@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use GIGANTIC in your research, please cite it using these metadata."
+type: software
+title: "GIGANTIC: Genomic Integration and Gene Analysis across Numerous Topology-Interrogated Clades"
+authors:
+  - family-names: "Edsinger"
+    given-names: "Eric"
+    orcid: ""
+version: "1.0.0"
+date-released: "2026-02-05"
+url: "https://github.com/000specific/gigantic_one"
+license: MIT
+repository-code: "https://github.com/000specific/gigantic_one"
+keywords:
+  - phylogenomics
+  - comparative genomics
+  - evolutionary biology
+  - bioinformatics
+  - nextflow
+  - gene families
+  - orthogroups
+  - species trees

@@ -1,0 +1,44 @@
+# NextFlow execution artifacts
+work/
+.nextflow/
+.nextflow.log*
+
+# Pipeline outputs (generated, not tracked)
+OUTPUT_pipeline/
+
+# Large data files
+*.aa
+*.fa
+*.fasta
+*.fna
+*.pdb
+*.psq
+*.psa
+*.pog
+*.pjs
+*.pos
+*.pto
+*.pin
+*.phr
+*.dmnd
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs (tracked per-subproject in gigantic_ai/ai_documentation/logs/)
+*.log
+
+# Environment files with secrets
+.env
