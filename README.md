@@ -1,6 +1,6 @@
 # GIGANTIC
 
-**Genomic Integration and Gene Analysis across Numerous Topology-Interrogated Clades**
+**Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades**
 
 A modular phylogenomics platform for comparative genomics and evolutionary analysis.
 
@@ -164,7 +164,7 @@ Key bioinformatics tools (installed via conda environments):
 
 If you use GIGANTIC in your research, please cite:
 
-> Edsinger, E. (2026). GIGANTIC: Genomic Integration and Gene Analysis across Numerous Topology-Interrogated Clades. GitHub repository: https://github.com/000specific/GIGANTIC
+> Edsinger, E. (2026). GIGANTIC: Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades. GitHub repository: https://github.com/000specific/GIGANTIC
 
 ## License
 

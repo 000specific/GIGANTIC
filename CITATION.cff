@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use GIGANTIC in your research, please cite it using these metadata."
 type: software
-title: "GIGANTIC: Genomic Integration and Gene Analysis across Numerous Topology-Interrogated Clades"
+title: "GIGANTIC: Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades"
 authors:
   - family-names: "Edsinger"
     given-names: "Eric"
