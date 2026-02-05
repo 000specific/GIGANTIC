@@ -1,8 +1,16 @@
-# GIGANTIC
+<p align="center">
+  <img src="assets/branding/logo-wordmark-black.jpg" alt="GIGANTIC" width="600">
+</p>
 
-**Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades**
+<p align="center">
+  <strong>Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades</strong>
+</p>
 
-A modular phylogenomics platform for comparative genomics and evolutionary analysis.
+<p align="center">
+  A modular phylogenomics platform for comparative genomics and evolutionary analysis.
+</p>
+
+---
 
 GIGANTIC provides a template-based framework of NextFlow workflows and Python pipelines for large-scale comparative genomics. Each subproject handles a distinct analysis stage - from proteome database curation to phylogenetic tree construction to evolutionary origin-conservation-loss analysis - connected through standardized data sharing conventions.
 
