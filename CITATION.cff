@@ -8,9 +8,9 @@ authors:
     orcid: ""
 version: "1.0.0"
 date-released: "2026-02-05"
-url: "https://github.com/000specific/gigantic_one"
+url: "https://github.com/000specific/GIGANTIC"
 license: MIT
-repository-code: "https://github.com/000specific/gigantic_one"
+repository-code: "https://github.com/000specific/GIGANTIC"
 keywords:
   - phylogenomics
   - comparative genomics

@@ -70,8 +70,8 @@ Each subproject is self-contained with its own NextFlow workflows, Python script
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/000specific/gigantic_one.git
-cd gigantic_one
+git clone https://github.com/000specific/GIGANTIC.git
+cd GIGANTIC
 ```
 
 ### 2. Set up conda environments
@@ -164,7 +164,7 @@ Key bioinformatics tools (installed via conda environments):
 
 If you use GIGANTIC in your research, please cite:
 
-> Edsinger, E. (2026). GIGANTIC: Genomic Integration and Gene Analysis across Numerous Topology-Interrogated Clades. GitHub repository: https://github.com/000specific/gigantic_one
+> Edsinger, E. (2026). GIGANTIC: Genomic Integration and Gene Analysis across Numerous Topology-Interrogated Clades. GitHub repository: https://github.com/000specific/GIGANTIC
 
 ## License
 
