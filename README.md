@@ -22,7 +22,7 @@ GIGANTIC provides a template-based framework of NextFlow workflows and Python pi
 GIGANTIC is organized as a series of subprojects that build on each other:
 
 ```
-[1] databases                Proteome database curation and BLAST setup
+[1] genomesDB                Proteome database curation and BLAST setup
        |
 [2] phylonames               Phylogenetic naming system (genus_species <-> full taxonomy)
        |
@@ -38,7 +38,7 @@ GIGANTIC is organized as a series of subprojects that build on each other:
        |                        All possible species
        |                        tree topologies
        |                           |
-       |                    [7] origins_conservation_loss
+       |                    [7] orthogroups_X_ocl
        |                        Gene origin, conservation,
        |                        and loss analysis (OCL)
        |                           |
@@ -56,13 +56,13 @@ Each subproject is self-contained with its own NextFlow workflows, Python script
 
 | # | Subproject | Description | Type |
 |---|-----------|-------------|------|
-| 1 | `databases` | Proteome database curation, BLAST database construction | Setup |
+| 1 | `genomesDB` | Proteome database curation, BLAST database construction | Setup |
 | 2 | `phylonames` | GIGANTIC phylogenetic naming system and species mapping | Setup |
 | 3 | `annotations_hmms` | Multi-tool protein functional annotation pipeline | NextFlow |
 | 4 | `orthogroups` | Ortholog group identification (OrthoHMM + OrthoFinder) | NextFlow |
 | 5 | `trees_species` | Exhaustive species tree topology generation | NextFlow |
 | 6 | `trees_gene_families` | Gene family phylogenetic analysis | NextFlow |
-| 7 | `origins_conservation_loss` | Evolutionary dynamics across all tree topologies | NextFlow |
+| 7 | `orthogroups_X_ocl` | Evolutionary dynamics across all tree topologies | NextFlow |
 | 8 | `annotations_X_ocl` | Functional annotation integrated with OCL analysis | NextFlow |
 
 ## Quick Start

@@ -19,7 +19,7 @@ Integrate functional annotations with Origin-Conservation-Loss (OCL) evolutionar
 ## Inputs
 
 - Functional annotations (from `annotations_hmms` subproject)
-- OCL data (from `origins_conservation_loss` subproject)
+- OCL data (from `orthogroups_X_ocl` subproject)
 - Species tree structures (from `trees_species` subproject)
 
 ## Outputs

@@ -16,7 +16,7 @@ Comprehensive functional annotation of all proteomes using multiple complementar
 
 ## Inputs
 
-- Proteome FASTA files (from `databases` subproject)
+- Proteome FASTA files (from `genomesDB` subproject)
 - Species manifest (TSV)
 
 ## Outputs

@@ -15,7 +15,7 @@ Using both methods provides cross-validation and different perspectives on gene 
 
 ## Inputs
 
-- Proteome FASTA files (from `databases` subproject)
+- Proteome FASTA files (from `genomesDB` subproject)
 
 ## Outputs
 
@@ -25,4 +25,4 @@ Using both methods provides cross-validation and different perspectives on gene 
 
 ## Outputs Shared Downstream (`output_to_input/`)
 
-- Orthogroup definitions (used by `origins_conservation_loss`)
+- Orthogroup definitions (used by `orthogroups_X_ocl`)

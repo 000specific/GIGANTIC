@@ -1,4 +1,4 @@
-# origins_conservation_loss - Evolutionary Dynamics Analysis
+# orthogroups_X_ocl - Evolutionary Dynamics Analysis
 
 ## Purpose
 

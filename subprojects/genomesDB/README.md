@@ -1,4 +1,4 @@
-# databases - Proteome Database Curation
+# genomesDB - Proteome Database Curation
 
 ## Purpose
 

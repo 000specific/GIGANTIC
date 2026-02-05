@@ -31,7 +31,7 @@ Block 3: Phylogenetic Analysis
 - Reference gene sequences (RGS) per gene family (FASTA)
 - Gene families manifest (TSV): gene_family_name, rgs_fasta_filename
 - Species keeper list (optional): which species to include
-- BLAST databases (from `databases` subproject)
+- BLAST databases (from `genomesDB` subproject)
 
 ## Outputs
 

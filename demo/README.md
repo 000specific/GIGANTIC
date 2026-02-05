@@ -14,11 +14,11 @@ This demo uses 3 species spanning 2 major clades plus an outgroup:
 
 The demo walks through the complete GIGANTIC pipeline with a small dataset:
 
-1. **databases** - Set up proteome databases for 3 species
+1. **genomesDB** - Set up proteome databases for 3 species
 2. **phylonames** - Generate phylonames for the demo species
 3. **orthogroups** - Identify ortholog groups
 4. **trees_species** - Generate all 3 possible tree topologies
-5. **origins_conservation_loss** - Analyze evolutionary dynamics across topologies
+5. **orthogroups_X_ocl** - Analyze evolutionary dynamics across topologies
 
 ## Running the Demo
 

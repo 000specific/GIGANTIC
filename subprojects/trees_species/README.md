@@ -45,8 +45,8 @@ Metazoa::Bilateria           # The branch where Bilateria diverges from Metazoa
 
 ## Outputs Shared Downstream (`output_to_input/`)
 
-- Phylogenetic block definitions (used by `origins_conservation_loss`)
-- Parent-child relationship tables (used by `origins_conservation_loss`)
+- Phylogenetic block definitions (used by `orthogroups_X_ocl`)
+- Parent-child relationship tables (used by `orthogroups_X_ocl`)
 - Species membership mappings (used by downstream analyses)
 
 ## NextFlow Templates
