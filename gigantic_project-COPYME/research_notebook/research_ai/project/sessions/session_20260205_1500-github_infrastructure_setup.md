@@ -164,6 +164,7 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 9. **Added "Honesty About Mistakes" principle** to all AI_GUIDE files and CLAUDE.md
 10. **Implemented softlinks pattern** for output_to_input to avoid data duplication
 11. **Implemented SLURM wrapper pattern** - clean separation of workflow logic from cluster settings
+12. **Renamed 000_user to user_research** - flexible organization with README documentation
 
 ## GitHub Commits This Session
 
@@ -173,6 +174,7 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 | `ce06ff6` | Add honesty principle to AI_GUIDE and CLAUDE.md files |
 | `3cccefc` | Implement softlinks pattern for output_to_input to avoid data duplication |
 | `e117b3a` | Implement SLURM wrapper pattern for clean local/cluster execution |
+| `6a21c1a` | Rename 000_user to user_research with flexible organization |
 
 ## Key Decisions Made
 
@@ -201,6 +203,15 @@ Implemented clean separation of local vs cluster execution:
   - SLURM users only edit account/qos - hard to misconfigure
   - No code duplication
   - Clean separation of concerns
+
+### 5. Flexible user_research Organization - IMPLEMENTED
+Renamed `000_user/` to `user_research/` with flexible organization:
+- **Two valid locations** for personal research work:
+  - `subprojects/[name]/user_research/` - close to the subproject
+  - `research_notebook/research_user/subproject-[name]/` - centralized
+- **README in each** explaining the flexibility
+- **Post-project consolidation**: can move/copy user_research to research_notebook when archiving
+- **Philosophy**: Give users freedom while maintaining structure
 
 ## Remaining Next Steps (Future Sessions)
 
