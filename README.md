@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>AI-native phylogenomics - for experts to everyone</em>
+  <em>AI-native phylogenomics - for experts to everyone!</em>
 </p>
 
 ---
