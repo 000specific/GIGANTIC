@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-  A modular phylogenomics platform for comparative genomics and evolutionary analysis.
+  A modular AI-user driven phylogenomics platform for comparative genomics and evolutionary analysis.
 </p>
 
 <p align="center">
-  <em>Developed with AI assistance. Designed for AI-assisted usage.</em>
+  <em>AI-user based development. AI-user based design.</em>
 </p>
 
 ---
