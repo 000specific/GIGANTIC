@@ -135,6 +135,8 @@ chmod +x ai_scripts/*.sh
 
 **GIGANTIC Transparency Principle**: All script outputs are visible in `output/N-output/` directories.
 
+**Softlink Pattern**: To avoid data duplication, `output_to_input/` contains symlinks pointing to actual files in `output/N-output/`. This allows downstream subprojects to access data while keeping canonical copies in workflow output directories.
+
 ### Workflow Directory (this template)
 ```
 output/
@@ -144,13 +146,25 @@ output/
 │   ├── phylonames_taxonid
 │   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
 │   └── generation_metadata.txt
-└── 3-output/   # (Script 003 writes to output_to_input/ at subproject root)
+└── 3-output/   # Project-specific mapping file (ACTUAL DATA)
+    └── [project]_map-genus_species_X_phylonames.tsv
 ```
 
 ### Subproject Directory (parent)
 ```
 ../output_to_input/maps/
-└── [project]_map-genus_species_X_phylonames.tsv  # For downstream subprojects
+└── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK to output/3-output/
+```
+
+### Archiving with Softlinks
+
+When archiving a project, use `cp -L` or `rsync -L` to dereference symlinks:
+```bash
+# Copy with dereferenced symlinks
+cp -rL my_project/ archive/my_project/
+
+# Or with rsync
+rsync -avL my_project/ archive/my_project/
 ```
 
 ## Output Verification

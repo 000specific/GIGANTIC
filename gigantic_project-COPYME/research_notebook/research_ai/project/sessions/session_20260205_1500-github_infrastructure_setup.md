@@ -162,6 +162,7 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 7. Updated CLAUDE.md with correct file references
 8. **Initial GitHub push** - Commit `3114c5f` (129 files, 2,690 insertions)
 9. **Added "Honesty About Mistakes" principle** to all AI_GUIDE files and CLAUDE.md
+10. **Implemented softlinks pattern** for output_to_input to avoid data duplication
 
 ## GitHub Commits This Session
 
@@ -175,11 +176,12 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 ### 1. Acronym Discussion
 User considered changing "Genome Integration and Gene Analysis" to "Genomes Integration and Genes Analyses" for scale emphasis. Decision: **Keep singular** - reads more naturally as compound nouns, scale already communicated by "GIGANTIC" and "Numerous".
 
-### 2. Softlinks for Data Sharing
-Discussed using symlinks to avoid data duplication:
+### 2. Softlinks for Data Sharing - IMPLEMENTED
+Implemented symlinks to avoid data duplication:
 - **Active work**: Symlinks from `output_to_input/` pointing to `output/N-output/` files
 - **Archiving**: Dereference symlinks with `cp -L` or `rsync -L`
-- Added to future todo list for implementation
+- **Implementation**: RUN_phylonames.sh now writes actual file to `output/3-output/` and creates symlink in `../output_to_input/maps/`
+- **Pattern**: Uses relative paths for portability (`../../workflow_dir/output/3-output/filename`)
 
 ### 3. Honesty About Mistakes Principle
 AI made an error (said "confusing" instead of "incorrect"). User correctly identified this as whitewashing. Added explicit guidance to all AI_GUIDE files:
@@ -190,7 +192,7 @@ AI made an error (said "confusing" instead of "incorrect"). User correctly ident
 ## Remaining Next Steps (Future Sessions)
 
 1. Add SLURM option to each nf_workflow template
-2. Implement softlinks for large data in output_to_input
+2. ~~Implement softlinks for large data in output_to_input~~ - DONE
 3. Add post-workflow cleanup for temporary directories
 4. Review AI_GUIDE depth after initial GitHub push
 5. Discuss demo data strategy

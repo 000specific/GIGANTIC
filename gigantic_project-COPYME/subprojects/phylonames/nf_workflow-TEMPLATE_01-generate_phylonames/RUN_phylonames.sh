@@ -26,11 +26,18 @@
 # OUTPUT:
 # Your mapping file will be at (relative to subproject root):
 #   output_to_input/maps/project_map-genus_species_X_phylonames.tsv
+#   (This is a symlink pointing to the actual file in output/3-output/)
 #
 # Script outputs for transparency (in this workflow directory):
 #   output/1-output/ - NCBI database download logs
 #   output/2-output/ - Generated phylonames and master mapping
-#   output/3-output/ - (empty - script 003 writes to output_to_input/)
+#   output/3-output/ - Project-specific mapping file (actual data)
+#
+# SYMLINK PATTERN:
+# To avoid data duplication, output_to_input/ contains symlinks pointing to
+# the actual files in output/3-output/. This allows downstream subprojects
+# to access the data while keeping the canonical copy in the workflow output.
+# For archiving, use `cp -L` or `rsync -L` to dereference symlinks.
 #
 # FOR HPC/SLURM USERS:
 # If running on an HPC cluster, you may want to submit this as a job.
@@ -61,9 +68,11 @@ PROJECT_NAME="my_project"
 # Edit this file with your species before running:
 SPECIES_LIST="INPUT_user/species_list.txt"
 
-# Output location for your mapping file:
-# Note: output_to_input/ is at the subproject root (parent of this workflow directory)
-OUTPUT_MAP="../output_to_input/maps/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv"
+# Output locations:
+# Actual file is in output/3-output/ (workflow directory)
+# Symlink is created in output_to_input/maps/ (subproject root) for downstream access
+OUTPUT_FILE="output/3-output/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv"
+OUTPUT_LINK="../output_to_input/maps/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv"
 
 ################################################################################
 # SCRIPT EXECUTION
@@ -135,16 +144,41 @@ echo ""
 echo "========================================================================"
 echo "Step 3: Creating your project-specific species mapping..."
 echo "========================================================================"
-mkdir -p "$(dirname ${OUTPUT_MAP})"
+
+# Create output directories
+mkdir -p "output/3-output"
+mkdir -p "$(dirname ${OUTPUT_LINK})"
+
+# Write actual file to output/3-output/
 python3 ai_scripts/003_ai-python-create_species_mapping.py \
     --species-list "${SPECIES_LIST}" \
     --master-mapping "output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv" \
-    --output "${OUTPUT_MAP}"
+    --output "${OUTPUT_FILE}"
 if [ $? -ne 0 ]; then
     echo "ERROR: Species mapping failed!"
     echo "Check that your species names are spelled correctly (Genus_species format)."
     exit 1
 fi
+
+# Create symlink in output_to_input/maps/ pointing to the actual file
+# Use relative path from output_to_input/maps/ to the workflow output/3-output/
+# Path: ../nf_workflow-TEMPLATE_01-generate_phylonames/output/3-output/filename
+WORKFLOW_DIR_NAME=$(basename "${SCRIPT_DIR}")
+RELATIVE_TARGET="../../${WORKFLOW_DIR_NAME}/output/3-output/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv"
+
+# Remove existing symlink if present (for re-runs)
+rm -f "${OUTPUT_LINK}"
+
+# Create the symlink
+ln -s "${RELATIVE_TARGET}" "${OUTPUT_LINK}"
+if [ $? -ne 0 ]; then
+    echo "WARNING: Could not create symlink at ${OUTPUT_LINK}"
+    echo "Copying file instead..."
+    cp "${OUTPUT_FILE}" "${OUTPUT_LINK}"
+fi
+
+echo "Actual file: ${OUTPUT_FILE}"
+echo "Symlink: ${OUTPUT_LINK}"
 echo ""
 
 # Success!
@@ -152,15 +186,19 @@ echo "========================================================================"
 echo "SUCCESS! Phylonames workflow complete."
 echo "========================================================================"
 echo ""
-echo "Your mapping file is at:"
-echo "  ${OUTPUT_MAP}"
+echo "Your mapping file:"
+echo "  Actual file: ${OUTPUT_FILE}"
+echo "  Symlink:     ${OUTPUT_LINK}"
 echo ""
 echo "This file maps your species to their full phylonames."
-echo "Other GIGANTIC subprojects will use this file."
+echo "Other GIGANTIC subprojects will use the symlink in output_to_input/."
 echo ""
 echo "Next steps:"
-echo "  1. Copy ${OUTPUT_MAP} to your genomesDB subproject"
+echo "  1. Other subprojects can read from ${OUTPUT_LINK}"
 echo "  2. Set up your proteome database using the phylonames for file naming"
+echo ""
+echo "Archiving note:"
+echo "  Use 'cp -L' or 'rsync -L' to dereference symlinks when archiving."
 echo ""
 echo "Completed: $(date)"
 echo "========================================================================"

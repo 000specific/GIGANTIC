@@ -121,11 +121,17 @@ chmod +x ai_scripts/*.sh
 After successful completion:
 
 ```
+nf_workflow-TEMPLATE_01-generate_phylonames/
+└── output/3-output/
+    └── [project]_map-genus_species_X_phylonames.tsv  # ACTUAL FILE
+
 output_to_input/maps/
-└── [project]_map-genus_species_X_phylonames.tsv
+└── [project]_map-genus_species_X_phylonames.tsv      # SYMLINK to above
 ```
 
 This TSV file has columns: `genus_species`, `phyloname`, `phyloname_taxonid`
+
+**Softlink Pattern**: The file in `output_to_input/` is a symlink pointing to the actual file in `output/3-output/`. This avoids data duplication. For archiving, use `cp -L` or `rsync -L` to dereference symlinks.
 
 ---
 
