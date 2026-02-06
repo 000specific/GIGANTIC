@@ -160,12 +160,40 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 5. Updated RUN_phylonames.sh with correct paths
 6. Updated AI_GUIDE-phylonames_workflow.md with output structure documentation
 7. Updated CLAUDE.md with correct file references
+8. **Initial GitHub push** - Commit `3114c5f` (129 files, 2,690 insertions)
+9. **Added "Honesty About Mistakes" principle** to all AI_GUIDE files and CLAUDE.md
 
-## Remaining Next Steps
+## GitHub Commits This Session
 
-1. Review AI_GUIDE depth after initial GitHub push
-2. Discuss demo data strategy
-3. Get user approval then commit and push to GitHub
+| Commit | Description |
+|--------|-------------|
+| `3114c5f` | Add gigantic_project-COPYME template with AI-native infrastructure |
+| `ce06ff6` | Add honesty principle to AI_GUIDE and CLAUDE.md files |
+
+## Key Decisions Made
+
+### 1. Acronym Discussion
+User considered changing "Genome Integration and Gene Analysis" to "Genomes Integration and Genes Analyses" for scale emphasis. Decision: **Keep singular** - reads more naturally as compound nouns, scale already communicated by "GIGANTIC" and "Numerous".
+
+### 2. Softlinks for Data Sharing
+Discussed using symlinks to avoid data duplication:
+- **Active work**: Symlinks from `output_to_input/` pointing to `output/N-output/` files
+- **Archiving**: Dereference symlinks with `cp -L` or `rsync -L`
+- Added to future todo list for implementation
+
+### 3. Honesty About Mistakes Principle
+AI made an error (said "confusing" instead of "incorrect"). User correctly identified this as whitewashing. Added explicit guidance to all AI_GUIDE files:
+- Say "I was incorrect" not "that was confusing"
+- Acknowledge mistakes clearly without minimizing language
+- Critical for scientific reproducibility and trust
+
+## Remaining Next Steps (Future Sessions)
+
+1. Add SLURM option to each nf_workflow template
+2. Implement softlinks for large data in output_to_input
+3. Add post-workflow cleanup for temporary directories
+4. Review AI_GUIDE depth after initial GitHub push
+5. Discuss demo data strategy
 
 ---
 
@@ -174,3 +202,7 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 This session represents an important milestone in GIGANTIC's development - establishing the infrastructure patterns that will be used across all subprojects. The consolidated research_ai structure and context-aware AI_GUIDE naming are foundational decisions that support GIGANTIC's goal of democratizing phylogenomics through AI assistance.
 
 The user emphasized: "this could be a really early example of a complex AI-user driven research tool - and this can be a part of the importance of GIGANTIC for publication"
+
+### Lesson Learned: Honesty in Error Acknowledgment
+
+During this session, the AI said "my original statement was confusing" when the correct statement was "I was incorrect." The user rightly called this out as whitewashing. This led to adding explicit guidance about honest error acknowledgment to all AI_GUIDE files - a valuable contribution to GIGANTIC's AI collaboration standards.
