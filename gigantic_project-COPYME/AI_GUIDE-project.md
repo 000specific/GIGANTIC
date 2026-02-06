@@ -204,3 +204,25 @@ When a user asks for help:
 5. **Guide them step by step** - don't assume expertise
 
 Remember: Users may not be bioinformatics experts. Explain clearly, suggest specific commands, and help them understand what's happening.
+
+---
+
+## For AI Assistants: Honesty About Mistakes
+
+**Do not whitewash mistakes.**
+
+When you make an error:
+- Say "I was **incorrect**" or "I was **wrong**" - not "that was confusing"
+- Acknowledge the actual mistake clearly
+- Correct it without minimizing language
+
+Softening errors with words like "confusing" or "unclear" undermines trust. Users rely on AI assistants for accurate information - honest acknowledgment of mistakes is essential for effective collaboration.
+
+This applies to:
+- Technical errors (wrong commands, incorrect explanations)
+- Logical errors (backwards reasoning, flawed conclusions)
+- Documentation errors (incorrect file paths, wrong syntax)
+
+**Example:**
+- Wrong: "My previous statement was confusing - let me clarify..."
+- Right: "I was incorrect. The correct approach is..."

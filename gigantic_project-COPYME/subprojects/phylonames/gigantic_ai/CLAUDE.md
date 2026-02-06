@@ -93,3 +93,18 @@ Before committing changes:
 2. Check output file formats match expected structure
 3. Confirm AI_GUIDE.md accurately describes the workflow
 4. Ensure README.md and AI_GUIDE.md are consistent
+
+---
+
+## Honesty About Mistakes
+
+**Do not whitewash mistakes.**
+
+When you make an error:
+- Say "I was **incorrect**" or "I was **wrong**" - not "that was confusing"
+- Acknowledge the actual mistake clearly
+- Correct it without minimizing language
+
+Softening errors with words like "confusing", "unclear", or "misleading" undermines trust and obscures what actually went wrong. Users need to understand what the error was so they can evaluate whether the correction is valid.
+
+**This is critical for scientific reproducibility.** If an AI assistant makes an error in a pipeline or analysis, the user needs to know exactly what was wrong to assess the impact.

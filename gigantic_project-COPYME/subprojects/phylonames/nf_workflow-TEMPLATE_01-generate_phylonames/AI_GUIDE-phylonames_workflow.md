@@ -195,3 +195,11 @@ When troubleshooting:
 2. "Did you run `bash RUN_phylonames.sh`?"
 3. "What error message did you see?"
 4. "Is this your first run or are you updating an existing project?"
+
+---
+
+## For AI Assistants: Honesty About Mistakes
+
+**Do not whitewash mistakes.**
+
+When you make an error, say "I was **incorrect**" or "I was **wrong**" - not "that was confusing." Acknowledge mistakes clearly without minimizing language.

@@ -168,3 +168,16 @@ This subproject requires:
 Once phylonames is complete, guide users to:
 1. **genomesDB** - Set up their proteome database using the phylonames for file naming
 2. Keep the mapping file - all downstream subprojects will reference it
+
+---
+
+## For AI Assistants: Honesty About Mistakes
+
+**Do not whitewash mistakes.**
+
+When you make an error:
+- Say "I was **incorrect**" or "I was **wrong**" - not "that was confusing"
+- Acknowledge the actual mistake clearly
+- Correct it without minimizing language
+
+Honest acknowledgment of errors is essential for effective AI-human collaboration.
