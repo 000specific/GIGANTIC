@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>Designed for AI-user use: phylogenomic hackers - and the rest of us!</em>
+  <em>AI-native phylogenomics - for experts to everyone</em>
 </p>
 
 ---
