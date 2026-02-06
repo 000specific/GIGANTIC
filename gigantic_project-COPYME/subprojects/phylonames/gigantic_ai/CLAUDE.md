@@ -79,6 +79,8 @@ The working implementation remains untouched while we develop the generalized ve
 | `README.md` | Human documentation |
 | `AI_GUIDE-phylonames.md` | AI assistant guidance (subproject level) |
 | `gigantic_ai/CLAUDE.md` | Development guidelines (this file) |
+| `nf_workflow-TEMPLATE_01-*/RUN_phylonames.sh` | Local execution script |
+| `nf_workflow-TEMPLATE_01-*/SLURM_phylonames.sbatch` | SLURM cluster submission wrapper |
 | `nf_workflow-TEMPLATE_01-*/ai_scripts/` | Core phyloname generation scripts |
 | `nf_workflow-TEMPLATE_01-*/` | Workflow template for users |
 | `output_to_input/` | Outputs shared with downstream subprojects |

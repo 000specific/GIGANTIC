@@ -40,21 +40,10 @@
 # For archiving, use `cp -L` or `rsync -L` to dereference symlinks.
 #
 # FOR HPC/SLURM USERS:
-# If running on an HPC cluster, you may want to submit this as a job.
-# Uncomment the SBATCH lines below and submit with: sbatch RUN_phylonames.sh
+# Use the SLURM wrapper script instead:
+#   sbatch SLURM_phylonames.sbatch
 #
 ################################################################################
-
-# Uncomment these lines for SLURM submission:
-# #SBATCH --job-name=phylonames
-# #SBATCH --account=YOUR_ACCOUNT
-# #SBATCH --qos=YOUR_QOS
-# #SBATCH --nodes=1
-# #SBATCH --ntasks=1
-# #SBATCH --cpus-per-task=2
-# #SBATCH --mem=8gb
-# #SBATCH --time=2:00:00
-# #SBATCH --output=phylonames-%j.log
 
 ################################################################################
 # CONFIGURATION

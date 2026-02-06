@@ -20,7 +20,8 @@
 
 | File | User Edits? | Purpose |
 |------|-------------|---------|
-| `RUN_phylonames.sh` | Maybe | One-click workflow execution. Edit PROJECT_NAME. |
+| `RUN_phylonames.sh` | Maybe | One-click workflow execution (local). Edit PROJECT_NAME. |
+| `SLURM_phylonames.sbatch` | **YES (SLURM users)** | SLURM submission wrapper. Edit account/qos. |
 | `phylonames_config.yaml` | Maybe | Configuration options. Usually defaults work. |
 | `INPUT_user/species_list.txt` | **YES** | User MUST add their species here |
 | `INPUT_user/species_list_example.txt` | No | Example format (3 demo species) |
@@ -68,11 +69,52 @@ This affects the output filename.
 
 ### Step 4: Run the Workflow
 
+**Local execution:**
 ```bash
 bash RUN_phylonames.sh
 ```
 
+**SLURM cluster execution:**
+```bash
+# First, edit SLURM_phylonames.sbatch to set your account and qos
+sbatch SLURM_phylonames.sbatch
+```
+
 That's it! The script handles everything else.
+
+---
+
+## Running on SLURM (HPC Clusters)
+
+GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and portable, while SLURM-specific settings live in a separate wrapper script.
+
+| Execution | Command | When to Use |
+|-----------|---------|-------------|
+| Local | `bash RUN_phylonames.sh` | Laptop, workstation, or non-SLURM server |
+| SLURM | `sbatch SLURM_phylonames.sbatch` | HPC clusters with SLURM scheduler |
+
+### SLURM Setup
+
+1. Edit `SLURM_phylonames.sbatch` and change:
+   ```bash
+   #SBATCH --account=YOUR_ACCOUNT    # Your cluster account
+   #SBATCH --qos=YOUR_QOS            # Your quality of service
+   ```
+
+2. Optionally adjust resources (mem, time, cpus) if needed
+
+3. Submit: `sbatch SLURM_phylonames.sbatch`
+
+4. Check status: `squeue -u $USER`
+
+5. View logs: `cat slurm_logs/phylonames-*.log`
+
+### Why This Pattern?
+
+- **RUN script stays portable** - works on any system without modification
+- **SLURM users only edit SBATCH headers** - hard to misconfigure
+- **Local users never see SLURM complexity** - cleaner experience
+- **One workflow, two execution modes** - no code duplication
 
 ---
 

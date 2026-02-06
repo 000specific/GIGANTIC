@@ -163,6 +163,7 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 8. **Initial GitHub push** - Commit `3114c5f` (129 files, 2,690 insertions)
 9. **Added "Honesty About Mistakes" principle** to all AI_GUIDE files and CLAUDE.md
 10. **Implemented softlinks pattern** for output_to_input to avoid data duplication
+11. **Implemented SLURM wrapper pattern** - clean separation of workflow logic from cluster settings
 
 ## GitHub Commits This Session
 
@@ -190,13 +191,24 @@ AI made an error (said "confusing" instead of "incorrect"). User correctly ident
 - Acknowledge mistakes clearly without minimizing language
 - Critical for scientific reproducibility and trust
 
+### 4. SLURM Wrapper Pattern - IMPLEMENTED
+Implemented clean separation of local vs cluster execution:
+- **`RUN_*.sh`**: Core workflow script - portable, no SLURM code
+- **`SLURM_*.sbatch`**: Thin wrapper (~20 lines) containing only SBATCH headers
+- **Benefits**:
+  - Local users never see SLURM complexity
+  - SLURM users only edit account/qos - hard to misconfigure
+  - No code duplication
+  - Clean separation of concerns
+
 ## Remaining Next Steps (Future Sessions)
 
-1. Add SLURM option to each nf_workflow template
+1. ~~Add SLURM option to each nf_workflow template~~ - DONE (SLURM wrapper pattern)
 2. ~~Implement softlinks for large data in output_to_input~~ - DONE
 3. Add post-workflow cleanup for temporary directories
 4. Review AI_GUIDE depth after initial GitHub push
 5. Discuss demo data strategy
+6. Update STRATEGY-GIGANTIC.md with new patterns
 
 ---
 

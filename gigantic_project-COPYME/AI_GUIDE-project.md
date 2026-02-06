@@ -150,7 +150,18 @@ GIGANTIC uses standardized species identifiers:
 Each subproject contains workflow templates (`nf_workflow-TEMPLATE_*/`):
 1. Copy the template to create a run
 2. Edit configuration files
-3. Run with `bash RUN_*.sh`
+3. Run locally with `bash RUN_*.sh` OR on SLURM with `sbatch SLURM_*.sbatch`
+
+### Running on SLURM (HPC Clusters)
+
+GIGANTIC uses a **SLURM wrapper pattern**:
+- `RUN_*.sh` - Core workflow script (runs on any system)
+- `SLURM_*.sbatch` - Thin wrapper that submits RUN script as a SLURM job
+
+**Local users**: Just run `bash RUN_*.sh`
+**SLURM users**: Edit `SLURM_*.sbatch` (account, qos), then `sbatch SLURM_*.sbatch`
+
+This keeps the core workflow portable while cleanly separating cluster-specific settings.
 
 ### Manifest Files
 

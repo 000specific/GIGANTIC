@@ -69,13 +69,20 @@ Ask the user:
 
 ### Step 3: Run the Workflow
 
-The simplest approach:
+**Local execution** (laptop, workstation):
 ```bash
 cd my_project/phylonames
 bash RUN_phylonames.sh
 ```
 
-Or step-by-step:
+**SLURM cluster execution**:
+```bash
+cd my_project/phylonames
+# First edit SLURM_phylonames.sbatch to set account/qos
+sbatch SLURM_phylonames.sbatch
+```
+
+Or step-by-step (for debugging):
 ```bash
 bash ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh
 python3 ai_scripts/002_ai-python-generate_phylonames.py
