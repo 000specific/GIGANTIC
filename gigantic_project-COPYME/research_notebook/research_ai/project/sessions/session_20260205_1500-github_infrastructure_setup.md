@@ -170,6 +170,7 @@ All scripts write to `output/N-output/` directories to enable human inspection o
 |--------|-------------|
 | `3114c5f` | Add gigantic_project-COPYME template with AI-native infrastructure |
 | `ce06ff6` | Add honesty principle to AI_GUIDE and CLAUDE.md files |
+| `3cccefc` | Implement softlinks pattern for output_to_input to avoid data duplication |
 
 ## Key Decisions Made
 
