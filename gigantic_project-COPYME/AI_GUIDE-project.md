@@ -50,6 +50,9 @@ gigantic_project-COPYME/               # Copy and rename for your project
 │   └── research_ai/                   # AI session documentation
 └── subprojects/                       # GIGANTIC analysis modules
     ├── phylonames/                    # [1] Phylogenetic naming system
+    │   ├── conda_environment-phylonames.yml  # Per-subproject environment
+    │   ├── AI_GUIDE-phylonames.md
+    │   └── [...]
     ├── genomesDB/                     # [2] Proteome database setup
     ├── annotations_hmms/              # [3] Functional annotation
     ├── orthogroups/                   # [4] Ortholog identification
@@ -181,6 +184,25 @@ This keeps the core workflow portable while cleanly separating cluster-specific 
 ### Manifest Files
 
 User inputs are specified in TSV manifest files in `INPUT_user/` directories.
+
+### Conda Environments
+
+Each subproject has its own conda environment file:
+
+```
+subprojects/phylonames/conda_environment-phylonames.yml
+subprojects/genomesDB/conda_environment-genomesDB.yml
+```
+
+**Why per-subproject**: GIGANTIC subprojects are autonomous modular units. Everything you need is right in the subproject folder - the AI assistant immediately sees the environment file when examining the directory.
+
+**Why this differs from traditional software design**: Traditional CS would centralize environments to avoid duplication. But that creates a disconnect between "where I'm working" and "what I need to work." For AI-assisted workflows, **discoverability > avoiding minor duplication**. Each subproject is an autonomous modular unit containing everything needed to run it.
+
+**To set up an environment**:
+```bash
+conda env create -f conda_environment-phylonames.yml
+conda activate gigantic-phylonames
+```
 
 ---
 

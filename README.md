@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-  A modular AI-user driven phylogenomics platform for comparative genomics and evolutionary analysis.
+  A modular phylogenomics platform for comparative genomics and evolutionary analysis.
 </p>
 
 <p align="center">
-  <em>AI-user based development. AI-user based design.</em>
+  <em>AI-user based development. AI-user based use.</em>
 </p>
 
 ---
@@ -209,8 +209,11 @@ GIGANTIC explores what research software looks like when AI assistance is assume
 - **AI_GUIDE files**: Each subproject and workflow includes documentation written specifically for AI assistants to read - structured to help them help you
 - **Research notebook separation**: `research_user/` (your notes, your way) vs `research_ai/` (structured AI session records) - because AI-assisted work is research too
 - **Context-aware naming**: Files like `AI_GUIDE-phylonames.md` let you direct your AI assistant to exactly the right documentation
+- **Per-subproject environments**: Each subproject contains its own `conda_environment-[subproject].yml` file - everything you need is right there in the subproject. The AI immediately sees it when examining the directory. No hunting through centralized folders.
 
-We're learning as we go. If you find patterns that work well (or don't), we'd love to hear about it.
+**Why this differs from traditional software design**: Traditional CS would centralize environments to avoid duplication. But that creates a disconnect between "where I'm working" and "what I need to work." For AI-assisted workflows, **discoverability > avoiding minor duplication**. Each subproject is an autonomous modular unit containing everything needed to run it.
+
+This is new territory. Users are not CS experts, and AI-user research workflows are inventing conventions as they go. We're learning what works. If you find patterns that work well (or don't), we'd love to hear about it.
 
 ---
 
