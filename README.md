@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades</strong>
+  <strong>GIGANTIC: Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades</strong>
 </p>
 
 <p align="center">
@@ -13,35 +13,6 @@
 <p align="center">
   <em>Developed with AI assistance. Designed for AI-assisted usage.</em>
 </p>
-
----
-
-## AI-Native Development
-
-**GIGANTIC is developed using AI pair programming and is designed to be run with AI assistance.**
-
-### Development
-
-GIGANTIC represents an ongoing transformation from **GIGANTIC_0** (a decade of human-written "crayon code" - functional but scattered, undocumented scripts) to **GIGANTIC_1** (modernized, documented, reproducible pipelines).
-
-This transformation is being done through AI pair programming using:
-- **Claude Code** within **Cursor IDE**
-- **Claude Opus 4.5** (as of February 2026)
-- Human collaborator: **Eric Edsinger**
-
-Every script includes an AI attribution header documenting the model, date, and purpose.
-
-### Usage
-
-**We recommend using an AI assistant (Claude, ChatGPT, or similar) to help run GIGANTIC workflows.**
-
-Each subproject and workflow template includes an `AI_GUIDE.md` file specifically written to help AI assistants:
-- Understand what the workflow does
-- Guide users through configuration
-- Troubleshoot common errors
-- Interpret outputs
-
-This approach democratizes access to complex phylogenomics pipelines - you don't need to be a bioinformatics expert if you have an AI assistant to help.
 
 ---
 
@@ -112,31 +83,46 @@ Each subproject is self-contained with its own NextFlow workflows, Python script
 
 ```bash
 git clone https://github.com/000specific/GIGANTIC.git
-cd GIGANTIC
 ```
 
-### 2. Set up conda environments
+### 2. Copy the project template to your working location
 
 ```bash
-bash environments/install_environments.sh
+cp -r GIGANTIC/gigantic_project-COPYME ~/my_projects/gigantic_project-cephalopod_evolution/
+cd ~/my_projects/gigantic_project-cephalopod_evolution/
 ```
 
-### 3. Run the demo
+**Project naming convention**: `gigantic_project-your_project_name`
+
+Examples:
+- `gigantic_project-cephalopod_evolution`
+- `gigantic_project-early_animal_phylogenomics`
+- `gigantic_project-mollusc_neural_genes`
+
+### 3. Work within your copied project
+
+Your copied project is completely self-contained. Read `AI_GUIDE-project.md` to get started - we recommend working with an AI assistant (Claude, ChatGPT, etc.) who can read this guide and help you through the workflows.
+
+```
+gigantic_project-your_project_name/
+├── AI_GUIDE-project.md                # Start here - high-level project guidance
+├── research_notebook/                 # Your research documentation
+│   ├── research_user/                 # Your personal workspace (notes, literature, drafts)
+│   └── research_ai/                   # AI session documentation (logs, validation)
+└── subprojects/                       # GIGANTIC analysis modules
+    ├── phylonames/                    # [1] Start here - species naming system
+    ├── genomesDB/                     # [2] Proteome database setup
+    └── ...                            # Additional subprojects
+```
+
+### 4. Run the demo (optional)
 
 ```bash
-cd demo
+cd GIGANTIC/demo
 bash run_demo.sh
 ```
 
 The demo uses a small 3-species dataset (*Homo sapiens*, *Aplysia californica*, *Octopus bimaculoides*) to walk through the complete GIGANTIC pipeline.
-
-### 4. Start your own project
-
-```bash
-bash scripts/setup_gigantic_project.sh my_project_name
-```
-
-This creates a new project directory with all subproject templates ready to customize for your species set.
 
 ## Subproject Workspace Structure
 
@@ -176,6 +162,57 @@ Metazoa_Mollusca_Cephalopoda_Octopoda_Octopodidae_Octopus_bimaculoides
 ```
 
 This enables programmatic extraction of any taxonomic level and ensures consistent naming across all subprojects and analyses.
+
+---
+
+## AI-Native Development
+
+**GIGANTIC is developed using AI pair programming and is designed to be run with AI assistance.**
+
+### Development
+
+GIGANTIC represents an ongoing transformation from **GIGANTIC_0** (a decade of human-written "crayon code" - functional but scattered, undocumented scripts) to **GIGANTIC_1** (modernized, documented, reproducible pipelines).
+
+This transformation is being done through AI pair programming using:
+- **Claude Code** within **Cursor IDE**
+- **Claude Opus 4.5** (as of February 2026)
+- Human collaborator: **Eric Edsinger**
+
+Every script includes an AI attribution header documenting the model, date, and purpose.
+
+### Usage
+
+**We recommend using an AI assistant (Claude, ChatGPT, or similar) to help run GIGANTIC workflows.**
+
+Each subproject and workflow template includes an `AI_GUIDE-[name].md` file specifically written to help AI assistants:
+- Understand what the workflow does
+- Guide users through configuration
+- Troubleshoot common errors
+- Interpret outputs
+
+### Why AI + Local HPC?
+
+This approach offers three transformative advantages:
+
+1. **Democratized access**: You don't need to be a bioinformatics expert to run complex phylogenomics pipelines. An AI assistant can guide you through configuration, troubleshoot errors, and interpret results.
+
+2. **Genome-scale throughput**: Unlike web-based phylogenetic tools, GIGANTIC runs on your local computing cluster (HPC), enabling analysis of **tens to hundreds of species** with full proteomes. Web services simply cannot provide this scale of comparative genomics analysis.
+
+3. **Modular flexibility**: Different projects have different targets and develop in different sequences as new insights and questions emerge. GIGANTIC's modular subproject architecture lets you run analyses in the order that makes sense for your research, not a fixed pipeline order.
+
+Together, AI assistance + local HPC computing + modular design makes sophisticated phylogenomics accessible to researchers who have cluster access but lack deep bioinformatics expertise.
+
+### Design Philosophy
+
+GIGANTIC explores what research software looks like when AI assistance is assumed rather than optional. This shapes several design choices:
+
+- **AI_GUIDE files**: Each subproject and workflow includes documentation written specifically for AI assistants to read - structured to help them help you
+- **Research notebook separation**: `research_user/` (your notes, your way) vs `research_ai/` (structured AI session records) - because AI-assisted work is research too
+- **Context-aware naming**: Files like `AI_GUIDE-phylonames.md` let you direct your AI assistant to exactly the right documentation
+
+We're learning as we go. If you find patterns that work well (or don't), we'd love to hear about it.
+
+---
 
 ## Requirements
 
