@@ -76,6 +76,13 @@ Each subproject is self-contained with its own NextFlow workflows, Python script
 | 6 | `trees_gene_families` | Gene family phylogenetic analysis | NextFlow |
 | 7 | `orthogroups_X_ocl` | Evolutionary dynamics across all tree topologies | NextFlow |
 | 8 | `annotations_X_ocl` | Functional annotation integrated with OCL analysis | NextFlow |
+| 9 | `synteny` | Gene order conservation analysis across species | NextFlow |
+| 10 | `dark_proteome` | Uncharacterized/unknown function protein analysis | NextFlow |
+| 11 | `hot_spots` | Evolutionary hotspots and rapid change regions | NextFlow |
+| 12 | `rnaseq_integration` | RNA-seq expression data integration | NextFlow |
+| 13 | `hgnc_automation` | Automated reference gene family gene set generation | NextFlow |
+| 14 | `gene_names` | Comprehensive gene naming system | NextFlow |
+| 15 | `one_direction_homologs` | One-way BLAST homolog identification | NextFlow |
 
 ## Quick Start
 

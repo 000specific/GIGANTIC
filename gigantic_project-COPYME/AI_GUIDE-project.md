@@ -59,7 +59,14 @@ gigantic_project-COPYME/               # Copy and rename for your project
     ├── trees_species/                 # [5] Species tree topologies
     ├── trees_gene_families/           # [6] Gene family phylogenetics
     ├── orthogroups_X_ocl/             # [7] Origin-Conservation-Loss analysis
-    └── annotations_X_ocl/             # [8] Annotation-OCL integration
+    ├── annotations_X_ocl/             # [8] Annotation-OCL integration
+    ├── synteny/                       # [9] Gene order conservation
+    ├── dark_proteome/                 # [10] Uncharacterized proteins
+    ├── hot_spots/                     # [11] Evolutionary hotspots
+    ├── rnaseq_integration/            # [12] RNA-seq integration
+    ├── hgnc_automation/               # [13] Reference gene set generation
+    ├── gene_names/                    # [14] Gene naming system
+    └── one_direction_homologs/        # [15] One-way BLAST homologs
 ```
 
 ---
@@ -150,6 +157,13 @@ Keeping `research_user/` and `research_ai/` separate ensures:
 | 6 | `trees_gene_families` | Build gene family phylogenies | After genomesDB |
 | 7 | `orthogroups_X_ocl` | Analyze evolutionary dynamics | After orthogroups + trees_species |
 | 8 | `annotations_X_ocl` | Integrate annotations with evolution | After annotations + OCL |
+| 9 | `synteny` | Gene order conservation analysis | After orthogroups |
+| 10 | `dark_proteome` | Uncharacterized protein analysis | After annotations_hmms |
+| 11 | `hot_spots` | Evolutionary hotspots analysis | After OCL |
+| 12 | `rnaseq_integration` | RNA-seq expression integration | Flexible (after relevant analyses) |
+| 13 | `hgnc_automation` | Automated reference gene set generation | Setup |
+| 14 | `gene_names` | Comprehensive gene naming | After annotations + orthogroups + one_direction_homologs |
+| 15 | `one_direction_homologs` | One-way BLAST homolog identification | After genomesDB |
 
 **Each subproject has its own `AI_GUIDE-[subproject].md`** with specific instructions.
 
