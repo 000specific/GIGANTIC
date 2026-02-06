@@ -33,6 +33,27 @@ research_notebook/
 
 Organize it however works for you.
 
+**Subproject-specific directories** can be created here:
+```
+research_user/
+├── subproject-phylonames/     # Phylonames-related personal work
+├── subproject-genomesDB/      # GenomesDB-related personal work
+└── [your organization]
+```
+
+### Flexibility: Where to Put Your Work
+
+GIGANTIC gives you two options for personal research files:
+
+| Location | Use When |
+|----------|----------|
+| `subprojects/[name]/user_research/` | You want work close to the subproject |
+| `research_notebook/research_user/subproject-[name]/` | You prefer centralized organization |
+
+**Both are valid.** Use whichever works for you, or both.
+
+**Post-project consolidation**: When archiving, you can move `user_research/` contents from subprojects to the centralized research notebook.
+
 ### `research_ai/`
 
 **Consolidated AI documentation** - organized like lab notebook sections:

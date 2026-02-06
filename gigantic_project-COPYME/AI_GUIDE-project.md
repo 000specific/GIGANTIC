@@ -81,6 +81,21 @@ This is **your playground**. Use it for:
 
 **No structure requirements** - organize it however works for you.
 
+### `user_research/` - Subproject Personal Workspaces
+
+Each subproject also has a `user_research/` directory for work that relates specifically to that subproject.
+
+**Users have flexibility** in where to put their personal research:
+
+| Location | Best For |
+|----------|----------|
+| `subprojects/[name]/user_research/` | Work closely tied to a specific subproject |
+| `research_notebook/research_user/subproject-[name]/` | Centralized organization of all personal work |
+
+Both locations are valid. Use whichever feels natural, or use both.
+
+**Post-project consolidation**: When archiving a completed project, users can consolidate by moving `user_research/` contents from subprojects to the centralized research notebook.
+
 ### `research_ai/` - Consolidated AI Documentation
 
 This is where **all AI-generated documentation** lives - organized like sections of a lab notebook:
