@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>AI-user based development. AI-user based use.</em>
+  <em>Designed for AI-user use: phylogenomic hackers - and the rest of us!</em>
 </p>
 
 ---
