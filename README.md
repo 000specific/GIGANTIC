@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/logo-wordmark-black.png" alt="GIGANTIC" width="100%">
+  <img src="assets/branding/logo-wordmark-black.png" alt="GIGANTIC" width="90%">
 </p>
 
 <p align="center">
