@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/logo-wordmark-black.jpg" alt="GIGANTIC" width="600">
+  <img src="assets/branding/logo-wordmark-black.png" alt="GIGANTIC" width="600">
 </p>
 
 <p align="center">
@@ -9,6 +9,39 @@
 <p align="center">
   A modular phylogenomics platform for comparative genomics and evolutionary analysis.
 </p>
+
+<p align="center">
+  <em>Developed with AI assistance. Designed for AI-assisted usage.</em>
+</p>
+
+---
+
+## AI-Native Development
+
+**GIGANTIC is developed using AI pair programming and is designed to be run with AI assistance.**
+
+### Development
+
+GIGANTIC represents an ongoing transformation from **GIGANTIC_0** (a decade of human-written "crayon code" - functional but scattered, undocumented scripts) to **GIGANTIC_1** (modernized, documented, reproducible pipelines).
+
+This transformation is being done through AI pair programming using:
+- **Claude Code** within **Cursor IDE**
+- **Claude Opus 4.5** (as of February 2026)
+- Human collaborator: **Eric Edsinger**
+
+Every script includes an AI attribution header documenting the model, date, and purpose.
+
+### Usage
+
+**We recommend using an AI assistant (Claude, ChatGPT, or similar) to help run GIGANTIC workflows.**
+
+Each subproject and workflow template includes an `AI_GUIDE.md` file specifically written to help AI assistants:
+- Understand what the workflow does
+- Guide users through configuration
+- Troubleshoot common errors
+- Interpret outputs
+
+This approach democratizes access to complex phylogenomics pipelines - you don't need to be a bioinformatics expert if you have an AI assistant to help.
 
 ---
 
