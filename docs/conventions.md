@@ -32,19 +32,17 @@ Each subproject follows a standard layout:
 
 ```
 subproject/
-├── 000_user/                    # Personal workspace
+├── user_research/               # Personal workspace
 ├── nf_workflow-TEMPLATE_01/     # NextFlow template
 │   ├── ai_scripts/              # Pipeline scripts
 │   ├── INPUT_user/              # User inputs
 │   ├── OUTPUT_pipeline/         # Workflow outputs
 │   └── OUTPUT_to_input/         # Archived outputs
 ├── output_to_input/             # Shared downstream
-├── upload_to_server/            # External access
-└── gigantic_ai/                 # Documentation
-    └── ai_documentation/
-        ├── documentation/
-        ├── validation/
-        └── logs/
+└── upload_to_server/            # External access
+
+# AI documentation stored centrally in:
+# research_notebook/research_ai/subproject-[name]/
 ```
 
 ## Python Code Style

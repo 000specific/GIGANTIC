@@ -78,24 +78,26 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 ```
 phylonames/
 ├── README.md                           # This file
-├── 000_user/                           # Personal workspace
+├── AI_GUIDE-phylonames.md              # AI assistant guidance
+├── conda_environment-phylonames.yml    # Per-subproject environment
+├── user_research/                      # Personal workspace
 ├── output_to_input/                    # Outputs for downstream subprojects
 │   └── maps/                           # Species mapping files
 │       └── [project]_map-genus_species_X_phylonames.tsv
-├── nf_workflow-TEMPLATE_01-generate_phylonames/
-│   ├── INPUT_user/                     # User-provided species list
-│   │   └── species_list.txt            # One genus_species per line
-│   ├── OUTPUT_pipeline/                # Generated phylonames and mappings
-│   └── OUTPUT_to_input/                # Copy for archival with this run
-└── gigantic_ai/
-    ├── ai_documentation/
-    │   ├── documentation/              # Session logs
-    │   ├── validation/                 # QC scripts
-    │   └── logs/                       # Log files
-    └── scripts/                        # Core phyloname generation scripts
-        ├── 001_ai-bash-download_ncbi_taxonomy.sh
-        ├── 002_ai-python-generate_phylonames.py
-        └── 003_ai-python-create_species_mapping.py
+└── nf_workflow-TEMPLATE_01-generate_phylonames/
+    ├── ai_scripts/                     # Core phyloname generation scripts
+    │   ├── 001_ai-bash-download_ncbi_taxonomy.sh
+    │   ├── 002_ai-python-generate_phylonames.py
+    │   └── 003_ai-python-create_species_mapping.py
+    ├── INPUT_user/                     # User-provided species list
+    │   └── species_list.txt            # One genus_species per line
+    ├── OUTPUT_pipeline/                # Generated phylonames and mappings
+    └── OUTPUT_to_input/                # Copy for archival with this run
+```
+
+**AI Documentation**: Session logs, validation scripts, and debugging files are stored in:
+```
+research_notebook/research_ai/subproject-phylonames/
 ```
 
 ---
@@ -106,7 +108,7 @@ phylonames/
 
 ```bash
 cd nf_workflow-TEMPLATE_01-generate_phylonames
-bash ../gigantic_ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh
+bash ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh
 ```
 
 Downloads the latest NCBI taxonomy database to a versioned directory:
@@ -117,7 +119,7 @@ database-ncbi_taxonomy_20260205_143052/
 ### Step 2: Generate All Phylonames
 
 ```bash
-python3 ../gigantic_ai/scripts/002_ai-python-generate_phylonames.py
+python3 ai_scripts/002_ai-python-generate_phylonames.py
 ```
 
 Creates master phyloname files in `output/2-output/`:
@@ -136,7 +138,7 @@ Octopus_bimaculoides
 
 Then run:
 ```bash
-python3 ../gigantic_ai/scripts/003_ai-python-create_species_mapping.py \
+python3 ai_scripts/003_ai-python-create_species_mapping.py \
     --species-list INPUT_user/species_list.txt \
     --output ../output_to_input/maps/demo_map-genus_species_X_phylonames.tsv
 ```

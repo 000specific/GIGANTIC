@@ -137,7 +137,7 @@ Each subproject follows a standard GIGANTIC workspace layout:
 
 ```
 subproject/
-├── 000_user/                          # Personal workspace for notes and exploration
+├── user_research/                     # Personal workspace for notes and exploration
 ├── nf_workflow-TEMPLATE_01/           # NextFlow workflow template
 │   ├── ai_scripts/                    # Python/Bash pipeline scripts
 │   ├── INPUT_user/                    # User-provided inputs (manifests, FASTAs)
@@ -147,12 +147,7 @@ subproject/
 │   ├── config.yaml                    # Pipeline configuration
 │   └── nextflow.config                # NextFlow execution settings
 ├── output_to_input/                   # Outputs shared to downstream subprojects
-├── upload_to_server/                  # Curated outputs for external access
-└── gigantic_ai/                       # AI documentation and validation
-    └── ai_documentation/
-        ├── documentation/             # Session logs
-        ├── validation/                # QC scripts
-        └── logs/                      # Execution logs
+└── upload_to_server/                  # Curated outputs for external access
 ```
 
 ## The Phyloname System

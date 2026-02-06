@@ -37,7 +37,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Logs (tracked per-subproject in gigantic_ai/ai_documentation/logs/)
+# Logs (tracked in research_notebook/research_ai/subproject-*/logs/)
 *.log
 
 # Environment files with secrets
