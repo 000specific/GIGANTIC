@@ -159,25 +159,34 @@ logging:
 #
 # NUMBERED CLADES (e.g., Kingdom6555, Family1426):
 #
-# When NCBI taxonomy is missing data for a taxonomic level, the pipeline assigns
-# numbered identifiers. Species sharing the same "first named clade below" get
-# the same number, grouping related species together.
+# NCBI Taxonomy is both INCOMPLETE and represents only ONE possible hypothesis
+# about phylogenetic history. When NCBI lacks data for a taxonomic level,
+# GIGANTIC assigns numbered identifiers - these are NOT from NCBI but are
+# GIGANTIC's unbiased, neutral way to fill gaps while preserving phylogenetic
+# information based on shared ancestry.
+#
+# Species sharing the same "first named clade below" get the same number,
+# grouping related species together despite missing higher taxonomy.
 #
 # Example: All choanoflagellates might share Kingdom6555 and Phylum6554 because
 # they all have "Choanoflagellata" as their first named clade below those levels.
 #
 # If you see numbered clades and want meaningful names, use user_phylonames
-# to provide custom phylonames based on current literature.
+# to provide custom phylonames based on current literature or alternative
+# phylogenetic hypotheses.
 #
 # USER PHYLONAMES AND UNOFFICIAL SUFFIX:
 #
-# When you provide custom phylonames, clades NOT in NCBI taxonomy are automatically
-# marked with "UNOFFICIAL" for transparency:
+# When you provide custom phylonames, ALL clades are marked "UNOFFICIAL" by default.
+# This is because assigning a clade to a species is a taxonomic DECISION point -
+# when you override NCBI's assignment (or fill in GIGANTIC's numbered clades),
+# YOUR decision is "unofficial" regardless of whether the clade name exists in NCBI.
 #
-#   ChoanozoaUNOFFICIAL = user-provided name, not in NCBI
-#   Choanoflagellata = in NCBI (no suffix)
+# Example with mark_unofficial: true (default):
+#   HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_...
 #
-# This lets downstream analyses know which taxonomy is official vs. custom.
+# This maintains transparency about data sources. Set mark_unofficial: false
+# if you want clean phylonames without the suffix.
 #
 # SPECIES LIST FORMAT:
 #

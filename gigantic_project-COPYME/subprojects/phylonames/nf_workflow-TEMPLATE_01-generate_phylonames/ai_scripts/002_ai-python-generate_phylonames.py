@@ -33,10 +33,21 @@ THE PROCESS:
 1. Reads NCBI's rankedlineage.dmp file (contains all species classifications)
 2. For each species, extracts: Kingdom, Phylum, Class, Order, Family, Genus, Species
 3. Cleans up special characters that cause problems in filenames
-4. For missing taxonomy levels, assigns numbered identifiers (e.g., Family1426)
+4. For missing taxonomy levels, GIGANTIC assigns numbered identifiers (e.g., Family1426)
    based on the first named clade below - this groups related species together
 5. Creates both phyloname and phyloname_taxonid formats
 6. Outputs multiple files for different use cases including a reference table
+
+IMPORTANT CONCEPTUAL NOTES:
+- NCBI Taxonomy is INCOMPLETE: Many species lack classifications at certain levels
+- NCBI Taxonomy is ONE HYPOTHESIS: It represents one view of phylogenetic history,
+  not absolute truth. Alternative phylogenetic frameworks exist.
+- NUMBERED CLADES (e.g., Kingdom6555, Family1426) are GIGANTIC's solution to gaps
+  in NCBI data - they are NOT assigned by NCBI. These provide an unbiased, neutral
+  way to fill gaps while preserving phylogenetic information based on shared
+  ancestry of all species within a given clade below an unknown clade.
+- Users can provide their own phylonames via Script 004 to use alternative
+  taxonomy based on current literature or different phylogenetic hypotheses.
 
 INPUT FORMAT (from NCBI):
 The rankedlineage.dmp file has pipe-delimited fields:

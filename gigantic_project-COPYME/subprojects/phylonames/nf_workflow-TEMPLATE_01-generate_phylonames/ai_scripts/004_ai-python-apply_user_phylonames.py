@@ -17,10 +17,19 @@ preferred phylogenetic names. This is useful when:
 3. Your working group uses specific naming conventions
 
 THE PROBLEM THIS SOLVES:
-NCBI taxonomy often has missing levels. For example, Monosiga brevicollis gets:
+NCBI Taxonomy is both INCOMPLETE and represents only ONE of multiple possible
+hypotheses about the phylogenetic history of each species. When NCBI lacks
+classification data for a taxonomic level, GIGANTIC generates numbered
+identifiers to fill the gap. For example, Monosiga brevicollis might get:
+
     Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 
-But based on current literature, you might prefer:
+IMPORTANT: Kingdom6555 and Phylum6554 are NOT assigned by NCBI - they are
+GIGANTIC's unbiased, neutral way of generating unique clade names when NCBI
+data is missing. The numbering preserves phylogenetic information by grouping
+species that share the same named clade below the unknown level.
+
+Based on current literature or alternative phylogenetic hypotheses, you might prefer:
     Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 
 THE UNOFFICIAL SUFFIX:
