@@ -33,19 +33,22 @@ Based on current literature or alternative phylogenetic hypotheses, you might pr
     Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 
 THE UNOFFICIAL SUFFIX:
-When you provide custom phylonames, ALL clades in the user phyloname are marked
-with "UNOFFICIAL" by default. This is because:
+When you provide custom phylonames, clades that DIFFER from the NCBI-derived
+phyloname are marked with "UNOFFICIAL". This is because:
 
 1. Assigning a clade to a species is a DECISION POINT
 2. NCBI made one decision (their official assignment)
-3. When you override it, YOUR assignment is "unofficial" - even if the clade
-   name itself exists in NCBI taxonomy
+3. When you override specific clades, those specific assignments are "unofficial"
+4. Clades that match the NCBI assignment remain unmarked (they're official)
 
-Example output:
-    HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_CraspedidaUNOFFICIAL_SalpingoecidaeUNOFFICIAL_Monosiga_brevicollis_MX1
+Example:
+    NCBI output:    Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+    User provides:  Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+    Final output:   HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 
-This way, anyone looking at the phyloname knows ALL taxonomic assignments
-came from user-provided data, not from NCBI's official taxonomy.
+Only Holozoa and Choanozoa get marked UNOFFICIAL because they replaced the
+numbered clades. Choanoflagellata, Craspedida, and Salpingoecidae remain
+unmarked because they match the NCBI-derived values.
 
 DISABLING UNOFFICIAL MARKING:
 If you prefer clean phylonames without the UNOFFICIAL suffix, set
@@ -291,78 +294,92 @@ def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
 # ================================================================================
 # UNOFFICIAL CLADE MARKING
 # ================================================================================
-# Mark ALL clades in user-provided phylonames with "UNOFFICIAL" suffix.
-# The key insight: assigning a clade to a species is a DECISION POINT.
-# When users override NCBI's decision, their assignment is "unofficial"
-# regardless of whether the clade name itself exists in NCBI taxonomy.
+# Mark clades in user-provided phylonames with "UNOFFICIAL" suffix ONLY when
+# they differ from the NCBI-derived phyloname. The key insight: assigning a
+# clade to a species is a DECISION POINT. When users override NCBI's decision,
+# only those specific overridden clades are marked "unofficial".
 
 def mark_unofficial_clades(
-    phyloname: str,
+    user_phyloname: str,
+    ncbi_phyloname: str,
     mark_unofficial: bool = True
 ) -> Tuple[ str, List[ str ] ]:
     """
-    Mark ALL clades in a user-provided phyloname as UNOFFICIAL.
+    Mark clades in a user-provided phyloname as UNOFFICIAL only where they
+    DIFFER from the NCBI-derived phyloname.
 
-    IMPORTANT: This marks ALL higher taxonomy clades (Kingdom through Family),
-    not just those that don't exist in NCBI. The rationale:
+    IMPORTANT: This marks ONLY clades that differ from the NCBI assignment.
+    Clades that match the NCBI phyloname remain unmarked.
 
+    The rationale:
     1. Assigning a clade to a species is a taxonomic DECISION
     2. NCBI made their official decision
-    3. When the user overrides this, their decision is "unofficial" -
-       even if the clade name itself exists in NCBI taxonomy
-    4. The name existing in NCBI is irrelevant - it's the ASSIGNMENT that matters
+    3. When the user overrides specific clades, those are "unofficial"
+    4. Clades that match NCBI's assignment are still "official"
 
     Example:
-    User provides: Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis
-    Output:        HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_CraspedidaUNOFFICIAL_SalpingoecidaeUNOFFICIAL_Monosiga_brevicollis
+    NCBI phyloname:  Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+    User provides:   Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+    Output:          HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 
-    NOTE: Genus and species are NOT marked - users are expected to provide
+    Only Holozoa and Choanozoa get marked because they differ from the NCBI values.
+    Choanoflagellata, Craspedida, Salpingoecidae match NCBI and remain unmarked.
+
+    NOTE: Genus and species are NOT compared or marked - users are expected to provide
     valid genus/species combinations that identify the organism.
 
     Args:
-        phyloname: The phyloname to mark (Kingdom_Phylum_Class_Order_Family_Genus_species)
-        mark_unofficial: If True, add UNOFFICIAL suffix. If False, return unchanged.
+        user_phyloname: The user-provided phyloname (Kingdom_Phylum_Class_Order_Family_Genus_species)
+        ncbi_phyloname: The original NCBI-derived phyloname to compare against
+        mark_unofficial: If True, add UNOFFICIAL suffix where clades differ. If False, return unchanged.
 
     Returns:
         Tuple of:
-        - Modified phyloname with UNOFFICIAL suffixes added (or unchanged if mark_unofficial=False)
+        - Modified phyloname with UNOFFICIAL suffixes added where clades differ (or unchanged if mark_unofficial=False)
         - List of clades that were marked as unofficial
     """
 
     # If marking is disabled, return unchanged
     if not mark_unofficial:
-        return phyloname, []
+        return user_phyloname, []
 
-    # Split phyloname into components
-    parts_phyloname = phyloname.split( '_' )
+    # Split both phylonames into components
+    parts_user_phyloname = user_phyloname.split( '_' )
+    parts_ncbi_phyloname = ncbi_phyloname.split( '_' )
 
     # Need at least 7 parts for valid phyloname
-    if len( parts_phyloname ) < 7:
-        return phyloname, []
+    if len( parts_user_phyloname ) < 7:
+        return user_phyloname, []
+
+    if len( parts_ncbi_phyloname ) < 7:
+        # If NCBI phyloname is malformed, mark all user clades as unofficial
+        # (fall back to original behavior since we can't compare)
+        return user_phyloname, []
 
     # Track which clades we mark as unofficial
     unofficial_clades = []
 
-    # Mark each taxonomic level (positions 0-4: Kingdom through Family)
-    # We do NOT mark Genus (position 5) or species (position 6+)
+    # Compare each taxonomic level (positions 0-4: Kingdom through Family)
+    # We do NOT compare or mark Genus (position 5) or species (position 6+)
     taxonomic_levels = [ 'Kingdom', 'Phylum', 'Class', 'Order', 'Family' ]
 
     for position, level_name in enumerate( taxonomic_levels ):
-        clade_name = parts_phyloname[ position ]
+        user_clade = parts_user_phyloname[ position ]
+        ncbi_clade = parts_ncbi_phyloname[ position ]
 
         # Skip if already marked unofficial (don't double-mark)
-        if clade_name.endswith( 'UNOFFICIAL' ):
-            unofficial_clades.append( clade_name )
+        if user_clade.endswith( 'UNOFFICIAL' ):
+            unofficial_clades.append( user_clade )
             continue
 
-        # Mark as unofficial by appending suffix
-        # ALL user-provided clades get marked, regardless of NCBI status
-        marked_clade = clade_name + 'UNOFFICIAL'
-        parts_phyloname[ position ] = marked_clade
-        unofficial_clades.append( marked_clade )
+        # Only mark as unofficial if user clade DIFFERS from NCBI clade
+        if user_clade != ncbi_clade:
+            marked_clade = user_clade + 'UNOFFICIAL'
+            parts_user_phyloname[ position ] = marked_clade
+            unofficial_clades.append( marked_clade )
 
     # Reconstruct phyloname with marked clades
-    marked_phyloname = '_'.join( parts_phyloname )
+    marked_phyloname = '_'.join( parts_user_phyloname )
 
     return marked_phyloname, unofficial_clades
 
@@ -425,10 +442,11 @@ def generate_final_mapping(
             # Use user-provided phyloname
             user_phyloname = genus_species___user_phylonames[ genus_species ]
 
-            # Mark ALL clades as unofficial (if enabled)
-            # The key insight: user assignment is unofficial regardless of NCBI name existence
+            # Mark clades as unofficial ONLY where they differ from NCBI
+            # This preserves official NCBI clades while marking user overrides
             marked_phyloname, unofficial_clades = mark_unofficial_clades(
-                phyloname = user_phyloname,
+                user_phyloname = user_phyloname,
+                ncbi_phyloname = ncbi_phyloname,
                 mark_unofficial = mark_unofficial
             )
 
@@ -668,7 +686,7 @@ File formats:
     print( "" )
     print( "The final mapping can be used by other GIGANTIC subprojects." )
     print( "Species with USER source have user-provided phylonames applied." )
-    print( "Clades marked with 'UNOFFICIAL' are not in NCBI taxonomy." )
+    print( "Clades marked 'UNOFFICIAL' differ from the NCBI-derived phyloname." )
     print( "=" * 70 )
     print( "" )
 

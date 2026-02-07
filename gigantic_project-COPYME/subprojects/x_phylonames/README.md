@@ -118,19 +118,24 @@ Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoe
 
 ### UNOFFICIAL Suffix
 
-By default, **ALL** clades in user-provided phylonames are marked with `UNOFFICIAL`:
+By default, clades that **DIFFER** from the NCBI-derived phyloname are marked with `UNOFFICIAL`:
 
 ```
-HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_CraspedidaUNOFFICIAL_SalpingoecidaeUNOFFICIAL_Monosiga_brevicollis_MX1
+NCBI output:    Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+User provides:  Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+Final output:   HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 ```
+
+Only `Holozoa` and `Choanozoa` get marked UNOFFICIAL because they replaced the numbered clades. `Choanoflagellata`, `Craspedida`, and `Salpingoecidae` remain unmarked because they match the NCBI-derived values.
 
 **Why UNOFFICIAL?**
 - Assigning a clade to a species is a **taxonomic DECISION**
 - NCBI made their official decision
-- When you override NCBI, **YOUR decision is "unofficial"** - even if the clade name itself exists in NCBI taxonomy
-- The UNOFFICIAL suffix maintains transparency about data sources
+- When you override specific clades, **those overrides are "unofficial"**
+- Clades that match NCBI's assignment remain official (unmarked)
+- The UNOFFICIAL suffix maintains transparency about which assignments came from the user
 
-**To disable** (if you want clean phylonames):
+**To disable** (if you want clean phylonames without any UNOFFICIAL markers):
 ```yaml
 mark_unofficial: false
 ```

@@ -106,12 +106,14 @@ If a real higher-level clade contains multiple lower-level clades, GIGANTIC will
 
 ### The UNOFFICIAL Suffix
 
-By default, ALL user-provided clades get marked `UNOFFICIAL`:
+By default, only clades that **DIFFER** from the NCBI-derived phyloname get marked `UNOFFICIAL`:
 ```
-HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_...
+NCBI:   Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
+User:   Holozoa_Choanozoa_Choanoflagellata_Craspedida_...
+Output: HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_...
 ```
 
-**Explain to users**: This suffix indicates that the taxonomic assignment is the user's decision, not NCBI's official classification. Set `mark_unofficial: false` to disable.
+**Explain to users**: The UNOFFICIAL suffix marks clades where the user overrode the NCBI classification. Clades that match the NCBI phyloname remain unmarked. Set `mark_unofficial: false` to disable all UNOFFICIAL marking.
 
 ---
 

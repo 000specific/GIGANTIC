@@ -84,19 +84,21 @@ If a real higher-level clade contains multiple lower-level clades, GIGANTIC inco
    ```yaml
    project:
      user_phylonames: "INPUT_user/user_phylonames.tsv"
-     mark_unofficial: true  # Default: mark all user clades as UNOFFICIAL
+     mark_unofficial: true  # Default: mark differing clades as UNOFFICIAL
    ```
 
 3. Run the pipeline - Script 004 applies overrides automatically
 
 ### The UNOFFICIAL Suffix
 
-By default, ALL user clades are marked:
+By default, clades that **DIFFER** from the NCBI phyloname are marked:
 ```
-HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_...
+NCBI:   Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
+User:   Holozoa_Choanozoa_Choanoflagellata_Craspedida_...
+Output: HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_...
 ```
 
-**Reasoning**: The clade name existing in NCBI is irrelevant - it's the **assignment** that matters. When users override NCBI's assignment, their decision is "unofficial."
+**Reasoning**: Only the clades the user actually changed get marked UNOFFICIAL. Clades that match the NCBI-derived phyloname remain unmarked because they're still "official."
 
 Set `mark_unofficial: false` in config to disable this behavior.
 
