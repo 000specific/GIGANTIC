@@ -24,13 +24,26 @@ But based on current literature, you might prefer:
     Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 
 THE UNOFFICIAL SUFFIX:
-When you provide custom clade names that don't exist in NCBI taxonomy, this
-script automatically marks them with "UNOFFICIAL" to maintain transparency:
-    Holozoa_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+When you provide custom phylonames, ALL clades in the user phyloname are marked
+with "UNOFFICIAL" by default. This is because:
 
-This way, anyone looking at the phyloname knows:
-- "Holozoa" IS in NCBI taxonomy (no suffix)
-- "ChoanozoaUNOFFICIAL" is a USER-PROVIDED name not in NCBI
+1. Assigning a clade to a species is a DECISION POINT
+2. NCBI made one decision (their official assignment)
+3. When you override it, YOUR assignment is "unofficial" - even if the clade
+   name itself exists in NCBI taxonomy
+
+Example output:
+    HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_CraspedidaUNOFFICIAL_SalpingoecidaeUNOFFICIAL_Monosiga_brevicollis_MX1
+
+This way, anyone looking at the phyloname knows ALL taxonomic assignments
+came from user-provided data, not from NCBI's official taxonomy.
+
+DISABLING UNOFFICIAL MARKING:
+If you prefer clean phylonames without the UNOFFICIAL suffix, set
+mark_unofficial: false in the config. This is useful when:
+- Your phylonames are from an authoritative source you trust
+- You're working within a group that has agreed on taxonomy
+- You want cleaner output for visualization/publication
 
 IMPORTANT CAVEAT - WHEN NUMBERED CLADES REMAIN:
 Even after applying user phylonames, you may still see numbered clades like
@@ -108,7 +121,7 @@ TECHNICAL NOTES (For Python/CS Experts):
 """
 
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Tuple
 import sys
 import argparse
 from datetime import datetime
@@ -120,119 +133,6 @@ from datetime import datetime
 # These paths are defaults; can be overridden via command line arguments
 
 OUTPUT_DIR = Path( 'output/4-output' )
-DEFAULT_MASTER_MAPPING = Path( 'output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv' )
-DEFAULT_PROJECT_MAPPING = Path( 'output/3-output' )  # Will search for mapping file here
-
-
-# ================================================================================
-# NCBI VOCABULARY EXTRACTION
-# ================================================================================
-# This section extracts all valid NCBI clade names from the master mapping.
-# These names will be used to detect which user-provided clades are "unofficial".
-
-def extract_ncbi_clade_vocabulary( master_mapping_path: Path ) -> Dict[ str, Set[ str ] ]:
-    """
-    Extract all unique clade names at each taxonomic level from NCBI data.
-
-    This function parses the master phyloname mapping and collects every unique
-    clade name that appears at each taxonomic position (Kingdom, Phylum, etc.).
-
-    The resulting vocabulary is used to detect which user-provided clade names
-    are NOT in NCBI taxonomy (and therefore should be marked as UNOFFICIAL).
-
-    IMPORTANT: Numbered clades (e.g., Kingdom6555) are EXCLUDED from the vocabulary
-    because they represent missing data, not official NCBI names.
-
-    Args:
-        master_mapping_path: Path to the master phyloname mapping TSV
-
-    Returns:
-        Dictionary mapping taxonomic level -> set of valid NCBI clade names
-        Example: { 'Kingdom': {'Metazoa', 'Holomycota', ...}, 'Phylum': {...}, ... }
-    """
-
-    print( "=" * 70 )
-    print( "STEP 1: Extracting NCBI clade vocabulary" )
-    print( "=" * 70 )
-    print( f"  Source: {master_mapping_path}" )
-    print( "" )
-
-    # Initialize sets for each taxonomic level
-    # Using sets for O(1) lookup when checking if a clade is official
-    ncbi_clades___by_level = {
-        'Kingdom': set(),
-        'Phylum': set(),
-        'Class': set(),
-        'Order': set(),
-        'Family': set(),
-        'Genus': set()
-    }
-
-    # Pattern to detect numbered clades that should be excluded
-    # These represent missing NCBI data, not official names
-    import re
-    numbered_clade_pattern = re.compile( r'^(Kingdom|Phylum|Class|Order|Family|Genus)\d+$' )
-
-    entries_processed = 0
-
-    # phyloname	phyloname_taxonid	genus_species	taxon_id	...
-    # Kingdom_Phylum_Class_Order_Family_Genus_species	...	Genus_species	12345	...
-    with open( master_mapping_path, 'r', encoding = 'utf-8' ) as input_file:
-        # Skip header line
-        header = input_file.readline()
-
-        for line in input_file:
-            line = line.strip()
-            if not line:
-                continue
-
-            parts = line.split( '\t' )
-            if len( parts ) < 1:
-                continue
-
-            phyloname = parts[ 0 ]
-
-            # Split phyloname into clade components
-            # Format: Kingdom_Phylum_Class_Order_Family_Genus_species
-            parts_phyloname = phyloname.split( '_' )
-
-            # Need at least 7 parts for valid phyloname
-            if len( parts_phyloname ) < 7:
-                continue
-
-            # Extract each taxonomic level
-            # Position 0 = Kingdom, 1 = Phylum, 2 = Class, 3 = Order, 4 = Family, 5 = Genus
-            taxonomic_levels = [ 'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus' ]
-
-            for position, level_name in enumerate( taxonomic_levels ):
-                clade_name = parts_phyloname[ position ]
-
-                # Skip numbered clades (they represent missing data)
-                # These should NOT be in the official vocabulary
-                if numbered_clade_pattern.match( clade_name ):
-                    continue
-
-                # Skip "unclassified" placeholders from older format
-                if 'unclassified' in clade_name.lower():
-                    continue
-
-                # Add to vocabulary for this level
-                ncbi_clades___by_level[ level_name ].add( clade_name )
-
-            entries_processed += 1
-
-            # Progress indicator for large files
-            if entries_processed % 500000 == 0:
-                print( f"  Processed {entries_processed:,} entries..." )
-
-    # Report vocabulary statistics
-    print( "" )
-    print( "  NCBI clade vocabulary extracted:" )
-    for level_name, clade_set in ncbi_clades___by_level.items():
-        print( f"    {level_name}: {len( clade_set ):,} unique official names" )
-    print( "" )
-
-    return ncbi_clades___by_level
 
 
 # ================================================================================
@@ -255,7 +155,7 @@ def load_project_mapping( project_mapping_path: Path ) -> Dict[ str, Tuple[ str,
     """
 
     print( "=" * 70 )
-    print( "STEP 2: Loading project mapping" )
+    print( "STEP 1: Loading project mapping" )
     print( "=" * 70 )
     print( f"  Source: {project_mapping_path}" )
 
@@ -314,7 +214,7 @@ def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
     """
 
     print( "=" * 70 )
-    print( "STEP 3: Loading user-provided phylonames" )
+    print( "STEP 2: Loading user-provided phylonames" )
     print( "=" * 70 )
     print( f"  Source: {user_phylonames_path}" )
 
@@ -358,37 +258,49 @@ def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
 
 
 # ================================================================================
-# UNOFFICIAL CLADE DETECTION
+# UNOFFICIAL CLADE MARKING
 # ================================================================================
-# Mark clades that are not in NCBI taxonomy with "UNOFFICIAL" suffix.
+# Mark ALL clades in user-provided phylonames with "UNOFFICIAL" suffix.
+# The key insight: assigning a clade to a species is a DECISION POINT.
+# When users override NCBI's decision, their assignment is "unofficial"
+# regardless of whether the clade name itself exists in NCBI taxonomy.
 
 def mark_unofficial_clades(
     phyloname: str,
-    ncbi_clades___by_level: Dict[ str, Set[ str ] ]
+    mark_unofficial: bool = True
 ) -> Tuple[ str, List[ str ] ]:
     """
-    Check each clade in a phyloname and mark unofficial ones.
+    Mark ALL clades in a user-provided phyloname as UNOFFICIAL.
 
-    For each taxonomic level (Kingdom, Phylum, Class, Order, Family):
-    - If the clade name exists in NCBI vocabulary: keep as-is
-    - If the clade name does NOT exist in NCBI: append "UNOFFICIAL"
+    IMPORTANT: This marks ALL higher taxonomy clades (Kingdom through Family),
+    not just those that don't exist in NCBI. The rationale:
 
-    This preserves transparency about which names come from NCBI versus
-    user-provided custom assignments.
+    1. Assigning a clade to a species is a taxonomic DECISION
+    2. NCBI made their official decision
+    3. When the user overrides this, their decision is "unofficial" -
+       even if the clade name itself exists in NCBI taxonomy
+    4. The name existing in NCBI is irrelevant - it's the ASSIGNMENT that matters
 
-    NOTE: Genus and species are NOT checked - users are expected to provide
-    valid genus/species combinations, and these may legitimately differ
-    from NCBI (e.g., subspecies, strains).
+    Example:
+    User provides: Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis
+    Output:        HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_CraspedidaUNOFFICIAL_SalpingoecidaeUNOFFICIAL_Monosiga_brevicollis
+
+    NOTE: Genus and species are NOT marked - users are expected to provide
+    valid genus/species combinations that identify the organism.
 
     Args:
-        phyloname: The phyloname to check (Kingdom_Phylum_Class_Order_Family_Genus_species)
-        ncbi_clades___by_level: Dictionary of NCBI vocabulary sets
+        phyloname: The phyloname to mark (Kingdom_Phylum_Class_Order_Family_Genus_species)
+        mark_unofficial: If True, add UNOFFICIAL suffix. If False, return unchanged.
 
     Returns:
         Tuple of:
-        - Modified phyloname with UNOFFICIAL suffixes added
+        - Modified phyloname with UNOFFICIAL suffixes added (or unchanged if mark_unofficial=False)
         - List of clades that were marked as unofficial
     """
+
+    # If marking is disabled, return unchanged
+    if not mark_unofficial:
+        return phyloname, []
 
     # Split phyloname into components
     parts_phyloname = phyloname.split( '_' )
@@ -400,8 +312,8 @@ def mark_unofficial_clades(
     # Track which clades we mark as unofficial
     unofficial_clades = []
 
-    # Check each taxonomic level (positions 0-4: Kingdom through Family)
-    # We do NOT check Genus (position 5) or species (position 6+)
+    # Mark each taxonomic level (positions 0-4: Kingdom through Family)
+    # We do NOT mark Genus (position 5) or species (position 6+)
     taxonomic_levels = [ 'Kingdom', 'Phylum', 'Class', 'Order', 'Family' ]
 
     for position, level_name in enumerate( taxonomic_levels ):
@@ -412,20 +324,11 @@ def mark_unofficial_clades(
             unofficial_clades.append( clade_name )
             continue
 
-        # Skip numbered clades - these are from NCBI's numbered unknown system
-        # They indicate missing data but are technically "official" (from our processing)
-        import re
-        if re.match( r'^(Kingdom|Phylum|Class|Order|Family)\d+$', clade_name ):
-            continue
-
-        # Check if clade exists in NCBI vocabulary
-        ncbi_clades_for_level = ncbi_clades___by_level.get( level_name, set() )
-
-        if clade_name not in ncbi_clades_for_level:
-            # Mark as unofficial by appending suffix
-            marked_clade = clade_name + 'UNOFFICIAL'
-            parts_phyloname[ position ] = marked_clade
-            unofficial_clades.append( marked_clade )
+        # Mark as unofficial by appending suffix
+        # ALL user-provided clades get marked, regardless of NCBI status
+        marked_clade = clade_name + 'UNOFFICIAL'
+        parts_phyloname[ position ] = marked_clade
+        unofficial_clades.append( marked_clade )
 
     # Reconstruct phyloname with marked clades
     marked_phyloname = '_'.join( parts_phyloname )
@@ -441,14 +344,14 @@ def mark_unofficial_clades(
 def generate_final_mapping(
     genus_species___project_phylonames: Dict[ str, Tuple[ str, str ] ],
     genus_species___user_phylonames: Dict[ str, str ],
-    ncbi_clades___by_level: Dict[ str, Set[ str ] ],
-    output_dir: Path
+    output_dir: Path,
+    mark_unofficial: bool = True
 ) -> Dict[ str, Tuple[ str, str, str, str ] ]:
     """
     Generate the final mapping by merging project and user phylonames.
 
     For each species in the project:
-    - If user provided a custom phyloname: use it (with UNOFFICIAL marking)
+    - If user provided a custom phyloname: use it (with UNOFFICIAL marking if enabled)
     - Otherwise: use the NCBI-generated phyloname
 
     This function also:
@@ -459,16 +362,18 @@ def generate_final_mapping(
     Args:
         genus_species___project_phylonames: From Script 003
         genus_species___user_phylonames: User-provided overrides
-        ncbi_clades___by_level: NCBI vocabulary for unofficial detection
         output_dir: Directory for output files
+        mark_unofficial: If True (default), add UNOFFICIAL suffix to user-provided clades
 
     Returns:
         Dictionary: genus_species -> (final_phyloname, phyloname_taxonid, source, original_phyloname)
     """
 
     print( "=" * 70 )
-    print( "STEP 4: Generating final mapping with UNOFFICIAL detection" )
+    print( "STEP 3: Generating final mapping" )
     print( "=" * 70 )
+    print( f"  UNOFFICIAL marking: {'ENABLED (default)' if mark_unofficial else 'DISABLED'}" )
+    print( "" )
 
     # Ensure output directory exists
     output_dir.mkdir( parents = True, exist_ok = True )
@@ -489,10 +394,11 @@ def generate_final_mapping(
             # Use user-provided phyloname
             user_phyloname = genus_species___user_phylonames[ genus_species ]
 
-            # Mark unofficial clades
+            # Mark ALL clades as unofficial (if enabled)
+            # The key insight: user assignment is unofficial regardless of NCBI name existence
             marked_phyloname, unofficial_clades = mark_unofficial_clades(
                 phyloname = user_phyloname,
-                ncbi_clades___by_level = ncbi_clades___by_level
+                mark_unofficial = mark_unofficial
             )
 
             # Extract taxon_id from original NCBI phyloname_taxonid
@@ -632,17 +538,17 @@ File formats:
     )
 
     parser.add_argument(
-        '--master-mapping',
-        type = str,
-        default = str( DEFAULT_MASTER_MAPPING ),
-        help = f'Path to master phyloname mapping (default: {DEFAULT_MASTER_MAPPING})'
-    )
-
-    parser.add_argument(
         '--output-dir',
         type = str,
         default = str( OUTPUT_DIR ),
         help = f'Output directory (default: {OUTPUT_DIR})'
+    )
+
+    parser.add_argument(
+        '--no-mark-unofficial',
+        action = 'store_true',
+        default = False,
+        help = 'Disable UNOFFICIAL suffix on user-provided clades (default: mark as UNOFFICIAL)'
     )
 
     args = parser.parse_args()
@@ -650,8 +556,8 @@ File formats:
     # Convert to Path objects
     project_mapping_path = Path( args.project_mapping )
     user_phylonames_path = Path( args.user_phylonames )
-    master_mapping_path = Path( args.master_mapping )
     output_dir = Path( args.output_dir )
+    mark_unofficial = not args.no_mark_unofficial
 
     # ============================================================
     # STARTUP BANNER
@@ -662,7 +568,7 @@ File formats:
     print( "" )
     print( "=" * 70 )
     print( "GIGANTIC User Phylonames Application" )
-    print( "Script 004: Apply user-provided phylonames with UNOFFICIAL detection" )
+    print( "Script 004: Apply user-provided phylonames with UNOFFICIAL marking" )
     print( "=" * 70 )
     print( f"Started: {start_time.strftime( '%Y-%m-%d %H:%M:%S' )}" )
     print( "" )
@@ -674,8 +580,10 @@ File formats:
     print( "Input files:" )
     print( f"  Project mapping: {project_mapping_path}" )
     print( f"  User phylonames: {user_phylonames_path}" )
-    print( f"  Master mapping:  {master_mapping_path}" )
     print( f"  Output directory: {output_dir}" )
+    print( "" )
+    print( "Settings:" )
+    print( f"  Mark UNOFFICIAL: {'YES (default)' if mark_unofficial else 'NO (user disabled)'}" )
     print( "" )
 
     # Validate input files exist
@@ -689,30 +597,24 @@ File formats:
         print( "Create a TSV file with genus_species<TAB>custom_phyloname entries." )
         sys.exit( 1 )
 
-    if not master_mapping_path.exists():
-        print( f"ERROR: Master mapping file not found: {master_mapping_path}" )
-        print( "Run Script 002 first to generate master phyloname mapping." )
-        sys.exit( 1 )
-
     # ============================================================
     # MAIN PROCESSING
     # ============================================================
 
-    # Step 1: Extract NCBI vocabulary for unofficial detection
-    ncbi_clades___by_level = extract_ncbi_clade_vocabulary( master_mapping_path )
-
-    # Step 2: Load project mapping
+    # Step 1: Load project mapping
     genus_species___project_phylonames = load_project_mapping( project_mapping_path )
 
-    # Step 3: Load user phylonames
+    # Step 2: Load user phylonames
     genus_species___user_phylonames = load_user_phylonames( user_phylonames_path )
 
-    # Step 4: Generate final mapping
+    # Step 3: Generate final mapping
+    # ALL user-provided clades are marked UNOFFICIAL (unless disabled)
+    # This reflects that user assignment is a decision point distinct from NCBI
     genus_species___final = generate_final_mapping(
         genus_species___project_phylonames = genus_species___project_phylonames,
         genus_species___user_phylonames = genus_species___user_phylonames,
-        ncbi_clades___by_level = ncbi_clades___by_level,
-        output_dir = output_dir
+        output_dir = output_dir,
+        mark_unofficial = mark_unofficial
     )
 
     # ============================================================

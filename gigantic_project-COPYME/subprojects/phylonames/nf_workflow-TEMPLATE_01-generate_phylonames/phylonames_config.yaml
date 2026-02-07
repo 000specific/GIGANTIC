@@ -36,6 +36,17 @@ project:
   # Example line: Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
   user_phylonames: ""
 
+  # Whether to mark user-provided clades with "UNOFFICIAL" suffix
+  # Default: true - ALL user-provided clades get marked UNOFFICIAL
+  # Set to false if you want clean phylonames without the suffix
+  #
+  # WHY UNOFFICIAL?
+  # Assigning a clade to a species is a taxonomic DECISION point.
+  # NCBI made their decision; when you override it, YOUR decision is "unofficial"
+  # even if the clade name itself exists in NCBI taxonomy.
+  # This maintains transparency about data sources.
+  mark_unofficial: true
+
 # ============================================================================
 # OUTPUT SETTINGS
 # ============================================================================

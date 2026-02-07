@@ -19,6 +19,7 @@ nextflow.enable.dsl = 2
 params.project_name = "my_project"
 params.species_list = "INPUT_user/species_list.txt"
 params.user_phylonames = ""  // Optional: user-provided custom phylonames file
+params.mark_unofficial = true  // Default: mark ALL user-provided clades as UNOFFICIAL
 params.output_dir = "OUTPUT_pipeline"
 params.force_download = false
 
@@ -132,7 +133,12 @@ process create_species_mapping {
  * Calls: ai_scripts/004_ai-python-apply_user_phylonames.py
  *
  * This process only runs if user_phylonames parameter is set.
- * It applies custom phylonames and marks non-NCBI clades as UNOFFICIAL.
+ * It applies custom phylonames and marks ALL user-provided clades as UNOFFICIAL
+ * (unless mark_unofficial is set to false in config).
+ *
+ * KEY CONCEPT: Assigning a clade to a species is a taxonomic DECISION.
+ * When users override NCBI, their decision is "unofficial" regardless of
+ * whether the clade name exists in NCBI taxonomy.
  */
 process apply_user_phylonames {
     label 'local'
@@ -152,7 +158,6 @@ process apply_user_phylonames {
 
     input:
         path project_mapping
-        path master_mapping
         path user_phylonames
 
     output:
@@ -160,16 +165,20 @@ process apply_user_phylonames {
         path "output/4-output/unofficial_clades_report.tsv", emit: unofficial_report, optional: true
 
     script:
+    // Build the command with optional --no-mark-unofficial flag
+    def unofficial_flag = params.mark_unofficial ? "" : "--no-mark-unofficial"
     """
     # Create output directory
     mkdir -p output/4-output
 
-    # Apply user phylonames with UNOFFICIAL detection
+    # Apply user phylonames
+    # By default, ALL user-provided clades are marked UNOFFICIAL
+    # Use mark_unofficial: false in config to disable this
     python3 ${projectDir}/ai_scripts/004_ai-python-apply_user_phylonames.py \\
         --project-mapping ${project_mapping} \\
         --user-phylonames ${user_phylonames} \\
-        --master-mapping ${master_mapping} \\
-        --output-dir output/4-output
+        --output-dir output/4-output \\
+        ${unofficial_flag}
     """
 }
 
@@ -194,12 +203,13 @@ workflow {
     )
 
     // Step 4: Apply user phylonames (OPTIONAL - only if user_phylonames is specified)
+    // ALL user-provided clades are marked UNOFFICIAL by default
+    // (unless mark_unofficial: false in config)
     if (params.user_phylonames) {
         user_phylonames_ch = Channel.fromPath("${projectDir}/${params.user_phylonames}")
 
         apply_user_phylonames(
             create_species_mapping.out.project_mapping,
-            generate_phylonames.out.master_mapping,
             user_phylonames_ch
         )
     }
