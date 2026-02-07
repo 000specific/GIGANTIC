@@ -177,23 +177,38 @@ GIGANTIC uses standardized species identifiers:
 - **`phyloname`**: `Kingdom_Phylum_Class_Order_Family_Genus_species`
 - **`phyloname_taxonid`**: Same but with `___taxonID` appended
 
-### Workflow Templates
+### Running Workflows
 
-Each subproject contains workflow templates (`nf_workflow-TEMPLATE_*/`):
-1. Copy the template to create a run
-2. Edit configuration files
-3. Run locally with `bash RUN_*.sh` OR on SLURM with `sbatch SLURM_*.sbatch`
+Every workflow template has two RUN files:
 
-### Running on SLURM (HPC Clusters)
+```
+nf_workflow-TEMPLATE_01/
+├── RUN_phylonames.sh      ← bash RUN_phylonames.sh      (local)
+├── RUN_phylonames.sbatch  ← sbatch RUN_phylonames.sbatch (SLURM)
+└── config.yaml            ← Edit this for your project
+```
 
-GIGANTIC uses a **SLURM wrapper pattern**:
-- `RUN_*.sh` - Core workflow script (runs on any system)
-- `SLURM_*.sbatch` - Thin wrapper that submits RUN script as a SLURM job
+| Want to run... | Command |
+|----------------|---------|
+| On your local machine | `bash RUN_*.sh` |
+| On SLURM cluster | `sbatch RUN_*.sbatch` |
 
-**Local users**: Just run `bash RUN_*.sh`
-**SLURM users**: Edit `SLURM_*.sbatch` (account, qos), then `sbatch SLURM_*.sbatch`
+The file extension tells you how to run it. That's it.
 
-This keeps the core workflow portable while cleanly separating cluster-specific settings.
+### Configuration Files
+
+Every workflow has a human-readable `config.yaml`:
+
+```yaml
+project:
+  name: "my_project"
+  species_list: "INPUT_user/species_list.txt"
+```
+
+**Users edit `config.yaml`, NOT NextFlow files.** This provides:
+- Reproducibility (config stays with workflow)
+- Transparency (human-readable with comments)
+- Accessibility (no NextFlow knowledge needed)
 
 ### Manifest Files
 

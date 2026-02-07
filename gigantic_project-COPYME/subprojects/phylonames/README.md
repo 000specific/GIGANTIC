@@ -85,14 +85,18 @@ phylonames/
 │   └── maps/                           # Species mapping files
 │       └── [project]_map-genus_species_X_phylonames.tsv
 └── nf_workflow-TEMPLATE_01-generate_phylonames/
-    ├── ai_scripts/                     # Core phyloname generation scripts
+    ├── RUN_phylonames.sh               # bash RUN_phylonames.sh (local)
+    ├── RUN_phylonames.sbatch           # sbatch RUN_phylonames.sbatch (SLURM)
+    ├── phylonames_config.yaml          # Edit this for your project
+    ├── main.nf                         # NextFlow pipeline (don't edit)
+    ├── nextflow.config                 # NextFlow settings (don't edit)
+    ├── ai_scripts/                     # Python/Bash scripts (called by NextFlow)
     │   ├── 001_ai-bash-download_ncbi_taxonomy.sh
     │   ├── 002_ai-python-generate_phylonames.py
     │   └── 003_ai-python-create_species_mapping.py
     ├── INPUT_user/                     # User-provided species list
     │   └── species_list.txt            # One genus_species per line
-    ├── OUTPUT_pipeline/                # Generated phylonames and mappings
-    └── OUTPUT_to_input/                # Copy for archival with this run
+    └── OUTPUT_pipeline/                # Generated phylonames and mappings
 ```
 
 **AI Documentation**: Session logs, validation scripts, and debugging files are stored in:
@@ -104,43 +108,46 @@ research_notebook/research_ai/subproject-phylonames/
 
 ## Quick Start
 
-### Step 1: Download NCBI Taxonomy
+### Step 1: Edit Your Species List
 
-```bash
-cd nf_workflow-TEMPLATE_01-generate_phylonames
-bash ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh
-```
-
-Downloads the latest NCBI taxonomy database to a versioned directory:
-```
-database-ncbi_taxonomy_20260205_143052/
-```
-
-### Step 2: Generate All Phylonames
-
-```bash
-python3 ai_scripts/002_ai-python-generate_phylonames.py
-```
-
-Creates master phyloname files in `output/2-output/`:
-- `phylonames` - All phylonames (standard format)
-- `phylonames_taxonid` - All phylonames (extended format)
-- `map-phyloname_X_ncbi_taxonomy_info.tsv` - Full mapping with NCBI fields
-
-### Step 3: Create Your Project Mapping
-
-First, create a species list in `INPUT_user/species_list.txt`:
+Edit `INPUT_user/species_list.txt` with your species (one per line):
 ```
 Homo_sapiens
 Aplysia_californica
 Octopus_bimaculoides
 ```
 
-Then run:
+### Step 2: Edit Configuration (Optional)
+
+Edit `phylonames_config.yaml` to set your project name:
+
+```yaml
+project:
+  name: "my_project"  # Change this to your project name
+```
+
+### Step 3: Run the Pipeline
+
 ```bash
-python3 ai_scripts/003_ai-python-create_species_mapping.py \
-    --species-list INPUT_user/species_list.txt \
-    --output ../output_to_input/maps/demo_map-genus_species_X_phylonames.tsv
+cd nf_workflow-TEMPLATE_01-generate_phylonames
+
+# Local machine:
+bash RUN_phylonames.sh
+
+# SLURM cluster (edit account/qos first):
+sbatch RUN_phylonames.sbatch
+```
+
+The pipeline will:
+1. Download NCBI taxonomy database (~2GB, skipped if already exists)
+2. Generate phylonames for all NCBI species (~5-10 minutes)
+3. Create your project-specific mapping file
+
+### Output
+
+Your mapping file will be at:
+```
+output_to_input/maps/[project_name]_map-genus_species_X_phylonames.tsv
 ```
 
 ---

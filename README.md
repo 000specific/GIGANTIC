@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <em>AI-native phylogenomics - for experts to everyone!</em>
+  <em>AI-native phylogenomics - for experts and everyone!</em>
 </p>
 
 ---
@@ -139,13 +139,14 @@ Each subproject follows a standard GIGANTIC workspace layout:
 subproject/
 ├── user_research/                     # Personal workspace for notes and exploration
 ├── nf_workflow-TEMPLATE_01/           # NextFlow workflow template
+│   ├── RUN_workflow.sh                # Local execution: bash RUN_workflow.sh
+│   ├── RUN_workflow.sbatch            # SLURM execution: sbatch RUN_workflow.sbatch
+│   ├── config.yaml                    # User configuration (edit this)
+│   ├── main.nf                        # NextFlow pipeline (don't edit)
+│   ├── nextflow.config                # NextFlow settings (don't edit)
 │   ├── ai_scripts/                    # Python/Bash pipeline scripts
-│   ├── INPUT_user/                    # User-provided inputs (manifests, FASTAs)
-│   ├── OUTPUT_pipeline/               # Workflow outputs
-│   ├── OUTPUT_to_input/               # Outputs archived with this run
-│   ├── pipeline.nf                    # NextFlow pipeline definition
-│   ├── config.yaml                    # Pipeline configuration
-│   └── nextflow.config                # NextFlow execution settings
+│   ├── INPUT_user/                    # User-provided inputs
+│   └── OUTPUT_pipeline/               # Workflow outputs
 ├── output_to_input/                   # Outputs shared to downstream subprojects
 └── upload_to_server/                  # Curated outputs for external access
 ```
@@ -216,6 +217,48 @@ GIGANTIC explores what research software looks like when AI assistance is assume
 **Why this differs from traditional software design**: Traditional CS would centralize environments to avoid duplication. But that creates a disconnect between "where I'm working" and "what I need to work." For AI-assisted workflows, **discoverability > avoiding minor duplication**. Each subproject is an autonomous modular unit containing everything needed to run it.
 
 This is new territory. Users are not CS experts, and AI-user research workflows are inventing conventions as they go. We're learning what works. If you find patterns that work well (or don't), we'd love to hear about it.
+
+### Running Workflows
+
+Every workflow template has two RUN files - the file extension tells you how to run it:
+
+```
+nf_workflow-TEMPLATE_01/
+├── RUN_phylonames.sh      ← bash RUN_phylonames.sh      (local machine)
+├── RUN_phylonames.sbatch  ← sbatch RUN_phylonames.sbatch (SLURM cluster)
+└── ...
+```
+
+| File | Command | Where it runs |
+|------|---------|---------------|
+| `RUN_*.sh` | `bash RUN_*.sh` | Your local machine |
+| `RUN_*.sbatch` | `sbatch RUN_*.sbatch` | SLURM cluster |
+
+**That's it.** Scan the directory, see two RUN files, pick the one for your environment.
+
+### NextFlow Execution Patterns (Internal Detail)
+
+Internally, workflows use one of two patterns based on computational needs:
+
+**Pattern A: Sequential** - All processes run in one job (e.g., `phylonames` ~15 mins)
+**Pattern B: Parallel** - NextFlow submits separate SLURM jobs (e.g., `annotations_hmms` with many proteomes)
+
+You don't need to know which pattern a workflow uses - just run `RUN_*.sh` or `RUN_*.sbatch`.
+
+### Configuration Files for Reproducibility
+
+Every workflow has a human-readable `config.yaml` that users edit:
+
+```yaml
+project:
+  name: "my_project"
+  species_list: "INPUT_user/species_list.txt"
+```
+
+**Users edit `config.yaml`, NOT NextFlow files.** This ensures:
+- **Reproducibility**: Config stays with the workflow - exact record of how things ran
+- **Transparency**: Human-readable YAML with detailed comments
+- **Accessibility**: Non-CS users can understand and modify settings
 
 ---
 
