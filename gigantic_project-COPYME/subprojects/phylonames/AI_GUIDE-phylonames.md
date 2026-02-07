@@ -45,6 +45,76 @@ GIGANTIC uses two distinct formats - help users understand the difference:
 
 ---
 
+## Numbered Unknown Clades (IMPORTANT CONCEPT)
+
+### What AI Assistants Need to Know
+
+NCBI Taxonomy is **incomplete** - many species lack data for all taxonomic levels. GIGANTIC fills these gaps with **numbered identifiers**:
+
+```
+Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
+```
+
+**Key Points to Explain to Users**:
+
+1. **These are NOT NCBI assignments** - `Kingdom6555` is GIGANTIC's solution, not NCBI data
+2. **Numbers group related species** - species with the same "first named clade below" get the same number
+3. **This is a limitation, not a feature** - numbered clades are a workaround for missing data
+
+### Clade Splitting Artifact (KNOWN LIMITATION)
+
+If a real higher-level clade contains multiple lower-level clades, GIGANTIC will **incorrectly split** them:
+
+**Example**: One real Kingdom containing Phyla A, B, and C becomes:
+- `Kingdom1` (Phylum A species)
+- `Kingdom2` (Phylum B species)
+- `Kingdom3` (Phylum C species)
+
+**When to warn users**:
+- If they're doing OCL (Origins, Conservation, Loss) analyses
+- If their species set spans multiple lower-level clades that share unknown higher clades
+- If they see unexpectedly fragmented results
+
+**Solution**: User-provided phylonames (see below)
+
+---
+
+## User-Provided Phylonames
+
+### When Users Need This
+
+1. They have species with numbered clades (`Kingdom6555`, etc.)
+2. They know the correct taxonomy from literature
+3. They want to override NCBI's classification
+
+### How to Help Users Set It Up
+
+1. Create `INPUT_user/user_phylonames.tsv`:
+   ```
+   genus_species	custom_phyloname
+   Species_name	Kingdom_Phylum_Class_Order_Family_Genus_species
+   ```
+
+2. Edit `phylonames_config.yaml`:
+   ```yaml
+   project:
+     user_phylonames: "INPUT_user/user_phylonames.tsv"
+     mark_unofficial: true  # or false for clean phylonames
+   ```
+
+3. Run the pipeline - Script 004 applies the overrides
+
+### The UNOFFICIAL Suffix
+
+By default, ALL user-provided clades get marked `UNOFFICIAL`:
+```
+HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_...
+```
+
+**Explain to users**: This suffix indicates that the taxonomic assignment is the user's decision, not NCBI's official classification. Set `mark_unofficial: false` to disable.
+
+---
+
 ## How to Help Users Run This Subproject
 
 ### Step 1: Understand Their Goal
@@ -161,8 +231,10 @@ If troubleshooting:
 | `nf_workflow-TEMPLATE_01-*/ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh` | Downloads NCBI data |
 | `nf_workflow-TEMPLATE_01-*/ai_scripts/002_ai-python-generate_phylonames.py` | Generates all phylonames |
 | `nf_workflow-TEMPLATE_01-*/ai_scripts/003_ai-python-create_species_mapping.py` | Creates project-specific mapping |
+| `nf_workflow-TEMPLATE_01-*/ai_scripts/004_ai-python-apply_user_phylonames.py` | Applies user-provided phylonames (optional) |
 | `nf_workflow-TEMPLATE_01-*/` | Workflow template directory |
 | `nf_workflow-TEMPLATE_01-*/INPUT_user/species_list.txt` | User's species list (they create this) |
+| `nf_workflow-TEMPLATE_01-*/INPUT_user/user_phylonames.tsv` | User's custom phylonames (optional) |
 
 ---
 

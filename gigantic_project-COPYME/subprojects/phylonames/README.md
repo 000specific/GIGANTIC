@@ -50,6 +50,93 @@ Throughout GIGANTIC code and documentation:
 
 ---
 
+## Numbered Unknown Clades (Kingdom6555, Family1426, etc.)
+
+### What Are Numbered Clades?
+
+NCBI Taxonomy is **incomplete** and represents **one hypothesis** among many about phylogenetic relationships. When NCBI lacks data for a taxonomic level, GIGANTIC generates **numbered unknown clade identifiers**.
+
+**Example**:
+```
+Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+```
+
+Here, `Kingdom6555` and `Phylum6554` are **not NCBI assignments** - they are GIGANTIC's solution to fill gaps while preserving phylogenetic information.
+
+### Why This Matters
+
+**The numbering captures shared ancestry**: All species sharing the same "first named clade below" an unknown level get the same number. This groups related species together despite missing higher taxonomy.
+
+**Example**: All choanoflagellates might share `Kingdom6555` and `Phylum6554` because they all have "Choanoflagellata" as their first named clade below those levels.
+
+### CRITICAL LIMITATION: Clade Splitting Artifact
+
+When a single unknown higher-level clade actually contains **multiple** lower-level clades, GIGANTIC's numbering will **split** the real clade into multiple numbered clades (one per each lower-level clade).
+
+**Example Scenario**:
+If one unknown Kingdom actually contains Phyla A, B, and C, GIGANTIC creates:
+- `Kingdom1` (for species in Phylum A)
+- `Kingdom2` (for species in Phylum B)
+- `Kingdom3` (for species in Phylum C)
+
+But in reality, all belong to the **SAME** unknown Kingdom.
+
+**Impact on Analyses**:
+- If your species set includes species from **only ONE** lower-level clade → **NO PROBLEM**
+- If your species set includes species from **MULTIPLE** lower-level clades that share an unknown higher clade → **PROBLEM**: OCL (Origins, Conservation, Loss) analyses will cryptically fail to capture accurate evolutionary patterns
+
+**Solution**: If you know the correct higher-level clade names from literature, use the **user-provided phylonames** feature (see below).
+
+---
+
+## User-Provided Phylonames (Custom Taxonomy)
+
+### Overview
+
+GIGANTIC allows you to override NCBI-generated phylonames with your own taxonomy based on current literature or alternative phylogenetic hypotheses.
+
+### Configuration
+
+In `phylonames_config.yaml`:
+
+```yaml
+project:
+  # Path to your custom phylonames file
+  user_phylonames: "INPUT_user/user_phylonames.tsv"
+
+  # Whether to mark user clades as UNOFFICIAL (default: true)
+  mark_unofficial: true
+```
+
+### Input Format
+
+Create a TSV file with two columns:
+```
+genus_species	custom_phyloname
+Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+```
+
+### UNOFFICIAL Suffix
+
+By default, **ALL** clades in user-provided phylonames are marked with `UNOFFICIAL`:
+
+```
+HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_ChoanoflagellataUNOFFICIAL_CraspedidaUNOFFICIAL_SalpingoecidaeUNOFFICIAL_Monosiga_brevicollis_MX1
+```
+
+**Why UNOFFICIAL?**
+- Assigning a clade to a species is a **taxonomic DECISION**
+- NCBI made their official decision
+- When you override NCBI, **YOUR decision is "unofficial"** - even if the clade name itself exists in NCBI taxonomy
+- The UNOFFICIAL suffix maintains transparency about data sources
+
+**To disable** (if you want clean phylonames):
+```yaml
+mark_unofficial: false
+```
+
+---
+
 ## Field Positions (0-indexed)
 
 | Position | Level | Example |
@@ -93,7 +180,8 @@ phylonames/
     ├── ai_scripts/                     # Python/Bash scripts (called by NextFlow)
     │   ├── 001_ai-bash-download_ncbi_taxonomy.sh
     │   ├── 002_ai-python-generate_phylonames.py
-    │   └── 003_ai-python-create_species_mapping.py
+    │   ├── 003_ai-python-create_species_mapping.py
+    │   └── 004_ai-python-apply_user_phylonames.py  # Optional: custom phylonames
     ├── INPUT_user/                     # User-provided species list
     │   └── species_list.txt            # One genus_species per line
     └── OUTPUT_pipeline/                # Generated phylonames and mappings
@@ -142,6 +230,7 @@ The pipeline will:
 1. Download NCBI taxonomy database (~2GB, skipped if already exists)
 2. Generate phylonames for all NCBI species (~5-10 minutes)
 3. Create your project-specific mapping file
+4. **(Optional)** Apply user-provided phylonames if specified in config
 
 ### Output
 
@@ -195,6 +284,15 @@ genus_species	phyloname	phyloname_taxonid
 Homo_sapiens	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606
 Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica___6500
 ```
+
+### User Phylonames Output (Optional)
+
+**Location**: `OUTPUT_pipeline/output/4-output/` (only if `user_phylonames` is specified)
+
+| File | Description |
+|------|-------------|
+| `final_project_mapping.tsv` | Species mapping with user phylonames applied |
+| `unofficial_clades_report.tsv` | Report of which clades were marked UNOFFICIAL |
 
 ---
 

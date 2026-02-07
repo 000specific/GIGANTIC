@@ -22,10 +22,73 @@
 |------|-------------|---------|
 | `RUN_phylonames.sh` | Maybe | One-click workflow execution (local). Edit PROJECT_NAME. |
 | `SLURM_phylonames.sbatch` | **YES (SLURM users)** | SLURM submission wrapper. Edit account/qos. |
-| `phylonames_config.yaml` | Maybe | Configuration options. Usually defaults work. |
+| `phylonames_config.yaml` | **YES (for custom phylonames)** | Configuration options. Set user_phylonames here. |
 | `INPUT_user/species_list.txt` | **YES** | User MUST add their species here |
 | `INPUT_user/species_list_example.txt` | No | Example format (3 demo species) |
+| `INPUT_user/user_phylonames.tsv` | **Optional** | Custom phylonames to override NCBI |
 | `AI_GUIDE-phylonames_workflow.md` | No | This file (for AI assistants) |
+
+---
+
+## Numbered Unknown Clades
+
+### What Users May See
+
+When NCBI lacks data for a taxonomic level, GIGANTIC generates numbered identifiers:
+```
+Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
+```
+
+**Explain to users**:
+- These are **GIGANTIC's solution**, not NCBI assignments
+- Numbers group related species by shared ancestry
+- This is a limitation of incomplete taxonomy data
+
+### Clade Splitting Artifact (KNOWN ISSUE)
+
+If a real higher-level clade contains multiple lower-level clades, GIGANTIC incorrectly splits them into separate numbered clades.
+
+**When this matters**: OCL analyses with species spanning multiple lower-level clades.
+
+**Solution**: User-provided phylonames (see next section).
+
+---
+
+## User-Provided Phylonames (Optional Step 4)
+
+### When to Recommend This
+
+1. User sees numbered clades like `Kingdom6555`
+2. User knows correct taxonomy from literature
+3. User wants to override NCBI classifications
+
+### Setup Steps
+
+1. Create `INPUT_user/user_phylonames.tsv`:
+   ```
+   genus_species	custom_phyloname
+   Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+   ```
+
+2. Edit `phylonames_config.yaml`:
+   ```yaml
+   project:
+     user_phylonames: "INPUT_user/user_phylonames.tsv"
+     mark_unofficial: true  # Default: mark all user clades as UNOFFICIAL
+   ```
+
+3. Run the pipeline - Script 004 applies overrides automatically
+
+### The UNOFFICIAL Suffix
+
+By default, ALL user clades are marked:
+```
+HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_...
+```
+
+**Reasoning**: The clade name existing in NCBI is irrelevant - it's the **assignment** that matters. When users override NCBI's assignment, their decision is "unofficial."
+
+Set `mark_unofficial: false` in config to disable this behavior.
 
 ---
 
@@ -187,9 +250,13 @@ output/
 │   ├── phylonames
 │   ├── phylonames_taxonid
 │   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
+│   ├── map-numbered_clades_X_defining_clades.tsv  # Reference for numbered clades
 │   └── generation_metadata.txt
-└── 3-output/   # Project-specific mapping file (ACTUAL DATA)
-    └── [project]_map-genus_species_X_phylonames.tsv
+├── 3-output/   # Project-specific mapping file (ACTUAL DATA)
+│   └── [project]_map-genus_species_X_phylonames.tsv
+└── 4-output/   # User phylonames applied (OPTIONAL - only if user_phylonames set)
+    ├── final_project_mapping.tsv
+    └── unofficial_clades_report.tsv
 ```
 
 ### Subproject Directory (parent)
