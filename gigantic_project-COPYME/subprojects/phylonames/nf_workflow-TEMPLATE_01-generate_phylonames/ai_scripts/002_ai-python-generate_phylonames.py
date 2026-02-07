@@ -49,6 +49,27 @@ IMPORTANT CONCEPTUAL NOTES:
 - Users can provide their own phylonames via Script 004 to use alternative
   taxonomy based on current literature or different phylogenetic hypotheses.
 
+CRITICAL LIMITATION - CLADE SPLITTING ARTIFACT:
+When a single unknown higher-level clade actually contains MULTIPLE lower-level
+clades, GIGANTIC's numbering will SPLIT the real clade into multiple numbered clades
+(one per each lower-level clade).
+
+Example: If one unknown Kingdom actually contains Phyla A, B, and C, GIGANTIC creates:
+  - Kingdom1 (for species in Phylum A)
+  - Kingdom2 (for species in Phylum B)
+  - Kingdom3 (for species in Phylum C)
+But in reality, all belong to the SAME unknown Kingdom.
+
+IMPACT ON ANALYSES:
+- If your species set includes species from only ONE lower-level clade → NO PROBLEM
+- If your species set includes species from MULTIPLE lower-level clades that share
+  an unknown higher clade → PROBLEM: OCL (Origins, Conservation, Loss) analyses
+  will cryptically fail to capture accurate evolutionary patterns for both the
+  higher-level and lower-level clades because they appear as separate lineages.
+
+SOLUTION: Use Script 004 to provide user phylonames that correctly group species
+under their shared higher-level clades based on current phylogenetic knowledge.
+
 INPUT FORMAT (from NCBI):
 The rankedlineage.dmp file has pipe-delimited fields:
 taxon_id | species_name | species | genus | family | order | class | phylum | kingdom | superkingdom |

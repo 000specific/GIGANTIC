@@ -62,6 +62,28 @@ Even after applying user phylonames, you may still see numbered clades like
 2. User phylonames were provided but didn't specify all levels
 3. The species simply wasn't in your user phylonames file
 
+CRITICAL LIMITATION - CLADE SPLITTING ARTIFACT:
+GIGANTIC's numbered clades have a subtle but important limitation. When a single
+unknown higher-level clade actually contains MULTIPLE lower-level clades, the
+numbering SPLITS the real clade into multiple numbered clades.
+
+Example: If one unknown Kingdom actually contains Phyla A, B, and C, GIGANTIC creates:
+  - Kingdom1 (for species in Phylum A)
+  - Kingdom2 (for species in Phylum B)
+  - Kingdom3 (for species in Phylum C)
+But in reality, all belong to the SAME unknown Kingdom.
+
+IMPACT ON ANALYSES:
+- If your species set includes species from only ONE lower-level clade → NO PROBLEM
+- If your species set includes species from MULTIPLE lower-level clades that share
+  an unknown higher clade → PROBLEM: OCL (Origins, Conservation, Loss) analyses
+  will CRYPTICALLY FAIL to capture accurate evolutionary patterns because species
+  that share common ancestry appear as separate lineages.
+
+THIS IS WHY USER PHYLONAMES MATTER: If you know (from literature or phylogenetic
+analysis) that certain species share a higher-level clade despite NCBI gaps,
+provide user phylonames to correctly group them. This prevents analytical artifacts
+
 Numbered clades mean: "NCBI doesn't have official names for these levels, and
 neither did the user provide custom names." This is scientifically valid - it
 honestly reflects missing taxonomic data rather than inventing names.
