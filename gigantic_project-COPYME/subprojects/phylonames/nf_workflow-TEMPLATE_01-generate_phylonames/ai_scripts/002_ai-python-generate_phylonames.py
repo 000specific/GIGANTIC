@@ -299,24 +299,34 @@ def main():
                 kingdom_raw = parts[ 8 ]
                 superkingdom_raw = parts[ 9 ]
 
-                # Skip lines with no species information at all
-                if not species_raw:
+                # Handle species extraction
+                # In NCBI format, field [2] (species_raw) is often empty for actual species
+                # The species name should be extracted from taxon_name (field [1]) in that case
+                if species_raw:
+                    # Subspecies/strain: species field is populated
+                    species = process_species_name( species_raw )
+                elif taxon_name:
+                    # Actual species: extract from taxon_name (e.g., "Aplysia californica" -> "californica")
+                    species = process_species_name( taxon_name )
+                else:
+                    # No species information at all - skip
                     output = line + '\n'
                     failed_output.write( output )
                     failed_count += 1
                     continue
 
-                # Process species name (handles "unclassified" and special cases)
-                species = process_species_name( species_raw )
-
                 # Process genus
-                # If genus field is empty, try to extract from species name
+                # If genus field is empty, try to extract from taxon_name
                 if genus_raw:
                     genus = genus_raw.replace( '-', '_' )
                 else:
-                    # First word of species name is usually genus
-                    genus_candidate = species_raw.split( ' ' )[ 0 ]
-                    genus = 'Genus_unclassified' if genus_candidate == 'unclassified' else genus_candidate
+                    # First word of taxon_name is usually genus
+                    name_for_genus = taxon_name if taxon_name else species_raw
+                    if name_for_genus:
+                        genus_candidate = name_for_genus.split( ' ' )[ 0 ]
+                        genus = 'Genus_unclassified' if genus_candidate == 'unclassified' else genus_candidate
+                    else:
+                        genus = 'Genus_unclassified'
 
                 # Process higher taxonomy levels (with defaults for missing data)
                 family = family_raw if family_raw else 'Family_unclassified'
