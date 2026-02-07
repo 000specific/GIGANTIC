@@ -64,6 +64,12 @@ GIGANTIC is organized as a series of subprojects that build on each other:
 
 Each subproject is self-contained with its own NextFlow workflows, Python scripts, documentation, and standardized input/output directories.
 
+## Development Status
+
+**Subprojects prefixed with `x_` are in active development** and not yet ready for public use. As each subproject is completed and tested, the `x_` prefix will be removed.
+
+Currently, all subprojects are in development (`x_phylonames/`, `x_genomesDB/`, etc.). Check back for updates as we finalize each component.
+
 ## Subprojects
 
 | # | Subproject | Description | Type |
