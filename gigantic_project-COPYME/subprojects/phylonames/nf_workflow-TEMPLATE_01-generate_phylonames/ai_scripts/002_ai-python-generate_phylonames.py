@@ -300,14 +300,18 @@ def main():
                 superkingdom_raw = parts[ 9 ]
 
                 # Handle species extraction
-                # In NCBI format, field [2] (species_raw) is often empty for actual species
-                # The species name should be extracted from taxon_name (field [1]) in that case
-                if species_raw:
-                    # Subspecies/strain: species field is populated
-                    species = process_species_name( species_raw )
-                elif taxon_name:
-                    # Actual species: extract from taxon_name (e.g., "Aplysia californica" -> "californica")
+                # NCBI format has two relevant fields:
+                # - taxon_name (field [1]): Full name including strain/subspecies (e.g., "Monosiga brevicollis MX1")
+                # - species_raw (field [2]): Parent species only (e.g., "Monosiga brevicollis")
+                #
+                # We prefer taxon_name because it preserves strain/subspecies info
+                # This allows users to look up "Monosiga_brevicollis_MX1" and get the correct taxon ID
+                if taxon_name:
+                    # Use full taxon name to preserve strain/subspecies info
                     species = process_species_name( taxon_name )
+                elif species_raw:
+                    # Fallback to species field if taxon_name is empty
+                    species = process_species_name( species_raw )
                 else:
                     # No species information at all - skip
                     output = line + '\n'
