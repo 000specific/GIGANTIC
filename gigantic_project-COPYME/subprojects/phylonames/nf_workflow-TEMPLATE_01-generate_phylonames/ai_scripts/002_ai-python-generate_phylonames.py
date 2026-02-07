@@ -33,8 +33,10 @@ THE PROCESS:
 1. Reads NCBI's rankedlineage.dmp file (contains all species classifications)
 2. For each species, extracts: Kingdom, Phylum, Class, Order, Family, Genus, Species
 3. Cleans up special characters that cause problems in filenames
-4. Creates both phyloname and phyloname_taxonid formats
-5. Outputs multiple files for different use cases
+4. For missing taxonomy levels, assigns numbered identifiers (e.g., Family1426)
+   based on the first named clade below - this groups related species together
+5. Creates both phyloname and phyloname_taxonid formats
+6. Outputs multiple files for different use cases including a reference table
 
 INPUT FORMAT (from NCBI):
 The rankedlineage.dmp file has pipe-delimited fields:
@@ -105,10 +107,55 @@ PHYLONAMES_TAXONID_FILE = OUTPUT_DIR / 'phylonames_taxonid'
 MAP_FILE = OUTPUT_DIR / 'map-phyloname_X_ncbi_taxonomy_info.tsv'
 FAILED_FILE = OUTPUT_DIR / 'failed-entries.txt'
 METADATA_FILE = OUTPUT_DIR / 'generation_metadata.txt'
+UNKNOWN_CLADE_REFERENCE_FILE = OUTPUT_DIR / 'map-numbered_clades_X_defining_clades.tsv'
+
+# Global tracking for numbered unknown clades
+# Key: (clade_type, first_named_clade_below)
+# Value: assigned number
+unknown_clade_assignments___numbers = {}
+unknown_clade_counter = 0
 
 # Characters that need to be removed or replaced in phylonames
 # These can cause problems in filenames or downstream processing
 PROBLEMATIC_CHARS = [ '(', ')', '[', ']', '/', '.', "'", ':', '-' ]
+
+
+def get_numbered_unknown_clade( clade_type: str, first_named_clade_below: str ) -> str:
+    """
+    Get or assign a numbered identifier for an unknown clade.
+
+    When a taxonomy level is missing (e.g., no Kingdom in NCBI), we assign a
+    unique number based on the first named clade BELOW it. This ensures that
+    species sharing the same lower clade get the same unknown clade number,
+    grouping related species together despite missing higher taxonomy.
+
+    Format: CladeTypeNumber (e.g., Kingdom42, Family1426)
+    No underscore between type and number to keep it compact.
+
+    Args:
+        clade_type: The taxonomy level (Kingdom, Phylum, Class, Order, Family)
+        first_named_clade_below: The first named clade below this unknown level
+
+    Returns:
+        Numbered clade identifier (e.g., "Kingdom42")
+    """
+    global unknown_clade_counter
+
+    # Create lookup key
+    lookup_key = ( clade_type, first_named_clade_below )
+
+    # Check if we've already assigned a number for this combination
+    if lookup_key in unknown_clade_assignments___numbers:
+        assigned_number = unknown_clade_assignments___numbers[ lookup_key ]
+    else:
+        # Assign next number
+        unknown_clade_counter += 1
+        assigned_number = unknown_clade_counter
+        unknown_clade_assignments___numbers[ lookup_key ] = assigned_number
+
+    # Return compact format: CladeTypeNumber (no underscore)
+    numbered_clade = f"{clade_type}{assigned_number}"
+    return numbered_clade
 
 
 def clean_word( word: str ) -> str:
@@ -332,12 +379,43 @@ def main():
                     else:
                         genus = 'Genus_unclassified'
 
-                # Process higher taxonomy levels (with defaults for missing data)
-                family = family_raw if family_raw else 'Family_unclassified'
-                order = order_raw if order_raw else 'Order_unclassified'
-                class_name = class_raw if class_raw else 'Class_unclassified'
-                phylum = phylum_raw if phylum_raw else 'Phylum_unclassified'
-                kingdom = kingdom_raw if kingdom_raw else 'Kingdom_unclassified'
+                # Process higher taxonomy levels with numbered unknown clades
+                # Work upward from genus, using the first named clade below each unknown level
+                # This groups related species together despite missing higher taxonomy
+
+                # Family: if unknown, genus is the first named clade below
+                if family_raw:
+                    family = family_raw
+                else:
+                    family = get_numbered_unknown_clade( 'Family', genus )
+
+                # Order: if unknown, use family (or genus if family was also unknown)
+                if order_raw:
+                    order = order_raw
+                else:
+                    first_named_below = family_raw if family_raw else genus
+                    order = get_numbered_unknown_clade( 'Order', first_named_below )
+
+                # Class: if unknown, use order (or next named below)
+                if class_raw:
+                    class_name = class_raw
+                else:
+                    first_named_below = order_raw if order_raw else ( family_raw if family_raw else genus )
+                    class_name = get_numbered_unknown_clade( 'Class', first_named_below )
+
+                # Phylum: if unknown, use class (or next named below)
+                if phylum_raw:
+                    phylum = phylum_raw
+                else:
+                    first_named_below = class_raw if class_raw else ( order_raw if order_raw else ( family_raw if family_raw else genus ) )
+                    phylum = get_numbered_unknown_clade( 'Phylum', first_named_below )
+
+                # Kingdom: if unknown, use phylum (or next named below)
+                if kingdom_raw:
+                    kingdom = kingdom_raw
+                else:
+                    first_named_below = phylum_raw if phylum_raw else ( class_raw if class_raw else ( order_raw if order_raw else ( family_raw if family_raw else genus ) ) )
+                    kingdom = get_numbered_unknown_clade( 'Kingdom', first_named_below )
 
                 # Generate phyloname (standard format)
                 phyloname = generate_phyloname(
@@ -401,6 +479,23 @@ def main():
     end_time = datetime.now()
     duration = end_time - start_time
 
+    # Write unknown clade reference table
+    # Maps numbered clades (e.g., Kingdom42) to their defining clade below
+    with open( UNKNOWN_CLADE_REFERENCE_FILE, 'w', encoding = 'utf-8' ) as reference_output:
+        header = 'numbered_clade\tclade_type\tdefining_clade_below\n'
+        reference_output.write( header )
+
+        # Sort by clade type and number for readability
+        for ( clade_type, defining_clade ), number in sorted(
+            unknown_clade_assignments___numbers.items(),
+            key = lambda x: ( x[ 0 ][ 0 ], x[ 1 ] )
+        ):
+            numbered_clade = f"{clade_type}{number}"
+            output = f"{numbered_clade}\t{clade_type}\t{defining_clade}\n"
+            reference_output.write( output )
+
+    print( f"  Numbered unknown clades assigned: {unknown_clade_counter:,}" )
+
     # Write generation metadata
     with open( METADATA_FILE, 'w', encoding = 'utf-8' ) as metadata_output:
         output = f"""Phyloname Generation Metadata
@@ -411,6 +506,7 @@ Generation end (local): {end_time.strftime( '%Y-%m-%d %H:%M:%S' )}
 Duration: {duration}
 Species processed: {processed_count:,}
 Failed entries: {failed_count:,}
+Numbered unknown clades assigned: {unknown_clade_counter:,}
 Script: 002_ai-python-generate_phylonames.py
 """
         metadata_output.write( output )
@@ -428,6 +524,7 @@ Script: 002_ai-python-generate_phylonames.py
     print( f"  - {PHYLONAMES_FILE} (standard phylonames)" )
     print( f"  - {PHYLONAMES_TAXONID_FILE} (phylonames with taxon ID)" )
     print( f"  - {MAP_FILE} (full mapping with NCBI data)" )
+    print( f"  - {UNKNOWN_CLADE_REFERENCE_FILE} (numbered clade reference)" )
     print( f"  - {FAILED_FILE} (entries that could not be processed)" )
     print( f"  - {METADATA_FILE} (generation metadata)" )
     print( "" )
