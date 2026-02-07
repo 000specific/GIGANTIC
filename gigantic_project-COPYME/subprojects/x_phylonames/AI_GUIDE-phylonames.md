@@ -125,9 +125,9 @@ Ask the user:
 
 ### Step 2: Guide Setup
 
-1. They need to copy the workflow template:
+1. They work within the workflow directory:
    ```bash
-   cp -r subprojects/phylonames/nf_workflow-TEMPLATE_01-generate_phylonames my_project/phylonames/
+   cd subprojects/x_phylonames/nf_workflow-COPYME_01-generate_phylonames/
    ```
 
 2. They need to create a species list in `INPUT_user/species_list.txt`:
@@ -137,26 +137,28 @@ Ask the user:
    Octopus_bimaculoides
    ```
 
+3. They edit `phylonames_config.yaml` with their project name
+
 ### Step 3: Run the Workflow
 
 **Local execution** (laptop, workstation):
 ```bash
-cd my_project/phylonames
+cd nf_workflow-COPYME_01-generate_phylonames
 bash RUN_phylonames.sh
 ```
 
 **SLURM cluster execution**:
 ```bash
-cd my_project/phylonames
-# First edit SLURM_phylonames.sbatch to set account/qos
-sbatch SLURM_phylonames.sbatch
+cd nf_workflow-COPYME_01-generate_phylonames
+# First edit RUN_phylonames.sbatch to set account/qos
+sbatch RUN_phylonames.sbatch
 ```
 
 Or step-by-step (for debugging):
 ```bash
-bash ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh
-python3 ai_scripts/002_ai-python-generate_phylonames.py
-python3 ai_scripts/003_ai-python-create_species_mapping.py --species-list INPUT_user/species_list.txt --output output_to_input/maps/my_project_map.tsv
+bash ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh
+python3 ai/scripts/002_ai-python-generate_phylonames.py
+python3 ai/scripts/003_ai-python-create_species_mapping.py --species-list INPUT_user/species_list.txt --output ../output_to_input/maps/my_project_map.tsv
 ```
 
 ---
@@ -188,7 +190,7 @@ python3 ai_scripts/003_ai-python-create_species_mapping.py --species-list INPUT_
 
 **Solution**: Make scripts executable:
 ```bash
-chmod +x ai_scripts/*.sh
+chmod +x ai/scripts/*.sh
 ```
 
 ---
@@ -198,17 +200,16 @@ chmod +x ai_scripts/*.sh
 After successful completion:
 
 ```
-nf_workflow-TEMPLATE_01-generate_phylonames/
-└── output/3-output/
-    └── [project]_map-genus_species_X_phylonames.tsv  # ACTUAL FILE
+nf_workflow-COPYME_01-generate_phylonames/
+└── OUTPUT_pipeline/
+    └── output/3-output/
+        └── [project]_map-genus_species_X_phylonames.tsv
 
 output_to_input/maps/
-└── [project]_map-genus_species_X_phylonames.tsv      # SYMLINK to above
+└── [project]_map-genus_species_X_phylonames.tsv      # Copied here for downstream use
 ```
 
 This TSV file has columns: `genus_species`, `phyloname`, `phyloname_taxonid`
-
-**Softlink Pattern**: The file in `output_to_input/` is a symlink pointing to the actual file in `output/3-output/`. This avoids data duplication. For archiving, use `cp -L` or `rsync -L` to dereference symlinks.
 
 ---
 
@@ -226,15 +227,15 @@ If troubleshooting:
 
 | File | Purpose |
 |------|---------|
-| `README.md` | Human documentation |
+| `README.md` | Human documentation (subproject level) |
 | `AI_GUIDE-phylonames.md` | This file (for AI assistants) |
-| `nf_workflow-TEMPLATE_01-*/ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh` | Downloads NCBI data |
-| `nf_workflow-TEMPLATE_01-*/ai_scripts/002_ai-python-generate_phylonames.py` | Generates all phylonames |
-| `nf_workflow-TEMPLATE_01-*/ai_scripts/003_ai-python-create_species_mapping.py` | Creates project-specific mapping |
-| `nf_workflow-TEMPLATE_01-*/ai_scripts/004_ai-python-apply_user_phylonames.py` | Applies user-provided phylonames (optional) |
-| `nf_workflow-TEMPLATE_01-*/` | Workflow template directory |
-| `nf_workflow-TEMPLATE_01-*/INPUT_user/species_list.txt` | User's species list (they create this) |
-| `nf_workflow-TEMPLATE_01-*/INPUT_user/user_phylonames.tsv` | User's custom phylonames (optional) |
+| `nf_workflow-COPYME_01-*/README.md` | Quick start guide (workflow level) |
+| `nf_workflow-COPYME_01-*/RUN_phylonames.sh` | Run locally |
+| `nf_workflow-COPYME_01-*/RUN_phylonames.sbatch` | Run on SLURM |
+| `nf_workflow-COPYME_01-*/phylonames_config.yaml` | User configuration |
+| `nf_workflow-COPYME_01-*/INPUT_user/species_list.txt` | User's species list |
+| `nf_workflow-COPYME_01-*/ai/AI_GUIDE-phylonames_workflow.md` | Workflow-level AI guide |
+| `nf_workflow-COPYME_01-*/ai/scripts/` | Python/Bash scripts (internal) |
 
 ---
 

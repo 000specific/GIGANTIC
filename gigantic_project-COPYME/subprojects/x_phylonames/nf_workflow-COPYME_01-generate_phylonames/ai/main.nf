@@ -29,7 +29,7 @@ params.force_download = false
 
 /*
  * Process 1: Download NCBI Taxonomy Database
- * Calls: ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh
+ * Calls: scripts/001_ai-bash-download_ncbi_taxonomy.sh
  */
 process download_ncbi_taxonomy {
     label 'local'
@@ -41,26 +41,26 @@ process download_ncbi_taxonomy {
     script:
     """
     # Check if database already exists (skip download if so)
-    if [ -d "${projectDir}/database-ncbi_taxonomy_latest" ] && [ "${params.force_download}" != "true" ]; then
+    if [ -d "${projectDir}/../database-ncbi_taxonomy_latest" ] && [ "${params.force_download}" != "true" ]; then
         echo "NCBI taxonomy database already exists. Skipping download."
         echo "To force re-download, set force_download: true in config.yaml"
         # Create symlinks to existing database for NextFlow output tracking
-        ln -s ${projectDir}/database-ncbi_taxonomy_latest database-ncbi_taxonomy_latest
+        ln -s ${projectDir}/../database-ncbi_taxonomy_latest database-ncbi_taxonomy_latest
         # Get the actual directory name
-        ACTUAL_DIR=\$(readlink -f ${projectDir}/database-ncbi_taxonomy_latest)
+        ACTUAL_DIR=\$(readlink -f ${projectDir}/../database-ncbi_taxonomy_latest)
         ln -s \$ACTUAL_DIR \$(basename \$ACTUAL_DIR)
     else
         echo "Downloading NCBI taxonomy database..."
-        bash ${projectDir}/ai_scripts/001_ai-bash-download_ncbi_taxonomy.sh
+        bash ${projectDir}/scripts/001_ai-bash-download_ncbi_taxonomy.sh
         # Move downloaded files to work directory for NextFlow tracking
-        mv ${projectDir}/database-ncbi_taxonomy_* .
+        mv ${projectDir}/../database-ncbi_taxonomy_* .
     fi
     """
 }
 
 /*
  * Process 2: Generate Phylonames from NCBI Taxonomy
- * Calls: ai_scripts/002_ai-python-generate_phylonames.py
+ * Calls: scripts/002_ai-python-generate_phylonames.py
  */
 process generate_phylonames {
     label 'local'
@@ -84,22 +84,22 @@ process generate_phylonames {
     # Run phyloname generation
     # The script looks for database-ncbi_taxonomy_latest in current directory
     # The input already has this name from NextFlow staging, so we just use it directly
-    python3 ${projectDir}/ai_scripts/002_ai-python-generate_phylonames.py
+    python3 ${projectDir}/scripts/002_ai-python-generate_phylonames.py
     """
 }
 
 /*
  * Process 3: Create Project-Specific Species Mapping
- * Calls: ai_scripts/003_ai-python-create_species_mapping.py
+ * Calls: scripts/003_ai-python-create_species_mapping.py
  */
 process create_species_mapping {
     label 'local'
 
     // Publish to OUTPUT_pipeline with full directory structure
-    publishDir "${projectDir}/${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     // Publish ONLY the mapping file to output_to_input/maps (flatten structure)
-    publishDir "${projectDir}/../output_to_input/maps", mode: 'copy', overwrite: true,
+    publishDir "${projectDir}/../../output_to_input/maps", mode: 'copy', overwrite: true,
                saveAs: { filename ->
                    if (filename.contains('map-genus_species')) {
                        // Extract just the filename, not the full path
@@ -121,7 +121,7 @@ process create_species_mapping {
     mkdir -p output/3-output
 
     # Create project-specific mapping
-    python3 ${projectDir}/ai_scripts/003_ai-python-create_species_mapping.py \\
+    python3 ${projectDir}/scripts/003_ai-python-create_species_mapping.py \\
         --species-list ${species_list} \\
         --master-mapping ${master_mapping} \\
         --output output/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv
@@ -130,7 +130,7 @@ process create_species_mapping {
 
 /*
  * Process 4: Apply User-Provided Phylonames (OPTIONAL)
- * Calls: ai_scripts/004_ai-python-apply_user_phylonames.py
+ * Calls: scripts/004_ai-python-apply_user_phylonames.py
  *
  * This process only runs if user_phylonames parameter is set.
  * It applies custom phylonames and marks ALL user-provided clades as UNOFFICIAL
@@ -144,10 +144,10 @@ process apply_user_phylonames {
     label 'local'
 
     // Publish to OUTPUT_pipeline with full directory structure
-    publishDir "${projectDir}/${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     // Publish final mapping to output_to_input/maps (flatten structure)
-    publishDir "${projectDir}/../output_to_input/maps", mode: 'copy', overwrite: true,
+    publishDir "${projectDir}/../../output_to_input/maps", mode: 'copy', overwrite: true,
                saveAs: { filename ->
                    if (filename.contains('final_project_mapping')) {
                        // Extract just the filename, add project name prefix
@@ -174,7 +174,7 @@ process apply_user_phylonames {
     # Apply user phylonames
     # By default, ALL user-provided clades are marked UNOFFICIAL
     # Use mark_unofficial: false in config to disable this
-    python3 ${projectDir}/ai_scripts/004_ai-python-apply_user_phylonames.py \\
+    python3 ${projectDir}/scripts/004_ai-python-apply_user_phylonames.py \\
         --project-mapping ${project_mapping} \\
         --user-phylonames ${user_phylonames} \\
         --output-dir output/4-output \\
@@ -187,8 +187,8 @@ process apply_user_phylonames {
 // ============================================================================
 
 workflow {
-    // Get species list from INPUT_user/
-    species_list_ch = Channel.fromPath("${projectDir}/${params.species_list}")
+    // Get species list from INPUT_user/ (relative to workflow root, not ai/)
+    species_list_ch = Channel.fromPath("${projectDir}/../${params.species_list}")
 
     // Step 1: Download NCBI taxonomy (if needed)
     download_ncbi_taxonomy()
@@ -206,7 +206,7 @@ workflow {
     // ALL user-provided clades are marked UNOFFICIAL by default
     // (unless mark_unofficial: false in config)
     if (params.user_phylonames) {
-        user_phylonames_ch = Channel.fromPath("${projectDir}/${params.user_phylonames}")
+        user_phylonames_ch = Channel.fromPath("${projectDir}/../${params.user_phylonames}")
 
         apply_user_phylonames(
             create_species_mapping.out.project_mapping,

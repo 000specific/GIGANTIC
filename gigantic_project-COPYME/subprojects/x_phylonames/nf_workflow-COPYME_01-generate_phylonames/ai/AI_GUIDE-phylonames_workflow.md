@@ -1,14 +1,14 @@
-# AI Guide: Phylonames Workflow Template
+# AI Guide: Phylonames Workflow
 
-**Purpose**: This document helps AI assistants guide users through this specific workflow template.
+**Purpose**: This document helps AI assistants guide users through this specific workflow.
 
-**For AI Assistants**: Read this file and the subproject-level `../AI_GUIDE-phylonames.md` for full context.
+**For AI Assistants**: Read this file and the subproject-level `../../AI_GUIDE-phylonames.md` for full context.
 
 ---
 
-## About This Workflow Template
+## About This Workflow
 
-**Template**: `nf_workflow-TEMPLATE_01-generate_phylonames`
+**Workflow**: `nf_workflow-COPYME_01-generate_phylonames`
 
 **What it does**: Downloads NCBI taxonomy and generates phyloname mappings for a user's species list.
 
@@ -16,17 +16,27 @@
 
 ---
 
-## Files in This Template
+## Workflow Structure
 
+The workflow separates user-facing files from internal files:
+
+**User-facing (at workflow root):**
 | File | User Edits? | Purpose |
 |------|-------------|---------|
-| `RUN_phylonames.sh` | Maybe | One-click workflow execution (local). Edit PROJECT_NAME. |
-| `SLURM_phylonames.sbatch` | **YES (SLURM users)** | SLURM submission wrapper. Edit account/qos. |
-| `phylonames_config.yaml` | **YES (for custom phylonames)** | Configuration options. Set user_phylonames here. |
-| `INPUT_user/species_list.txt` | **YES** | User MUST add their species here |
-| `INPUT_user/species_list_example.txt` | No | Example format (3 demo species) |
-| `INPUT_user/user_phylonames.tsv` | **Optional** | Custom phylonames to override NCBI |
-| `AI_GUIDE-phylonames_workflow.md` | No | This file (for AI assistants) |
+| `README.md` | No | Quick start guide |
+| `RUN_phylonames.sh` | No | Run locally: `bash RUN_phylonames.sh` |
+| `RUN_phylonames.sbatch` | **YES (SLURM)** | Edit account/qos, then `sbatch RUN_phylonames.sbatch` |
+| `phylonames_config.yaml` | **YES** | Project name and options |
+| `INPUT_user/species_list.txt` | **YES** | User's species list |
+| `OUTPUT_pipeline/` | No | Results appear here |
+
+**Internal (in ai/ folder - users don't touch):**
+| File | Purpose |
+|------|---------|
+| `ai/AI_GUIDE-phylonames_workflow.md` | This file (for AI assistants) |
+| `ai/main.nf` | NextFlow pipeline |
+| `ai/nextflow.config` | NextFlow settings |
+| `ai/scripts/` | Python/Bash scripts |
 
 ---
 
@@ -94,13 +104,10 @@ Set `mark_unofficial: false` in config to disable this behavior.
 
 ## User Workflow
 
-### Step 1: Copy Template
-
-Tell users to copy this entire directory to their project:
+### Step 1: Navigate to Workflow
 
 ```bash
-cp -r nf_workflow-TEMPLATE_01-generate_phylonames my_phylonames_run
-cd my_phylonames_run
+cd subprojects/x_phylonames/nf_workflow-COPYME_01-generate_phylonames/
 ```
 
 ### Step 2: Create Species List
@@ -120,15 +127,14 @@ Drosophila_melanogaster
 - Lines starting with `#` are comments
 - Use official NCBI scientific names
 
-### Step 3: Edit RUN Script (Optional)
+### Step 3: Edit Configuration
 
-In `RUN_phylonames.sh`, users may want to edit:
+In `phylonames_config.yaml`, set their project name:
 
-```bash
-PROJECT_NAME="my_project"  # Change to their project name
+```yaml
+project:
+  name: "my_project"  # Change this
 ```
-
-This affects the output filename.
 
 ### Step 4: Run the Workflow
 
@@ -139,8 +145,8 @@ bash RUN_phylonames.sh
 
 **SLURM cluster execution:**
 ```bash
-# First, edit SLURM_phylonames.sbatch to set your account and qos
-sbatch SLURM_phylonames.sbatch
+# First, edit RUN_phylonames.sbatch to set your account and qos
+sbatch RUN_phylonames.sbatch
 ```
 
 That's it! The script handles everything else.
@@ -158,7 +164,7 @@ GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and po
 
 ### SLURM Setup
 
-1. Edit `SLURM_phylonames.sbatch` and change:
+1. Edit `RUN_phylonames.sbatch` and change:
    ```bash
    #SBATCH --account=YOUR_ACCOUNT    # Your cluster account
    #SBATCH --qos=YOUR_QOS            # Your quality of service
@@ -166,7 +172,7 @@ GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and po
 
 2. Optionally adjust resources (mem, time, cpus) if needed
 
-3. Submit: `sbatch SLURM_phylonames.sbatch`
+3. Submit: `sbatch RUN_phylonames.sbatch`
 
 4. Check status: `squeue -u $USER`
 
@@ -231,38 +237,36 @@ wc -l ../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
 **Solution**:
 ```bash
 chmod +x RUN_phylonames.sh
-chmod +x ai_scripts/*.sh
+chmod +x ai/scripts/*.sh
 ```
 
 ---
 
 ## Output Structure
 
-**GIGANTIC Transparency Principle**: All script outputs are visible in `output/N-output/` directories.
+**GIGANTIC Transparency Principle**: All script outputs are visible in `OUTPUT_pipeline/output/N-output/` directories.
 
-**Softlink Pattern**: To avoid data duplication, `output_to_input/` contains symlinks pointing to actual files in `output/N-output/`. This allows downstream subprojects to access data while keeping canonical copies in workflow output directories.
-
-### Workflow Directory (this template)
+### Workflow Directory
 ```
-output/
-├── 1-output/   # (Database downloaded to versioned directory, not here)
-├── 2-output/   # Master phylonames and mapping files
-│   ├── phylonames
-│   ├── phylonames_taxonid
-│   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
-│   ├── map-numbered_clades_X_defining_clades.tsv  # Reference for numbered clades
-│   └── generation_metadata.txt
-├── 3-output/   # Project-specific mapping file (ACTUAL DATA)
-│   └── [project]_map-genus_species_X_phylonames.tsv
-└── 4-output/   # User phylonames applied (OPTIONAL - only if user_phylonames set)
-    ├── final_project_mapping.tsv
-    └── unofficial_clades_report.tsv
+OUTPUT_pipeline/
+└── output/
+    ├── 2-output/   # Master phylonames and mapping files
+    │   ├── phylonames
+    │   ├── phylonames_taxonid
+    │   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
+    │   ├── map-numbered_clades_X_defining_clades.tsv
+    │   └── generation_metadata.txt
+    ├── 3-output/   # Project-specific mapping file
+    │   └── [project]_map-genus_species_X_phylonames.tsv
+    └── 4-output/   # (Optional) User phylonames applied
+        ├── final_project_mapping.tsv
+        └── unofficial_clades_report.tsv
 ```
 
 ### Subproject Directory (parent)
 ```
-../output_to_input/maps/
-└── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK to output/3-output/
+../../output_to_input/maps/
+└── [project]_map-genus_species_X_phylonames.tsv  # Copied here for downstream use
 ```
 
 ### Archiving with Softlinks
@@ -283,10 +287,10 @@ After successful run, users should have:
 **How to verify**:
 ```bash
 # Check the intermediate outputs (in workflow directory)
-ls output/2-output/
+ls OUTPUT_pipeline/output/2-output/
 
 # Check the final mapping file (at subproject root)
-head ../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
+head ../../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
 ```
 
 **Expected output**:

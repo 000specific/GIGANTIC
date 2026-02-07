@@ -143,18 +143,22 @@ Each subproject follows a standard GIGANTIC workspace layout:
 
 ```
 subproject/
+├── README.md                          # Subproject documentation
+├── AI_GUIDE-subproject.md             # AI assistant guidance
 ├── user_research/                     # Personal workspace for notes and exploration
-├── nf_workflow-TEMPLATE_01/           # NextFlow workflow template
-│   ├── RUN_workflow.sh                # Local execution: bash RUN_workflow.sh
-│   ├── RUN_workflow.sbatch            # SLURM execution: sbatch RUN_workflow.sbatch
-│   ├── config.yaml                    # User configuration (edit this)
-│   ├── main.nf                        # NextFlow pipeline (don't edit)
-│   ├── nextflow.config                # NextFlow settings (don't edit)
-│   ├── ai_scripts/                    # Python/Bash pipeline scripts
-│   ├── INPUT_user/                    # User-provided inputs
-│   └── OUTPUT_pipeline/               # Workflow outputs
 ├── output_to_input/                   # Outputs shared to downstream subprojects
-└── upload_to_server/                  # Curated outputs for external access
+└── nf_workflow-COPYME_01/             # NextFlow workflow (copy this to run)
+    ├── README.md                      # Quick start guide
+    ├── RUN_workflow.sh                # Local: bash RUN_workflow.sh
+    ├── RUN_workflow.sbatch            # SLURM: sbatch RUN_workflow.sbatch
+    ├── config.yaml                    # User configuration (edit this)
+    ├── INPUT_user/                    # User-provided inputs
+    ├── OUTPUT_pipeline/               # Results appear here
+    └── ai/                            # Internal (don't touch)
+        ├── AI_GUIDE-workflow.md       # For AI assistants
+        ├── main.nf                    # NextFlow pipeline
+        ├── nextflow.config            # NextFlow settings
+        └── scripts/                   # Python/Bash scripts
 ```
 
 ## The Phyloname System
@@ -226,10 +230,10 @@ This is new territory. Users are not CS experts, and AI-user research workflows 
 
 ### Running Workflows
 
-Every workflow template has two RUN files - the file extension tells you how to run it:
+Every workflow has two RUN files - the file extension tells you how to run it:
 
 ```
-nf_workflow-TEMPLATE_01/
+nf_workflow-COPYME_01/
 ├── RUN_phylonames.sh      ← bash RUN_phylonames.sh      (local machine)
 ├── RUN_phylonames.sbatch  ← sbatch RUN_phylonames.sbatch (SLURM cluster)
 └── ...

@@ -82,7 +82,7 @@ echo ""
 echo "Running NextFlow pipeline..."
 echo ""
 
-nextflow run main.nf
+nextflow run ai/main.nf
 
 EXIT_CODE=$?
 

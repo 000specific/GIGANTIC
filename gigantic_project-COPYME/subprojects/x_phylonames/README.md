@@ -165,26 +165,28 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 ```
 phylonames/
 ├── README.md                           # This file
-├── AI_GUIDE-phylonames.md              # AI assistant guidance
-├── conda_environment-phylonames.yml    # Per-subproject environment
+├── AI_GUIDE-phylonames.md              # AI assistant guidance (subproject level)
 ├── user_research/                      # Personal workspace
 ├── output_to_input/                    # Outputs for downstream subprojects
 │   └── maps/                           # Species mapping files
 │       └── [project]_map-genus_species_X_phylonames.tsv
-└── nf_workflow-TEMPLATE_01-generate_phylonames/
+└── nf_workflow-COPYME_01-generate_phylonames/
+    ├── README.md                       # Quick start guide
     ├── RUN_phylonames.sh               # bash RUN_phylonames.sh (local)
     ├── RUN_phylonames.sbatch           # sbatch RUN_phylonames.sbatch (SLURM)
     ├── phylonames_config.yaml          # Edit this for your project
-    ├── main.nf                         # NextFlow pipeline (don't edit)
-    ├── nextflow.config                 # NextFlow settings (don't edit)
-    ├── ai_scripts/                     # Python/Bash scripts (called by NextFlow)
-    │   ├── 001_ai-bash-download_ncbi_taxonomy.sh
-    │   ├── 002_ai-python-generate_phylonames.py
-    │   ├── 003_ai-python-create_species_mapping.py
-    │   └── 004_ai-python-apply_user_phylonames.py  # Optional: custom phylonames
     ├── INPUT_user/                     # User-provided species list
     │   └── species_list.txt            # One genus_species per line
-    └── OUTPUT_pipeline/                # Generated phylonames and mappings
+    ├── OUTPUT_pipeline/                # Generated phylonames and mappings
+    └── ai/                             # Internal (don't touch)
+        ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
+        ├── main.nf                     # NextFlow pipeline
+        ├── nextflow.config             # NextFlow settings
+        └── scripts/                    # Python/Bash scripts
+            ├── 001_ai-bash-download_ncbi_taxonomy.sh
+            ├── 002_ai-python-generate_phylonames.py
+            ├── 003_ai-python-create_species_mapping.py
+            └── 004_ai-python-apply_user_phylonames.py
 ```
 
 **AI Documentation**: Session logs, validation scripts, and debugging files are stored in:
@@ -217,7 +219,7 @@ project:
 ### Step 3: Run the Pipeline
 
 ```bash
-cd nf_workflow-TEMPLATE_01-generate_phylonames
+cd nf_workflow-COPYME_01-generate_phylonames
 
 # Local machine:
 bash RUN_phylonames.sh
