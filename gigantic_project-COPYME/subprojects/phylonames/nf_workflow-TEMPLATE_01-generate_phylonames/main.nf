@@ -18,6 +18,7 @@ nextflow.enable.dsl = 2
 
 params.project_name = "my_project"
 params.species_list = "INPUT_user/species_list.txt"
+params.user_phylonames = ""  // Optional: user-provided custom phylonames file
 params.output_dir = "OUTPUT_pipeline"
 params.force_download = false
 
@@ -70,6 +71,7 @@ process generate_phylonames {
         path "output/2-output/phylonames", emit: phylonames
         path "output/2-output/phylonames_taxonid", emit: phylonames_taxonid
         path "output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv", emit: master_mapping
+        path "output/2-output/map-numbered_clades_X_defining_clades.tsv", emit: numbered_clades_reference
         path "output/2-output/failed-entries.txt", emit: failed_entries
         path "output/2-output/generation_metadata.txt", emit: metadata
 
@@ -125,6 +127,52 @@ process create_species_mapping {
     """
 }
 
+/*
+ * Process 4: Apply User-Provided Phylonames (OPTIONAL)
+ * Calls: ai_scripts/004_ai-python-apply_user_phylonames.py
+ *
+ * This process only runs if user_phylonames parameter is set.
+ * It applies custom phylonames and marks non-NCBI clades as UNOFFICIAL.
+ */
+process apply_user_phylonames {
+    label 'local'
+
+    // Publish to OUTPUT_pipeline with full directory structure
+    publishDir "${projectDir}/${params.output_dir}", mode: 'copy', overwrite: true
+
+    // Publish final mapping to output_to_input/maps (flatten structure)
+    publishDir "${projectDir}/../output_to_input/maps", mode: 'copy', overwrite: true,
+               saveAs: { filename ->
+                   if (filename.contains('final_project_mapping')) {
+                       // Extract just the filename, add project name prefix
+                       return "${params.project_name}_" + filename.tokenize('/').last()
+                   }
+                   return null
+               }
+
+    input:
+        path project_mapping
+        path master_mapping
+        path user_phylonames
+
+    output:
+        path "output/4-output/final_project_mapping.tsv", emit: final_mapping
+        path "output/4-output/unofficial_clades_report.tsv", emit: unofficial_report, optional: true
+
+    script:
+    """
+    # Create output directory
+    mkdir -p output/4-output
+
+    # Apply user phylonames with UNOFFICIAL detection
+    python3 ${projectDir}/ai_scripts/004_ai-python-apply_user_phylonames.py \\
+        --project-mapping ${project_mapping} \\
+        --user-phylonames ${user_phylonames} \\
+        --master-mapping ${master_mapping} \\
+        --output-dir output/4-output
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -144,6 +192,17 @@ workflow {
         generate_phylonames.out.master_mapping,
         species_list_ch
     )
+
+    // Step 4: Apply user phylonames (OPTIONAL - only if user_phylonames is specified)
+    if (params.user_phylonames) {
+        user_phylonames_ch = Channel.fromPath("${projectDir}/${params.user_phylonames}")
+
+        apply_user_phylonames(
+            create_species_mapping.out.project_mapping,
+            generate_phylonames.out.master_mapping,
+            user_phylonames_ch
+        )
+    }
 }
 
 // ============================================================================
@@ -161,9 +220,16 @@ workflow.onComplete {
     if (workflow.success) {
         println "Output files:"
         println "  - ${params.output_dir}/output/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv"
+        if (params.user_phylonames) {
+            println "  - ${params.output_dir}/output/4-output/final_project_mapping.tsv (with user phylonames)"
+            println "  - ${params.output_dir}/output/4-output/unofficial_clades_report.tsv (if any unofficial clades)"
+        }
         println ""
-        println "Symlink for downstream subprojects:"
-        println "  - ../output_to_input/maps/${params.project_name}_map-genus_species_X_phylonames.tsv"
+        println "Files copied to output_to_input/maps/ for downstream subprojects"
+        if (params.user_phylonames) {
+            println ""
+            println "Note: User phylonames applied. Clades not in NCBI taxonomy are marked UNOFFICIAL."
+        }
     }
     println "========================================================================"
 }

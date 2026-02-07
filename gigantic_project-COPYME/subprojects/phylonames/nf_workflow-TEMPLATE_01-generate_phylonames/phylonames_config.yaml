@@ -27,6 +27,15 @@ project:
   # Lines starting with # are treated as comments
   species_list: "INPUT_user/species_list.txt"
 
+  # (OPTIONAL) Path to user-provided custom phylonames
+  # If specified, these phylonames will OVERRIDE NCBI-generated phylonames
+  # Clades not in NCBI taxonomy will be marked with "UNOFFICIAL" suffix
+  # Leave empty or comment out to use only NCBI-generated phylonames
+  #
+  # Format: TSV file with columns: genus_species<TAB>custom_phyloname
+  # Example line: Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+  user_phylonames: ""
+
 # ============================================================================
 # OUTPUT SETTINGS
 # ============================================================================
@@ -136,6 +145,28 @@ logging:
 #
 # Extended phyloname_taxonid (used for file naming):
 #   Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606
+#
+# NUMBERED CLADES (e.g., Kingdom6555, Family1426):
+#
+# When NCBI taxonomy is missing data for a taxonomic level, the pipeline assigns
+# numbered identifiers. Species sharing the same "first named clade below" get
+# the same number, grouping related species together.
+#
+# Example: All choanoflagellates might share Kingdom6555 and Phylum6554 because
+# they all have "Choanoflagellata" as their first named clade below those levels.
+#
+# If you see numbered clades and want meaningful names, use user_phylonames
+# to provide custom phylonames based on current literature.
+#
+# USER PHYLONAMES AND UNOFFICIAL SUFFIX:
+#
+# When you provide custom phylonames, clades NOT in NCBI taxonomy are automatically
+# marked with "UNOFFICIAL" for transparency:
+#
+#   ChoanozoaUNOFFICIAL = user-provided name, not in NCBI
+#   Choanoflagellata = in NCBI (no suffix)
+#
+# This lets downstream analyses know which taxonomy is official vs. custom.
 #
 # SPECIES LIST FORMAT:
 #
