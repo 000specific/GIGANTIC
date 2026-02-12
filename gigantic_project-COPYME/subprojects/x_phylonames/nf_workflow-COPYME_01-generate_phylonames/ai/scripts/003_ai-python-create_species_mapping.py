@@ -173,7 +173,7 @@ Examples:
 
   python3 003_ai-python-create_species_mapping.py \\
       --species-list my_species.txt \\
-      --master-mapping output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv \\
+      --master-mapping 2-output/map-phyloname_X_ncbi_taxonomy_info.tsv \\
       --output my_project_mapping.tsv
         """
     )
@@ -195,8 +195,8 @@ Examples:
     parser.add_argument(
         '--master-mapping',
         type = str,
-        default = 'output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv',
-        help = 'Path to master phyloname mapping file (default: output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv)'
+        default = '2-output/map-phyloname_X_ncbi_taxonomy_info.tsv',
+        help = 'Path to master phyloname mapping file (default: 2-output/map-phyloname_X_ncbi_taxonomy_info.tsv)'
     )
 
     parser.add_argument(

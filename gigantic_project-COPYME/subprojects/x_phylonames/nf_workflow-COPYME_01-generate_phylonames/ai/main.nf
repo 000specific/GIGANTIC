@@ -69,17 +69,17 @@ process generate_phylonames {
         path database_link
 
     output:
-        path "output/2-output/phylonames", emit: phylonames
-        path "output/2-output/phylonames_taxonid", emit: phylonames_taxonid
-        path "output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv", emit: master_mapping
-        path "output/2-output/map-numbered_clades_X_defining_clades.tsv", emit: numbered_clades_reference
-        path "output/2-output/failed-entries.txt", emit: failed_entries
-        path "output/2-output/generation_metadata.txt", emit: metadata
+        path "2-output/phylonames", emit: phylonames
+        path "2-output/phylonames_taxonid", emit: phylonames_taxonid
+        path "2-output/map-phyloname_X_ncbi_taxonomy_info.tsv", emit: master_mapping
+        path "2-output/map-numbered_clades_X_defining_clades.tsv", emit: numbered_clades_reference
+        path "2-output/failed-entries.txt", emit: failed_entries
+        path "2-output/generation_metadata.txt", emit: metadata
 
     script:
     """
     # Create output directory structure
-    mkdir -p output/2-output
+    mkdir -p 2-output
 
     # Run phyloname generation
     # The script looks for database-ncbi_taxonomy_latest in current directory
@@ -113,18 +113,18 @@ process create_species_mapping {
         path species_list
 
     output:
-        path "output/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv", emit: project_mapping
+        path "3-output/${params.project_name}_map-genus_species_X_phylonames.tsv", emit: project_mapping
 
     script:
     """
     # Create output directory
-    mkdir -p output/3-output
+    mkdir -p 3-output
 
     # Create project-specific mapping
     python3 ${projectDir}/scripts/003_ai-python-create_species_mapping.py \\
         --species-list ${species_list} \\
         --master-mapping ${master_mapping} \\
-        --output output/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv
+        --output 3-output/${params.project_name}_map-genus_species_X_phylonames.tsv
     """
 }
 
@@ -161,15 +161,15 @@ process apply_user_phylonames {
         path user_phylonames
 
     output:
-        path "output/4-output/final_project_mapping.tsv", emit: final_mapping
-        path "output/4-output/unofficial_clades_report.tsv", emit: unofficial_report, optional: true
+        path "4-output/final_project_mapping.tsv", emit: final_mapping
+        path "4-output/unofficial_clades_report.tsv", emit: unofficial_report, optional: true
 
     script:
     // Build the command with optional --no-mark-unofficial flag
     def unofficial_flag = params.mark_unofficial ? "" : "--no-mark-unofficial"
     """
     # Create output directory
-    mkdir -p output/4-output
+    mkdir -p 4-output
 
     # Apply user phylonames
     # By default, ALL user-provided clades are marked UNOFFICIAL
@@ -177,7 +177,7 @@ process apply_user_phylonames {
     python3 ${projectDir}/scripts/004_ai-python-apply_user_phylonames.py \\
         --project-mapping ${project_mapping} \\
         --user-phylonames ${user_phylonames} \\
-        --output-dir output/4-output \\
+        --output-dir 4-output \\
         ${unofficial_flag}
     """
 }
@@ -229,10 +229,10 @@ workflow.onComplete {
     println ""
     if (workflow.success) {
         println "Output files:"
-        println "  - ${params.output_dir}/output/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv"
+        println "  - ${params.output_dir}/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv"
         if (params.user_phylonames) {
-            println "  - ${params.output_dir}/output/4-output/final_project_mapping.tsv (with user phylonames)"
-            println "  - ${params.output_dir}/output/4-output/unofficial_clades_report.tsv (if any unofficial clades)"
+            println "  - ${params.output_dir}/4-output/final_project_mapping.tsv (with user phylonames)"
+            println "  - ${params.output_dir}/4-output/unofficial_clades_report.tsv (if any unofficial clades)"
         }
         println ""
         println "Files copied to output_to_input/maps/ for downstream subprojects"

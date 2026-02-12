@@ -137,11 +137,11 @@ USER PHYLONAMES FILE (optional):
 OUTPUT FILES:
 ================================================================================
 
-FINAL MAPPING (output/4-output/final_project_mapping.tsv):
+FINAL MAPPING (4-output/final_project_mapping.tsv):
     genus_species<TAB>phyloname<TAB>phyloname_taxonid<TAB>source<TAB>original_phyloname
     Monosiga_brevicollis_MX1<TAB>Holozoa_ChoanozoaUNOFFICIAL_...<TAB>...<TAB>USER<TAB>Kingdom6555_...
 
-UNOFFICIAL CLADES REPORT (output/4-output/unofficial_clades_report.tsv):
+UNOFFICIAL CLADES REPORT (4-output/unofficial_clades_report.tsv):
     Documents all user-provided clades marked as UNOFFICIAL
 
 ================================================================================
@@ -166,7 +166,7 @@ from datetime import datetime
 # ================================================================================
 # These paths are defaults; can be overridden via command line arguments
 
-OUTPUT_DIR = Path( 'output/4-output' )
+OUTPUT_DIR = Path( '4-output' )
 
 
 # ================================================================================
@@ -556,14 +556,14 @@ def main():
 Examples:
   # Apply user phylonames to project mapping:
   python3 004_ai-python-apply_user_phylonames.py \\
-      --project-mapping output/3-output/species67_map-genus_species_X_phylonames.tsv \\
+      --project-mapping 3-output/species67_map-genus_species_X_phylonames.tsv \\
       --user-phylonames INPUT_user/custom_phylonames.tsv
 
   # Just mark unofficial clades in existing user phylonames (skip vocabulary extraction):
   python3 004_ai-python-apply_user_phylonames.py \\
-      --project-mapping output/3-output/project_mapping.tsv \\
+      --project-mapping 3-output/project_mapping.tsv \\
       --user-phylonames custom_phylonames.tsv \\
-      --master-mapping output/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv
+      --master-mapping 2-output/map-phyloname_X_ncbi_taxonomy_info.tsv
 
 File formats:
   User phylonames file (TSV):

@@ -131,7 +131,7 @@ def find_database_directory() -> Path:
 # Configuration
 DATABASE_DIR = find_database_directory()
 DATABASE_PATH = DATABASE_DIR / 'rankedlineage.dmp'
-OUTPUT_DIR = Path( 'output/2-output' )
+OUTPUT_DIR = Path( '2-output' )
 
 # Output files
 PHYLONAMES_FILE = OUTPUT_DIR / 'phylonames'

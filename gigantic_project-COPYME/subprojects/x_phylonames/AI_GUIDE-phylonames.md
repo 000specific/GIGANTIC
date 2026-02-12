@@ -204,7 +204,7 @@ After successful completion:
 ```
 nf_workflow-COPYME_01-generate_phylonames/
 └── OUTPUT_pipeline/
-    └── output/3-output/
+    └── 3-output/
         └── [project]_map-genus_species_X_phylonames.tsv
 
 output_to_input/maps/

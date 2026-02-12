@@ -49,9 +49,11 @@ echo ""
 # Create slurm_logs directory if it doesn't exist
 mkdir -p slurm_logs
 
-# Get the directory where this script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd "${SCRIPT_DIR}"
+# Change to the directory where sbatch was invoked
+# NOTE: We use SLURM_SUBMIT_DIR instead of BASH_SOURCE[0] because SLURM
+# copies the script to a spool directory before execution, which breaks
+# the BASH_SOURCE pattern. SLURM_SUBMIT_DIR is set to the original directory.
+cd "${SLURM_SUBMIT_DIR}"
 
 # Load required modules (adjust for your cluster)
 module load conda 2>/dev/null || true

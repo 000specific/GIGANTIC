@@ -267,7 +267,7 @@ Lines starting with `#` are treated as comments and ignored.
 
 ### Master Phylonames Database
 
-**Location**: `OUTPUT_pipeline/output/2-output/`
+**Location**: `OUTPUT_pipeline/2-output/`
 
 | File | Description |
 |------|-------------|
@@ -294,7 +294,7 @@ Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_cal
 
 ### User Phylonames Output (Optional)
 
-**Location**: `OUTPUT_pipeline/output/4-output/` (only if `user_phylonames` is specified)
+**Location**: `OUTPUT_pipeline/4-output/` (only if `user_phylonames` is specified)
 
 | File | Description |
 |------|-------------|

@@ -289,7 +289,7 @@ After successful run, users should have:
 **How to verify**:
 ```bash
 # Check the intermediate outputs (in workflow directory)
-ls OUTPUT_pipeline/output/2-output/
+ls OUTPUT_pipeline/2-output/
 
 # Check the final mapping file (at subproject root)
 head ../../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
