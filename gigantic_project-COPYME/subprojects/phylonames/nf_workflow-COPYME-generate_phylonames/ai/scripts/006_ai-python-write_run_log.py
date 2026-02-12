@@ -166,7 +166,7 @@ def write_run_log(
     log_lines.extend( [
         "## Workflow Details",
         "",
-        "Pipeline: phylonames (nf_workflow-COPYME_01-generate_phylonames)",
+        "Pipeline: phylonames (nf_workflow-COPYME-generate_phylonames)",
         "Scripts executed:",
         "  1. 001_ai-bash-download_ncbi_taxonomy.sh",
         "  2. 002_ai-python-generate_phylonames.py",

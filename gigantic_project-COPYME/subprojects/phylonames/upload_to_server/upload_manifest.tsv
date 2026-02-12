@@ -16,23 +16,23 @@
 # ============================================================================
 
 # Project-specific phyloname mapping (most commonly needed)
-nf_workflow-COPYME_01-generate_phylonames/OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv	yes
+nf_workflow-COPYME-generate_phylonames/OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv	yes
 
 # ============================================================================
 # OPTIONAL OUTPUTS (uncomment if needed)
 # ============================================================================
 
 # Master phylonames for all NCBI species (large file, ~2M lines)
-# nf_workflow-COPYME_01-generate_phylonames/OUTPUT_pipeline/2-output/phylonames	no
+# nf_workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/phylonames	no
 
 # Master phylonames with taxon IDs
-# nf_workflow-COPYME_01-generate_phylonames/OUTPUT_pipeline/2-output/phylonames_taxonid	no
+# nf_workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/phylonames_taxonid	no
 
 # Complete mapping with NCBI taxonomy info
-# nf_workflow-COPYME_01-generate_phylonames/OUTPUT_pipeline/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv	no
+# nf_workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv	no
 
 # Numbered clades explanation (for debugging taxonomy issues)
-# nf_workflow-COPYME_01-generate_phylonames/OUTPUT_pipeline/2-output/map-numbered_clades_X_defining_clades.tsv	no
+# nf_workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/map-numbered_clades_X_defining_clades.tsv	no
 
 # ============================================================================
 # USER ADDITIONS (add your custom paths below)

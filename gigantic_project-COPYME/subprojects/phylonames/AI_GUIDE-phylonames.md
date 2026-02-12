@@ -12,7 +12,7 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | Phylonames concepts, troubleshooting | This file |
-| Running the workflow | `nf_workflow-COPYME_01-*/ai/AI_GUIDE-phylonames_workflow.md` |
+| Running the workflow | `nf_workflow-COPYME-*/ai/AI_GUIDE-phylonames_workflow.md` |
 
 ---
 
@@ -46,7 +46,7 @@ phylonames/
 ├── upload_to_server/                # Server sharing
 │   └── upload_manifest.tsv
 │
-└── nf_workflow-COPYME_01-generate_phylonames/
+└── nf_workflow-COPYME-generate_phylonames/
     ├── RUN-phylonames.sh            # bash RUN-phylonames.sh
     ├── RUN-phylonames.sbatch        # sbatch RUN-phylonames.sbatch
     ├── phylonames_config.yaml       # User edits project name here

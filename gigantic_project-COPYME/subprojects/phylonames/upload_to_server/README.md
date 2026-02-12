@@ -28,7 +28,7 @@ Edit `upload_manifest.tsv`:
 
 ```tsv
 # source_path<TAB>include
-nf_workflow-COPYME_01-*/OUTPUT_pipeline/3-output/*.tsv    yes
+nf_workflow-COPYME-*/OUTPUT_pipeline/3-output/*.tsv    yes
 # Commented lines are ignored
 ```
 

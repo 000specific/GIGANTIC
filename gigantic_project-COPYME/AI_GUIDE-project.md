@@ -83,26 +83,31 @@ gigantic_project-[project_name]/
         │   ├── upload_manifest.tsv      # Controls what gets shared
         │   └── [symlinks]               # Created by RUN-update_upload_to_server.sh
         │
-        └── nf_workflow-COPYME_NN-[description]/  # WORKFLOW TEMPLATE
-            │
-            ├── README.md                    # Quick start guide
-            ├── RUN-[workflow].sh            # Local execution: bash RUN-*.sh
-            ├── RUN-[workflow].sbatch        # SLURM execution: sbatch RUN-*.sbatch
-            ├── [workflow]_config.yaml       # User configuration
-            │
-            ├── INPUT_user/                  # WORKFLOW INPUTS
-            │   │                            # Copied from INPUT_gigantic/ at runtime
-            │   └── [input files]            # Archived with this workflow run
-            │
-            ├── OUTPUT_pipeline/             # WORKFLOW OUTPUTS
-            │   ├── N-output/                # Script N outputs (numbered for transparency)
-            │   └── ...
-            │
-            └── ai/                          # INTERNAL (users don't touch)
-                ├── AI_GUIDE-*_workflow.md   # Workflow-level AI guidance
-                ├── main.nf                  # NextFlow pipeline
-                ├── nextflow.config          # NextFlow settings
-                └── scripts/                 # Python/Bash scripts
+        ├── nf_workflow-COPYME-[name]/      # WORKFLOW TEMPLATE (not numbered)
+        │   │                                # Only ONE COPYME per workflow type
+        │   │
+        │   ├── README.md                    # Quick start guide
+        │   ├── RUN-[workflow].sh            # Local execution: bash RUN-*.sh
+        │   ├── RUN-[workflow].sbatch        # SLURM execution: sbatch RUN-*.sbatch
+        │   ├── [workflow]_config.yaml       # User configuration
+        │   │
+        │   ├── INPUT_user/                  # WORKFLOW INPUTS
+        │   │   │                            # Copied from INPUT_gigantic/ at runtime
+        │   │   └── [input files]            # Archived with this workflow run
+        │   │
+        │   ├── OUTPUT_pipeline/             # WORKFLOW OUTPUTS
+        │   │   ├── N-output/                # Script N outputs (numbered for transparency)
+        │   │   └── ...
+        │   │
+        │   └── ai/                          # INTERNAL (users don't touch)
+        │       ├── AI_GUIDE-*_workflow.md   # Workflow-level AI guidance
+        │       ├── main.nf                  # NextFlow pipeline
+        │       ├── nextflow.config          # NextFlow settings
+        │       └── scripts/                 # Python/Bash scripts
+        │
+        └── nf_workflow-RUN_XX-[name]/       # WORKFLOW RUN INSTANCES (numbered)
+            │                                # Copy from COPYME, increment XX for each run
+            └── [same structure as COPYME]
 ```
 
 ---
@@ -145,6 +150,36 @@ upload_to_server/[symlinks]           # GIGANTIC server scans these
 |------|---------|----------|
 | `RUN-*.sh` | `bash RUN-*.sh` | Local machine, workstation |
 | `RUN-*.sbatch` | `sbatch RUN-*.sbatch` | SLURM cluster (edit account/qos first) |
+
+### Workflow Naming Convention (COPYME/RUN)
+
+GIGANTIC uses a **COPYME/RUN naming system** for NextFlow workflows:
+
+| Type | Naming Pattern | Description |
+|------|----------------|-------------|
+| **COPYME** (template) | `nf_workflow-COPYME-[name]` | The template workflow. NOT numbered. Only ONE COPYME per workflow type. |
+| **RUN** (instance) | `nf_workflow-RUN_XX-[name]` | Numbered copies for actual runs. Each run gets its own directory. |
+
+**Examples:**
+```
+nf_workflow-COPYME-generate_phylonames    # Template (this is what you copy)
+nf_workflow-RUN_01-generate_phylonames    # First run instance
+nf_workflow-RUN_02-generate_phylonames    # Second run instance
+```
+
+**To create a new run:**
+```bash
+# From the subproject directory
+cp -r nf_workflow-COPYME-[name] nf_workflow-RUN_01-[name]
+cd nf_workflow-RUN_01-[name]
+# Edit config, add inputs, then run
+```
+
+**Key Principles:**
+- COPYME stays clean as the template - never run workflows directly in COPYME
+- All actual work happens in RUN_XX directories
+- Increment the number (RUN_01, RUN_02, ...) for each new run
+- Each RUN directory preserves its own inputs and outputs for reproducibility
 
 ### Session Provenance Recording (AI-Native Feature)
 
