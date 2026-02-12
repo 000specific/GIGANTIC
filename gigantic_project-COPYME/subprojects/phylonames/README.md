@@ -180,7 +180,7 @@ phylonames/
 ├── upload_to_server/                   # Files to share via GIGANTIC server
 │   ├── upload_manifest.tsv             # Controls what gets shared
 │   └── [symlinks to selected outputs]
-└── nf_workflow-COPYME-generate_phylonames/
+└── workflow-COPYME-generate_phylonames/
     ├── README.md                       # Quick start guide
     ├── RUN-phylonames.sh               # bash RUN-phylonames.sh (local)
     ├── RUN-phylonames.sbatch           # sbatch RUN-phylonames.sbatch (SLURM)
@@ -231,7 +231,7 @@ This creates the `ai_gigantic_phylonames` conda environment with all required de
 
 Or edit the workflow-specific copy (for advanced use):
 ```
-nf_workflow-COPYME-generate_phylonames/INPUT_user/species_list.txt
+workflow-COPYME-generate_phylonames/INPUT_user/species_list.txt
 ```
 
 Format (one species per line):
@@ -255,7 +255,7 @@ project:
 ### Step 3: Run the Pipeline
 
 ```bash
-cd nf_workflow-COPYME-generate_phylonames
+cd workflow-COPYME-generate_phylonames
 
 # Local machine:
 bash RUN-phylonames.sh

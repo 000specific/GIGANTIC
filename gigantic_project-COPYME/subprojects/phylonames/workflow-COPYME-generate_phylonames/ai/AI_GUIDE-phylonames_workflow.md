@@ -2,29 +2,29 @@
 
 **For AI Assistants**: This guide covers workflow execution. For concepts (numbered clades, user phylonames), see `../../AI_GUIDE-phylonames.md`. For GIGANTIC overview, see `../../../../AI_GUIDE-project.md`.
 
-**Location**: `gigantic_project-*/subprojects/phylonames/nf_workflow-COPYME-generate_phylonames/`
+**Location**: `gigantic_project-*/subprojects/phylonames/workflow-COPYME-generate_phylonames/`
 
 ---
 
 ## Workflow Naming Convention
 
-GIGANTIC uses a **COPYME/RUN naming system** for NextFlow workflows:
+GIGANTIC uses a **COPYME/RUN naming system** for workflows:
 
 | Type | Naming Pattern | Description |
 |------|----------------|-------------|
-| **COPYME** (template) | `nf_workflow-COPYME-[name]` | The template workflow - NOT numbered. Only ONE COPYME per workflow type. |
-| **RUN** (instance) | `nf_workflow-RUN_XX-[name]` | Numbered copies for actual runs. Each run gets its own directory. |
+| **COPYME** (template) | `workflow-COPYME-[name]` | The template workflow - NOT numbered. Only ONE COPYME per workflow type. |
+| **RUN** (instance) | `workflow-RUN_XX-[name]` | Numbered copies for actual runs. Each run gets its own directory. |
 
 **Examples:**
-- `nf_workflow-COPYME-generate_phylonames` - The template (this directory)
-- `nf_workflow-RUN_01-generate_phylonames` - First run instance
-- `nf_workflow-RUN_02-generate_phylonames` - Second run instance
+- `workflow-COPYME-generate_phylonames` - The template (this directory)
+- `workflow-RUN_01-generate_phylonames` - First run instance
+- `workflow-RUN_02-generate_phylonames` - Second run instance
 
 **To create a new run:**
 ```bash
 # From the subproject directory (phylonames/)
-cp -r nf_workflow-COPYME-generate_phylonames nf_workflow-RUN_01-generate_phylonames
-cd nf_workflow-RUN_01-generate_phylonames
+cp -r workflow-COPYME-generate_phylonames workflow-RUN_01-generate_phylonames
+cd workflow-RUN_01-generate_phylonames
 # Edit config, add inputs, then run
 ```
 
@@ -45,7 +45,7 @@ cd nf_workflow-RUN_01-generate_phylonames
 ## Workflow Directory Structure
 
 ```
-nf_workflow-COPYME-generate_phylonames/
+workflow-COPYME-generate_phylonames/
 │
 ├── README.md                    # Quick start guide
 ├── RUN-phylonames.sh            # Local: bash RUN-phylonames.sh
@@ -276,7 +276,7 @@ bash RUN-phylonames.sh
 ## Manual Execution (for debugging)
 
 ```bash
-cd nf_workflow-COPYME-generate_phylonames
+cd workflow-COPYME-generate_phylonames
 
 # Run scripts individually
 bash ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh

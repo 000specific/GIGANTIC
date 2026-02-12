@@ -195,7 +195,7 @@ if [ $created_count -gt 0 ] || [ $skipped_count -gt 0 ]; then
     echo "  conda activate ai_gigantic_phylonames"
     echo ""
     echo "Then run a workflow:"
-    echo "  cd subprojects/phylonames/nf_workflow-COPYME-generate_phylonames/"
+    echo "  cd subprojects/phylonames/workflow-COPYME-generate_phylonames/"
     echo "  bash RUN-phylonames.sh"
 fi
 

@@ -14,7 +14,7 @@
 #   bash RUN-clean_and_record_subproject.sh [OPTIONS]
 #
 # OPTIONS:
-#   --clean-work       Remove work/ and .nextflow* from all nf_workflow directories
+#   --clean-work       Remove work/ and .nextflow* from all workflow directories
 #   --harden-links     Convert softlinks to hard copies in upload_to_server/
 #   --remove-gitkeep   Remove .gitkeep files from non-empty directories
 #   --record-sessions  Extract Claude Code session summaries to research_notebook/
@@ -311,11 +311,11 @@ PYEND
 clean_work_directories() {
     echo -e "${YELLOW}=== Cleaning NextFlow work directories ===${NC}"
 
-    # Find all nf_workflow directories
-    workflow_dirs=$(find "$SCRIPT_DIR" -maxdepth 1 -type d -name "nf_workflow*" 2>/dev/null)
+    # Find all workflow directories
+    workflow_dirs=$(find "$SCRIPT_DIR" -maxdepth 1 -type d -name "workflow*" 2>/dev/null)
 
     if [ -z "$workflow_dirs" ]; then
-        echo "  No nf_workflow directories found."
+        echo "  No workflow directories found."
         return
     fi
 

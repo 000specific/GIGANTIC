@@ -33,7 +33,7 @@ Each subproject follows a standard layout:
 ```
 subproject/
 ├── user_research/               # Personal workspace
-├── nf_workflow-TEMPLATE_01/     # NextFlow template
+├── workflow-COPYME/     # NextFlow template
 │   ├── ai_scripts/              # Pipeline scripts
 │   ├── INPUT_user/              # User inputs
 │   ├── OUTPUT_pipeline/         # Workflow outputs
@@ -98,8 +98,8 @@ Orthogroup_ID (identifier from clustering)	Conservation_Rate_Percent (conserved 
 ### Template Versioning
 
 ```
-nf_workflow-TEMPLATE_XX-description/
-nf_workflow_TXX-pipeline-RUN_N-description/
+workflow-COPYME-[name]/
+workflow-RUN_XX-[name]/
 ```
 
 ### Error Handling

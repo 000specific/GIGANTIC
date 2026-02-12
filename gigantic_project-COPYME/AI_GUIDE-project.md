@@ -10,7 +10,7 @@
 |------------------|----------|
 | Project overview, directory structure | This file |
 | Subproject-specific help | `subprojects/[name]/AI_GUIDE-[name].md` |
-| Workflow execution help | `subprojects/[name]/nf_workflow-*/ai/AI_GUIDE-*_workflow.md` |
+| Workflow execution help | `subprojects/[name]/workflow-*/ai/AI_GUIDE-*_workflow.md` |
 
 ---
 
@@ -83,7 +83,7 @@ gigantic_project-[project_name]/
         │   ├── upload_manifest.tsv      # Controls what gets shared
         │   └── [symlinks]               # Created by RUN-update_upload_to_server.sh
         │
-        ├── nf_workflow-COPYME-[name]/      # WORKFLOW TEMPLATE (not numbered)
+        ├── workflow-COPYME-[name]/          # WORKFLOW TEMPLATE (not numbered)
         │   │                                # Only ONE COPYME per workflow type
         │   │
         │   ├── README.md                    # Quick start guide
@@ -105,7 +105,7 @@ gigantic_project-[project_name]/
         │       ├── nextflow.config          # NextFlow settings
         │       └── scripts/                 # Python/Bash scripts
         │
-        └── nf_workflow-RUN_XX-[name]/       # WORKFLOW RUN INSTANCES (numbered)
+        └── workflow-RUN_XX-[name]/          # WORKFLOW RUN INSTANCES (numbered)
             │                                # Copy from COPYME, increment XX for each run
             └── [same structure as COPYME]
 ```
@@ -119,7 +119,7 @@ gigantic_project-[project_name]/
 ```
 INPUT_gigantic/species_list.txt     # User edits HERE (single source of truth)
         ↓ (copied by RUN script)
-nf_workflow-*/INPUT_user/species_list.txt  # Archived copy for this run
+workflow-*/INPUT_user/species_list.txt  # Archived copy for this run
 ```
 
 **Why**: One place to edit, but each workflow run has its own archived copy.
@@ -127,9 +127,9 @@ nf_workflow-*/INPUT_user/species_list.txt  # Archived copy for this run
 ### output_to_input Pattern
 
 ```
-nf_workflow-*/OUTPUT_pipeline/3-output/map.tsv  # ACTUAL FILE
+workflow-*/OUTPUT_pipeline/3-output/map.tsv  # ACTUAL FILE
         ↓ (symlinked)
-output_to_input/maps/map.tsv                     # SYMLINK (downstream subprojects read here)
+output_to_input/maps/map.tsv                  # SYMLINK (downstream subprojects read here)
 ```
 
 **Why**: Single source of truth, no duplication, clear provenance.
@@ -153,25 +153,25 @@ upload_to_server/[symlinks]           # GIGANTIC server scans these
 
 ### Workflow Naming Convention (COPYME/RUN)
 
-GIGANTIC uses a **COPYME/RUN naming system** for NextFlow workflows:
+GIGANTIC uses a **COPYME/RUN naming system** for workflows:
 
 | Type | Naming Pattern | Description |
 |------|----------------|-------------|
-| **COPYME** (template) | `nf_workflow-COPYME-[name]` | The template workflow. NOT numbered. Only ONE COPYME per workflow type. |
-| **RUN** (instance) | `nf_workflow-RUN_XX-[name]` | Numbered copies for actual runs. Each run gets its own directory. |
+| **COPYME** (template) | `workflow-COPYME-[name]` | The template workflow. NOT numbered. Only ONE COPYME per workflow type. |
+| **RUN** (instance) | `workflow-RUN_XX-[name]` | Numbered copies for actual runs. Each run gets its own directory. |
 
 **Examples:**
 ```
-nf_workflow-COPYME-generate_phylonames    # Template (this is what you copy)
-nf_workflow-RUN_01-generate_phylonames    # First run instance
-nf_workflow-RUN_02-generate_phylonames    # Second run instance
+workflow-COPYME-generate_phylonames    # Template (this is what you copy)
+workflow-RUN_01-generate_phylonames    # First run instance
+workflow-RUN_02-generate_phylonames    # Second run instance
 ```
 
 **To create a new run:**
 ```bash
 # From the subproject directory
-cp -r nf_workflow-COPYME-[name] nf_workflow-RUN_01-[name]
-cd nf_workflow-RUN_01-[name]
+cp -r workflow-COPYME-[name] workflow-RUN_01-[name]
+cd workflow-RUN_01-[name]
 # Edit config, add inputs, then run
 ```
 

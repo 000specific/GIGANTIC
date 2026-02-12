@@ -33,7 +33,7 @@ This gives you:
 1. Edit `species_list.txt` with your species (one per line, `Genus_species` format)
 2. Run the phylonames subproject first:
    ```bash
-   cd subprojects/phylonames/nf_workflow-COPYME-generate_phylonames/
+   cd subprojects/phylonames/workflow-COPYME-generate_phylonames/
    bash RUN-phylonames.sh
    ```
 3. The RUN script will automatically copy your species list for archival

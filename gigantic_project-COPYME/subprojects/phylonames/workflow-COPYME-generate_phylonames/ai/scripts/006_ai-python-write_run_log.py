@@ -33,7 +33,7 @@ def get_research_notebook_path( workflow_dir: Path ) -> Path:
     """
     Calculate path to research_notebook from workflow directory.
 
-    Workflow is at: subprojects/phylonames/nf_workflow-.../
+    Workflow is at: subprojects/phylonames/workflow-.../
     Research notebook is at: research_notebook/research_ai/subproject-phylonames/logs/
     """
     # Navigate up to project root then into research_notebook
@@ -166,7 +166,7 @@ def write_run_log(
     log_lines.extend( [
         "## Workflow Details",
         "",
-        "Pipeline: phylonames (nf_workflow-COPYME-generate_phylonames)",
+        "Pipeline: phylonames (workflow-COPYME-generate_phylonames)",
         "Scripts executed:",
         "  1. 001_ai-bash-download_ncbi_taxonomy.sh",
         "  2. 002_ai-python-generate_phylonames.py",

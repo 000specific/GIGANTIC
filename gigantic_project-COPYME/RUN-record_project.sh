@@ -310,7 +310,7 @@ if ! $PROJECT_ONLY; then
                 fi
 
                 # Find workflow directories
-                for workflow_dir in "$subproject_dir"/nf_workflow*; do
+                for workflow_dir in "$subproject_dir"/workflow*; do
                     if [ -d "$workflow_dir" ]; then
                         workflow_name=$(basename "$workflow_dir")
 

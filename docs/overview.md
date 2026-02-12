@@ -61,7 +61,7 @@ subproject_A/
     └── data_for_subproject_B.tsv
 
 subproject_B/
-└── nf_workflow-TEMPLATE_01/
+└── workflow-COPYME/
     └── INPUT_user/           # References data from subproject_A
 ```
 

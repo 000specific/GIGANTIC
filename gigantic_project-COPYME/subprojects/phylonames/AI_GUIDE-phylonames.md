@@ -12,7 +12,7 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | Phylonames concepts, troubleshooting | This file |
-| Running the workflow | `nf_workflow-COPYME-*/ai/AI_GUIDE-phylonames_workflow.md` |
+| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-phylonames_workflow.md` |
 
 ---
 
@@ -46,7 +46,7 @@ phylonames/
 ├── upload_to_server/                # Server sharing
 │   └── upload_manifest.tsv
 │
-└── nf_workflow-COPYME-generate_phylonames/
+└── workflow-COPYME-generate_phylonames/
     ├── RUN-phylonames.sh            # bash RUN-phylonames.sh
     ├── RUN-phylonames.sbatch        # sbatch RUN-phylonames.sbatch
     ├── phylonames_config.yaml       # User edits project name here
@@ -181,9 +181,9 @@ research_notebook/research_ai/subproject-phylonames/logs/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `../../INPUT_gigantic/species_list.txt` | Canonical species list | **YES** |
-| `nf_workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
-| `nf_workflow-*/RUN-phylonames.sbatch` | SLURM account/qos | **YES** (SLURM) |
-| `nf_workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
+| `workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
+| `workflow-*/RUN-phylonames.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
 | `output_to_input/maps/*.tsv` | Output for downstream | No |
 
 ---

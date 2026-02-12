@@ -54,7 +54,7 @@ This creates a project directory with all subproject templates ready to customiz
 ## Step 5: Add Your Species
 
 1. Place your proteome FASTA files in `genomesDB/000_user/`
-2. Create a species manifest in `genomesDB/nf_workflow-TEMPLATE_01/INPUT_user/`
+2. Create a species manifest in `genomesDB/workflow-COPYME/INPUT_user/`
 3. Generate phylonames for your species using the `phylonames/` subproject
 
 ## Next Steps

@@ -49,8 +49,8 @@ Use `user_research/` for active work, then move completed work to the research n
 
 ## What Does NOT Go Here
 
-- **Workflow inputs** - Use `nf_workflow-*/INPUT_user/` (structured formats)
-- **Workflow outputs** - Generated in `nf_workflow-*/output/`
+- **Workflow inputs** - Use `workflow-*/INPUT_user/` (structured formats)
+- **Workflow outputs** - Generated in `workflow-*/output/`
 - **Inter-subproject data** - Goes to `output_to_input/`
 
 ---

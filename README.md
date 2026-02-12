@@ -147,7 +147,7 @@ subproject/
 ├── AI_GUIDE-subproject.md             # AI assistant guidance
 ├── user_research/                     # Personal workspace for notes and exploration
 ├── output_to_input/                   # Outputs shared to downstream subprojects
-└── nf_workflow-COPYME_01/             # NextFlow workflow (copy this to run)
+└── workflow-COPYME/             # NextFlow workflow (copy this to run)
     ├── README.md                      # Quick start guide
     ├── RUN-workflow.sh                # Local: bash RUN-workflow.sh
     ├── RUN-workflow.sbatch            # SLURM: sbatch RUN-workflow.sbatch
@@ -268,7 +268,7 @@ research_notebook/research_ai/
 Every workflow has two RUN files - the file extension tells you how to run it:
 
 ```
-nf_workflow-COPYME_01/
+workflow-COPYME/
 ├── RUN-phylonames.sh      ← bash RUN-phylonames.sh      (local machine)
 ├── RUN-phylonames.sbatch  ← sbatch RUN-phylonames.sbatch (SLURM cluster)
 └── ...
