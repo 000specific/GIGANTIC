@@ -34,7 +34,8 @@ nf_workflow-COPYME_01-generate_phylonames/
 │   ├── 1-output/                # NCBI taxonomy database
 │   ├── 2-output/                # Master phylonames for all NCBI species
 │   ├── 3-output/                # Project-specific mapping
-│   └── 4-output/                # (Optional) User phylonames applied
+│   ├── 4-output/                # (Optional) User phylonames applied
+│   └── 5-output/                # Taxonomy summary (MD and HTML)
 │
 └── ai/                          # Internal - users don't touch
     ├── AI_GUIDE-phylonames_workflow.md  # THIS FILE
@@ -44,7 +45,9 @@ nf_workflow-COPYME_01-generate_phylonames/
         ├── 001_ai-bash-download_ncbi_taxonomy.sh
         ├── 002_ai-python-generate_phylonames.py
         ├── 003_ai-python-create_species_mapping.py
-        └── 004_ai-python-apply_user_phylonames.py
+        ├── 004_ai-python-apply_user_phylonames.py
+        ├── 005_ai-python-generate_taxonomy_summary.py
+        └── 006_ai-python-write_run_log.py
 ```
 
 ---
@@ -135,6 +138,8 @@ sbatch RUN-phylonames.sbatch
 | `2-output/map-phyloname_X_ncbi_taxonomy_info.tsv` | Complete NCBI mapping |
 | `3-output/[project]_map-genus_species_X_phylonames.tsv` | **Your mapping** |
 | `4-output/` | (Optional) User phylonames applied |
+| `5-output/[project]_taxonomy_summary.md` | Taxonomy summary (Markdown) |
+| `5-output/[project]_taxonomy_summary.html` | Taxonomy summary (HTML) |
 
 ### Downstream Location
 
@@ -160,6 +165,9 @@ wc -l OUTPUT_pipeline/2-output/phylonames
 
 # Did project mapping create?
 head OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
+
+# Did taxonomy summary generate?
+ls OUTPUT_pipeline/5-output/
 
 # Is symlink in place?
 ls -la ../../output_to_input/maps/
@@ -234,6 +242,8 @@ bash RUN-phylonames.sh
 | 002 | Generates ALL phylonames | `2-output/phylonames`, `2-output/phylonames_taxonid` |
 | 003 | Creates project mapping | `3-output/[project]_map-*.tsv` |
 | 004 | (Optional) Applies user overrides | `4-output/*.tsv` |
+| 005 | Generates taxonomy summary | `5-output/[project]_taxonomy_summary.md/.html` |
+| 006 | Writes run log | Research notebook log entry |
 
 ---
 

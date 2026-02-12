@@ -129,11 +129,56 @@ process create_species_mapping {
 }
 
 /*
- * Process 4: Write Run Log to Research Notebook
- * Calls: scripts/005_ai-python-write_run_log.py
+ * Process 5: Generate Taxonomy Summary
+ * Calls: scripts/005_ai-python-generate_taxonomy_summary.py
+ *
+ * Generates readable summary of phylonames showing:
+ * - Taxonomic distribution (species counts by clade)
+ * - UNOFFICIAL clades (user-provided classifications)
+ * - Numbered clades (NCBI gaps that could be named)
+ */
+process generate_taxonomy_summary {
+    label 'local'
+
+    // Publish to OUTPUT_pipeline
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+
+    // Also publish to upload_to_server for web viewing
+    publishDir "${projectDir}/../../upload_to_server/taxonomy_summaries", mode: 'copy', overwrite: true,
+               saveAs: { filename ->
+                   if (filename.endsWith('.html') || filename.endsWith('.md')) {
+                       return filename.tokenize('/').last()
+                   }
+                   return null
+               }
+
+    input:
+        path project_mapping
+
+    output:
+        path "5-output/${params.project_name}_taxonomy_summary.md", emit: summary_md
+        path "5-output/${params.project_name}_taxonomy_summary.html", emit: summary_html
+
+    script:
+    """
+    # Create output directory
+    mkdir -p 5-output
+
+    # Generate taxonomy summary (both markdown and HTML)
+    python3 ${projectDir}/scripts/005_ai-python-generate_taxonomy_summary.py \\
+        --input ${project_mapping} \\
+        --output-dir 5-output \\
+        --project-name "${params.project_name}"
+    """
+}
+
+/*
+ * Process 6: Write Run Log to Research Notebook
+ * Calls: scripts/006_ai-python-write_run_log.py
  *
  * Creates a timestamped log in research_notebook/research_ai/subproject-phylonames/logs/
  * for transparency and reproducibility - like an AI lab notebook.
+ * This is the FINAL step in the workflow.
  */
 process write_run_log {
     label 'local'
@@ -151,7 +196,7 @@ process write_run_log {
     SPECIES_COUNT=\$(grep -v '^#' ${species_list} | grep -v '^\$' | wc -l)
 
     # Write run log to research notebook
-    python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \\
+    python3 ${projectDir}/scripts/006_ai-python-write_run_log.py \\
         --project-name "${params.project_name}" \\
         --species-count \$SPECIES_COUNT \\
         --species-file ${species_list} \\
@@ -234,13 +279,7 @@ workflow {
         species_list_ch
     )
 
-    // Step 4: Write run log to research notebook (AI lab notebook)
-    write_run_log(
-        create_species_mapping.out.project_mapping,
-        species_list_ch
-    )
-
-    // Step 5: Apply user phylonames (OPTIONAL - only if user_phylonames is specified)
+    // Step 4: Apply user phylonames (OPTIONAL - only if user_phylonames is specified)
     // ALL user-provided clades are marked UNOFFICIAL by default
     // (unless mark_unofficial: false in config)
     if (params.user_phylonames) {
@@ -250,7 +289,24 @@ workflow {
             create_species_mapping.out.project_mapping,
             user_phylonames_ch
         )
+
+        // Use final mapping for downstream steps
+        final_mapping_ch = apply_user_phylonames.out.final_mapping
+    } else {
+        // Use project mapping directly if no user phylonames
+        final_mapping_ch = create_species_mapping.out.project_mapping
     }
+
+    // Step 5: Generate taxonomy summary (runs on final mapping)
+    generate_taxonomy_summary(
+        params.user_phylonames ? apply_user_phylonames.out.final_mapping : create_species_mapping.out.project_mapping
+    )
+
+    // Step 6: Write run log to research notebook (FINAL STEP)
+    write_run_log(
+        params.user_phylonames ? apply_user_phylonames.out.final_mapping : create_species_mapping.out.project_mapping,
+        species_list_ch
+    )
 }
 
 // ============================================================================
@@ -272,8 +328,11 @@ workflow.onComplete {
             println "  - ${params.output_dir}/4-output/final_project_mapping.tsv (with user phylonames)"
             println "  - ${params.output_dir}/4-output/unofficial_clades_report.tsv (if any unofficial clades)"
         }
+        println "  - ${params.output_dir}/5-output/${params.project_name}_taxonomy_summary.md"
+        println "  - ${params.output_dir}/5-output/${params.project_name}_taxonomy_summary.html"
         println ""
         println "Files copied to output_to_input/maps/ for downstream subprojects"
+        println "Taxonomy summary copied to upload_to_server/taxonomy_summaries/"
         println "Run log written to research_notebook/research_ai/subproject-phylonames/logs/"
         if (params.user_phylonames) {
             println ""
