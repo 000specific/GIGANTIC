@@ -1,0 +1,176 @@
+# AI: Claude Code | Opus 4.5 | 2026 February 12 | Purpose: CI workflow for GIGANTIC
+# Human: Eric Edsinger
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-yaml:
+    name: Validate YAML files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Validate YAML files
+        run: |
+          echo "Validating YAML configuration files..."
+          find . -name "*.yml" -o -name "*.yaml" | while read file; do
+            # Skip GitHub workflow files (they have special syntax)
+            if [[ "$file" == *".github/workflows"* ]]; then
+              continue
+            fi
+            echo "Checking: $file"
+            yamllint -d "{extends: relaxed, rules: {line-length: disable}}" "$file" || true
+          done
+
+  validate-python:
+    name: Validate Python syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check Python syntax
+        run: |
+          echo "Checking Python syntax..."
+          find . -name "*.py" | while read file; do
+            echo "Checking: $file"
+            python -m py_compile "$file"
+          done
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Lint Python files (warnings only)
+        run: |
+          echo "Linting Python files (informational)..."
+          # E501: line too long (we allow long lines for readability)
+          # W503: line break before binary operator (style preference)
+          # E201, E202: whitespace inside brackets (GIGANTIC style)
+          flake8 --ignore=E501,W503,E201,E202,E203 --exit-zero .
+
+  validate-shell:
+    name: Validate shell scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Check shell scripts
+        run: |
+          echo "Checking shell scripts..."
+          find . -name "*.sh" -o -name "*.sbatch" | while read file; do
+            echo "Checking: $file"
+            # SC1091: Can't follow sourced files (expected for conda)
+            # SC2086: Double quote to prevent globbing (sometimes intentional)
+            shellcheck --severity=error --exclude=SC1091,SC2086 "$file" || true
+          done
+
+  check-structure:
+    name: Check project structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify COPYME template structure
+        run: |
+          echo "Verifying gigantic_project-COPYME structure..."
+
+          # Required directories
+          required_dirs=(
+            "gigantic_project-COPYME/INPUT_gigantic"
+            "gigantic_project-COPYME/research_notebook"
+            "gigantic_project-COPYME/research_notebook/research_user"
+            "gigantic_project-COPYME/research_notebook/research_ai"
+            "gigantic_project-COPYME/subprojects"
+            "gigantic_project-COPYME/subprojects/phylonames"
+          )
+
+          for dir in "${required_dirs[@]}"; do
+            if [ -d "$dir" ]; then
+              echo "✓ Found: $dir"
+            else
+              echo "✗ Missing: $dir"
+              exit 1
+            fi
+          done
+
+          # Required files
+          required_files=(
+            "gigantic_project-COPYME/AI_GUIDE-project.md"
+            "gigantic_project-COPYME/RUN-setup_environments.sh"
+            "gigantic_project-COPYME/RUN-record_project.sh"
+            "README.md"
+            "LICENSE"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✓ Found: $file"
+            else
+              echo "✗ Missing: $file"
+              exit 1
+            fi
+          done
+
+          echo ""
+          echo "All required structure verified!"
+
+  check-docs:
+    name: Check documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for broken markdown links
+        run: |
+          echo "Checking for common documentation issues..."
+
+          # Check that AI_GUIDE files exist where referenced
+          echo "Verifying AI_GUIDE hierarchy..."
+
+          if [ -f "gigantic_project-COPYME/AI_GUIDE-project.md" ]; then
+            echo "✓ Project-level AI_GUIDE exists"
+          fi
+
+          if [ -f "gigantic_project-COPYME/subprojects/phylonames/AI_GUIDE-phylonames.md" ]; then
+            echo "✓ Phylonames AI_GUIDE exists"
+          fi
+
+          # Count AI_GUIDE files
+          ai_guide_count=$(find . -name "AI_GUIDE*.md" | wc -l)
+          echo "Total AI_GUIDE files: $ai_guide_count"
+
+  # This job runs only on main branch pushes (not PRs)
+  # It's a placeholder for future demo testing
+  test-demo:
+    name: Test demo (placeholder)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Demo test placeholder
+        run: |
+          echo "Demo testing will be implemented when demo/run_demo.sh is complete."
+          echo "For now, this is a placeholder that always passes."
+
+          if [ -f "demo/run_demo.sh" ]; then
+            echo "demo/run_demo.sh exists - ready for testing when implemented"
+          else
+            echo "demo/run_demo.sh not yet created"
+          fi

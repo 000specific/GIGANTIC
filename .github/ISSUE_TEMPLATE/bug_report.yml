@@ -1,0 +1,129 @@
+name: Bug Report
+description: Report a bug in GIGANTIC
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us understand and fix the issue.
+
+  - type: dropdown
+    id: subproject
+    attributes:
+      label: Subproject
+      description: Which subproject is affected?
+      options:
+        - phylonames
+        - genomesDB
+        - orthogroups
+        - trees_species
+        - trees_gene_families
+        - annotations_hmms
+        - orthogroups_X_ocl
+        - annotations_X_ocl
+        - Project-level (not subproject-specific)
+        - Demo
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "When I run X, Y happens instead of Z..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this bug?
+      placeholder: |
+        1. Run `bash RUN-phylonames.sh`
+        2. Wait for completion
+        3. See error in output
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Messages / Logs
+      description: |
+        Please paste any relevant error messages or log output.
+        This will be automatically formatted as code.
+      render: shell
+
+  - type: dropdown
+    id: execution
+    attributes:
+      label: Execution Environment
+      description: How are you running GIGANTIC?
+      options:
+        - Local machine (bash RUN-*.sh)
+        - SLURM cluster (sbatch RUN-*.sbatch)
+        - Other HPC scheduler
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you using?
+      placeholder: "Ubuntu 22.04 / CentOS 7 / macOS 14 / etc."
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python Version
+      description: Output of `python --version`
+      placeholder: "Python 3.11.0"
+
+  - type: input
+    id: nextflow
+    attributes:
+      label: NextFlow Version
+      description: Output of `nextflow -version`
+      placeholder: "nextflow version 23.10.0"
+
+  - type: dropdown
+    id: ai_assisted
+    attributes:
+      label: AI-Assisted Usage
+      description: Were you using an AI assistant (Claude, ChatGPT, etc.) when this occurred?
+      options:
+        - Yes - Claude Code
+        - Yes - Other AI assistant
+        - No - Manual usage
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context about the problem (screenshots, config files, etc.)

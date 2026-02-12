@@ -1,0 +1,148 @@
+name: New Subproject Proposal
+description: Propose a new analysis subproject for GIGANTIC
+title: "[Subproject Proposal]: "
+labels: ["subproject-proposal", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a new subproject! GIGANTIC's modular architecture makes it easy to add new analysis pipelines that integrate with existing subprojects.
+
+        Before proposing, please review:
+        - [Current subprojects](https://github.com/000specific/GIGANTIC#subprojects)
+        - [Architecture overview](docs/overview.md)
+        - [Subproject dependency chain](docs/overview.md#dependency-chain)
+
+  - type: input
+    id: name
+    attributes:
+      label: Proposed Subproject Name
+      description: What would you call this subproject?
+      placeholder: "e.g., protein_domains, regulatory_elements, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Purpose
+      description: What analysis does this subproject perform? What biological question does it address?
+      placeholder: "This subproject would analyze..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: inputs
+    attributes:
+      label: Required Inputs
+      description: What data does this subproject need? What other subprojects does it depend on?
+      placeholder: |
+        - Proteome FASTA files (from genomesDB)
+        - Phylonames mapping (from phylonames)
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: outputs
+    attributes:
+      label: Expected Outputs
+      description: What files/data will this subproject produce?
+      placeholder: |
+        - Domain annotations per species (TSV)
+        - Summary statistics (TSV)
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tools
+    attributes:
+      label: External Tools Required
+      description: What bioinformatics tools would this subproject use?
+      placeholder: |
+        - HMMER (hmmscan)
+        - InterProScan
+        - ...
+
+  - type: dropdown
+    id: dependencies
+    attributes:
+      label: Upstream Dependencies
+      description: Which existing subprojects must run before this one?
+      multiple: true
+      options:
+        - phylonames (required for all)
+        - genomesDB
+        - orthogroups
+        - trees_species
+        - trees_gene_families
+        - annotations_hmms
+        - orthogroups_X_ocl
+        - None besides phylonames
+    validations:
+      required: true
+
+  - type: dropdown
+    id: downstream
+    attributes:
+      label: Downstream Integration
+      description: Which subprojects might use outputs from this one?
+      multiple: true
+      options:
+        - orthogroups
+        - trees_gene_families
+        - orthogroups_X_ocl
+        - annotations_X_ocl
+        - New integration subproject needed
+        - Standalone (no downstream)
+
+  - type: textarea
+    id: existing_tools
+    attributes:
+      label: Existing Solutions
+      description: Are there existing tools/pipelines that do this? How would GIGANTIC's version differ?
+      placeholder: |
+        Existing tools:
+        - Tool X does Y
+
+        GIGANTIC version would:
+        - Integrate with phylonames for consistent naming
+        - Connect to OCL analysis
+        - ...
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Computational Scope
+      description: How computationally intensive would this be?
+      options:
+        - Light (minutes per species)
+        - Medium (hours per species)
+        - Heavy (days per species, needs HPC)
+    validations:
+      required: true
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: Reference Implementation
+      description: Do you have existing scripts or a reference implementation? (Links welcome)
+
+  - type: dropdown
+    id: implementation
+    attributes:
+      label: Implementation Interest
+      description: Would you be interested in implementing this subproject?
+      options:
+        - Yes - I can implement the full subproject
+        - Partial - I can contribute scripts/core logic
+        - No - just proposing the idea
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other information, papers, or examples that would help understand this proposal

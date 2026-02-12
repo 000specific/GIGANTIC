@@ -1,0 +1,104 @@
+name: Feature Request
+description: Suggest a new feature or improvement for GIGANTIC
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! GIGANTIC is an AI-native platform, so we especially welcome ideas that improve AI-assisted workflows.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What type of feature is this?
+      options:
+        - New subproject/pipeline
+        - Enhancement to existing subproject
+        - AI-native feature (prompts, session handling, etc.)
+        - Documentation improvement
+        - Visualization/reporting
+        - Cross-subproject integration
+        - Developer tooling
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: subproject
+    attributes:
+      label: Related Subproject(s)
+      description: Which subproject(s) would this affect? (Select all that apply)
+      multiple: true
+      options:
+        - phylonames
+        - genomesDB
+        - orthogroups
+        - trees_species
+        - trees_gene_families
+        - annotations_hmms
+        - orthogroups_X_ocl
+        - annotations_X_ocl
+        - Project-level (affects all)
+        - New subproject (doesn't exist yet)
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is this related to a frustration you have?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature you'd like to see
+      placeholder: "It would be great if GIGANTIC could..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+
+  - type: dropdown
+    id: ai_workflow
+    attributes:
+      label: AI Workflow Impact
+      description: Would this feature improve AI-assisted usage of GIGANTIC?
+      options:
+        - Yes - directly improves AI workflows
+        - Somewhat - could help AI assistants
+        - No - mainly for manual usage
+        - Not sure
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Use Case
+      description: Describe a concrete example of how you would use this feature
+      placeholder: |
+        Example: When analyzing 50 species, I want to...
+
+  - type: dropdown
+    id: willing_to_contribute
+    attributes:
+      label: Contribution Interest
+      description: Would you be interested in contributing to this feature?
+      options:
+        - Yes - I'd like to implement this
+        - Yes - I can help with testing
+        - Yes - I can help with documentation
+        - No - just suggesting
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context, mockups, or examples

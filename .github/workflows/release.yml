@@ -1,0 +1,94 @@
+# AI: Claude Code | Opus 4.5 | 2026 February 12 | Purpose: Release workflow for GIGANTIC
+# Human: Eric Edsinger
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for changelog generation
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get commits since last tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "First release - no previous tag"
+            CHANGELOG="Initial release of GIGANTIC"
+          else
+            echo "Generating changelog from $PREV_TAG to HEAD"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
+          fi
+
+          # Write to file for multi-line handling
+          echo "$CHANGELOG" > changelog.txt
+          echo "Generated changelog:"
+          cat changelog.txt
+
+      - name: Create release notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          # GIGANTIC ${{ steps.version.outputs.VERSION }}
+
+          **Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades**
+
+          ## Installation
+
+          ```bash
+          git clone https://github.com/000specific/GIGANTIC.git
+          cd GIGANTIC
+          cp -r gigantic_project-COPYME ~/my_projects/gigantic_project-my_project/
+          ```
+
+          ## What's New
+
+          EOF
+
+          cat changelog.txt >> release_notes.md
+
+          cat >> release_notes.md << 'EOF'
+
+          ## Documentation
+
+          - [Getting Started](docs/getting_started.md)
+          - [Installation Guide](docs/installation.md)
+          - [Tutorials](docs/tutorials/)
+
+          ## Citation
+
+          If you use GIGANTIC in your research, please cite:
+
+          > Edsinger, E. (2026). GIGANTIC: Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades. GitHub repository: https://github.com/000specific/GIGANTIC
+
+          ---
+
+          *This release was automatically generated.*
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
