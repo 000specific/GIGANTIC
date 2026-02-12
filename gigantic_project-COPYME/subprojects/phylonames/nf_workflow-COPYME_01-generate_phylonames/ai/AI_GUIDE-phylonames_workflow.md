@@ -2,7 +2,7 @@
 
 **For AI Assistants**: This guide covers workflow execution. For concepts (numbered clades, user phylonames), see `../../AI_GUIDE-phylonames.md`. For GIGANTIC overview, see `../../../../AI_GUIDE-project.md`.
 
-**Location**: `gigantic_project-*/subprojects/x_phylonames/nf_workflow-COPYME_01-generate_phylonames/`
+**Location**: `gigantic_project-*/subprojects/phylonames/nf_workflow-COPYME_01-generate_phylonames/`
 
 ---
 

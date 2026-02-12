@@ -2,7 +2,7 @@
 
 **For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers phylonames-specific concepts and troubleshooting.
 
-**Location**: `gigantic_project-*/subprojects/x_phylonames/`
+**Location**: `gigantic_project-*/subprojects/phylonames/`
 
 ---
 
@@ -31,7 +31,7 @@
 ## Directory Structure (relative to subproject root)
 
 ```
-x_phylonames/
+phylonames/
 ├── README.md                        # Human documentation
 ├── AI_GUIDE-phylonames.md           # THIS FILE
 ├── RUN-clean_subproject.sh          # Cleanup work/ and .nextflow*

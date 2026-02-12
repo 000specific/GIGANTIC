@@ -20,7 +20,7 @@ ai_gigantic_[subproject]
 
 | Environment | Subproject | Purpose |
 |-------------|------------|---------|
-| `ai_gigantic_phylonames` | x_phylonames | NCBI taxonomy and phyloname generation |
+| `ai_gigantic_phylonames` | phylonames | NCBI taxonomy and phyloname generation |
 | `ai_gigantic_genomesdb` | x_genomesDB | Proteome database setup and BLAST |
 | `ai_gigantic_orthogroups` | x_orthogroups | Ortholog group identification |
 | `ai_gigantic_trees` | x_trees_species | Species tree generation |

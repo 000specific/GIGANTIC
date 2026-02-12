@@ -33,7 +33,7 @@ def get_research_notebook_path( workflow_dir: Path ) -> Path:
     """
     Calculate path to research_notebook from workflow directory.
 
-    Workflow is at: subprojects/x_phylonames/nf_workflow-.../
+    Workflow is at: subprojects/phylonames/nf_workflow-.../
     Research notebook is at: research_notebook/research_ai/subproject-phylonames/logs/
     """
     # Navigate up to project root then into research_notebook

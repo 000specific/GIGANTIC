@@ -9,8 +9,8 @@
 | If user needs... | Go to... |
 |------------------|----------|
 | Project overview, directory structure | This file |
-| Subproject-specific help | `subprojects/x_[name]/AI_GUIDE-[name].md` |
-| Workflow execution help | `subprojects/x_[name]/nf_workflow-*/ai/AI_GUIDE-*_workflow.md` |
+| Subproject-specific help | `subprojects/[name]/AI_GUIDE-[name].md` |
+| Workflow execution help | `subprojects/[name]/nf_workflow-*/ai/AI_GUIDE-*_workflow.md` |
 
 ---
 
@@ -59,7 +59,7 @@ gigantic_project-[project_name]/
 │
 └── subprojects/                     # ANALYSIS MODULES
     │
-    └── x_[subproject_name]/         # Each subproject follows this pattern:
+    └── [subproject_name]/           # Each subproject follows this pattern:
         │
         ├── README.md                    # Human documentation
         ├── AI_GUIDE-[name].md           # AI guidance (references this project guide)
@@ -210,7 +210,7 @@ pwd
 ### Step 2: Read Appropriate Guide
 
 - **Project-level issues**: This file
-- **Subproject issues**: `subprojects/x_[name]/AI_GUIDE-[name].md`
+- **Subproject issues**: `subprojects/[name]/AI_GUIDE-[name].md`
 - **Workflow execution**: `ai/AI_GUIDE-*_workflow.md` inside the workflow
 
 ### Step 3: Check Configuration
@@ -243,7 +243,7 @@ Users may not be bioinformatics experts. Give specific commands, not general adv
 ## Common User Questions
 
 **"Where do I start?"**
-→ `subprojects/x_phylonames/`. Run this first.
+→ `subprojects/phylonames/`. Run this first.
 
 **"Where do I put my species list?"**
 → `INPUT_gigantic/species_list.txt` (project root)
