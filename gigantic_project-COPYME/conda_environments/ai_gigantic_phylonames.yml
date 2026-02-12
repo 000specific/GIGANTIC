@@ -1,0 +1,34 @@
+# GIGANTIC Phylonames Environment
+# ================================
+#
+# Environment for the phylonames subproject.
+# Downloads NCBI taxonomy and generates standardized species identifiers.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_phylonames.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_phylonames
+
+name: ai_gigantic_phylonames
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.9
+  - nextflow>=23.0
+
+  # For downloading NCBI taxonomy database
+  - wget
+
+  # Optional: useful utilities
+  - curl

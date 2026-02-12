@@ -51,9 +51,9 @@ process download_ncbi_taxonomy {
         ln -s \$ACTUAL_DIR \$(basename \$ACTUAL_DIR)
     else
         echo "Downloading NCBI taxonomy database..."
+        # The download script creates the database in the current directory (NextFlow work dir)
+        # It also creates the database-ncbi_taxonomy_latest symlink
         bash ${projectDir}/scripts/001_ai-bash-download_ncbi_taxonomy.sh
-        # Move downloaded files to work directory for NextFlow tracking
-        mv ${projectDir}/../database-ncbi_taxonomy_* .
     fi
     """
 }

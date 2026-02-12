@@ -1,238 +1,212 @@
 # AI Guide: Phylonames Workflow
 
-**Purpose**: This document helps AI assistants guide users through this specific workflow.
+**For AI Assistants**: This guide covers workflow execution. For concepts (numbered clades, user phylonames), see `../../AI_GUIDE-phylonames.md`. For GIGANTIC overview, see `../../../../AI_GUIDE-project.md`.
 
-**For AI Assistants**: Read this file and the subproject-level `../../AI_GUIDE-phylonames.md` for full context.
-
----
-
-## About This Workflow
-
-**Workflow**: `nf_workflow-COPYME_01-generate_phylonames`
-
-**What it does**: Downloads NCBI taxonomy and generates phyloname mappings for a user's species list.
-
-**When users should use this**: At the very beginning of their GIGANTIC project - phylonames must be set up before any other subproject.
+**Location**: `gigantic_project-*/subprojects/x_phylonames/nf_workflow-COPYME_01-generate_phylonames/`
 
 ---
 
-## Workflow Structure
+## Quick Reference
 
-The workflow separates user-facing files from internal files:
-
-**User-facing (at workflow root):**
-| File | User Edits? | Purpose |
-|------|-------------|---------|
-| `README.md` | No | Quick start guide |
-| `RUN-phylonames.sh` | No | Run locally: `bash RUN-phylonames.sh` |
-| `RUN-phylonames.sbatch` | **YES (SLURM)** | Edit account/qos, then `sbatch RUN-phylonames.sbatch` |
-| `phylonames_config.yaml` | **YES** | Project name and options |
-| `INPUT_user/species_list.txt` | **YES** | User's species list |
-| `OUTPUT_pipeline/` | No | Results appear here |
-
-**Internal (in ai/ folder - users don't touch):**
-| File | Purpose |
-|------|---------|
-| `ai/AI_GUIDE-phylonames_workflow.md` | This file (for AI assistants) |
-| `ai/main.nf` | NextFlow pipeline |
-| `ai/nextflow.config` | NextFlow settings |
-| `ai/scripts/` | Python/Bash scripts |
+| User needs... | Go to... |
+|---------------|----------|
+| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
+| Phylonames concepts | `../../AI_GUIDE-phylonames.md` |
+| Running the workflow | This file |
 
 ---
 
-## Numbered Unknown Clades
+## Workflow Directory Structure
 
-### What Users May See
-
-When NCBI lacks data for a taxonomic level, GIGANTIC generates numbered identifiers:
 ```
-Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
+nf_workflow-COPYME_01-generate_phylonames/
+│
+├── README.md                    # Quick start guide
+├── RUN-phylonames.sh            # Local: bash RUN-phylonames.sh
+├── RUN-phylonames.sbatch        # SLURM: sbatch RUN-phylonames.sbatch
+├── phylonames_config.yaml       # Project name and options
+│
+├── INPUT_user/                  # Copied from INPUT_gigantic/ at runtime
+│   ├── species_list.txt         # Species to process
+│   └── user_phylonames.tsv      # (Optional) Custom phylonames
+│
+├── OUTPUT_pipeline/             # All outputs
+│   ├── 1-output/                # NCBI taxonomy database
+│   ├── 2-output/                # Master phylonames for all NCBI species
+│   ├── 3-output/                # Project-specific mapping
+│   └── 4-output/                # (Optional) User phylonames applied
+│
+└── ai/                          # Internal - users don't touch
+    ├── AI_GUIDE-phylonames_workflow.md  # THIS FILE
+    ├── main.nf
+    ├── nextflow.config
+    └── scripts/
+        ├── 001_ai-bash-download_ncbi_taxonomy.sh
+        ├── 002_ai-python-generate_phylonames.py
+        ├── 003_ai-python-create_species_mapping.py
+        └── 004_ai-python-apply_user_phylonames.py
 ```
-
-**Explain to users**:
-- These are **GIGANTIC's solution**, not NCBI assignments
-- Numbers group related species by shared ancestry
-- This is a limitation of incomplete taxonomy data
-
-### Clade Splitting Artifact (KNOWN ISSUE)
-
-If a real higher-level clade contains multiple lower-level clades, GIGANTIC incorrectly splits them into separate numbered clades.
-
-**When this matters**: OCL analyses with species spanning multiple lower-level clades.
-
-**Solution**: User-provided phylonames (see next section).
-
----
-
-## User-Provided Phylonames (Optional Step 4)
-
-### When to Recommend This
-
-1. User sees numbered clades like `Kingdom6555`
-2. User knows correct taxonomy from literature
-3. User wants to override NCBI classifications
-
-### Setup Steps
-
-1. Create `INPUT_user/user_phylonames.tsv`:
-   ```
-   genus_species	custom_phyloname
-   Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
-   ```
-
-2. Edit `phylonames_config.yaml`:
-   ```yaml
-   project:
-     user_phylonames: "INPUT_user/user_phylonames.tsv"
-     mark_unofficial: true  # Default: mark differing clades as UNOFFICIAL
-   ```
-
-3. Run the pipeline - Script 004 applies overrides automatically
-
-### The UNOFFICIAL Suffix
-
-By default, clades that **DIFFER** from the NCBI phyloname are marked:
-```
-NCBI:   Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
-User:   Holozoa_Choanozoa_Choanoflagellata_Craspedida_...
-Output: HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_...
-```
-
-**Reasoning**: Only the clades the user actually changed get marked UNOFFICIAL. Clades that match the NCBI-derived phyloname remain unmarked because they're still "official."
-
-Set `mark_unofficial: false` in config to disable this behavior.
 
 ---
 
 ## User Workflow
 
-### Step 1: Navigate to Workflow
+### Step 1: Add Species
 
+**Recommended**: Edit project-wide list (single source of truth):
 ```bash
-cd subprojects/x_phylonames/nf_workflow-COPYME_01-generate_phylonames/
+# From workflow directory
+nano ../../../../INPUT_gigantic/species_list.txt
 ```
 
-### Step 2: Create Species List
-
-**This is the most important step.** Users must edit `INPUT_user/species_list.txt`:
-
+**Alternative**: Edit workflow-specific copy:
+```bash
+nano INPUT_user/species_list.txt
 ```
-# My project species
+
+**Format**:
+```
+# Comments start with #
 Homo_sapiens
-Mus_musculus
-Drosophila_melanogaster
+Aplysia_californica
+Octopus_bimaculoides
 ```
 
-**Key formatting rules**:
-- One species per line
-- Format: `Genus_species` (underscore, not space)
-- Lines starting with `#` are comments
-- Use official NCBI scientific names
+### Step 2: Set Project Name
 
-### Step 3: Edit Configuration
-
-In `phylonames_config.yaml`, set their project name:
-
+Edit `phylonames_config.yaml`:
 ```yaml
 project:
   name: "my_project"  # Change this
 ```
 
-### Step 4: Run the Workflow
+### Step 3: Run
 
-**Local execution:**
+**Local**:
 ```bash
 bash RUN-phylonames.sh
 ```
 
-**SLURM cluster execution:**
+**SLURM** (edit account/qos first):
 ```bash
-# First, edit RUN-phylonames.sbatch to set your account and qos
+# Edit RUN-phylonames.sbatch:
+#SBATCH --account=YOUR_ACCOUNT
+#SBATCH --qos=YOUR_QOS
+
 sbatch RUN-phylonames.sbatch
 ```
 
-That's it! The script handles everything else.
-
 ---
 
-## Running on SLURM (HPC Clusters)
+## SLURM Execution Details
 
-GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and portable, while SLURM-specific settings live in a separate wrapper script.
+| Setting | Value | Notes |
+|---------|-------|-------|
+| `--account` | `YOUR_ACCOUNT` | **Must edit** |
+| `--qos` | `YOUR_QOS` | **Must edit** |
+| `--mem` | `8gb` | Usually sufficient |
+| `--time` | `2:00:00` | First run ~15min, subsequent <1min |
+| `--cpus-per-task` | `2` | Minimal parallelism needed |
 
-| Execution | Command | When to Use |
-|-----------|---------|-------------|
-| Local | `bash RUN-phylonames.sh` | Laptop, workstation, or non-SLURM server |
-| SLURM | `sbatch RUN-phylonames.sbatch` | HPC clusters with SLURM scheduler |
+**Check job status**: `squeue -u $USER`
 
-### SLURM Setup
-
-1. Edit `RUN-phylonames.sbatch` and change:
-   ```bash
-   #SBATCH --account=YOUR_ACCOUNT    # Your cluster account
-   #SBATCH --qos=YOUR_QOS            # Your quality of service
-   ```
-
-2. Optionally adjust resources (mem, time, cpus) if needed
-
-3. Submit: `sbatch RUN-phylonames.sbatch`
-
-4. Check status: `squeue -u $USER`
-
-5. View logs: `cat slurm_logs/phylonames-*.log`
-
-### Why This Pattern?
-
-- **RUN script stays portable** - works on any system without modification
-- **SLURM users only edit SBATCH headers** - hard to misconfigure
-- **Local users never see SLURM complexity** - cleaner experience
-- **One workflow, two execution modes** - no code duplication
+**View logs**: `cat slurm_logs/phylonames-*.log`
 
 ---
 
 ## Expected Runtime
 
-| Dataset Size | Download | Generate | Map | Total |
-|-------------|----------|----------|-----|-------|
-| First run | 3-5 min | 5-10 min | <1 min | ~15 min |
-| Subsequent runs | Skip | Skip | <1 min | <1 min |
-
-The NCBI database and master phylonames only need to be generated once.
+| Scenario | Duration |
+|----------|----------|
+| First run (download + generate) | ~15 minutes |
+| Subsequent runs (mapping only) | < 1 minute |
 
 ---
 
-## Troubleshooting This Workflow
+## Output Files
+
+### OUTPUT_pipeline/ Contents
+
+| Directory | Contents |
+|-----------|----------|
+| `1-output/` | NCBI taxonomy database (~2GB) |
+| `2-output/phylonames` | All NCBI phylonames (~2.5M lines) |
+| `2-output/phylonames_taxonid` | All phylonames with taxon IDs |
+| `2-output/map-phyloname_X_ncbi_taxonomy_info.tsv` | Complete NCBI mapping |
+| `3-output/[project]_map-genus_species_X_phylonames.tsv` | **Your mapping** |
+| `4-output/` | (Optional) User phylonames applied |
+
+### Downstream Location
+
+```
+../../output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv
+```
+
+This symlink is what other subprojects read.
+
+---
+
+## Verification Commands
+
+```bash
+# Did species list copy from INPUT_gigantic?
+head INPUT_user/species_list.txt
+
+# Did NCBI download complete?
+ls -lh OUTPUT_pipeline/1-output/
+
+# Did master phylonames generate?
+wc -l OUTPUT_pipeline/2-output/phylonames
+
+# Did project mapping create?
+head OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
+
+# Is symlink in place?
+ls -la ../../output_to_input/maps/
+```
+
+---
+
+## Troubleshooting
 
 ### "Species not found"
 
-**Error message**: `ERROR: Some species were not found in the NCBI taxonomy`
+**Check**:
+1. Spelling: `Homo_sapiens` not `Homo sapeins`
+2. Format: Use underscore, not space
+3. Name: NCBI may use different name (check ncbi.nlm.nih.gov/taxonomy)
 
-**Common causes**:
-1. **Spelling**: Check for typos (e.g., `Homo_sapeins` vs `Homo_sapiens`)
-2. **Format**: Use underscore not space (`Homo_sapiens` not `Homo sapiens`)
-3. **Synonym**: NCBI may use a different name - check NCBI Taxonomy website
-4. **Subspecies**: Try just genus + species (without subspecies)
-
-**How to diagnose**:
+**Diagnose**:
 ```bash
-# See which species failed
-# The script will print missing species to the terminal
-# Or check the output file for missing entries
-wc -l ../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
+# Show your species list
+cat INPUT_user/species_list.txt
+
+# Count lines in output (should match input species count)
+wc -l OUTPUT_pipeline/3-output/*_map*.tsv
 ```
 
 ### "Download failed"
 
-**Error message**: wget/curl connection errors
-
-**Common causes**:
-1. No internet connection
-2. Firewall blocking FTP
-3. NCBI server temporarily down
+**Causes**: Network issue, firewall, NCBI maintenance
 
 **Solutions**:
-1. Check internet connectivity: `ping google.com`
-2. Try again later (NCBI occasionally has maintenance)
-3. If FTP is blocked, user may need to download manually
+```bash
+# Test connectivity
+ping google.com
+curl -I ftp.ncbi.nlm.nih.gov
+
+# Try again (often resolves itself)
+bash RUN-phylonames.sh
+```
+
+### "No database directory"
+
+**Cause**: Script 001 didn't complete
+
+**Solution**: Run download first:
+```bash
+bash ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh
+```
 
 ### "Permission denied"
 
@@ -242,92 +216,44 @@ chmod +x RUN-phylonames.sh
 chmod +x ai/scripts/*.sh
 ```
 
----
+### NextFlow errors
 
-## Output Structure
-
-**GIGANTIC Transparency Principle**: All script outputs are visible in `OUTPUT_pipeline/output/N-output/` directories.
-
-### Workflow Directory
-```
-OUTPUT_pipeline/
-├── 2-output/   # Master phylonames and mapping files
-│   ├── phylonames
-│   ├── phylonames_taxonid
-│   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
-│   ├── map-numbered_clades_X_defining_clades.tsv
-│   └── generation_metadata.txt
-├── 3-output/   # Project-specific mapping file
-│   └── [project]_map-genus_species_X_phylonames.tsv
-└── 4-output/   # (Optional) User phylonames applied
-    ├── final_project_mapping.tsv
-    └── unofficial_clades_report.tsv
-```
-
-### Subproject Directory (parent)
-```
-../../output_to_input/maps/
-└── [project]_map-genus_species_X_phylonames.tsv  # Copied here for downstream use
-```
-
-### Archiving with Softlinks
-
-When archiving a project, use `cp -L` or `rsync -L` to dereference symlinks:
+**Clean and retry**:
 ```bash
-# Copy with dereferenced symlinks
-cp -rL my_project/ archive/my_project/
-
-# Or with rsync
-rsync -avL my_project/ archive/my_project/
+rm -rf work .nextflow .nextflow.log*
+bash RUN-phylonames.sh
 ```
 
-## Output Verification
+---
 
-After successful run, users should have:
+## Script Pipeline
 
-**How to verify**:
+| Script | Does | Creates |
+|--------|------|---------|
+| 001 | Downloads NCBI taxonomy | `1-output/database-ncbi_taxonomy_*` |
+| 002 | Generates ALL phylonames | `2-output/phylonames`, `2-output/phylonames_taxonid` |
+| 003 | Creates project mapping | `3-output/[project]_map-*.tsv` |
+| 004 | (Optional) Applies user overrides | `4-output/*.tsv` |
+
+---
+
+## Manual Execution (for debugging)
+
 ```bash
-# Check the intermediate outputs (in workflow directory)
-ls OUTPUT_pipeline/2-output
+cd nf_workflow-COPYME_01-generate_phylonames
 
-# Check the final mapping file (at subproject root)
-head ../../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
-```
-
-**Expected output**:
-```
-genus_species   phyloname   phyloname_taxonid
-Homo_sapiens    Metazoa_Chordata_...    Metazoa_Chordata_...___9606
+# Run scripts individually
+bash ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh
+python3 ai/scripts/002_ai-python-generate_phylonames.py
+python3 ai/scripts/003_ai-python-create_species_mapping.py \
+    --species-list INPUT_user/species_list.txt \
+    --output OUTPUT_pipeline/3-output/my_project_map.tsv
 ```
 
 ---
 
-## Integration with Other Subprojects
+## After Successful Run
 
-After phylonames completes:
-
-1. The mapping file in `output_to_input/maps/` is used by:
-   - **genomesDB** - for naming proteome files
-   - **trees_species** - for clade definitions
-   - **All downstream subprojects** - for species identification
-
-2. Tell users to copy or symlink this file to their main project's phylonames directory
-
----
-
-## Questions to Ask Users
-
-When troubleshooting:
-
-1. "Can you show me your `INPUT_user/species_list.txt` file?"
-2. "Did you run `bash RUN-phylonames.sh`?"
-3. "What error message did you see?"
-4. "Is this your first run or are you updating an existing project?"
-
----
-
-## For AI Assistants: Honesty About Mistakes
-
-**Do not whitewash mistakes.**
-
-When you make an error, say "I was **incorrect**" or "I was **wrong**" - not "that was confusing." Acknowledge mistakes clearly without minimizing language.
+1. **Verify output**: `head ../../output_to_input/maps/*_map*.tsv`
+2. **Next subproject**: Guide user to `genomesDB`
+3. **Keep results**: Other subprojects read from `output_to_input/maps/`

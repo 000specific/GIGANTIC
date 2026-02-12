@@ -73,19 +73,34 @@ if [ -f "${INPUT_GIGANTIC}/species_list.txt" ]; then
     fi
 fi
 
-# Load required modules (adjust for your cluster)
+# ============================================================================
+# Activate GIGANTIC Environment
+# ============================================================================
+# Load conda module (required on HPC systems like HiPerGator)
 module load conda 2>/dev/null || true
 
-# Activate NextFlow environment
-# Adjust the environment name for your setup
-if conda activate ai_nextflow 2>/dev/null; then
-    echo "Activated conda environment: ai_nextflow"
-elif conda activate nextflow 2>/dev/null; then
-    echo "Activated conda environment: nextflow"
+# Activate the phylonames environment
+# This environment is created by: bash RUN-setup_environments.sh (at project root)
+if conda activate ai_gigantic_phylonames 2>/dev/null; then
+    echo "Activated conda environment: ai_gigantic_phylonames"
 else
-    echo "WARNING: Could not activate NextFlow conda environment"
-    echo "Assuming NextFlow is available in PATH"
+    # Check if nextflow is already available in PATH
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: Environment 'ai_gigantic_phylonames' not found!"
+        echo ""
+        echo "Please run the environment setup script first:"
+        echo ""
+        echo "  cd ../../../  # Go to project root"
+        echo "  bash RUN-setup_environments.sh"
+        echo ""
+        echo "Or create this environment manually:"
+        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_phylonames.yml"
+        echo ""
+        exit 1
+    fi
+    echo "Using NextFlow from PATH (environment not activated)"
 fi
+echo ""
 
 # Check for species list
 if [ ! -f "INPUT_user/species_list.txt" ]; then

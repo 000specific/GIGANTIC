@@ -171,7 +171,6 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 phylonames/
 ├── README.md                           # This file
 ├── AI_GUIDE-phylonames.md              # AI assistant guidance (subproject level)
-├── conda_environment-phylonames.yml    # Conda environment for this subproject
 ├── RUN-clean_subproject.sh             # Cleanup script (work/, .nextflow*)
 ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
 ├── user_research/                      # Personal workspace
@@ -208,6 +207,17 @@ research_notebook/research_ai/subproject-phylonames/
 ---
 
 ## Quick Start
+
+### Step 0: Set Up Environment (One-Time)
+
+If you haven't already, run the environment setup script from the project root:
+
+```bash
+cd ../../  # Go to gigantic_project-[name] root
+bash RUN-setup_environments.sh
+```
+
+This creates the `ai_gigantic_phylonames` conda environment with all required dependencies.
 
 ### Step 1: Edit Your Species List
 
@@ -375,10 +385,22 @@ bash RUN-update_upload_to_server.sh
 
 ## Dependencies
 
-- **bash** (for download script)
-- **curl** or **wget** (for NCBI download)
-- **Python 3.8+** (for phyloname generation)
-- No external Python packages required (uses standard library only)
+All dependencies are provided by the `ai_gigantic_phylonames` conda environment:
+
+```bash
+# Set up (from project root - run once)
+bash RUN-setup_environments.sh
+
+# Activate before running workflows
+conda activate ai_gigantic_phylonames
+```
+
+**Environment provides:**
+- Python 3.9+
+- NextFlow 23.0+
+- wget (for NCBI download)
+
+**Note:** The Python scripts use only standard library modules - no external packages required.
 
 ---
 

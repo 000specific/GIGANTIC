@@ -1,81 +1,93 @@
 # AI Guide: phylonames Subproject
 
-**Purpose**: This document helps AI assistants understand and guide users through the GIGANTIC phylonames subproject.
+**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers phylonames-specific concepts and troubleshooting.
 
-**For AI Assistants**: Read this file first when a user asks for help with phylonames.
+**Location**: `gigantic_project-*/subprojects/x_phylonames/`
 
 ---
 
-## About GIGANTIC and AI Assistance
+## Quick Reference
 
-**GIGANTIC** (Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades) is a phylogenomics platform developed through AI pair programming:
-- **Development**: Claude Code within Cursor IDE, using Claude Opus 4.5
-- **Human Collaborator**: Eric Edsinger
-- **Transformation**: From GIGANTIC_0 (legacy scripts) to GIGANTIC_1 (modern, documented pipelines)
-
-**AI assistants are the expected way for users to run GIGANTIC workflows.** This guide helps you help them.
+| User needs... | Go to... |
+|---------------|----------|
+| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| Phylonames concepts, troubleshooting | This file |
+| Running the workflow | `nf_workflow-COPYME_01-*/ai/AI_GUIDE-phylonames_workflow.md` |
 
 ---
 
 ## What This Subproject Does
 
-The **phylonames** subproject creates standardized species identifiers from NCBI taxonomy.
+**Purpose**: Generate standardized species identifiers from NCBI taxonomy.
 
-**Input**: A list of species names (e.g., `Homo_sapiens`, `Octopus_bimaculoides`)
+**Input**: Species list (e.g., `Homo_sapiens`, `Octopus_bimaculoides`)
 
-**Output**: Mapping of short names to full taxonomic phylonames
+**Output**: Mapping of `genus_species → phyloname → phyloname_taxonid`
 
-**Example**:
-```
-Homo_sapiens → Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens
-```
-
-**Why it matters**: All other GIGANTIC subprojects use phylonames for consistent species identification. This subproject MUST run first.
+**Critical**: This subproject MUST run first. All other subprojects depend on phylonames.
 
 ---
 
-## Two Phyloname Formats (CRITICAL)
+## Directory Structure (relative to subproject root)
 
-GIGANTIC uses two distinct formats - help users understand the difference:
-
-| Format | Example | Use Case |
-|--------|---------|----------|
-| `phyloname` | `Metazoa_Chordata_..._Homo_sapiens` | Most common - data tables, analysis |
-| `phyloname_taxonid` | `Metazoa_Chordata_..._Homo_sapiens___9606` | File naming (guarantees uniqueness) |
+```
+x_phylonames/
+├── README.md                        # Human documentation
+├── AI_GUIDE-phylonames.md           # THIS FILE
+├── RUN-clean_subproject.sh          # Cleanup work/ and .nextflow*
+├── RUN-update_upload_to_server.sh   # Update server symlinks
+│
+├── user_research/                   # Personal workspace for this subproject
+│
+├── output_to_input/                 # Outputs for downstream subprojects
+│   └── maps/
+│       └── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK
+│
+├── upload_to_server/                # Server sharing
+│   └── upload_manifest.tsv
+│
+└── nf_workflow-COPYME_01-generate_phylonames/
+    ├── RUN-phylonames.sh            # bash RUN-phylonames.sh
+    ├── RUN-phylonames.sbatch        # sbatch RUN-phylonames.sbatch
+    ├── phylonames_config.yaml       # User edits project name here
+    ├── INPUT_user/                  # Copied from INPUT_gigantic at runtime
+    ├── OUTPUT_pipeline/             # Results
+    └── ai/                          # Internal
+```
 
 ---
 
-## Numbered Unknown Clades (IMPORTANT CONCEPT)
+## Phylonames-Specific Concepts
 
-### What AI Assistants Need to Know
+### Numbered Unknown Clades
 
-NCBI Taxonomy is **incomplete** - many species lack data for all taxonomic levels. GIGANTIC fills these gaps with **numbered identifiers**:
-
+**What users see**:
 ```
 Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
 ```
 
-**Key Points to Explain to Users**:
+**Key points to explain**:
 
-1. **These are NOT NCBI assignments** - `Kingdom6555` is GIGANTIC's solution, not NCBI data
-2. **Numbers group related species** - species with the same "first named clade below" get the same number
-3. **This is a limitation, not a feature** - numbered clades are a workaround for missing data
+| Concept | Explanation |
+|---------|-------------|
+| What they are | GIGANTIC's solution for missing NCBI taxonomy levels |
+| NOT NCBI data | Numbers like `Kingdom6555` are generated, not official |
+| Grouping logic | Species with same "first named clade below" get same number |
+| Limitation | A workaround, not a feature |
 
-### Clade Splitting Artifact (KNOWN LIMITATION)
+### Clade Splitting Artifact (Known Issue)
 
-If a real higher-level clade contains multiple lower-level clades, GIGANTIC will **incorrectly split** them:
+**Problem**: If one unknown higher clade contains multiple lower clades, GIGANTIC creates separate numbered clades.
 
-**Example**: One real Kingdom containing Phyla A, B, and C becomes:
-- `Kingdom1` (Phylum A species)
-- `Kingdom2` (Phylum B species)
-- `Kingdom3` (Phylum C species)
+**Example**:
+```
+Real taxonomy:       Unknown Kingdom → Phylum A, Phylum B, Phylum C
+GIGANTIC creates:    Kingdom1 (A species), Kingdom2 (B species), Kingdom3 (C species)
+```
 
-**When to warn users**:
-- If they're doing OCL (Origins, Conservation, Loss) analyses
-- If their species set spans multiple lower-level clades that share unknown higher clades
-- If they see unexpectedly fragmented results
+**Impact**: OCL analyses may give incorrect results if species span multiple lower clades.
 
-**Solution**: User-provided phylonames (see below)
+**Solution**: User-provided phylonames (see below).
 
 ---
 
@@ -83,189 +95,92 @@ If a real higher-level clade contains multiple lower-level clades, GIGANTIC will
 
 ### When Users Need This
 
-1. They have species with numbered clades (`Kingdom6555`, etc.)
-2. They know the correct taxonomy from literature
+1. They see numbered clades (`Kingdom6555`, etc.)
+2. They know correct taxonomy from literature
 3. They want to override NCBI's classification
 
-### How to Help Users Set It Up
+### Setup
 
-1. Create `INPUT_user/user_phylonames.tsv`:
-   ```
-   genus_species	custom_phyloname
-   Species_name	Kingdom_Phylum_Class_Order_Family_Genus_species
-   ```
-
-2. Edit `phylonames_config.yaml`:
-   ```yaml
-   project:
-     user_phylonames: "INPUT_user/user_phylonames.tsv"
-     mark_unofficial: true  # or false for clean phylonames
-   ```
-
-3. Run the pipeline - Script 004 applies the overrides
-
-### The UNOFFICIAL Suffix
-
-By default, only clades that **DIFFER** from the NCBI-derived phyloname get marked `UNOFFICIAL`:
-```
-NCBI:   Kingdom6555_Phylum6554_Choanoflagellata_Craspedida_...
-User:   Holozoa_Choanozoa_Choanoflagellata_Craspedida_...
-Output: HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_Craspedida_...
+**1. Create** `INPUT_user/user_phylonames.tsv`:
+```tsv
+genus_species	custom_phyloname
+Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 ```
 
-**Explain to users**: The UNOFFICIAL suffix marks clades where the user overrode the NCBI classification. Clades that match the NCBI phyloname remain unmarked. Set `mark_unofficial: false` to disable all UNOFFICIAL marking.
+**2. Edit** `phylonames_config.yaml`:
+```yaml
+project:
+  user_phylonames: "INPUT_user/user_phylonames.tsv"
+  mark_unofficial: true  # or false
+```
+
+**3. Run pipeline** - Script 004 applies overrides
+
+### UNOFFICIAL Suffix
+
+Clades that DIFFER from NCBI get marked `UNOFFICIAL`:
+```
+NCBI:   Kingdom6555_Phylum6554_Choanoflagellata_...
+User:   Holozoa_Choanozoa_Choanoflagellata_...
+Output: HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_...
+```
+
+Matching clades stay unmarked. Set `mark_unofficial: false` to disable.
 
 ---
 
-## How to Help Users Run This Subproject
+## Troubleshooting
 
-### Step 1: Understand Their Goal
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Species not found" | Spelling, format, or synonym | Check spelling, use `Genus_species` format, check NCBI Taxonomy website |
+| "No database directory" | NCBI not downloaded | Run script 001 first |
+| "Permission denied" | Scripts not executable | `chmod +x ai/scripts/*.sh` |
+| Download failed | Network or NCBI down | Check connectivity, try later |
 
-Ask the user:
-- "What species are you working with?"
-- "Do you have a list of species names ready?"
+### Diagnostic Commands
 
-### Step 2: Guide Setup
-
-1. They work within the workflow directory:
-   ```bash
-   cd subprojects/x_phylonames/nf_workflow-COPYME_01-generate_phylonames/
-   ```
-
-2. They need to create a species list in `INPUT_user/species_list.txt`:
-   ```
-   Homo_sapiens
-   Aplysia_californica
-   Octopus_bimaculoides
-   ```
-
-3. They edit `phylonames_config.yaml` with their project name
-
-### Step 3: Run the Workflow
-
-**Local execution** (laptop, workstation):
 ```bash
-cd nf_workflow-COPYME_01-generate_phylonames
-bash RUN-phylonames.sh
-```
+# Check species list exists
+cat INPUT_user/species_list.txt
 
-**SLURM cluster execution**:
-```bash
-cd nf_workflow-COPYME_01-generate_phylonames
-# First edit RUN-phylonames.sbatch to set account/qos
-sbatch RUN-phylonames.sbatch
-```
+# Check NCBI database was downloaded
+ls -la OUTPUT_pipeline/1-output/
 
-Or step-by-step (for debugging):
-```bash
-bash ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh
-python3 ai/scripts/002_ai-python-generate_phylonames.py
-python3 ai/scripts/003_ai-python-create_species_mapping.py --species-list INPUT_user/species_list.txt --output ../output_to_input/maps/my_project_map.tsv
+# Check master phylonames generated
+wc -l OUTPUT_pipeline/2-output/phylonames
+
+# Check project mapping created
+head output_to_input/maps/*_map-genus_species_X_phylonames.tsv
 ```
 
 ---
 
-## Common Issues and Solutions
+## Key Files
 
-### Issue: "Species not found in NCBI taxonomy"
-
-**Symptoms**: Script 003 reports missing species
-
-**Diagnosis**: Check if the species name is spelled correctly (Genus_species format)
-
-**Solutions**:
-1. Check spelling - NCBI uses official scientific names
-2. Check for synonyms - species may be listed under different name
-3. Use `--allow-missing` flag to continue with found species
-
-### Issue: "No database directory found"
-
-**Symptoms**: Script 002 fails immediately
-
-**Cause**: NCBI taxonomy hasn't been downloaded yet
-
-**Solution**: Run script 001 first to download the database
-
-### Issue: "Permission denied"
-
-**Symptoms**: Scripts won't execute
-
-**Solution**: Make scripts executable:
-```bash
-chmod +x ai/scripts/*.sh
-```
-
----
-
-## Output Files to Expect
-
-After successful completion:
-
-```
-nf_workflow-COPYME_01-generate_phylonames/
-└── OUTPUT_pipeline/
-    └── 3-output/
-        └── [project]_map-genus_species_X_phylonames.tsv
-
-output_to_input/maps/
-└── [project]_map-genus_species_X_phylonames.tsv      # Copied here for downstream use
-```
-
-This TSV file has columns: `genus_species`, `phyloname`, `phyloname_taxonid`
-
----
-
-## Questions to Ask Users
-
-If troubleshooting:
-1. "Which script failed?" (001, 002, or 003?)
-2. "What error message did you see?"
-3. "Did you download the NCBI taxonomy first?"
-4. "Can you show me your species list file?"
-
----
-
-## Key Files in This Subproject
-
-| File | Purpose |
-|------|---------|
-| `README.md` | Human documentation (subproject level) |
-| `AI_GUIDE-phylonames.md` | This file (for AI assistants) |
-| `nf_workflow-COPYME_01-*/README.md` | Quick start guide (workflow level) |
-| `nf_workflow-COPYME_01-*/RUN-phylonames.sh` | Run locally |
-| `nf_workflow-COPYME_01-*/RUN-phylonames.sbatch` | Run on SLURM |
-| `nf_workflow-COPYME_01-*/phylonames_config.yaml` | User configuration |
-| `nf_workflow-COPYME_01-*/INPUT_user/species_list.txt` | User's species list |
-| `nf_workflow-COPYME_01-*/ai/AI_GUIDE-phylonames_workflow.md` | Workflow-level AI guide |
-| `nf_workflow-COPYME_01-*/ai/scripts/` | Python/Bash scripts (internal) |
-
----
-
-## Dependencies
-
-This subproject requires:
-- **bash** (for download script)
-- **Python 3.8+** (for phyloname generation)
-- **curl** or **wget** (for NCBI download)
-- No special conda environment needed (uses standard library)
+| File | Purpose | User Edits? |
+|------|---------|-------------|
+| `../../INPUT_gigantic/species_list.txt` | Canonical species list | **YES** |
+| `nf_workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
+| `nf_workflow-*/RUN-phylonames.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `nf_workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
+| `output_to_input/maps/*.tsv` | Output for downstream | No |
 
 ---
 
 ## Next Steps After phylonames
 
-Once phylonames is complete, guide users to:
-1. **genomesDB** - Set up their proteome database using the phylonames for file naming
-2. Keep the mapping file - all downstream subprojects will reference it
+Guide users to:
+1. **genomesDB** - Set up proteome database using phylonames for file naming
+2. **Keep the mapping** - All downstream subprojects reference `output_to_input/maps/`
 
 ---
 
-## For AI Assistants: Honesty About Mistakes
+## Questions to Ask Users
 
-**Do not whitewash mistakes.**
-
-When you make an error:
-- Say "I was **incorrect**" or "I was **wrong**" - not "that was confusing"
-- Acknowledge the actual mistake clearly
-- Correct it without minimizing language
-
-Honest acknowledgment of errors is essential for effective AI-human collaboration.
+| Situation | Ask |
+|-----------|-----|
+| General help | "What species are you working with?" |
+| Error occurred | "Which script failed? What error message?" |
+| Missing species | "Can you show me your species list file?" |
+| Numbered clades | "Do you know the correct taxonomy from literature?" |
