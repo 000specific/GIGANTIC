@@ -196,13 +196,16 @@ phylonames/
             ├── 001_ai-bash-download_ncbi_taxonomy.sh
             ├── 002_ai-python-generate_phylonames.py
             ├── 003_ai-python-create_species_mapping.py
-            └── 004_ai-python-apply_user_phylonames.py
+            ├── 004_ai-python-apply_user_phylonames.py
+            └── 005_ai-python-write_run_log.py
 ```
 
-**AI Documentation**: Session logs, validation scripts, and debugging files are stored in:
+**AI Documentation**: Each workflow run creates a timestamped log in:
 ```
-research_notebook/research_ai/subproject-phylonames/
+research_notebook/research_ai/subproject-phylonames/logs/
 ```
+
+This serves as an **AI lab notebook** - documenting what the workflow did, when, with what inputs, and what it produced. This ensures transparency and reproducibility of AI-assisted research.
 
 ---
 

@@ -129,7 +129,39 @@ process create_species_mapping {
 }
 
 /*
- * Process 4: Apply User-Provided Phylonames (OPTIONAL)
+ * Process 4: Write Run Log to Research Notebook
+ * Calls: scripts/005_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in research_notebook/research_ai/subproject-phylonames/logs/
+ * for transparency and reproducibility - like an AI lab notebook.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        path project_mapping
+        path species_list
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    # Count species in the list
+    SPECIES_COUNT=\$(grep -v '^#' ${species_list} | grep -v '^\$' | wc -l)
+
+    # Write run log to research notebook
+    python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \\
+        --project-name "${params.project_name}" \\
+        --species-count \$SPECIES_COUNT \\
+        --species-file ${species_list} \\
+        --output-file ${project_mapping} \\
+        --status success
+    """
+}
+
+/*
+ * Process 5 (OPTIONAL): Apply User-Provided Phylonames
  * Calls: scripts/004_ai-python-apply_user_phylonames.py
  *
  * This process only runs if user_phylonames parameter is set.
@@ -202,7 +234,13 @@ workflow {
         species_list_ch
     )
 
-    // Step 4: Apply user phylonames (OPTIONAL - only if user_phylonames is specified)
+    // Step 4: Write run log to research notebook (AI lab notebook)
+    write_run_log(
+        create_species_mapping.out.project_mapping,
+        species_list_ch
+    )
+
+    // Step 5: Apply user phylonames (OPTIONAL - only if user_phylonames is specified)
     // ALL user-provided clades are marked UNOFFICIAL by default
     // (unless mark_unofficial: false in config)
     if (params.user_phylonames) {
@@ -236,6 +274,7 @@ workflow.onComplete {
         }
         println ""
         println "Files copied to output_to_input/maps/ for downstream subprojects"
+        println "Run log written to research_notebook/research_ai/subproject-phylonames/logs/"
         if (params.user_phylonames) {
             println ""
             println "Note: User phylonames applied. Clades not in NCBI taxonomy are marked UNOFFICIAL."

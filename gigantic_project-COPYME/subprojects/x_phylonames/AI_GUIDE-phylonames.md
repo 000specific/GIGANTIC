@@ -156,6 +156,26 @@ head output_to_input/maps/*_map-genus_species_X_phylonames.tsv
 
 ---
 
+## Run Logging (AI Lab Notebook)
+
+Each workflow run automatically creates a timestamped log in:
+```
+research_notebook/research_ai/subproject-phylonames/logs/
+```
+
+**Log filename format**: `run_YYYYMMDD_HHMMSS-phylonames_success.log`
+
+**Log contents**:
+- Timestamp and project name
+- Species list (full list of what was processed)
+- Output file location and species mapped count
+- Sample mappings (first 3 results)
+- Workflow scripts executed
+
+**Purpose**: Transparency and reproducibility of AI-assisted research. Like a lab notebook, but for AI work.
+
+---
+
 ## Key Files
 
 | File | Purpose | User Edits? |
