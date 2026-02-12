@@ -10,7 +10,7 @@
 # Run the phylonames workflow on a SLURM cluster using NextFlow.
 #
 # USAGE:
-#   sbatch RUN_phylonames.sbatch
+#   sbatch RUN-phylonames.sbatch
 #
 # BEFORE RUNNING:
 # 1. Edit the SBATCH directives below (account, qos) for your cluster
@@ -19,7 +19,7 @@
 #
 # FOR LOCAL MACHINES:
 # Use the local version instead:
-#   bash RUN_phylonames.sh
+#   bash RUN-phylonames.sh
 #
 ################################################################################
 

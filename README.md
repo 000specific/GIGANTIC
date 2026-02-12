@@ -149,8 +149,8 @@ subproject/
 ├── output_to_input/                   # Outputs shared to downstream subprojects
 └── nf_workflow-COPYME_01/             # NextFlow workflow (copy this to run)
     ├── README.md                      # Quick start guide
-    ├── RUN_workflow.sh                # Local: bash RUN_workflow.sh
-    ├── RUN_workflow.sbatch            # SLURM: sbatch RUN_workflow.sbatch
+    ├── RUN-workflow.sh                # Local: bash RUN-workflow.sh
+    ├── RUN-workflow.sbatch            # SLURM: sbatch RUN-workflow.sbatch
     ├── config.yaml                    # User configuration (edit this)
     ├── INPUT_user/                    # User-provided inputs
     ├── OUTPUT_pipeline/               # Results appear here
@@ -234,15 +234,15 @@ Every workflow has two RUN files - the file extension tells you how to run it:
 
 ```
 nf_workflow-COPYME_01/
-├── RUN_phylonames.sh      ← bash RUN_phylonames.sh      (local machine)
-├── RUN_phylonames.sbatch  ← sbatch RUN_phylonames.sbatch (SLURM cluster)
+├── RUN-phylonames.sh      ← bash RUN-phylonames.sh      (local machine)
+├── RUN-phylonames.sbatch  ← sbatch RUN-phylonames.sbatch (SLURM cluster)
 └── ...
 ```
 
 | File | Command | Where it runs |
 |------|---------|---------------|
-| `RUN_*.sh` | `bash RUN_*.sh` | Your local machine |
-| `RUN_*.sbatch` | `sbatch RUN_*.sbatch` | SLURM cluster |
+| `RUN-*.sh` | `bash RUN-*.sh` | Your local machine |
+| `RUN-*.sbatch` | `sbatch RUN-*.sbatch` | SLURM cluster |
 
 **That's it.** Scan the directory, see two RUN files, pick the one for your environment.
 
@@ -253,7 +253,7 @@ Internally, workflows use one of two patterns based on computational needs:
 **Pattern A: Sequential** - All processes run in one job (e.g., `phylonames` ~15 mins)
 **Pattern B: Parallel** - NextFlow submits separate SLURM jobs (e.g., `annotations_hmms` with many proteomes)
 
-You don't need to know which pattern a workflow uses - just run `RUN_*.sh` or `RUN_*.sbatch`.
+You don't need to know which pattern a workflow uses - just run `RUN-*.sh` or `RUN-*.sbatch`.
 
 ### Configuration Files for Reproducibility
 

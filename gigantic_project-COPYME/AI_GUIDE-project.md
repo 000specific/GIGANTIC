@@ -183,15 +183,15 @@ Every workflow template has two RUN files:
 
 ```
 nf_workflow-TEMPLATE_01/
-├── RUN_phylonames.sh      ← bash RUN_phylonames.sh      (local)
-├── RUN_phylonames.sbatch  ← sbatch RUN_phylonames.sbatch (SLURM)
+├── RUN-phylonames.sh      ← bash RUN-phylonames.sh      (local)
+├── RUN-phylonames.sbatch  ← sbatch RUN-phylonames.sbatch (SLURM)
 └── config.yaml            ← Edit this for your project
 ```
 
 | Want to run... | Command |
 |----------------|---------|
-| On your local machine | `bash RUN_*.sh` |
-| On SLURM cluster | `sbatch RUN_*.sbatch` |
+| On your local machine | `bash RUN-*.sh` |
+| On SLURM cluster | `sbatch RUN-*.sbatch` |
 
 The file extension tells you how to run it. That's it.
 

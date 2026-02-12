@@ -10,7 +10,7 @@
 # Run the phylonames workflow on your local machine using NextFlow.
 #
 # USAGE:
-#   bash RUN_phylonames.sh
+#   bash RUN-phylonames.sh
 #
 # BEFORE RUNNING:
 # 1. Edit phylonames_config.yaml with your project settings
@@ -18,7 +18,7 @@
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
-#   sbatch RUN_phylonames.sbatch
+#   sbatch RUN-phylonames.sbatch
 #
 # WHAT THIS DOES:
 # 1. Downloads NCBI taxonomy database (~2GB, skipped if already exists)

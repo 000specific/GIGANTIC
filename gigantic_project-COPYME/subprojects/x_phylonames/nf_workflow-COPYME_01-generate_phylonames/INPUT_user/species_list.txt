@@ -9,5 +9,5 @@
 # Aplysia_californica
 # Octopus_bimaculoides
 #
-# After editing this file, run: bash RUN_phylonames.sh
+# After editing this file, run: bash RUN-phylonames.sh
 

@@ -13,8 +13,8 @@
 #
 # USAGE:
 #   cd nf_workflow-COPYME_01-generate_phylonames/
-#   bash RUN_phylonames.sh          # Local execution
-#   sbatch RUN_phylonames.sbatch    # SLURM execution
+#   bash RUN-phylonames.sh          # Local execution
+#   sbatch RUN-phylonames.sbatch    # SLURM execution
 #
 # NOTE: This is a minimal environment. The Python scripts use only standard
 # library modules (pathlib, argparse, datetime, etc.) - no external packages.

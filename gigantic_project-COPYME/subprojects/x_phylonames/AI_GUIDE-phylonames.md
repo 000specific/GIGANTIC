@@ -146,14 +146,14 @@ Ask the user:
 **Local execution** (laptop, workstation):
 ```bash
 cd nf_workflow-COPYME_01-generate_phylonames
-bash RUN_phylonames.sh
+bash RUN-phylonames.sh
 ```
 
 **SLURM cluster execution**:
 ```bash
 cd nf_workflow-COPYME_01-generate_phylonames
-# First edit RUN_phylonames.sbatch to set account/qos
-sbatch RUN_phylonames.sbatch
+# First edit RUN-phylonames.sbatch to set account/qos
+sbatch RUN-phylonames.sbatch
 ```
 
 Or step-by-step (for debugging):
@@ -232,8 +232,8 @@ If troubleshooting:
 | `README.md` | Human documentation (subproject level) |
 | `AI_GUIDE-phylonames.md` | This file (for AI assistants) |
 | `nf_workflow-COPYME_01-*/README.md` | Quick start guide (workflow level) |
-| `nf_workflow-COPYME_01-*/RUN_phylonames.sh` | Run locally |
-| `nf_workflow-COPYME_01-*/RUN_phylonames.sbatch` | Run on SLURM |
+| `nf_workflow-COPYME_01-*/RUN-phylonames.sh` | Run locally |
+| `nf_workflow-COPYME_01-*/RUN-phylonames.sbatch` | Run on SLURM |
 | `nf_workflow-COPYME_01-*/phylonames_config.yaml` | User configuration |
 | `nf_workflow-COPYME_01-*/INPUT_user/species_list.txt` | User's species list |
 | `nf_workflow-COPYME_01-*/ai/AI_GUIDE-phylonames_workflow.md` | Workflow-level AI guide |

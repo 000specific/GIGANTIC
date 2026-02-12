@@ -24,8 +24,8 @@ The workflow separates user-facing files from internal files:
 | File | User Edits? | Purpose |
 |------|-------------|---------|
 | `README.md` | No | Quick start guide |
-| `RUN_phylonames.sh` | No | Run locally: `bash RUN_phylonames.sh` |
-| `RUN_phylonames.sbatch` | **YES (SLURM)** | Edit account/qos, then `sbatch RUN_phylonames.sbatch` |
+| `RUN-phylonames.sh` | No | Run locally: `bash RUN-phylonames.sh` |
+| `RUN-phylonames.sbatch` | **YES (SLURM)** | Edit account/qos, then `sbatch RUN-phylonames.sbatch` |
 | `phylonames_config.yaml` | **YES** | Project name and options |
 | `INPUT_user/species_list.txt` | **YES** | User's species list |
 | `OUTPUT_pipeline/` | No | Results appear here |
@@ -142,13 +142,13 @@ project:
 
 **Local execution:**
 ```bash
-bash RUN_phylonames.sh
+bash RUN-phylonames.sh
 ```
 
 **SLURM cluster execution:**
 ```bash
-# First, edit RUN_phylonames.sbatch to set your account and qos
-sbatch RUN_phylonames.sbatch
+# First, edit RUN-phylonames.sbatch to set your account and qos
+sbatch RUN-phylonames.sbatch
 ```
 
 That's it! The script handles everything else.
@@ -161,12 +161,12 @@ GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and po
 
 | Execution | Command | When to Use |
 |-----------|---------|-------------|
-| Local | `bash RUN_phylonames.sh` | Laptop, workstation, or non-SLURM server |
+| Local | `bash RUN-phylonames.sh` | Laptop, workstation, or non-SLURM server |
 | SLURM | `sbatch SLURM_phylonames.sbatch` | HPC clusters with SLURM scheduler |
 
 ### SLURM Setup
 
-1. Edit `RUN_phylonames.sbatch` and change:
+1. Edit `RUN-phylonames.sbatch` and change:
    ```bash
    #SBATCH --account=YOUR_ACCOUNT    # Your cluster account
    #SBATCH --qos=YOUR_QOS            # Your quality of service
@@ -174,7 +174,7 @@ GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and po
 
 2. Optionally adjust resources (mem, time, cpus) if needed
 
-3. Submit: `sbatch RUN_phylonames.sbatch`
+3. Submit: `sbatch RUN-phylonames.sbatch`
 
 4. Check status: `squeue -u $USER`
 
@@ -238,7 +238,7 @@ wc -l ../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
 
 **Solution**:
 ```bash
-chmod +x RUN_phylonames.sh
+chmod +x RUN-phylonames.sh
 chmod +x ai/scripts/*.sh
 ```
 
@@ -321,7 +321,7 @@ After phylonames completes:
 When troubleshooting:
 
 1. "Can you show me your `INPUT_user/species_list.txt` file?"
-2. "Did you run `bash RUN_phylonames.sh`?"
+2. "Did you run `bash RUN-phylonames.sh`?"
 3. "What error message did you see?"
 4. "Is this your first run or are you updating an existing project?"
 

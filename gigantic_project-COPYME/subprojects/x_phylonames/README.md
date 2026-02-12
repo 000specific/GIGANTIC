@@ -177,8 +177,8 @@ phylonames/
 │       └── [project]_map-genus_species_X_phylonames.tsv
 └── nf_workflow-COPYME_01-generate_phylonames/
     ├── README.md                       # Quick start guide
-    ├── RUN_phylonames.sh               # bash RUN_phylonames.sh (local)
-    ├── RUN_phylonames.sbatch           # sbatch RUN_phylonames.sbatch (SLURM)
+    ├── RUN-phylonames.sh               # bash RUN-phylonames.sh (local)
+    ├── RUN-phylonames.sbatch           # sbatch RUN-phylonames.sbatch (SLURM)
     ├── phylonames_config.yaml          # Edit this for your project
     ├── INPUT_user/                     # User-provided species list
     │   └── species_list.txt            # One genus_species per line
@@ -227,10 +227,10 @@ project:
 cd nf_workflow-COPYME_01-generate_phylonames
 
 # Local machine:
-bash RUN_phylonames.sh
+bash RUN-phylonames.sh
 
 # SLURM cluster (edit account/qos first):
-sbatch RUN_phylonames.sbatch
+sbatch RUN-phylonames.sbatch
 ```
 
 The pipeline will:

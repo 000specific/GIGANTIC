@@ -7,8 +7,8 @@ Generate standardized phylogenetic names from NCBI taxonomy.
 1. Edit `phylonames_config.yaml` with your project name
 2. Put your species list in `INPUT_user/species_list.txt` (one species per line, e.g., `Homo_sapiens`)
 3. Run the workflow:
-   - **Local**: `bash RUN_phylonames.sh`
-   - **SLURM**: Edit account/qos in `RUN_phylonames.sbatch`, then `sbatch RUN_phylonames.sbatch`
+   - **Local**: `bash RUN-phylonames.sh`
+   - **SLURM**: Edit account/qos in `RUN-phylonames.sbatch`, then `sbatch RUN-phylonames.sbatch`
 
 ## Results
 
