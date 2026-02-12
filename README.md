@@ -228,6 +228,41 @@ GIGANTIC explores what research software looks like when AI assistance is assume
 
 This is new territory. Users are not CS experts, and AI-user research workflows are inventing conventions as they go. We're learning what works. If you find patterns that work well (or don't), we'd love to hear about it.
 
+### Session Provenance Recording
+
+**A major innovation in GIGANTIC**: automatic extraction of AI session histories for research documentation.
+
+Scientific research requires complete provenance - knowing exactly what was done, when, how, and why. When AI assists with research, those sessions become part of the scientific record. But current AI coding assistants (Claude Code, Cursor, GitHub Copilot, ChatGPT) don't export session histories to project directories.
+
+**GIGANTIC solves this** with automatic session extraction:
+
+```bash
+# Extract all Claude Code sessions for the entire project
+bash RUN-record_project.sh
+
+# Subproject cleanup with session recording
+bash RUN-clean_and_record_subproject.sh --all
+```
+
+This creates human-readable markdown files documenting AI-assisted development:
+
+```
+research_notebook/research_ai/
+├── project/sessions/
+│   ├── session_2026february12_abc123.md    # Extracted AI conversation summaries
+│   └── SESSION_EXTRACTION_LOG.md           # Activity log
+└── subproject-phylonames/sessions/
+    └── ...                                  # Per-subproject session records
+```
+
+**Why this matters**:
+- **Reproducibility**: Future researchers can understand how AI contributed to the work
+- **Transparency**: AI assistance is documented, not hidden
+- **Lab notebook culture**: Treats AI sessions like traditional research records
+- **Audit trail**: Meets emerging journal and funding agency AI disclosure requirements
+
+**This capability does not exist in any other bioinformatics framework.** GIGANTIC treats AI sessions as first-class research artifacts - a necessary evolution as AI becomes integral to scientific research.
+
 ### Running Workflows
 
 Every workflow has two RUN files - the file extension tells you how to run it:

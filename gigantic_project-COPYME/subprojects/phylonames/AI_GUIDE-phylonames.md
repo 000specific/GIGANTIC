@@ -34,8 +34,8 @@
 phylonames/
 ├── README.md                        # Human documentation
 ├── AI_GUIDE-phylonames.md           # THIS FILE
-├── RUN-clean_subproject.sh          # Cleanup work/ and .nextflow*
-├── RUN-update_upload_to_server.sh   # Update server symlinks
+├── RUN-clean_and_record_subproject.sh  # Cleanup + AI session recording
+├── RUN-update_upload_to_server.sh      # Update server symlinks
 │
 ├── user_research/                   # Personal workspace for this subproject
 │

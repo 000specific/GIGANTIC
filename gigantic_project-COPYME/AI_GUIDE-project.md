@@ -34,6 +34,11 @@ gigantic_project-[project_name]/
 │
 ├── AI_GUIDE-project.md              # THIS FILE - project-level AI guidance
 ├── RUN-setup_environments.sh        # ONE-TIME: Creates all conda environments
+├── RUN-record_project.sh            # Extract Claude sessions for entire project
+│
+├── ai/                              # AI TOOLS
+│   └── tools/                       # Extraction and utility scripts
+│       └── 001_ai-python-extract_claude_sessions.py
 │
 ├── conda_environments/              # CONDA ENVIRONMENT DEFINITIONS
 │   ├── README.md                    # Environment documentation
@@ -63,8 +68,8 @@ gigantic_project-[project_name]/
         │
         ├── README.md                    # Human documentation
         ├── AI_GUIDE-[name].md           # AI guidance (references this project guide)
-        ├── RUN-clean_subproject.sh      # Cleanup script (removes work/, .nextflow*)
-        ├── RUN-update_upload_to_server.sh  # Updates server sharing symlinks
+        ├── RUN-clean_and_record_subproject.sh  # Cleanup + session recording
+        ├── RUN-update_upload_to_server.sh      # Updates server sharing symlinks
         │
         ├── user_research/               # Subproject-specific personal workspace
         │                                # Alternative to research_notebook/research_user/
@@ -140,6 +145,35 @@ upload_to_server/[symlinks]           # GIGANTIC server scans these
 |------|---------|----------|
 | `RUN-*.sh` | `bash RUN-*.sh` | Local machine, workstation |
 | `RUN-*.sbatch` | `sbatch RUN-*.sbatch` | SLURM cluster (edit account/qos first) |
+
+### Session Provenance Recording (AI-Native Feature)
+
+GIGANTIC automatically extracts Claude Code session summaries for research documentation:
+
+```bash
+# Project level: Record all sessions (project + subprojects + workflows)
+bash RUN-record_project.sh
+
+# Subproject level: Cleanup with optional session recording
+bash RUN-clean_and_record_subproject.sh --record-sessions
+bash RUN-clean_and_record_subproject.sh --all  # cleanup + recording
+```
+
+**Output locations**:
+```
+research_notebook/research_ai/
+├── project/sessions/
+│   ├── session_*.md                 # Extracted compaction summaries
+│   └── SESSION_EXTRACTION_LOG.md    # Activity log
+└── subproject-[name]/sessions/
+    └── ...                          # Same structure per subproject
+```
+
+**Why This Matters**:
+- Scientific research requires complete provenance
+- AI sessions are treated as first-class research artifacts
+- Enables reproducibility and transparency in AI-assisted research
+- Safe to run multiple times (overwrites with complete current state)
 
 ---
 

@@ -1,32 +1,38 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.5 | 2026 February 12 | Purpose: Clean up subproject after workflow runs
+# AI: Claude Code | Opus 4.5 | 2026 February 12 | Purpose: Clean up subproject and record AI sessions
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC Subproject Cleanup Script
+# GIGANTIC Subproject Cleanup and Recording Script
 ################################################################################
 #
 # PURPOSE:
-# Clean up temporary files and prepare subproject for archiving or sharing.
-# Run this ONLY after confirming your workflow results are correct and you
-# no longer need to troubleshoot.
+# Clean up temporary files and record AI session provenance.
+# Run this after confirming your workflow results are correct.
 #
 # USAGE:
-#   bash RUN-clean_subproject.sh [OPTIONS]
+#   bash RUN-clean_and_record_subproject.sh [OPTIONS]
 #
 # OPTIONS:
 #   --clean-work       Remove work/ and .nextflow* from all nf_workflow directories
 #   --harden-links     Convert softlinks to hard copies in upload_to_server/
 #   --remove-gitkeep   Remove .gitkeep files from non-empty directories
-#   --all              Run all cleanup operations
+#   --record-sessions  Extract Claude Code session summaries to research_notebook/
+#   --all              Run all cleanup operations (includes --record-sessions)
 #   --dry-run          Show what would be done without making changes
 #   --help             Show this help message
 #
 # EXAMPLES:
-#   bash RUN-clean_subproject.sh --dry-run --all    # Preview all operations
-#   bash RUN-clean_subproject.sh --clean-work       # Only remove temp files
-#   bash RUN-clean_subproject.sh --harden-links     # Only convert softlinks
-#   bash RUN-clean_subproject.sh --all              # Do everything
+#   bash RUN-clean_and_record_subproject.sh --dry-run --all    # Preview all operations
+#   bash RUN-clean_and_record_subproject.sh --record-sessions  # Only extract sessions
+#   bash RUN-clean_and_record_subproject.sh --clean-work       # Only remove temp files
+#   bash RUN-clean_and_record_subproject.sh --all              # Do everything
+#
+# SESSION RECORDING:
+#   Extracts Claude Code context compaction summaries from ~/.claude/projects/
+#   and saves them to research_notebook/research_ai/project/sessions/
+#   This provides research provenance for AI-assisted work.
+#   Safe to run multiple times - overwrites with complete current state.
 #
 # WARNING:
 #   --clean-work is DESTRUCTIVE! NextFlow's work/ directory contains all
@@ -47,10 +53,24 @@ NC='\033[0m' # No Color
 # Script directory (subproject root)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Find project root (parent of subprojects/)
+PROJECT_ROOT="$SCRIPT_DIR"
+while [ "$PROJECT_ROOT" != "/" ]; do
+    if [ -d "$PROJECT_ROOT/research_notebook" ] && [ -d "$PROJECT_ROOT/subprojects" ]; then
+        break
+    fi
+    PROJECT_ROOT=$(dirname "$PROJECT_ROOT")
+done
+
+if [ "$PROJECT_ROOT" == "/" ]; then
+    PROJECT_ROOT="$SCRIPT_DIR/../.."  # Fallback: assume subprojects/[name]/
+fi
+
 # Options (default: all off)
 CLEAN_WORK=false
 HARDEN_LINKS=false
 REMOVE_GITKEEP=false
+RECORD_SESSIONS=false
 DRY_RUN=false
 
 # Parse arguments
@@ -68,10 +88,15 @@ while [[ $# -gt 0 ]]; do
             REMOVE_GITKEEP=true
             shift
             ;;
+        --record-sessions)
+            RECORD_SESSIONS=true
+            shift
+            ;;
         --all)
             CLEAN_WORK=true
             HARDEN_LINKS=true
             REMOVE_GITKEEP=true
+            RECORD_SESSIONS=true
             shift
             ;;
         --dry-run)
@@ -91,24 +116,26 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Check if any operation was selected
-if ! $CLEAN_WORK && ! $HARDEN_LINKS && ! $REMOVE_GITKEEP; then
+if ! $CLEAN_WORK && ! $HARDEN_LINKS && ! $REMOVE_GITKEEP && ! $RECORD_SESSIONS; then
     echo -e "${YELLOW}No operations selected. Use --help to see options.${NC}"
     echo ""
     echo "Quick reference:"
     echo "  --clean-work       Remove work/ and .nextflow* temp files"
     echo "  --harden-links     Convert softlinks to hard copies"
     echo "  --remove-gitkeep   Remove .gitkeep from non-empty directories"
+    echo "  --record-sessions  Extract Claude Code session summaries"
     echo "  --all              All of the above"
     echo "  --dry-run          Preview without making changes"
     exit 0
 fi
 
 echo "========================================================================"
-echo "GIGANTIC Subproject Cleanup"
+echo "GIGANTIC Subproject Cleanup and Recording"
 echo "========================================================================"
 echo ""
 echo "Subproject: $(basename "$SCRIPT_DIR")"
 echo "Location: $SCRIPT_DIR"
+echo "Project root: $PROJECT_ROOT"
 echo ""
 
 if $DRY_RUN; then
@@ -118,6 +145,7 @@ fi
 
 # Track what we'll do
 OPERATIONS=()
+$RECORD_SESSIONS && OPERATIONS+=("Record Claude Code sessions")
 $CLEAN_WORK && OPERATIONS+=("Clean NextFlow work directories")
 $HARDEN_LINKS && OPERATIONS+=("Harden softlinks in upload_to_server/")
 $REMOVE_GITKEEP && OPERATIONS+=("Remove .gitkeep from non-empty directories")
@@ -127,6 +155,154 @@ for op in "${OPERATIONS[@]}"; do
     echo "  - $op"
 done
 echo ""
+
+################################################################################
+# Operation 0: Record Claude Code Sessions (runs FIRST - before cleanup)
+################################################################################
+
+record_sessions() {
+    echo -e "${YELLOW}=== Recording Claude Code Sessions ===${NC}"
+    echo ""
+
+    # Get Claude's encoded project directory
+    working_dir=$(cd "$PROJECT_ROOT" && pwd)
+    encoded_path=$(echo "$working_dir" | sed 's|/|-|g' | sed 's|_|-|g')
+    claude_project_dir="$HOME/.claude/projects/$encoded_path"
+
+    echo "  Working directory: $working_dir"
+    echo "  Claude project dir: $claude_project_dir"
+
+    if [ ! -d "$claude_project_dir" ]; then
+        echo ""
+        echo -e "  ${YELLOW}No Claude Code session data found.${NC}"
+        echo "  This means Claude Code has not been used from this directory."
+        return
+    fi
+
+    # Count JSONL files
+    jsonl_count=$(find "$claude_project_dir" -name "*.jsonl" 2>/dev/null | wc -l)
+    echo "  Session files found: $jsonl_count"
+
+    if [ "$jsonl_count" -eq 0 ]; then
+        echo "  No sessions to extract."
+        return
+    fi
+
+    # Output locations - log file lives inside sessions folder
+    sessions_dir="$PROJECT_ROOT/research_notebook/research_ai/project/sessions"
+    log_file="$sessions_dir/SESSION_EXTRACTION_LOG.md"
+
+    echo "  Output directory: $sessions_dir"
+    echo ""
+
+    if $DRY_RUN; then
+        echo -e "  ${BLUE}[DRY RUN]${NC} Would extract sessions to: $sessions_dir"
+        echo -e "  ${BLUE}[DRY RUN]${NC} Would update log: $sessions_dir/SESSION_EXTRACTION_LOG.md"
+        echo ""
+        echo -e "${GREEN}  Session recording preview complete.${NC}"
+        return
+    fi
+
+    # Create output directory
+    mkdir -p "$sessions_dir"
+
+    # Create log file header if it doesn't exist
+    if [ ! -f "$log_file" ]; then
+        cat > "$log_file" << 'LOGHEADER'
+# Session Extraction Log
+
+This log records all Claude Code session extractions for this GIGANTIC project.
+Each extraction overwrites the previous version with complete current state.
+
+| Date | Session ID | Compactions | Output File |
+|------|------------|-------------|-------------|
+LOGHEADER
+    fi
+
+    # Process each JSONL file
+    total_compactions=0
+    files_created=0
+
+    for jsonl_file in "$claude_project_dir"/*.jsonl; do
+        [ -f "$jsonl_file" ] || continue
+
+        session_id=$(basename "$jsonl_file" .jsonl)
+        short_id="${session_id:0:8}"
+
+        echo "  Processing: $short_id..."
+
+        # Extract compaction summaries using Python inline
+        output_file="$sessions_dir/session_$(date +%Y%B%d | tr '[:upper:]' '[:lower:]')_$short_id.md"
+
+        # Run extraction
+        compaction_count=$(python3 << PYEND
+import json
+import sys
+from datetime import datetime
+
+jsonl_path = "$jsonl_file"
+output_path = "$output_file"
+session_id = "$session_id"
+project_path = "$working_dir"
+
+summaries = []
+with open(jsonl_path, 'r') as f:
+    for line_num, line in enumerate(f, 1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            data = json.loads(line)
+            if data.get('isCompactSummary', False):
+                content = data.get('message', {}).get('content', '')
+                if 'This session is being continued' in content:
+                    summaries.append({
+                        'line': line_num,
+                        'timestamp': data.get('timestamp', ''),
+                        'content': content
+                    })
+        except:
+            pass
+
+if summaries:
+    with open(output_path, 'w') as f:
+        f.write(f"# Claude Code Session Extraction\\n\\n")
+        f.write(f"**Session ID**: {session_id}\\n")
+        f.write(f"**Project Path**: {project_path}\\n")
+        f.write(f"**Compaction Count**: {len(summaries)}\\n")
+        f.write(f"**Extracted**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\\n")
+        f.write("---\\n\\n")
+
+        for i, s in enumerate(summaries, 1):
+            ts = s['timestamp'][:19] if s['timestamp'] else 'Unknown'
+            f.write(f"## Compaction Summary {i}\\n\\n")
+            f.write(f"**Timestamp**: {ts}\\n")
+            f.write(f"**JSONL Line**: {s['line']}\\n\\n")
+            f.write("\\x60\\x60\\x60\\n")
+            f.write(s['content'])
+            f.write("\\n\\x60\\x60\\x60\\n\\n---\\n\\n")
+
+print(len(summaries))
+PYEND
+)
+
+        if [ "$compaction_count" -gt 0 ]; then
+            echo "    Found $compaction_count compaction(s)"
+            echo "    Written to: $(basename "$output_file")"
+
+            # Append to log
+            echo "| $(date '+%Y-%m-%d %H:%M') | $short_id... | $compaction_count | $(basename "$output_file") |" >> "$log_file"
+
+            total_compactions=$((total_compactions + compaction_count))
+            files_created=$((files_created + 1))
+        fi
+    done
+
+    echo ""
+    echo -e "${GREEN}  Session recording complete.${NC}"
+    echo "  Total compactions: $total_compactions"
+    echo "  Files created: $files_created"
+}
 
 ################################################################################
 # Operation 1: Clean NextFlow work directories
@@ -287,6 +463,12 @@ remove_gitkeep() {
 # Execute selected operations
 ################################################################################
 
+# Session recording runs FIRST (before any cleanup)
+if $RECORD_SESSIONS; then
+    record_sessions
+    echo ""
+fi
+
 if $CLEAN_WORK; then
     if ! $DRY_RUN; then
         echo -e "${RED}WARNING: This will permanently delete NextFlow work directories!${NC}"
@@ -319,6 +501,6 @@ if $DRY_RUN; then
     echo -e "${BLUE}DRY RUN COMPLETE - No changes were made${NC}"
     echo "Remove --dry-run to execute these operations."
 else
-    echo -e "${GREEN}CLEANUP COMPLETE${NC}"
+    echo -e "${GREEN}CLEANUP AND RECORDING COMPLETE${NC}"
 fi
 echo "========================================================================"
