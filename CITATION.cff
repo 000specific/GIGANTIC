@@ -1,16 +1,39 @@
+# CITATION.cff - How to cite GIGANTIC
+# Documentation: https://citation-file-format.github.io/
+#
+# GitHub will display a "Cite this repository" button based on this file.
+
 cff-version: 1.2.0
-message: "If you use GIGANTIC in your research, please cite it using these metadata."
+message: "If you use GIGANTIC in your research, please cite it as below."
 type: software
 title: "GIGANTIC: Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades"
+
 authors:
-  - family-names: "Edsinger"
-    given-names: "Eric"
-    orcid: ""
-version: "1.0.0"
-date-released: "2026-02-05"
-url: "https://github.com/000specific/GIGANTIC"
+  - family-names: Edsinger
+    given-names: Eric
+    affiliation: University of Florida
+    orcid: https://orcid.org/0000-0002-1012-1506
+
+  - family-names: Hsiao
+    given-names: Jan
+    # affiliation: TODO
+    # orcid: https://orcid.org/0000-0000-0000-0000  # TODO: Add ORCID
+
+  - family-names: Deng
+    given-names: Lola Chenxi
+    # affiliation: TODO
+    # orcid: https://orcid.org/0000-0000-0000-0000  # TODO: Add ORCID
+
+version: 0.1.0
+date-released: 2026-02-12
+
+url: https://github.com/000specific/GIGANTIC
+repository-code: https://github.com/000specific/GIGANTIC
 license: MIT
-repository-code: "https://github.com/000specific/GIGANTIC"
+
+# Zenodo DOI - uncomment and update when you archive a release on Zenodo
+# doi: 10.5281/zenodo.XXXXXXX
+
 keywords:
   - phylogenomics
   - comparative genomics
@@ -20,3 +43,10 @@ keywords:
   - gene families
   - orthogroups
   - species trees
+
+abstract: >-
+  GIGANTIC is a modular AI-native phylogenomics platform for comparative
+  genomics and evolutionary analysis. It provides NextFlow workflows and
+  Python pipelines that work together through standardized data sharing,
+  enabling systematic analysis of gene families across species using
+  exhaustive topology interrogation.
