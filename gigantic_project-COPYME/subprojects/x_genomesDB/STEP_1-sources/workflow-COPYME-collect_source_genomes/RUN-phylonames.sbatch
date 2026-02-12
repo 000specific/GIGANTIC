@@ -1,0 +1,145 @@
+#!/bin/bash
+# AI: Claude Code | Opus 4.5 | 2026 February 06 | Purpose: Run phylonames NextFlow pipeline on SLURM
+# Human: Eric Edsinger
+
+################################################################################
+# GIGANTIC Phylonames Pipeline - SLURM Execution
+################################################################################
+#
+# PURPOSE:
+# Run the phylonames workflow on a SLURM cluster using NextFlow.
+#
+# USAGE:
+#   sbatch RUN-phylonames.sbatch
+#
+# BEFORE RUNNING:
+# 1. Edit the SBATCH directives below (account, qos) for your cluster
+# 2. Edit phylonames_config.yaml with your project settings
+# 3. Edit INPUT_gigantic/species_list.txt (at project root) with your species
+#    OR edit INPUT_user/species_list.txt directly (workflow-specific)
+#
+# FOR LOCAL MACHINES:
+# Use the local version instead:
+#   bash RUN-phylonames.sh
+#
+################################################################################
+
+#SBATCH --job-name=phylonames
+#SBATCH --account=YOUR_ACCOUNT        # <-- EDIT: Your cluster account
+#SBATCH --qos=YOUR_QOS                # <-- EDIT: Your quality of service
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8gb
+#SBATCH --time=2:00:00
+#SBATCH --output=slurm_logs/phylonames-%j.log
+
+################################################################################
+# SLURM JOB EXECUTION
+################################################################################
+
+echo "========================================================================"
+echo "GIGANTIC Phylonames Pipeline (SLURM)"
+echo "========================================================================"
+echo ""
+echo "Job ID: ${SLURM_JOB_ID}"
+echo "Node: ${SLURM_NODELIST}"
+echo "Started: $(date)"
+echo ""
+
+# Create slurm_logs directory if it doesn't exist
+mkdir -p slurm_logs
+
+# Change to the directory where sbatch was invoked
+# NOTE: We use SLURM_SUBMIT_DIR instead of BASH_SOURCE[0] because SLURM
+# copies the script to a spool directory before execution, which breaks
+# the BASH_SOURCE pattern. SLURM_SUBMIT_DIR is set to the original directory.
+cd "${SLURM_SUBMIT_DIR}"
+
+# Path to project-level INPUT_gigantic (relative to this workflow)
+INPUT_GIGANTIC="../../../INPUT_gigantic"
+
+# Copy species list from INPUT_gigantic if it exists and has content
+# This provides a single source of truth at project level while archiving
+# a copy in INPUT_user/ for each workflow run
+if [ -f "${INPUT_GIGANTIC}/species_list.txt" ]; then
+    # Check if INPUT_gigantic species list has actual species (not just comments)
+    GIGANTIC_SPECIES_COUNT=$(grep -v "^#" "${INPUT_GIGANTIC}/species_list.txt" | grep -v "^$" | wc -l)
+    if [ "$GIGANTIC_SPECIES_COUNT" -gt 0 ]; then
+        echo "Copying species list from INPUT_gigantic/ (project-wide source)..."
+        cp "${INPUT_GIGANTIC}/species_list.txt" "INPUT_user/species_list.txt"
+        echo "  Copied ${GIGANTIC_SPECIES_COUNT} species to INPUT_user/ for archival"
+        echo ""
+    fi
+fi
+
+# ============================================================================
+# Activate GIGANTIC Environment
+# ============================================================================
+# Load conda module (required on HPC systems like HiPerGator)
+module load conda 2>/dev/null || true
+
+# Activate the phylonames environment
+# This environment is created by: bash RUN-setup_environments.sh (at project root)
+if conda activate ai_gigantic_phylonames 2>/dev/null; then
+    echo "Activated conda environment: ai_gigantic_phylonames"
+else
+    # Check if nextflow is already available in PATH
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: Environment 'ai_gigantic_phylonames' not found!"
+        echo ""
+        echo "Please run the environment setup script first:"
+        echo ""
+        echo "  cd ../../../  # Go to project root"
+        echo "  bash RUN-setup_environments.sh"
+        echo ""
+        echo "Or create this environment manually:"
+        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_phylonames.yml"
+        echo ""
+        exit 1
+    fi
+    echo "Using NextFlow from PATH (environment not activated)"
+fi
+echo ""
+
+# Check for species list
+if [ ! -f "INPUT_user/species_list.txt" ]; then
+    echo "ERROR: Species list not found!"
+    echo ""
+    echo "Please add your species to one of these locations:"
+    echo ""
+    echo "  RECOMMENDED (project-wide):"
+    echo "    INPUT_gigantic/species_list.txt  (at project root)"
+    echo ""
+    echo "  OR workflow-specific:"
+    echo "    INPUT_user/species_list.txt  (in this workflow directory)"
+    echo ""
+    echo "Format: one species per line, Genus_species (e.g., Homo_sapiens)"
+    exit 1
+fi
+
+# Show species count
+SPECIES_COUNT=$(grep -v "^#" INPUT_user/species_list.txt | grep -v "^$" | wc -l)
+echo "Species in your list: ${SPECIES_COUNT}"
+echo ""
+
+# Run NextFlow pipeline
+echo "Running NextFlow pipeline..."
+echo ""
+
+nextflow run ai/main.nf
+
+EXIT_CODE=$?
+
+echo ""
+echo "========================================================================"
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "SUCCESS! Pipeline completed."
+else
+    echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
+    echo "Check the logs above for error details."
+fi
+echo "========================================================================"
+echo "Job completed: $(date)"
+
+exit $EXIT_CODE

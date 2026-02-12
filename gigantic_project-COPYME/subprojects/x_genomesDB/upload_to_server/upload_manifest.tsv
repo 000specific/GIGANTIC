@@ -1,0 +1,37 @@
+# GIGANTIC Upload Manifest - genomesDB Subproject
+#
+# This file controls what gets shared via upload_to_server/
+# Edit this file to customize which outputs are shared with collaborators.
+#
+# FORMAT:
+#   source_path<TAB>include
+#
+# - source_path: Relative path from subproject root (supports glob patterns)
+# - include: "yes" to include, "no" or comment out to exclude
+#
+# After editing, run: bash RUN-update_upload_to_server.sh
+#
+# ============================================================================
+# DEFAULT OUTPUTS (uncomment to include when workflows are populated)
+# ============================================================================
+
+# Species proteome manifests
+# STEP_3-databases/output_to_input/species_manifest.tsv	yes
+
+# BLAST database index
+# STEP_3-databases/output_to_input/blastdb_index.tsv	yes
+
+# ============================================================================
+# OPTIONAL OUTPUTS (uncomment if needed)
+# ============================================================================
+
+# Quality evaluation reports
+# STEP_2-standardize_and_evaluate/output_to_input/quality_reports/*.tsv	no
+
+# Source collection logs
+# STEP_1-sources/output_to_input/collection_log.tsv	no
+
+# ============================================================================
+# USER ADDITIONS (add your custom paths below)
+# ============================================================================
+
