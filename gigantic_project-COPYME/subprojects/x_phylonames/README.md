@@ -171,17 +171,23 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 phylonames/
 ├── README.md                           # This file
 ├── AI_GUIDE-phylonames.md              # AI assistant guidance (subproject level)
+├── conda_environment-phylonames.yml    # Conda environment for this subproject
+├── RUN-clean_subproject.sh             # Cleanup script (work/, .nextflow*)
+├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
 ├── user_research/                      # Personal workspace
 ├── output_to_input/                    # Outputs for downstream subprojects
 │   └── maps/                           # Species mapping files
 │       └── [project]_map-genus_species_X_phylonames.tsv
+├── upload_to_server/                   # Files to share via GIGANTIC server
+│   ├── upload_manifest.tsv             # Controls what gets shared
+│   └── [symlinks to selected outputs]
 └── nf_workflow-COPYME_01-generate_phylonames/
     ├── README.md                       # Quick start guide
     ├── RUN-phylonames.sh               # bash RUN-phylonames.sh (local)
     ├── RUN-phylonames.sbatch           # sbatch RUN-phylonames.sbatch (SLURM)
     ├── phylonames_config.yaml          # Edit this for your project
-    ├── INPUT_user/                     # User-provided species list
-    │   └── species_list.txt            # One genus_species per line
+    ├── INPUT_user/                     # Workflow-specific inputs (archived copy)
+    │   └── species_list.txt            # Copied from INPUT_gigantic at runtime
     ├── OUTPUT_pipeline/                # Generated phylonames and mappings
     └── ai/                             # Internal (don't touch)
         ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
@@ -205,12 +211,24 @@ research_notebook/research_ai/subproject-phylonames/
 
 ### Step 1: Edit Your Species List
 
-Edit `INPUT_user/species_list.txt` with your species (one per line):
+**Recommended**: Edit the project-wide species list at the project root:
+```
+../../INPUT_gigantic/species_list.txt
+```
+
+Or edit the workflow-specific copy (for advanced use):
+```
+nf_workflow-COPYME_01-generate_phylonames/INPUT_user/species_list.txt
+```
+
+Format (one species per line):
 ```
 Homo_sapiens
 Aplysia_californica
 Octopus_bimaculoides
 ```
+
+**Note**: The RUN script automatically copies from `INPUT_gigantic/` to `INPUT_user/` at runtime, creating an archival record for each workflow run.
 
 ### Step 2: Edit Configuration (Optional)
 
@@ -333,6 +351,25 @@ A symlink `database-ncbi_taxonomy_latest` always points to the most recent downl
 - Versioned directories enable reproducibility
 - Multiple versions can coexist for comparison
 - You always know which taxonomy version generated your results
+
+---
+
+## Sharing Data via GIGANTIC Server
+
+To share outputs with collaborators:
+
+1. **Edit the manifest**: `upload_to_server/upload_manifest.tsv`
+2. **Run the update script**: `bash RUN-update_upload_to_server.sh`
+
+The script creates symlinks in `upload_to_server/` based on your manifest. The GIGANTIC server periodically scans this directory.
+
+```bash
+# Preview what would be done
+bash RUN-update_upload_to_server.sh --dry-run
+
+# Create/update symlinks
+bash RUN-update_upload_to_server.sh
+```
 
 ---
 

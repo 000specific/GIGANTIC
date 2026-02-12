@@ -14,7 +14,8 @@
 #
 # BEFORE RUNNING:
 # 1. Edit phylonames_config.yaml with your project settings
-# 2. Edit INPUT_user/species_list.txt with your species
+# 2. Edit INPUT_gigantic/species_list.txt (at project root) with your species
+#    OR edit INPUT_user/species_list.txt directly (workflow-specific)
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
@@ -42,6 +43,23 @@ echo ""
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
+# Path to project-level INPUT_gigantic (relative to this workflow)
+INPUT_GIGANTIC="../../../INPUT_gigantic"
+
+# Copy species list from INPUT_gigantic if it exists and has content
+# This provides a single source of truth at project level while archiving
+# a copy in INPUT_user/ for each workflow run
+if [ -f "${INPUT_GIGANTIC}/species_list.txt" ]; then
+    # Check if INPUT_gigantic species list has actual species (not just comments)
+    GIGANTIC_SPECIES_COUNT=$(grep -v "^#" "${INPUT_GIGANTIC}/species_list.txt" | grep -v "^$" | wc -l)
+    if [ "$GIGANTIC_SPECIES_COUNT" -gt 0 ]; then
+        echo "Copying species list from INPUT_gigantic/ (project-wide source)..."
+        cp "${INPUT_GIGANTIC}/species_list.txt" "INPUT_user/species_list.txt"
+        echo "  Copied ${GIGANTIC_SPECIES_COUNT} species to INPUT_user/ for archival"
+        echo ""
+    fi
+fi
+
 # Check for NextFlow
 if ! command -v nextflow &> /dev/null; then
     echo "ERROR: NextFlow not found!"
@@ -55,12 +73,17 @@ fi
 
 # Check for species list
 if [ ! -f "INPUT_user/species_list.txt" ]; then
-    echo "ERROR: Species list not found at INPUT_user/species_list.txt"
+    echo "ERROR: Species list not found!"
     echo ""
-    echo "Please create this file with your species, one per line:"
-    echo "  Homo_sapiens"
-    echo "  Aplysia_californica"
-    echo "  Octopus_bimaculoides"
+    echo "Please add your species to one of these locations:"
+    echo ""
+    echo "  RECOMMENDED (project-wide):"
+    echo "    INPUT_gigantic/species_list.txt  (at project root)"
+    echo ""
+    echo "  OR workflow-specific:"
+    echo "    INPUT_user/species_list.txt  (in this workflow directory)"
+    echo ""
+    echo "Format: one species per line, Genus_species (e.g., Homo_sapiens)"
     echo ""
     exit 1
 fi
