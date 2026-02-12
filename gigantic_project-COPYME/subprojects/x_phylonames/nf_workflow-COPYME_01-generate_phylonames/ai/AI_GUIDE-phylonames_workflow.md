@@ -162,7 +162,7 @@ GIGANTIC uses a **SLURM wrapper pattern** - the core workflow stays clean and po
 | Execution | Command | When to Use |
 |-----------|---------|-------------|
 | Local | `bash RUN-phylonames.sh` | Laptop, workstation, or non-SLURM server |
-| SLURM | `sbatch SLURM_phylonames.sbatch` | HPC clusters with SLURM scheduler |
+| SLURM | `sbatch RUN-phylonames.sbatch` | HPC clusters with SLURM scheduler |
 
 ### SLURM Setup
 
@@ -251,18 +251,17 @@ chmod +x ai/scripts/*.sh
 ### Workflow Directory
 ```
 OUTPUT_pipeline/
-└── output/
-    ├── 2-output/   # Master phylonames and mapping files
-    │   ├── phylonames
-    │   ├── phylonames_taxonid
-    │   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
-    │   ├── map-numbered_clades_X_defining_clades.tsv
-    │   └── generation_metadata.txt
-    ├── 3-output/   # Project-specific mapping file
-    │   └── [project]_map-genus_species_X_phylonames.tsv
-    └── 4-output/   # (Optional) User phylonames applied
-        ├── final_project_mapping.tsv
-        └── unofficial_clades_report.tsv
+├── 2-output/   # Master phylonames and mapping files
+│   ├── phylonames
+│   ├── phylonames_taxonid
+│   ├── map-phyloname_X_ncbi_taxonomy_info.tsv
+│   ├── map-numbered_clades_X_defining_clades.tsv
+│   └── generation_metadata.txt
+├── 3-output/   # Project-specific mapping file
+│   └── [project]_map-genus_species_X_phylonames.tsv
+└── 4-output/   # (Optional) User phylonames applied
+    ├── final_project_mapping.tsv
+    └── unofficial_clades_report.tsv
 ```
 
 ### Subproject Directory (parent)
@@ -289,7 +288,7 @@ After successful run, users should have:
 **How to verify**:
 ```bash
 # Check the intermediate outputs (in workflow directory)
-ls OUTPUT_pipeline/2-output/
+ls OUTPUT_pipeline/2-output
 
 # Check the final mapping file (at subproject root)
 head ../../output_to_input/maps/*_map-genus_species_X_phylonames.tsv
