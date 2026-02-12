@@ -2,7 +2,7 @@
 
 **For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers genomesDB-specific concepts and the three-step architecture.
 
-**Location**: `gigantic_project-*/subprojects/genomesDB/`
+**Location**: `gigantic_project-*/subprojects/x_genomesDB/`
 
 ---
 
@@ -23,7 +23,7 @@
 **Purpose**: Manage genome and proteome data for GIGANTIC projects.
 
 **Three-Step Pipeline**:
-1. **Sources** - Collect proteome files from NCBI, UniProt, user sources
+1. **Sources** - Ingest user-provided proteome files (USER-DRIVEN, no auto-downloads)
 2. **Standardize and Evaluate** - Standardize formats, apply phylonames, evaluate quality
 3. **Databases** - Build BLAST databases and search indices
 
@@ -31,21 +31,98 @@
 
 ---
 
+## GIGANTIC Source Data Naming Conventions
+
+### Source Manifest Format
+
+The source manifest is a **four-column TSV**:
+
+```
+genus_species	genome_path	gtf_path	proteome_path
+```
+
+**Example**:
+```tsv
+genus_species	genome_path	gtf_path	proteome_path
+Homo_sapiens	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.gtf	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+Mus_musculus	/data/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	/data/Mus_musculus-genome-GCF_000001635.27-20240115.gtf	/data/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+```
+
+### File Naming Convention
+
+**All source files follow this structure**:
+
+```
+genus_species-genome-source_genome_project_identifier-download_date.extension
+```
+
+| Component | Description | Example |
+|-----------|-------------|---------|
+| `genus_species` | Species name | `Homo_sapiens` |
+| `genome` | Literal string (indicates genome-level data) | `genome` |
+| `source_genome_project_identifier` | Source database + assembly ID | `GCF_000001405.40` |
+| `download_date` | YYYYMMDD format | `20240115` |
+| `extension` | File type | `.fasta`, `.gtf`, `.gff`, `.aa` |
+
+**File type extensions**:
+- `.fasta` - Genome sequence (nucleotide)
+- `.gff` or `.gtf` - Gene annotation
+- `.aa` - Proteome (amino acid sequences)
+
+**Examples**:
+```
+Homo_sapiens-genome-GCF_000001405.40-20240115.fasta
+Homo_sapiens-genome-GCF_000001405.40-20240115.gtf
+Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+```
+
+### Sequence Header Convention
+
+**FASTA headers follow this structure**:
+
+```
+>genus_species-source_gene_id-source_transcript_id-source_protein_id
+```
+
+| Component | Description | Example |
+|-----------|-------------|---------|
+| `genus_species` | Must match filename species | `Homo_sapiens` |
+| `source_gene_id` | Gene ID from source database | `ENSG00000139618` |
+| `source_transcript_id` | Transcript ID from source | `ENST00000380152` |
+| `source_protein_id` | Protein ID from source | `ENSP00000369497` |
+
+**Example headers**:
+```
+>Homo_sapiens-ENSG00000139618-ENST00000380152-ENSP00000369497
+>Mus_musculus-MGI:87853-NM_007393-NP_031419
+>Drosophila_melanogaster-FBgn0000003-FBtr0071763-FBpp0071429
+```
+
+**Why this format?**
+- Species is immediately identifiable from any sequence
+- Full provenance chain: gene → transcript → protein
+- Enables tracing back to source databases
+- Consistent across all GIGANTIC analyses
+
+---
+
 ## Three-Step Architecture
 
-### STEP_1-sources
+### STEP_1-sources (USER-DRIVEN)
 
 **Directory**: `STEP_1-sources/`
-**Workflow**: `workflow-COPYME-collect_source_genomes`
+**Workflow**: `workflow-COPYME-ingest_source_proteomes`
+
+**Critical Concept**: STEP_1 does NOT download data automatically. Users provide their own source files.
 
 **Function**:
-- Download proteomes from NCBI
-- Fetch from UniProt
-- Accept user-provided files
-- Organize by source
+- Accept user-provided manifest with genome, GTF, proteome paths
+- Validate source files exist
+- Hard copy proteomes to OUTPUT_pipeline
+- Create symlinks in output_to_input for STEP_2
 
 **Outputs**:
-- `STEP_1-sources/output_to_input/raw_proteomes/` - Raw files for STEP_2
+- `STEP_1-sources/output_to_input/proteomes/` - Symlinks for STEP_2
 
 ### STEP_2-standardize_and_evaluate
 
@@ -81,7 +158,7 @@
 ## Directory Structure (relative to subproject root)
 
 ```
-genomesDB/
+x_genomesDB/
 ├── README.md                           # Human documentation
 ├── AI_GUIDE-genomesDB.md               # THIS FILE
 ├── RUN-clean_and_record_subproject.sh  # Cleanup for entire subproject
@@ -95,10 +172,11 @@ genomesDB/
 │   ├── README.md
 │   ├── AI_GUIDE-sources.md
 │   ├── RUN-clean_and_record_subproject.sh
-│   ├── user_research/
+│   ├── user_research/                  # User's source data storage
 │   ├── output_to_input/                # → STEP_2 inputs
-│   └── workflow-COPYME-collect_source_genomes/
+│   └── workflow-COPYME-ingest_source_proteomes/
 │       ├── INPUT_user/
+│       │   └── source_manifest.tsv     # User creates this
 │       ├── OUTPUT_pipeline/
 │       └── ai/
 │
@@ -147,10 +225,10 @@ Step directories are nested ONE level deeper than standard subprojects:
 
 | Location | Relative path to project root |
 |----------|-------------------------------|
-| `genomesDB/` | `../../` |
-| `genomesDB/STEP_1-sources/` | `../../../` |
-| `genomesDB/STEP_1-sources/workflow-COPYME-*/` | `../../../../` |
-| `genomesDB/STEP_1-sources/workflow-COPYME-*/ai/` | `../../../../../` |
+| `x_genomesDB/` | `../../` |
+| `x_genomesDB/STEP_1-sources/` | `../../../` |
+| `x_genomesDB/STEP_1-sources/workflow-COPYME-*/` | `../../../../` |
+| `x_genomesDB/STEP_1-sources/workflow-COPYME-*/ai/` | `../../../../../` |
 
 ---
 
@@ -172,11 +250,12 @@ This consolidates documentation regardless of which step generated it.
 | Error | Cause | Solution |
 |-------|-------|----------|
 | "Species not found" | phylonames not run | Run phylonames subproject first |
+| "Source file not found" | Path in manifest doesn't exist | Verify paths with `ls` |
 | STEP_2 can't find inputs | STEP_1 not run | Run STEP_1-sources workflow first |
 | STEP_3 can't find inputs | STEP_2 not run | Run STEP_2-standardize_and_evaluate first |
 | BLAST database empty | No proteomes passed QC | Check STEP_2 evaluation reports |
-| Download failed | Network or NCBI down | Check connectivity, retry |
 | "No phyloname mapping" | Missing mapping file | Run phylonames, check output_to_input |
+| Manifest format error | Wrong columns or delimiter | Use 4 tab-separated columns |
 
 ### Diagnostic Commands
 
@@ -201,7 +280,7 @@ ls output_to_input/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `STEP_1-sources/workflow-*/INPUT_user/source_manifest.tsv` | What to download | **YES** |
+| `STEP_1-sources/workflow-*/INPUT_user/source_manifest.tsv` | List of genomes/proteomes to ingest | **YES** |
 | `STEP_2-standardize_and_evaluate/workflow-*/INPUT_user/` | (from STEP_1) | No |
 | `STEP_3-databases/workflow-*/INPUT_user/` | (from STEP_2) | No |
 | `output_to_input/` | Final databases | No |
@@ -214,9 +293,10 @@ ls output_to_input/
 | Situation | Ask |
 |-----------|-----|
 | Starting genomesDB | "Have you run the phylonames subproject first?" |
-| Species sources | "Which sources should we collect from? (NCBI, UniProt, custom)" |
+| Before STEP_1 | "Where are your genome, GTF, and proteome files located?" |
+| Manifest creation | "Are your files named with the GIGANTIC convention? (genus_species-genome-source_id-date.ext)" |
+| Header format | "Do your FASTA headers follow the convention? (genus_species-gene_id-transcript_id-protein_id)" |
 | Quality thresholds | "What quality thresholds should we use for evaluation?" |
-| BLAST database type | "What type of BLAST database? (protein, nucleotide)" |
 | Error occurred | "Which step failed? What error message?" |
 
 ---

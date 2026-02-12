@@ -1,7 +1,0 @@
-# GIGANTIC Demo Species List
-# One species per line, format: Genus_species
-# Lines starting with # are ignored
-
-Homo_sapiens
-Aplysia_californica
-Octopus_bimaculoides

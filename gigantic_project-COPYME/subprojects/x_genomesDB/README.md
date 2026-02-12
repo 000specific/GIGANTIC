@@ -13,28 +13,92 @@ The genomesDB subproject manages genome and proteome data for GIGANTIC projects.
 
 ---
 
+## GIGANTIC Source Data Naming Conventions
+
+### Source Manifest Format
+
+The source manifest is a TSV file with four columns:
+
+```
+genus_species	path/to/genome	path/to/gtf	path/to/proteome
+```
+
+**Example**:
+```tsv
+genus_species	genome_path	gtf_path	proteome_path
+Homo_sapiens	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.gtf	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+Mus_musculus	/data/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	/data/Mus_musculus-genome-GCF_000001635.27-20240115.gtf	/data/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+```
+
+### File Naming Convention
+
+All source data files follow this structure:
+
+```
+genus_species-genome-source_genome_project_identifier-download_date.extension
+```
+
+**Components**:
+- `genus_species` - Species name in Genus_species format
+- `genome` - Literal string "genome" (indicates this is genome-level data)
+- `source_genome_project_identifier` - Source database and assembly ID (e.g., GCF_000001405.40, PRJNA12345)
+- `download_date` - Date downloaded in YYYYMMDD format
+- `extension` - File type: `.fasta` (genome), `.gff` or `.gtf` (annotation), `.aa` (proteome)
+
+**Examples**:
+```
+Homo_sapiens-genome-GCF_000001405.40-20240115.fasta    # Genome sequence
+Homo_sapiens-genome-GCF_000001405.40-20240115.gtf      # Gene annotation
+Homo_sapiens-genome-GCF_000001405.40-20240115.aa       # Proteome (amino acids)
+```
+
+### Sequence Header Convention
+
+FASTA sequence headers follow this structure:
+
+```
+>genus_species-source_gene_id-source_transcript_id-source_protein_id
+```
+
+**Components**:
+- `genus_species` - Species name matching the file name
+- `source_gene_id` - Gene identifier from source database
+- `source_transcript_id` - Transcript identifier from source database
+- `source_protein_id` - Protein identifier from source database
+
+**Example headers**:
+```
+>Homo_sapiens-ENSG00000139618-ENST00000380152-ENSP00000369497
+>Mus_musculus-MGI:87853-NM_007393-NP_031419
+>Drosophila_melanogaster-FBgn0000003-FBtr0071763-FBpp0071429
+```
+
+---
+
 ## Three-Step Structure
 
 genomesDB is organized as three sequential steps, each with its own workflow:
 
 ```
-genomesDB/
-├── STEP_1-sources/                    # Collect genome/proteome files
-│   └── workflow-COPYME-collect_source_genomes/
+x_genomesDB/
+├── STEP_1-sources/                    # Ingest user-provided genome/proteome files
+│   └── workflow-COPYME-ingest_source_proteomes/
 ├── STEP_2-standardize_and_evaluate/   # Standardize and evaluate quality
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 └── STEP_3-databases/                  # Build BLAST databases
     └── workflow-COPYME-build_gigantic_genomesDB/
 ```
 
-### STEP_1-sources
+### STEP_1-sources (USER-DRIVEN)
 
-**Purpose**: Collect proteome files from various sources (NCBI, UniProt, user-provided).
+**Purpose**: Ingest user-provided proteome files into GIGANTIC.
 
-**Workflow**: `STEP_1-sources/workflow-COPYME-collect_source_genomes/`
+**Key Concept**: STEP_1 does NOT automatically download data. Users provide source data from outside GIGANTIC.
 
-**Inputs**: Species list, source manifests
-**Outputs**: Raw proteome files organized by source
+**Workflow**: `STEP_1-sources/workflow-COPYME-ingest_source_proteomes/`
+
+**Inputs**: Source manifest listing genome, GTF, and proteome paths
+**Outputs**: Proteome files organized in GIGANTIC structure
 
 ### STEP_2-standardize_and_evaluate
 
@@ -42,7 +106,7 @@ genomesDB/
 
 **Workflow**: `STEP_2-standardize_and_evaluate/workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/`
 
-**Inputs**: Raw proteome files from STEP_1
+**Inputs**: Proteome files from STEP_1
 **Outputs**: Standardized proteomes with phyloname-based naming
 
 ### STEP_3-databases
@@ -59,7 +123,7 @@ genomesDB/
 ## Directory Structure
 
 ```
-genomesDB/
+x_genomesDB/
 ├── README.md                           # This file
 ├── AI_GUIDE-genomesDB.md               # AI assistant guidance (subproject level)
 ├── RUN-clean_and_record_subproject.sh  # Cleanup script for entire subproject
@@ -72,10 +136,10 @@ genomesDB/
 │   ├── README.md                       # Step-specific documentation
 │   ├── AI_GUIDE-sources.md             # AI guidance for this step
 │   ├── RUN-clean_and_record_subproject.sh  # Step-level cleanup
-│   ├── user_research/                  # Step-specific workspace
+│   ├── user_research/                  # Step-specific workspace (user's source data)
 │   ├── output_to_input/                # Outputs passed to STEP_2
-│   └── workflow-COPYME-collect_source_genomes/
-│       ├── INPUT_user/                 # Workflow inputs
+│   └── workflow-COPYME-ingest_source_proteomes/
+│       ├── INPUT_user/                 # Source manifest goes here
 │       ├── OUTPUT_pipeline/            # Workflow outputs
 │       └── ai/                         # Pipeline scripts
 │
@@ -122,9 +186,10 @@ Each step passes outputs to the next step via its `output_to_input/` directory. 
 ### Running All Steps
 
 ```bash
-# STEP_1: Collect sources
-cd STEP_1-sources/workflow-COPYME-collect_source_genomes/
-bash RUN-workflow.sh
+# STEP_1: Ingest source proteomes
+cd STEP_1-sources/workflow-COPYME-ingest_source_proteomes/
+# Create INPUT_user/source_manifest.tsv with your data
+bash RUN-ingest_sources.sh
 
 # STEP_2: Standardize and evaluate
 cd ../../STEP_2-standardize_and_evaluate/workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
@@ -139,7 +204,7 @@ bash RUN-workflow.sh
 
 ```bash
 # Clean entire subproject (all steps)
-cd genomesDB/
+cd x_genomesDB/
 bash RUN-clean_and_record_subproject.sh --all
 
 # Or clean individual steps
@@ -183,7 +248,7 @@ genomesDB workflows depend on the `phylonames` subproject for species naming. Ru
 
 ## Notes
 
-- Step 1 downloads can be large (multiple GB per species)
+- STEP_1 is user-driven - users provide source data, no automatic downloads
 - Step 2 evaluation may flag low-quality genomes for review
 - Step 3 BLAST databases require substantial disk space
 - The complete pipeline may take several hours for large species sets

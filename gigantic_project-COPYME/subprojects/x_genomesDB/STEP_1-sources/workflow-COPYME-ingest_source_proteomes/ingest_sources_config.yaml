@@ -1,0 +1,133 @@
+# GIGANTIC Source Proteome Ingestion Configuration
+# AI: Claude Code | Opus 4.5 | 2026 February 12
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This workflow ingests user-provided proteome files into GIGANTIC.
+# It reads a manifest of source proteome paths and:
+#   1. Validates that all source files exist
+#   2. Hard copies proteomes to OUTPUT_pipeline/1-output/proteomes/
+#   3. Creates symlinks in STEP_1-sources/output_to_input/proteomes/
+#
+# After editing, run: bash RUN-ingest_sources.sh
+#
+# ============================================================================
+
+# ============================================================================
+# PROJECT SETTINGS (EDIT THESE)
+# ============================================================================
+
+project:
+  # Your project name (used in output file naming and logs)
+  # Example: "ctenophore_study", "species69", "my_project"
+  name: "my_project"
+
+  # Path to your source manifest file
+  # This TSV file lists the proteome files to ingest
+  # Location: INPUT_user/source_manifest.tsv (relative to workflow root)
+  source_manifest: "INPUT_user/source_manifest.tsv"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory for copied files
+  base_dir: "OUTPUT_pipeline"
+
+  # Location for files shared with STEP_2
+  # Symlinks to proteomes will be placed here
+  shared_dir: "output_to_input/proteomes"
+
+# ============================================================================
+# INGESTION OPTIONS
+# ============================================================================
+
+ingestion:
+  # Validate that source files exist before copying (recommended: true)
+  validate_sources: true
+
+  # How to handle missing source files
+  # "error" - Stop with error message (recommended)
+  # "warn" - Continue but log warning
+  # "skip" - Silently skip missing files
+  missing_file_action: "error"
+
+  # Overwrite existing files if they already exist (default: false)
+  overwrite_existing: false
+
+  # Create a log of all ingested files (default: true)
+  create_ingestion_log: true
+
+# ============================================================================
+# SLURM SETTINGS (FOR HPC USERS)
+# ============================================================================
+
+slurm:
+  # Enable SLURM job submission
+  # Set to true if running on an HPC cluster
+  enabled: false
+
+  # SLURM account to charge
+  account: "your_account"
+
+  # SLURM Quality of Service
+  qos: "your_qos"
+
+  # Resource allocation
+  memory: "4gb"
+  time: "1:00:00"
+  cpus: 1
+
+# ============================================================================
+# LOGGING SETTINGS
+# ============================================================================
+
+logging:
+  # Log file location
+  log_dir: "OUTPUT_pipeline/logs"
+
+  # Logging level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+
+  # Include timestamps in log messages
+  include_timestamps: true
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# SOURCE MANIFEST FORMAT:
+#
+# Your source_manifest.tsv should be a tab-separated file with headers:
+#
+#   species_name<TAB>proteome_path
+#   Homo_sapiens<TAB>/path/to/Homo_sapiens.fasta
+#   Aplysia_californica<TAB>/path/to/Aplysia_californica.aa
+#
+# The proteome_path can be:
+#   - Absolute path: /blue/moroz/share/data/proteomes/species.aa
+#   - Relative to workflow: ../user_research/species69/ncbi_genomes/output_to_input/proteomes/species.aa
+#
+# WHAT THIS WORKFLOW DOES:
+#
+# 1. Reads the source manifest from INPUT_user/
+# 2. Validates that each proteome file exists
+# 3. Hard copies proteomes to OUTPUT_pipeline/1-output/proteomes/
+# 4. Creates symlinks in STEP_1-sources/output_to_input/proteomes/
+# 5. Writes a log of all ingested files
+#
+# The symlinks in output_to_input/ are what STEP_2 will use as input.
+#
+# WHY HARD COPY + SYMLINK?
+#
+# Hard copying creates an archived record of exactly what was ingested.
+# Symlinks in output_to_input provide the interface for downstream steps.
+# This pattern ensures:
+#   - Reproducibility: OUTPUT_pipeline archives what was used
+#   - Clean interface: output_to_input/ has consistent structure
+#   - Flexibility: Original files remain untouched
+#
