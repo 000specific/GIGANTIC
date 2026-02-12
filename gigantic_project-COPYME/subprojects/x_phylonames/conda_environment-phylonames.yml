@@ -1,0 +1,38 @@
+# Conda Environment for GIGANTIC Phylonames Subproject
+# =====================================================
+#
+# This environment contains all dependencies needed to run the phylonames workflow.
+#
+# INSTALLATION:
+#   conda env create -f conda_environment-phylonames.yml
+#   # Or with mamba (faster):
+#   mamba env create -f conda_environment-phylonames.yml
+#
+# ACTIVATION:
+#   conda activate gigantic_phylonames
+#
+# USAGE:
+#   cd nf_workflow-COPYME_01-generate_phylonames/
+#   bash RUN_phylonames.sh          # Local execution
+#   sbatch RUN_phylonames.sbatch    # SLURM execution
+#
+# NOTE: This is a minimal environment. The Python scripts use only standard
+# library modules (pathlib, argparse, datetime, etc.) - no external packages.
+
+name: gigantic_phylonames
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.9
+  - nextflow>=23.0
+
+  # For downloading NCBI taxonomy database
+  - wget
+
+  # Optional: useful utilities
+  - curl
