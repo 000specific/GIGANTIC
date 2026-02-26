@@ -14,25 +14,26 @@
 # ============================================================================
 # DEFAULT OUTPUTS (uncomment to include)
 # ============================================================================
+#
+# NOTE: workflow-RUN_* patterns automatically resolve to the latest RUN directory.
+# If RUN_01 and RUN_02 both exist, only RUN_02 outputs will be linked.
 
-# Project-specific phyloname mapping (most commonly needed)
-workflow-COPYME-generate_phylonames/OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv	yes
+# Final project phyloname mapping with user overrides applied (script 004 output)
+workflow-RUN_*-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv	yes
 
 # ============================================================================
 # OPTIONAL OUTPUTS (uncomment if needed)
 # ============================================================================
 
-# Master phylonames for all NCBI species (large file, ~2M lines)
-# workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/phylonames	no
+# Base species mapping before user overrides (script 003 output)
+# workflow-RUN_*-generate_phylonames/OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv	no
 
-# Master phylonames with taxon IDs
-# workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/phylonames_taxonid	no
+# Unofficial clades report (script 004 output)
+# workflow-RUN_*-generate_phylonames/OUTPUT_pipeline/4-output/unofficial_clades_report.tsv	no
 
-# Complete mapping with NCBI taxonomy info
-# workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/map-phyloname_X_ncbi_taxonomy_info.tsv	no
-
-# Numbered clades explanation (for debugging taxonomy issues)
-# workflow-COPYME-generate_phylonames/OUTPUT_pipeline/2-output/map-numbered_clades_X_defining_clades.tsv	no
+# Taxonomy summary (script 005 output)
+# workflow-RUN_*-generate_phylonames/OUTPUT_pipeline/5-output/*_taxonomy_summary.html	no
+# workflow-RUN_*-generate_phylonames/OUTPUT_pipeline/5-output/*_taxonomy_summary.md	no
 
 # ============================================================================
 # USER ADDITIONS (add your custom paths below)

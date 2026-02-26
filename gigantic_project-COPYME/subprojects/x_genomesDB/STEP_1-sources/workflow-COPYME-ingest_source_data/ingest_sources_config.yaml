@@ -1,16 +1,16 @@
-# GIGANTIC Source Proteome Ingestion Configuration
-# AI: Claude Code | Opus 4.5 | 2026 February 12
+# GIGANTIC Source Data Ingestion Configuration
+# AI: Claude Code | Opus 4.5 | 2026 February 13
 # Human: Eric Edsinger
 #
 # ============================================================================
 # HOW TO USE THIS FILE
 # ============================================================================
 #
-# This workflow ingests user-provided proteome files into GIGANTIC.
-# It reads a manifest of source proteome paths and:
-#   1. Validates that all source files exist
-#   2. Hard copies proteomes to OUTPUT_pipeline/1-output/proteomes/
-#   3. Creates symlinks in STEP_1-sources/output_to_input/proteomes/
+# This workflow ingests user-provided source data into GIGANTIC.
+# It reads a manifest of source file paths and:
+#   1. Validates that all source files exist        -> OUTPUT_pipeline/1-output/
+#   2. Hard copies data into organized directories  -> OUTPUT_pipeline/2-output/
+#   3. Creates symlinks for STEP_2 access           -> OUTPUT_pipeline/3-output/
 #
 # After editing, run: bash RUN-ingest_sources.sh
 #
@@ -22,11 +22,11 @@
 
 project:
   # Your project name (used in output file naming and logs)
-  # Example: "ctenophore_study", "species69", "my_project"
+  # Example: "ctenophore_study", "species71", "my_project"
   name: "my_project"
 
   # Path to your source manifest file
-  # This TSV file lists the proteome files to ingest
+  # This TSV file lists the data files to ingest (proteomes, genomes, GFFs)
   # Location: INPUT_user/source_manifest.tsv (relative to workflow root)
   source_manifest: "INPUT_user/source_manifest.tsv"
 
@@ -35,32 +35,21 @@ project:
 # ============================================================================
 
 output:
-  # Main output directory for copied files
+  # Main output directory for all pipeline output
   base_dir: "OUTPUT_pipeline"
-
-  # Location for files shared with STEP_2
-  # Symlinks to proteomes will be placed here
-  shared_dir: "output_to_input/proteomes"
 
 # ============================================================================
 # INGESTION OPTIONS
 # ============================================================================
 
 ingestion:
-  # Validate that source files exist before copying (recommended: true)
-  validate_sources: true
-
   # How to handle missing source files
-  # "error" - Stop with error message (recommended)
-  # "warn" - Continue but log warning
-  # "skip" - Silently skip missing files
+  # "error" - Stop with error message (recommended for research)
+  # "warn"  - Continue but log warning
   missing_file_action: "error"
 
   # Overwrite existing files if they already exist (default: false)
   overwrite_existing: false
-
-  # Create a log of all ingested files (default: true)
-  create_ingestion_log: true
 
 # ============================================================================
 # SLURM SETTINGS (FOR HPC USERS)
@@ -83,44 +72,27 @@ slurm:
   cpus: 1
 
 # ============================================================================
-# LOGGING SETTINGS
-# ============================================================================
-
-logging:
-  # Log file location
-  log_dir: "OUTPUT_pipeline/logs"
-
-  # Logging level: DEBUG, INFO, WARNING, ERROR
-  level: "INFO"
-
-  # Include timestamps in log messages
-  include_timestamps: true
-
-# ============================================================================
 # NOTES
 # ============================================================================
 #
 # SOURCE MANIFEST FORMAT:
 #
-# Your source_manifest.tsv should be a tab-separated file with headers:
+# Your source_manifest.tsv should be a tab-separated file with 4 columns:
 #
-#   species_name<TAB>proteome_path
-#   Homo_sapiens<TAB>/path/to/Homo_sapiens.fasta
-#   Aplysia_californica<TAB>/path/to/Aplysia_californica.aa
+#   genus_species    genome_path    gff_path    proteome_path
+#   Homo_sapiens     /path/to/genome.fasta    /path/to/annotations.gff3    /path/to/proteome.aa
 #
-# The proteome_path can be:
-#   - Absolute path: /blue/moroz/share/data/proteomes/species.aa
-#   - Relative to workflow: ../user_research/species69/ncbi_genomes/output_to_input/proteomes/species.aa
+# Use "NA" for data types not available for a species.
 #
-# WHAT THIS WORKFLOW DOES:
+# Paths can be:
+#   - Absolute: /blue/moroz/data/genomes/species.fasta
+#   - Relative: ../user_research/downloads/species.fasta
 #
-# 1. Reads the source manifest from INPUT_user/
-# 2. Validates that each proteome file exists
-# 3. Hard copies proteomes to OUTPUT_pipeline/1-output/proteomes/
-# 4. Creates symlinks in STEP_1-sources/output_to_input/proteomes/
-# 5. Writes a log of all ingested files
+# WHAT THIS WORKFLOW DOES (3 steps, each with visible output):
 #
-# The symlinks in output_to_input/ are what STEP_2 will use as input.
+#   Step 1 -> OUTPUT_pipeline/1-output/   Validate manifest (check all files exist)
+#   Step 2 -> OUTPUT_pipeline/2-output/   Ingest data (hard copy files into organized dirs)
+#   Step 3 -> OUTPUT_pipeline/3-output/   Create symlinks (for STEP_2 to consume)
 #
 # WHY HARD COPY + SYMLINK?
 #

@@ -6,6 +6,20 @@ work/
 # Pipeline outputs (generated, not tracked)
 OUTPUT_pipeline/
 
+# Test/production run directories (contain large data, not templates)
+workflow-RUN_*/
+
+# User research directories (personal data, not for git)
+user_research/
+
+# Species data directories (large proteome collections)
+species*/
+
+# output_to_input contents (symlinks to run data, created during workflow runs)
+**/output_to_input/*
+!**/output_to_input/.gitkeep
+!**/output_to_input/README.md
+
 # Large data files
 *.aa
 *.fa

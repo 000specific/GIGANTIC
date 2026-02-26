@@ -23,7 +23,8 @@
 # 1. Reads upload_to_server/upload_manifest.tsv
 # 2. For each line with "yes", creates symlink(s) in upload_to_server/
 # 3. Glob patterns are expanded (e.g., *.tsv matches all .tsv files)
-# 4. Stale symlinks (pointing to non-existent files) are removed
+# 4. For workflow-RUN_* patterns: automatically selects the latest RUN
+# 5. Stale symlinks (pointing to non-existent files) are removed
 #
 # MANIFEST FORMAT:
 #   source_path<TAB>include
@@ -142,6 +143,19 @@ while IFS=$'\t' read -r source_path include || [ -n "$source_path" ]; do
         echo -e "  ${YELLOW}WARNING: No files match: ${source_path}${NC}"
         missing_count=$((missing_count + 1))
         continue
+    fi
+
+    # If pattern contains workflow-RUN_* and multiple matches exist,
+    # keep only files from the latest (highest-numbered) RUN directory
+    if [[ "$source_path" == *"workflow-RUN_"* ]]; then
+        match_count=$(echo "$matches" | wc -l)
+        if [ "$match_count" -gt 1 ]; then
+            # Sort matches and keep only the last one (highest RUN number)
+            latest_match=$(echo "$matches" | sort -t'_' -k2 -V | tail -n 1)
+            latest_run_dir=$(echo "$latest_match" | grep -oP 'workflow-RUN_\d+-[^/]+')
+            echo -e "  ${BLUE}Multiple RUNs found, using latest: ${latest_run_dir}${NC}"
+            matches="$latest_match"
+        fi
     fi
 
     for source_file in $matches; do

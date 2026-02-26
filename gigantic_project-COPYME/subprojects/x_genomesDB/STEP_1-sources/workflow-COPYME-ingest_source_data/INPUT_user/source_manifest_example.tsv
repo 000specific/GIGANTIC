@@ -1,5 +1,5 @@
 # GIGANTIC Source Data Manifest
-# AI: Claude Code | Opus 4.5 | 2026 February 12
+# AI: Claude Code | Opus 4.5 | 2026 February 13
 # Human: Eric Edsinger
 #
 # This manifest lists source data files to ingest into GIGANTIC.
@@ -9,9 +9,9 @@
 # ============================================================================
 #
 #   genus_species    - Species identifier (Genus_species format)
-#   genome_path      - Path to genome FASTA file
-#   gtf_path         - Path to GTF/GFF annotation file
-#   proteome_path    - Path to proteome file (amino acids)
+#   genome_path      - Path to genome FASTA file (or NA if not available)
+#   gff_path         - Path to GFF3/GTF annotation file (or NA if not available)
+#   proteome_path    - Path to proteome amino acid file (or NA if not available)
 #
 # ============================================================================
 # FILE NAMING CONVENTION (REQUIRED)
@@ -23,17 +23,17 @@
 # Components:
 #   genus_species    - e.g., Homo_sapiens
 #   genome           - literal string "genome"
-#   source_id        - e.g., GCF_000001405.40 (NCBI), PRJNA12345 (other)
-#   download_date    - YYYYMMDD format, e.g., 20240115
-#   extension        - .fasta (genome), .gtf/.gff (annotation), .aa (proteome)
+#   source_id        - e.g., ncbi_GCF_000001405.40 (NCBI), figshare_12345 (other)
+#   download_date    - downloaded_YYYYMMDD format, e.g., downloaded_20240115
+#   extension        - .fasta (genome), .gff3/.gtf (annotation), .aa (proteome)
 #
 # Examples:
-#   Homo_sapiens-genome-GCF_000001405.40-20240115.fasta
-#   Homo_sapiens-genome-GCF_000001405.40-20240115.gtf
-#   Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+#   Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.fasta
+#   Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.gff3
+#   Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.aa
 #
 # ============================================================================
-# SEQUENCE HEADER CONVENTION (REQUIRED)
+# SEQUENCE HEADER CONVENTION (REQUIRED for proteome .aa files)
 # ============================================================================
 #
 # FASTA headers must follow:
@@ -50,22 +50,23 @@
 #
 #   - Lines starting with # are comments (ignored)
 #   - Paths can be absolute or relative to this workflow directory
-#   - All three data files (genome, GTF, proteome) must exist
+#   - Use "NA" for data types not available for a species
 #   - Species names must use underscores (Genus_species), not spaces
 #
 # ============================================================================
 # HEADER ROW (required, must be exactly these 4 column names)
 # ============================================================================
-genus_species	genome_path	gtf_path	proteome_path
+genus_species	genome_path	gff_path	proteome_path
 # ============================================================================
 # EXAMPLE DATA (uncomment and edit with your data)
 # ============================================================================
 #
-# Using absolute paths:
-# Homo_sapiens	/blue/moroz/data/genomes/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/blue/moroz/data/genomes/Homo_sapiens-genome-GCF_000001405.40-20240115.gtf	/blue/moroz/data/genomes/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+# All three data types available:
+# Homo_sapiens	/data/genomes/Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.fasta	/data/genomes/Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.gff3	/data/genomes/Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.aa
 #
-# Using relative paths (from user_research):
-# Mus_musculus	../user_research/ncbi_downloads/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	../user_research/ncbi_downloads/Mus_musculus-genome-GCF_000001635.27-20240115.gtf	../user_research/ncbi_downloads/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+# Using relative paths:
+# Mus_musculus	../user_research/downloads/Mus_musculus-genome-ncbi_GCF_000001635.27-downloaded_20240115.fasta	../user_research/downloads/Mus_musculus-genome-ncbi_GCF_000001635.27-downloaded_20240115.gff3	../user_research/downloads/Mus_musculus-genome-ncbi_GCF_000001635.27-downloaded_20240115.aa
 #
-# Drosophila_melanogaster	../user_research/flybase/Drosophila_melanogaster-genome-BDGP6.46-20240115.fasta	../user_research/flybase/Drosophila_melanogaster-genome-BDGP6.46-20240115.gtf	../user_research/flybase/Drosophila_melanogaster-genome-BDGP6.46-20240115.aa
+# Missing genome (proteome and GFF only):
+# Amphiscolops_sp	NA	../user_research/downloads/Amphiscolops_sp-genome-zenodo_12345-downloaded_20240115.gff3	../user_research/downloads/Amphiscolops_sp-genome-zenodo_12345-downloaded_20240115.aa
 #
