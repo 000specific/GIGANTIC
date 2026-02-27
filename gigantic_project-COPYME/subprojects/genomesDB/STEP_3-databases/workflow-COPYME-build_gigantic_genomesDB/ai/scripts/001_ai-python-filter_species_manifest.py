@@ -101,8 +101,11 @@ def filter_manifest(
     include_column_index = -1
 
     with open( input_manifest_path, 'r' ) as input_manifest:
-        # Read and parse header to find Include column
+        # Skip comment lines and find the actual header
         header_line = input_manifest.readline().strip()
+        while header_line.startswith( '#' ) or not header_line:
+            header_line = input_manifest.readline().strip()
+
         parts_header = header_line.split( '\t' )
 
         # Find the Include column (look for column containing "Include")

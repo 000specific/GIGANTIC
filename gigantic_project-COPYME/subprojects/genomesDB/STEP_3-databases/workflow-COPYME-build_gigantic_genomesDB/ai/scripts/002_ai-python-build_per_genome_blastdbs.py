@@ -112,19 +112,23 @@ def build_single_blastdb(
         }
 
     # Build BLAST database
-    # Command: makeblastdb -in FASTA -parse_seqids -dbtype prot -out FASTA
+    # Command: makeblastdb -in FASTA -dbtype prot -out FASTA
+    # Note: We omit -parse_seqids because GIGANTIC sequence IDs exceed BLAST's
+    # 50-character limit. BLAST searches still work correctly without this flag.
     makeblastdb_command = [
         'makeblastdb',
         '-in', str( dest_fasta ),
-        '-parse_seqids',
         '-dbtype', 'prot',
         '-out', str( dest_fasta )
     ]
 
     try:
+        # Suppress stderr to avoid thousands of "invalid residue" warnings
+        # (selenocysteine, pyrrolysine, etc.) which slow down execution
         result = subprocess.run(
             makeblastdb_command,
-            capture_output = True,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.DEVNULL,
             text = True,
             check = True
         )
@@ -134,8 +138,7 @@ def build_single_blastdb(
             'success': True,
             'fasta_path': str( dest_fasta ),
             'command': ' '.join( makeblastdb_command ),
-            'stdout': result.stdout,
-            'stderr': result.stderr
+            'stdout': result.stdout
         }
 
     except subprocess.CalledProcessError as error:

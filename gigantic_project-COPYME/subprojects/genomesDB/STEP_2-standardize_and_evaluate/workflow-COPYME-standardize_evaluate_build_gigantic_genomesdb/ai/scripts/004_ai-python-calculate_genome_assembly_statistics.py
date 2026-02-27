@@ -3,7 +3,7 @@
 # Human: Eric Edsinger
 
 """
-003_ai-python-calculate_genome_assembly_statistics.py
+004_ai-python-calculate_genome_assembly_statistics.py
 
 Calculate comprehensive assembly statistics for all genome FASTA files using gfastats,
 the standard tool for genome assembly quality metrics.
@@ -27,15 +27,15 @@ Inputs:
       Used for reverse lookup: phyloname -> genus_species
 
 Outputs:
-    - Assembly statistics TSV: OUTPUT_pipeline/3-output/3_ai-genome_assembly_statistics.tsv
-    - Processing log: OUTPUT_pipeline/3-output/3_ai-log-calculate_genome_assembly_statistics.log
+    - Assembly statistics TSV: OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv
+    - Processing log: OUTPUT_pipeline/4-output/4_ai-log-calculate_genome_assembly_statistics.log
 
 Usage:
     conda activate ai_gigantic_genomesdb
-    python3 003_ai-python-calculate_genome_assembly_statistics.py \\
+    python3 004_ai-python-calculate_genome_assembly_statistics.py \\
         --input-genomes PATH_TO_GIGANTIC_GENOMES_DIR \\
         --phylonames-mapping PATH_TO_MAPPING.tsv \\
-        --output-dir OUTPUT_PIPELINE/3-output
+        --output-dir OUTPUT_PIPELINE/4-output
 """
 
 import argparse
@@ -365,12 +365,12 @@ def main():
         epilog = """
 Examples:
     # Basic usage
-    python3 003_ai-python-calculate_genome_assembly_statistics.py \\
+    python3 004_ai-python-calculate_genome_assembly_statistics.py \\
         --input-genomes ../output_to_input/gigantic_genomes \\
         --phylonames-mapping ../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv
 
     # Custom output directory
-    python3 003_ai-python-calculate_genome_assembly_statistics.py \\
+    python3 004_ai-python-calculate_genome_assembly_statistics.py \\
         --input-genomes /path/to/genomes \\
         --phylonames-mapping /path/to/mapping.tsv \\
         --output-dir /path/to/output
@@ -404,8 +404,8 @@ Notes:
     parser.add_argument(
         '--output-dir',
         type = str,
-        default = 'OUTPUT_pipeline/3-output',
-        help = 'Base output directory (default: OUTPUT_pipeline/3-output)'
+        default = 'OUTPUT_pipeline/4-output',
+        help = 'Base output directory (default: OUTPUT_pipeline/4-output)'
     )
 
     parser.add_argument(
@@ -425,8 +425,8 @@ Notes:
     input_phylonames_mapping_path = Path( arguments.phylonames_mapping ).resolve()
     output_base_directory = Path( arguments.output_dir )
 
-    output_tsv_path = output_base_directory / '3_ai-genome_assembly_statistics.tsv'
-    output_log_path = output_base_directory / '3_ai-log-calculate_genome_assembly_statistics.log'
+    output_tsv_path = output_base_directory / '4_ai-genome_assembly_statistics.tsv'
+    output_log_path = output_base_directory / '4_ai-log-calculate_genome_assembly_statistics.log'
 
     # Create output directory
     output_base_directory.mkdir( parents = True, exist_ok = True )
@@ -439,7 +439,7 @@ Notes:
 
     logger.info( "=" * 80 )
     logger.info( "GIGANTIC Genome Assembly Statistics (via gfastats)" )
-    logger.info( "Script: 003_ai-python-calculate_genome_assembly_statistics.py" )
+    logger.info( "Script: 004_ai-python-calculate_genome_assembly_statistics.py" )
     logger.info( "=" * 80 )
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"Input genomes directory: {input_genomes_directory}" )

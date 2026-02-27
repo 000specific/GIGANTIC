@@ -3,7 +3,7 @@
 # Human: Eric Edsinger
 
 """
-005_ai-python-summarize_quality_and_generate_species_manifest.py
+006_ai-python-summarize_quality_and_generate_species_manifest.py
 
 Combine genome assembly statistics (Script 003) and BUSCO results (Script 004)
 into a comprehensive quality summary table. Also generates a species selection
@@ -23,22 +23,22 @@ Users can:
 - STEP_3 will read the manifest and only process species marked YES
 
 Inputs:
-    - Genome assembly statistics from Script 003 (OUTPUT_pipeline/3-output/3_ai-genome_assembly_statistics.tsv)
-    - BUSCO summary from Script 004 (OUTPUT_pipeline/4-output/4_ai-busco_summary.tsv)
+    - Genome assembly statistics from Script 004 (OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv)
+    - BUSCO summary from Script 005 (OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv)
     - Proteome standardization manifest from Script 001 (for species without genomes)
 
 Outputs:
-    - Comprehensive quality summary: OUTPUT_pipeline/5-output/5_ai-comprehensive_quality_summary.tsv
-    - Species selection manifest: OUTPUT_pipeline/5-output/5_ai-species_selection_manifest.tsv
+    - Comprehensive quality summary: OUTPUT_pipeline/6-output/6_ai-comprehensive_quality_summary.tsv
+    - Species selection manifest: OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv
     - Species selection manifest (for editing): ../../output_to_input/species_selection_manifest.tsv
-    - Processing log: OUTPUT_pipeline/5-output/5_ai-log-summarize_quality.log
+    - Processing log: OUTPUT_pipeline/6-output/6_ai-log-summarize_quality.log
 
 Usage:
-    python3 005_ai-python-summarize_quality_and_generate_species_manifest.py \\
-        --assembly-stats OUTPUT_pipeline/3-output/3_ai-genome_assembly_statistics.tsv \\
-        --busco-summary OUTPUT_pipeline/4-output/4_ai-busco_summary.tsv \\
+    python3 006_ai-python-summarize_quality_and_generate_species_manifest.py \\
+        --assembly-stats OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv \\
+        --busco-summary OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv \\
         --proteome-manifest OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv \\
-        --output-dir OUTPUT_pipeline/5-output \\
+        --output-dir OUTPUT_pipeline/6-output \\
         --output-to-input-dir ../../output_to_input
 """
 
@@ -87,7 +87,7 @@ def load_assembly_stats( stats_path: Path, logger: logging.Logger ) -> dict:
     Load genome assembly statistics from Script 003 output.
 
     Args:
-        stats_path: Path to 3_ai-genome_assembly_statistics.tsv
+        stats_path: Path to 4_ai-genome_assembly_statistics.tsv
         logger: Logger instance
 
     Returns:
@@ -146,7 +146,7 @@ def load_busco_summary( summary_path: Path, logger: logging.Logger ) -> tuple:
     Load BUSCO summary from Script 004 output.
 
     Args:
-        summary_path: Path to 4_ai-busco_summary.tsv
+        summary_path: Path to 5_ai-busco_summary.tsv
         logger: Logger instance
 
     Returns:
@@ -392,11 +392,11 @@ def main():
         formatter_class = argparse.RawDescriptionHelpFormatter,
         epilog = """
 Examples:
-    python3 005_ai-python-summarize_quality_and_generate_species_manifest.py \\
-        --assembly-stats OUTPUT_pipeline/3-output/3_ai-genome_assembly_statistics.tsv \\
-        --busco-summary OUTPUT_pipeline/4-output/4_ai-busco_summary.tsv \\
+    python3 006_ai-python-summarize_quality_and_generate_species_manifest.py \\
+        --assembly-stats OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv \\
+        --busco-summary OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv \\
         --proteome-manifest OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv \\
-        --output-dir OUTPUT_pipeline/5-output \\
+        --output-dir OUTPUT_pipeline/6-output \\
         --manifest-output-dir INPUT_user
         """
     )
@@ -425,8 +425,8 @@ Examples:
     parser.add_argument(
         '--output-dir',
         type = str,
-        default = 'OUTPUT_pipeline/5-output',
-        help = 'Output directory for quality summary (default: OUTPUT_pipeline/5-output)'
+        default = 'OUTPUT_pipeline/6-output',
+        help = 'Output directory for quality summary (default: OUTPUT_pipeline/6-output)'
     )
 
     parser.add_argument(
@@ -448,10 +448,10 @@ Examples:
     output_base_directory = Path( arguments.output_dir )
     output_to_input_directory = Path( arguments.output_to_input_dir )
 
-    output_summary_path = output_base_directory / '5_ai-comprehensive_quality_summary.tsv'
-    output_log_path = output_base_directory / '5_ai-log-summarize_quality.log'
+    output_summary_path = output_base_directory / '6_ai-comprehensive_quality_summary.tsv'
+    output_log_path = output_base_directory / '6_ai-log-summarize_quality.log'
     # Manifest goes to BOTH 5-output (as script output) AND output_to_input (for user editing and STEP_3)
-    output_manifest_path = output_base_directory / '5_ai-species_selection_manifest.tsv'
+    output_manifest_path = output_base_directory / '6_ai-species_selection_manifest.tsv'
     output_to_input_manifest_path = output_to_input_directory / 'species_selection_manifest.tsv'
 
     # Create output directories
@@ -466,7 +466,7 @@ Examples:
 
     logger.info( "=" * 80 )
     logger.info( "GIGANTIC Quality Summary and Species Selection Manifest" )
-    logger.info( "Script: 005_ai-python-summarize_quality_and_generate_species_manifest.py" )
+    logger.info( "Script: 006_ai-python-summarize_quality_and_generate_species_manifest.py" )
     logger.info( "=" * 80 )
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"Assembly stats input: {input_assembly_stats_path}" )

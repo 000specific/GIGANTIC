@@ -1,0 +1,76 @@
+# GIGANTIC genomesDB STEP_2 - Standardize and Evaluate Configuration
+# AI: Claude Code | Opus 4.6 | 2026 February 27
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration file controls how the STEP_2 workflow runs.
+# Edit the paths below to match your project setup.
+#
+# After editing, run: bash RUN-standardize_evaluate.sh
+#
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  # Path to phylonames mapping file (from phylonames subproject)
+  phylonames_mapping: "../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
+
+  # Path to source proteomes (from STEP_1)
+  proteomes: "../../STEP_1-sources/output_to_input/T1_proteomes"
+
+  # Path to source genomes (from STEP_1, optional)
+  genomes: "../../STEP_1-sources/output_to_input/genomes"
+
+  # Path to gene annotations (from STEP_1, optional)
+  gene_annotations: "../../STEP_1-sources/output_to_input/gene_annotations"
+
+  # Path to BUSCO lineages manifest (in INPUT_user/)
+  busco_lineages: "INPUT_user/busco_lineages.txt"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# BUSCO SETTINGS
+# ============================================================================
+
+busco:
+  # Number of parallel BUSCO jobs
+  parallel: 4
+
+  # CPUs per BUSCO job
+  cpus_per_job: 4
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# WORKFLOW STEPS:
+#   001: Standardize proteome filenames and FASTA headers with phylonames
+#   002: Clean proteome invalid residues (replace '.' with 'X')
+#   003: Create phyloname-based symlinks for genomes and gene annotations
+#   004: Calculate genome assembly statistics using gfastats
+#   005: Run BUSCO proteome completeness evaluation
+#   006: Summarize quality metrics and generate species manifest
+#
+# OUTPUT STRUCTURE:
+#   OUTPUT_pipeline/1-output/  - Standardized proteomes
+#   OUTPUT_pipeline/2-output/  - Cleaned proteomes
+#   OUTPUT_pipeline/3-output/  - Genome/annotation symlinks
+#   OUTPUT_pipeline/4-output/  - Assembly statistics
+#   OUTPUT_pipeline/5-output/  - BUSCO results
+#   OUTPUT_pipeline/6-output/  - Quality summary and manifest
+#
+# The species manifest is also copied to ../../output_to_input/ for STEP_3.
+#

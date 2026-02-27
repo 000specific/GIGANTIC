@@ -3,7 +3,7 @@
 # Human: Eric Edsinger
 
 """
-002_ai-python-standardize_genome_and_annotation_phylonames.py
+003_ai-python-standardize_genome_and_annotation_phylonames.py
 
 Standardize genome and gene annotation files by creating phyloname-based symlinks:
     - Genomes:          Genus_species-genome-source-date.fasta  ->  phyloname-genome.fasta
@@ -23,19 +23,19 @@ Inputs:
       (named: Genus_species-genome-source_id-download_date.gff3 or .gtf)
 
 Outputs:
-    - Symlinked genome files in OUTPUT_pipeline/2-output/gigantic_genomes/
+    - Symlinked genome files in OUTPUT_pipeline/3-output/gigantic_genomes/
       (named: phyloname-genome.fasta)
-    - Symlinked gene annotation files in OUTPUT_pipeline/2-output/gigantic_gene_annotations/
+    - Symlinked gene annotation files in OUTPUT_pipeline/3-output/gigantic_gene_annotations/
       (named: phyloname-genome.gff3 or phyloname-genome.gtf)
-    - Transformation manifest TSV: OUTPUT_pipeline/2-output/2_ai-standardization_manifest.tsv
-    - Detailed log: OUTPUT_pipeline/2-output/2_ai-log-standardize_genome_and_annotation_phylonames.log
+    - Transformation manifest TSV: OUTPUT_pipeline/3-output/3_ai-standardization_manifest.tsv
+    - Detailed log: OUTPUT_pipeline/3-output/3_ai-log-standardize_genome_and_annotation_phylonames.log
 
 Usage:
-    python3 002_ai-python-standardize_genome_and_annotation_phylonames.py \\
+    python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping PATH_TO_MAPPING.tsv \\
         --input-genomes PATH_TO_GENOMES_DIR \\
         --input-gene-annotations PATH_TO_GENE_ANNOTATIONS_DIR \\
-        --output-dir OUTPUT_PIPELINE/2-output
+        --output-dir OUTPUT_PIPELINE/3-output
 """
 
 import argparse
@@ -372,13 +372,13 @@ def main():
         epilog = """
 Examples:
     # Basic usage with default output location
-    python3 002_ai-python-standardize_genome_and_annotation_phylonames.py \\
+    python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping ../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv \\
         --input-genomes ../../STEP_1-sources/output_to_input/genomes \\
         --input-gene-annotations ../../STEP_1-sources/output_to_input/gene_annotations
 
     # Custom output directory
-    python3 002_ai-python-standardize_genome_and_annotation_phylonames.py \\
+    python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping /path/to/mapping.tsv \\
         --input-genomes /path/to/genomes \\
         --input-gene-annotations /path/to/gene_annotations \\
@@ -410,8 +410,8 @@ Examples:
     parser.add_argument(
         '--output-dir',
         type = str,
-        default = 'OUTPUT_pipeline/2-output',
-        help = 'Base output directory (default: OUTPUT_pipeline/2-output)'
+        default = 'OUTPUT_pipeline/3-output',
+        help = 'Base output directory (default: OUTPUT_pipeline/3-output)'
     )
 
     arguments = parser.parse_args()
@@ -427,8 +427,8 @@ Examples:
 
     output_genomes_directory = output_base_directory / 'gigantic_genomes'
     output_gene_annotations_directory = output_base_directory / 'gigantic_gene_annotations'
-    output_manifest_path = output_base_directory / '2_ai-standardization_manifest.tsv'
-    output_log_path = output_base_directory / '2_ai-log-standardize_genome_and_annotation_phylonames.log'
+    output_manifest_path = output_base_directory / '3_ai-standardization_manifest.tsv'
+    output_log_path = output_base_directory / '3_ai-log-standardize_genome_and_annotation_phylonames.log'
 
     # Create output directories
     output_genomes_directory.mkdir( parents = True, exist_ok = True )
@@ -443,7 +443,7 @@ Examples:
 
     logger.info( "=" * 80 )
     logger.info( "GIGANTIC Genome and Gene Annotation Standardization - Phylonames" )
-    logger.info( "Script: 002_ai-python-standardize_genome_and_annotation_phylonames.py" )
+    logger.info( "Script: 003_ai-python-standardize_genome_and_annotation_phylonames.py" )
     logger.info( "=" * 80 )
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"Phylonames mapping: {input_phylonames_mapping_path}" )

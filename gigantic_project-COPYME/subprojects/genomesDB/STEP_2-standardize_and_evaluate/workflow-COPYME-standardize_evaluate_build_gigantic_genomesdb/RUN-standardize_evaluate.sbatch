@@ -1,50 +1,50 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.5 | 2026 February 26 | Purpose: Run STEP_3 workflow on SLURM
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: Run STEP_2 workflow on SLURM
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC genomesDB - STEP_3 Build BLAST Databases (SLURM)
+# GIGANTIC genomesDB - STEP_2 Standardize and Evaluate (SLURM)
 ################################################################################
 #
 # PURPOSE:
-# Run the STEP_3 database building workflow on a SLURM cluster.
-# Builds per-genome BLAST databases from standardized proteomes.
+# Run the STEP_2 standardization workflow on a SLURM cluster.
+# This runs Scripts 001-006 (full standardization and evaluation pipeline).
 #
 # USAGE:
-#   sbatch RUN-workflow.sbatch
+#   sbatch RUN-standardize_evaluate.sbatch
 #
 # BEFORE RUNNING:
 # 1. Edit the SBATCH directives below (account, qos) for your cluster
-# 2. Ensure STEP_2 is complete (provides standardized proteomes)
-# 3. User should have edited species_selection_manifest.tsv (Include=YES/NO)
+# 2. Ensure STEP_1-sources is complete (provides source data)
+# 3. Ensure phylonames subproject is complete (provides species naming)
+# 4. Ensure INPUT_user/busco_lineages.txt exists for BUSCO evaluation
 #
 # FOR LOCAL MACHINES:
 # Use the local version instead:
-#   bash RUN-workflow.sh
+#   bash RUN-standardize_evaluate.sh
 #
 ################################################################################
 
-#SBATCH --job-name=genomesDB_step3
-#SBATCH --account=moroz
-#SBATCH --qos=moroz
+#SBATCH --job-name=genomesDB_step2
+#SBATCH --account=YOUR_ACCOUNT        # <-- EDIT: Your cluster account
+#SBATCH --qos=YOUR_QOS                # <-- EDIT: Your quality of service
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=16gb
-#SBATCH --time=2:00:00
-#SBATCH --output=slurm_logs/step3_workflow-%j.log
+#SBATCH --cpus-per-task=100
+#SBATCH --mem=700gb
+#SBATCH --time=6:00:00
+#SBATCH --output=slurm_logs/step2_workflow-%j.log
 
 ################################################################################
 # SLURM JOB EXECUTION
 ################################################################################
 
 echo "========================================================================"
-echo "GIGANTIC genomesDB STEP_3 Workflow (SLURM)"
+echo "GIGANTIC genomesDB STEP_2 Workflow (SLURM)"
 echo "========================================================================"
 echo ""
 echo "Job ID: ${SLURM_JOB_ID}"
 echo "Node: ${SLURM_NODELIST}"
-echo "CPUs: ${SLURM_CPUS_PER_TASK}"
 echo "Started: $(date)"
 echo ""
 
@@ -54,21 +54,11 @@ mkdir -p slurm_logs
 # Change to the directory where sbatch was invoked
 cd "${SLURM_SUBMIT_DIR}"
 
-# Load conda and activate environment
-module load conda
-conda activate ai_gigantic_genomesdb
-
-# Verify tools are available
-echo "Checking tools..."
-echo "NextFlow version: $(nextflow -version 2>&1 | head -1 || echo 'version check failed')"
-echo "makeblastdb version: $(makeblastdb -version 2>&1 | head -1 || echo 'version check failed')"
-echo ""
-
 # ============================================================================
 # Run the main workflow script
 # ============================================================================
 
-bash RUN-workflow.sh
+bash RUN-standardize_evaluate.sh
 EXIT_CODE=$?
 
 echo ""

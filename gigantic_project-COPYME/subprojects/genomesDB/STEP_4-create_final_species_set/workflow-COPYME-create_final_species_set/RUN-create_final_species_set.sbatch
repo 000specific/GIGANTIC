@@ -1,49 +1,45 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.5 | 2026 February 26 | Purpose: Run STEP_2 workflow on SLURM
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: Run STEP_4 workflow on SLURM
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC genomesDB - STEP_2 Standardize and Evaluate (SLURM)
+# GIGANTIC genomesDB - STEP_4 Create Final Species Set (SLURM)
 ################################################################################
 #
 # PURPOSE:
-# Run the STEP_2 standardization workflow on a SLURM cluster.
-# This runs Scripts 001-003 (proteome standardization, genome symlinks, assembly stats).
+# Run the STEP_4 workflow on a SLURM cluster.
+# This is a lightweight job - just copying files based on user selection.
 #
 # USAGE:
-#   sbatch RUN-workflow.sbatch
+#   sbatch RUN-create_final_species_set.sbatch
 #
 # BEFORE RUNNING:
 # 1. Edit the SBATCH directives below (account, qos) for your cluster
-# 2. Ensure STEP_1-sources is complete (provides source data)
-# 3. Ensure phylonames subproject is complete (provides species naming)
+# 2. Ensure STEP_2 and STEP_3 are complete
+# 3. Edit INPUT_user/selected_species.txt with your species selection
 #
 # FOR LOCAL MACHINES:
 # Use the local version instead:
-#   bash RUN-workflow.sh
-#
-# NOTE: BUSCO evaluation (Script 004) is a separate SLURM job because it
-# requires more time and CPUs:
-#   sbatch SLURM-004-busco_evaluation.sbatch
+#   bash RUN-create_final_species_set.sh
 #
 ################################################################################
 
-#SBATCH --job-name=genomesDB_step2
+#SBATCH --job-name=genomesDB_step4
 #SBATCH --account=YOUR_ACCOUNT        # <-- EDIT: Your cluster account
 #SBATCH --qos=YOUR_QOS                # <-- EDIT: Your quality of service
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16gb
-#SBATCH --time=2:00:00
-#SBATCH --output=slurm_logs/step2_workflow-%j.log
+#SBATCH --time=1:00:00
+#SBATCH --output=slurm_logs/step4_workflow-%j.log
 
 ################################################################################
 # SLURM JOB EXECUTION
 ################################################################################
 
 echo "========================================================================"
-echo "GIGANTIC genomesDB STEP_2 Workflow (SLURM)"
+echo "GIGANTIC genomesDB STEP_4 Workflow (SLURM)"
 echo "========================================================================"
 echo ""
 echo "Job ID: ${SLURM_JOB_ID}"
@@ -61,7 +57,7 @@ cd "${SLURM_SUBMIT_DIR}"
 # Run the main workflow script
 # ============================================================================
 
-bash RUN-workflow.sh
+bash RUN-create_final_species_set.sh
 EXIT_CODE=$?
 
 echo ""

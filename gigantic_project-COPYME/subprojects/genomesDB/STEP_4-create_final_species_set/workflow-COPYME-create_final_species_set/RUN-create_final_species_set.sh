@@ -1,35 +1,44 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.5 | 2026 February 27 | Purpose: Run STEP_3 database building workflow locally
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: Run STEP_4 final species set workflow locally
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC genomesDB STEP_3 - Build BLAST Databases (Local)
+# GIGANTIC genomesDB STEP_4 - Create Final Species Set (Local)
 ################################################################################
 #
 # PURPOSE:
-# Build per-genome BLAST databases from standardized proteomes.
-# Each species gets its own individual BLAST database.
+# Create the final species set for downstream subprojects by copying
+# user-selected species from STEP_2 and STEP_3 to output_to_input/.
 #
 # USAGE:
-#   bash RUN-workflow.sh
+#   bash RUN-create_final_species_set.sh
 #
 # BEFORE RUNNING:
-# 1. Ensure STEP_2-standardize_and_evaluate is complete
-# 2. User should have edited the species_selection_manifest.tsv (Include=YES/NO)
-# 3. Edit databases_config.yaml if needed
+# 1. Complete STEP_2 (standardize and evaluate all species)
+# 2. Complete STEP_3 (create BLAST databases for all species)
+# 3. Review STEP_2 quality metrics and decide which species to keep
+# 4. Edit INPUT_user/selected_species.txt (or use all species by default)
+# 5. Edit final_species_set_config.yaml with paths to STEP_2 and STEP_3 outputs
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
-#   sbatch RUN-workflow.sbatch
+#   sbatch RUN-create_final_species_set.sbatch
 #
-# OUTPUTS:
-# - Per-genome BLAST databases in OUTPUT_pipeline/2-output/gigantic-T1-blastp/
-# - Databases also copied to output_to_input/ for downstream use
+# WHAT THIS DOES:
+# 1. Validates species selection against STEP_2 and STEP_3 outputs
+# 2. Copies selected proteomes from STEP_2 with speciesN naming
+# 3. Copies selected BLAST databases from STEP_3 with speciesN naming
+# 4. Creates output_to_input/speciesN_gigantic_T1_proteomes/
+# 5. Creates output_to_input/speciesN_gigantic_T1_blastp/
+#
+# OUTPUT:
+# Results in OUTPUT_pipeline/1-output and 2-output/
+# Final species set copied to ../../output_to_input/
 #
 ################################################################################
 
 echo "========================================================================"
-echo "GIGANTIC genomesDB STEP_3 - Build BLAST Databases (Local)"
+echo "GIGANTIC genomesDB STEP_4 Pipeline (Local)"
 echo "========================================================================"
 echo ""
 echo "Started: $(date)"
@@ -43,29 +52,26 @@ cd "${SCRIPT_DIR}"
 # Activate GIGANTIC Environment
 # ============================================================================
 
+# Load conda module (required on HPC systems like HiPerGator)
 module load conda 2>/dev/null || true
 
+# Activate the genomesdb environment
 if conda activate ai_gigantic_genomesdb 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_genomesdb"
 else
-    # Check if nextflow and makeblastdb are available
+    # Check if nextflow is already available in PATH
     if ! command -v nextflow &> /dev/null; then
         echo "ERROR: Environment 'ai_gigantic_genomesdb' not found!"
         echo ""
-        echo "Please ensure the environment is set up with:"
-        echo "  - nextflow"
-        echo "  - makeblastdb (BLAST+)"
-        echo "  - python3"
+        echo "Please run the environment setup script first:"
+        echo ""
+        echo "  cd ../../../  # Go to project root"
+        echo "  bash RUN-setup_environments.sh"
         echo ""
         exit 1
     fi
-
-    # Also try loading blast module
-    module load blast 2>/dev/null || true
-
-    echo "Using NextFlow from PATH"
+    echo "Using NextFlow from PATH (environment not activated)"
 fi
-
 echo ""
 
 # ============================================================================
@@ -76,45 +82,16 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "databases_config.yaml" ]; then
+if [ ! -f "final_species_set_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: databases_config.yaml"
+    echo "Expected: final_species_set_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
 
-# Check for species selection manifest
-MANIFEST_PATH="../../output_to_input/species_selection_manifest.tsv"
-
-if [ ! -f "${MANIFEST_PATH}" ]; then
-    echo "ERROR: Species selection manifest not found!"
-    echo ""
-    echo "Expected location:"
-    echo "  ${MANIFEST_PATH}"
-    echo ""
-    echo "Please ensure STEP_2 is complete and species_selection_manifest.tsv exists."
-    exit 1
-fi
-
-TOTAL_SPECIES=$(tail -n +2 "${MANIFEST_PATH}" | grep -v "^#" | wc -l)
-INCLUDE_YES=$(tail -n +2 "${MANIFEST_PATH}" | grep -v "^#" | grep -i "YES" | wc -l || echo 0)
-
-echo "  [OK] Species selection manifest found"
-echo "       Total species: ${TOTAL_SPECIES}"
-echo "       Include=YES: ${INCLUDE_YES}"
-echo ""
-
-if [ "${INCLUDE_YES}" -eq 0 ]; then
-    echo "ERROR: No species have Include=YES in the manifest!"
-    echo "Please edit the manifest and set Include=YES for species to include."
-    exit 1
-fi
-
-# Check makeblastdb
-if ! command -v makeblastdb &> /dev/null; then
-    echo "WARNING: makeblastdb not found in PATH"
-    echo "Process 002 will fail unless BLAST+ is available."
-    echo ""
+# Check if selected_species.txt exists - if not, create default from STEP_2
+if [ ! -f "INPUT_user/selected_species.txt" ]; then
+    echo "  [INFO] No selected_species.txt found - will use all species from STEP_2"
 fi
 
 echo ""

@@ -6,6 +6,17 @@
 
 ---
 
+## ⚠️ CRITICAL: Surface Discrepancies - No Silent Changes
+
+**The user is managing this project - you must surface discrepancies so the user can make decisions. Silent changes undermine project management.**
+
+- ❌ **NEVER** silently do something different than requested
+- ❌ **NEVER** assume you know better and proceed without asking
+- ✅ **ALWAYS** stop and explain the discrepancy
+- ✅ **ALWAYS** ask for clarification before proceeding
+
+---
+
 ## Quick Reference
 
 | User needs... | Go to... |

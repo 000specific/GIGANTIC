@@ -1,0 +1,38 @@
+# GIGANTIC Orthogroups Environment
+# =================================
+#
+# Environment for the orthogroups subproject.
+# Ortholog group identification using OrthoHMM, OrthoFinder, and Broccoli.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_orthogroups.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_orthogroups
+
+name: ai_gigantic_orthogroups
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.10
+
+  # HMMER suite (required by OrthoHMM)
+  - hmmer
+
+  # MCL clustering algorithm (required by OrthoHMM)
+  - mcl
+
+  # OrthoHMM via pip (not available in conda)
+  - pip
+  - pip:
+    - orthohmm

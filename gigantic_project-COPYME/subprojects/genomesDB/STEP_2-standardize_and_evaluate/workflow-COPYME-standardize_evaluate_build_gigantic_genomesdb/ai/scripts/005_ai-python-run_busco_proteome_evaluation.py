@@ -3,7 +3,7 @@
 # Human: Eric Edsinger
 
 """
-004_ai-python-run_busco_proteome_evaluation.py
+005_ai-python-run_busco_proteome_evaluation.py
 
 Run BUSCO (Benchmarking Universal Single-Copy Orthologs) on all standardized proteomes
 to assess proteome completeness. Users specify which BUSCO lineage databases to use
@@ -18,20 +18,20 @@ Inputs:
     - Standardized proteomes from Script 001 output (OUTPUT_pipeline/1-output/gigantic_proteomes/)
 
 Outputs:
-    - Per-species BUSCO results in OUTPUT_pipeline/4-output/busco_results/
+    - Per-species BUSCO results in OUTPUT_pipeline/5-output/busco_results/
       Organized as: phyloname/lineage_name/busco_output_files
-    - Summary TSV: OUTPUT_pipeline/4-output/4_ai-busco_summary.tsv
-    - Processing log: OUTPUT_pipeline/4-output/4_ai-log-run_busco_proteome_evaluation.log
+    - Summary TSV: OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv
+    - Processing log: OUTPUT_pipeline/5-output/5_ai-log-run_busco_proteome_evaluation.log
 
 REQUIRES: BUSCO (install via: mamba install busco)
           conda activate ai_gigantic_genomesdb
 
 Usage:
     conda activate ai_gigantic_genomesdb
-    python3 004_ai-python-run_busco_proteome_evaluation.py \\
+    python3 005_ai-python-run_busco_proteome_evaluation.py \\
         --lineage-manifest INPUT_user/busco_lineages.txt \\
         --input-proteomes OUTPUT_pipeline/1-output/gigantic_proteomes \\
-        --output-dir OUTPUT_pipeline/4-output
+        --output-dir OUTPUT_pipeline/5-output
 """
 
 import argparse
@@ -403,10 +403,10 @@ def main():
         formatter_class = argparse.RawDescriptionHelpFormatter,
         epilog = """
 Examples:
-    python3 004_ai-python-run_busco_proteome_evaluation.py \\
+    python3 005_ai-python-run_busco_proteome_evaluation.py \\
         --lineage-manifest INPUT_user/busco_lineages.txt \\
         --input-proteomes OUTPUT_pipeline/1-output/gigantic_proteomes \\
-        --output-dir OUTPUT_pipeline/4-output
+        --output-dir OUTPUT_pipeline/5-output
 
 Lineage manifest format (one lineage per line):
     metazoa_odb10
@@ -431,8 +431,8 @@ Lineage manifest format (one lineage per line):
     parser.add_argument(
         '--output-dir',
         type = str,
-        default = 'OUTPUT_pipeline/4-output',
-        help = 'Output directory (default: OUTPUT_pipeline/4-output)'
+        default = 'OUTPUT_pipeline/5-output',
+        help = 'Output directory (default: OUTPUT_pipeline/5-output)'
     )
 
     parser.add_argument(
@@ -459,8 +459,8 @@ Lineage manifest format (one lineage per line):
     input_proteomes_directory = Path( arguments.input_proteomes ).resolve()
     output_base_directory = Path( arguments.output_dir )
 
-    output_summary_path = output_base_directory / '4_ai-busco_summary.tsv'
-    output_log_path = output_base_directory / '4_ai-log-run_busco_proteome_evaluation.log'
+    output_summary_path = output_base_directory / '5_ai-busco_summary.tsv'
+    output_log_path = output_base_directory / '5_ai-log-run_busco_proteome_evaluation.log'
 
     # Create output directory
     output_base_directory.mkdir( parents = True, exist_ok = True )
@@ -473,7 +473,7 @@ Lineage manifest format (one lineage per line):
 
     logger.info( "=" * 80 )
     logger.info( "GIGANTIC BUSCO Proteome Evaluation" )
-    logger.info( "Script: 004_ai-python-run_busco_proteome_evaluation.py" )
+    logger.info( "Script: 005_ai-python-run_busco_proteome_evaluation.py" )
     logger.info( "=" * 80 )
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"Lineage manifest: {input_lineage_manifest_path}" )

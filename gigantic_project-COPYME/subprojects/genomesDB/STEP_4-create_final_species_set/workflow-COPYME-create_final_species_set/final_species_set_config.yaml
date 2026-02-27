@@ -1,0 +1,59 @@
+# GIGANTIC genomesDB STEP_4 - Create Final Species Set Configuration
+# AI: Claude Code | Opus 4.6 | 2026 February 27
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration file controls how the STEP_4 workflow runs.
+# Edit the paths below to match your project setup.
+#
+# After editing, run: bash RUN-create_final_species_set.sh
+#
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  # Path to cleaned proteomes from STEP_2 (all species)
+  step2_proteomes: "../STEP_2-standardize_and_evaluate/workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned"
+
+  # Path to BLAST databases from STEP_3 (all species)
+  step3_blastp: "../STEP_3-databases/workflow-RUN_01-build_gigantic_blastp_databases/OUTPUT_pipeline/1-output/gigantic_blastp"
+
+  # Path to species selection file (defaults to all species if not specified)
+  # User can edit this file to remove species they don't want
+  selected_species: "INPUT_user/selected_species.txt"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# WORKFLOW PURPOSE:
+# STEP_4 creates the final species set for downstream subprojects.
+# It COPIES (not processes) files from STEP_2 and STEP_3 based on user selection.
+#
+# HOW IT WORKS:
+# 1. User reviews STEP_2 quality metrics and decides which species to keep
+# 2. User edits INPUT_user/selected_species.txt (or uses all species by default)
+# 3. Script 001 validates the species selection against STEP_2 and STEP_3
+# 4. Script 002 copies selected proteomes and blastp databases
+# 5. Outputs go to output_to_input/ with speciesN_ naming convention
+#
+# OUTPUT STRUCTURE:
+#   output_to_input/speciesN_gigantic_T1_proteomes/  - Selected proteomes
+#   output_to_input/speciesN_gigantic_T1_blastp/     - Selected BLAST databases
+#
+# Where N = count of selected species (e.g., species69, species71)
+#

@@ -1,35 +1,43 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.5 | 2026 February 27 | Purpose: Run STEP_3 database building workflow locally
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: Run STEP_2 standardization workflow locally
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC genomesDB STEP_3 - Build BLAST Databases (Local)
+# GIGANTIC genomesDB STEP_2 - Standardize and Evaluate (Local)
 ################################################################################
 #
 # PURPOSE:
-# Build per-genome BLAST databases from standardized proteomes.
-# Each species gets its own individual BLAST database.
+# Run the STEP_2 standardization workflow on your local machine using NextFlow.
 #
 # USAGE:
-#   bash RUN-workflow.sh
+#   bash RUN-standardize_evaluate.sh
 #
 # BEFORE RUNNING:
-# 1. Ensure STEP_2-standardize_and_evaluate is complete
-# 2. User should have edited the species_selection_manifest.tsv (Include=YES/NO)
-# 3. Edit databases_config.yaml if needed
+# 1. Edit standardize_evaluate_config.yaml with your project settings
+# 2. Ensure STEP_1-sources is complete (provides proteomes, genomes, annotations)
+# 3. Ensure phylonames subproject is complete (provides species naming)
+# 4. Ensure INPUT_user/busco_lineages.txt exists for BUSCO evaluation
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
-#   sbatch RUN-workflow.sbatch
+#   sbatch RUN-standardize_evaluate.sbatch
 #
-# OUTPUTS:
-# - Per-genome BLAST databases in OUTPUT_pipeline/2-output/gigantic-T1-blastp/
-# - Databases also copied to output_to_input/ for downstream use
+# WHAT THIS DOES:
+# 1. Standardizes proteome filenames and FASTA headers with phylonames
+# 2. Cleans proteome invalid residues (replaces '.' with 'X')
+# 3. Creates phyloname-based symlinks for genomes and annotations
+# 4. Calculates genome assembly statistics using gfastats
+# 5. Runs BUSCO proteome completeness evaluation
+# 6. Summarizes quality metrics and generates species manifest
+#
+# OUTPUT:
+# Results in OUTPUT_pipeline/1-output through 6-output/
+# Species manifest copied to ../../output_to_input/
 #
 ################################################################################
 
 echo "========================================================================"
-echo "GIGANTIC genomesDB STEP_3 - Build BLAST Databases (Local)"
+echo "GIGANTIC genomesDB STEP_2 Pipeline (Local)"
 echo "========================================================================"
 echo ""
 echo "Started: $(date)"
@@ -43,29 +51,29 @@ cd "${SCRIPT_DIR}"
 # Activate GIGANTIC Environment
 # ============================================================================
 
+# Load conda module (required on HPC systems like HiPerGator)
 module load conda 2>/dev/null || true
 
+# Activate the genomesdb environment
 if conda activate ai_gigantic_genomesdb 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_genomesdb"
 else
-    # Check if nextflow and makeblastdb are available
+    # Check if nextflow is already available in PATH
     if ! command -v nextflow &> /dev/null; then
         echo "ERROR: Environment 'ai_gigantic_genomesdb' not found!"
         echo ""
-        echo "Please ensure the environment is set up with:"
-        echo "  - nextflow"
-        echo "  - makeblastdb (BLAST+)"
-        echo "  - python3"
+        echo "Please run the environment setup script first:"
+        echo ""
+        echo "  cd ../../../  # Go to project root"
+        echo "  bash RUN-setup_environments.sh"
+        echo ""
+        echo "Or create this environment manually:"
+        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_genomesdb.yml"
         echo ""
         exit 1
     fi
-
-    # Also try loading blast module
-    module load blast 2>/dev/null || true
-
-    echo "Using NextFlow from PATH"
+    echo "Using NextFlow from PATH (environment not activated)"
 fi
-
 echo ""
 
 # ============================================================================
@@ -76,45 +84,18 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "databases_config.yaml" ]; then
+if [ ! -f "standardize_evaluate_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: databases_config.yaml"
+    echo "Expected: standardize_evaluate_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
 
-# Check for species selection manifest
-MANIFEST_PATH="../../output_to_input/species_selection_manifest.tsv"
-
-if [ ! -f "${MANIFEST_PATH}" ]; then
-    echo "ERROR: Species selection manifest not found!"
-    echo ""
-    echo "Expected location:"
-    echo "  ${MANIFEST_PATH}"
-    echo ""
-    echo "Please ensure STEP_2 is complete and species_selection_manifest.tsv exists."
-    exit 1
-fi
-
-TOTAL_SPECIES=$(tail -n +2 "${MANIFEST_PATH}" | grep -v "^#" | wc -l)
-INCLUDE_YES=$(tail -n +2 "${MANIFEST_PATH}" | grep -v "^#" | grep -i "YES" | wc -l || echo 0)
-
-echo "  [OK] Species selection manifest found"
-echo "       Total species: ${TOTAL_SPECIES}"
-echo "       Include=YES: ${INCLUDE_YES}"
-echo ""
-
-if [ "${INCLUDE_YES}" -eq 0 ]; then
-    echo "ERROR: No species have Include=YES in the manifest!"
-    echo "Please edit the manifest and set Include=YES for species to include."
-    exit 1
-fi
-
-# Check makeblastdb
-if ! command -v makeblastdb &> /dev/null; then
-    echo "WARNING: makeblastdb not found in PATH"
-    echo "Process 002 will fail unless BLAST+ is available."
-    echo ""
+# Check BUSCO lineages manifest exists
+if [ ! -f "INPUT_user/busco_lineages.txt" ]; then
+    echo "WARNING: BUSCO lineage manifest not found"
+    echo "Expected: INPUT_user/busco_lineages.txt"
+    echo "BUSCO evaluation will be skipped."
 fi
 
 echo ""

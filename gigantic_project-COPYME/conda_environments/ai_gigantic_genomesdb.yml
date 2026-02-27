@@ -32,3 +32,6 @@ dependencies:
 
   # Proteome completeness evaluation
   - busco
+
+  # BLAST+ for database building and searches (STEP_3)
+  - blast

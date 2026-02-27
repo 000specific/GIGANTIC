@@ -6,7 +6,7 @@
 001_ai-python-standardize_proteome_phylonames.py
 
 Standardize proteome files by:
-1. Renaming files from genus_species-genome-source-date.aa to phyloname-proteome.aa
+1. Renaming files from genus_species-genome-source-date.aa to phyloname-T1-proteome.aa
 2. Updating FASTA headers from:
        >genus_species-source_gene_id-source_transcript_id-source_protein_id
    to:
@@ -20,7 +20,7 @@ Inputs:
 
 Outputs:
     - Standardized proteome files in OUTPUT_pipeline/1-output/gigantic_proteomes/
-      (named: phyloname-proteome.aa)
+      (named: phyloname-T1-proteome.aa)
     - Transformation manifest TSV: OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv
     - Detailed log with every header transformation: OUTPUT_pipeline/1-output/1_ai-log-standardize_proteome_phylonames.log
 
@@ -608,8 +608,8 @@ Examples:
 
         phyloname, phyloname_taxonid = genus_species___phyloname_tuples[ genus_species ]
 
-        # Build output filename: phyloname-proteome.aa
-        output_filename = phyloname + '-proteome.aa'
+        # Build output filename: phyloname-T1-proteome.aa (T1 = transcript 1 proteome)
+        output_filename = phyloname + '-T1-proteome.aa'
         output_file_path = output_proteomes_directory / output_filename
 
         logger.info( f"Processing: {genus_species}" )
