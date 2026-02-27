@@ -1,0 +1,5 @@
+# Ignore all server upload data except README, manifest, and .gitignore
+*
+!README.md
+!upload_manifest.tsv
+!.gitignore

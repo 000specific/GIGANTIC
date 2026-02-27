@@ -1,0 +1,6 @@
+# Ignore all content in research_notebook
+# but preserve directory structure via .gitkeep files
+*
+!.gitignore
+!.gitkeep
+!*/

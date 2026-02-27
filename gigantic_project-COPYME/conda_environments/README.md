@@ -21,10 +21,10 @@ ai_gigantic_[subproject]
 | Environment | Subproject | Purpose |
 |-------------|------------|---------|
 | `ai_gigantic_phylonames` | phylonames | NCBI taxonomy and phyloname generation |
-| `ai_gigantic_genomesdb` | x_genomesDB | Proteome database setup and BLAST |
-| `ai_gigantic_orthogroups` | x_orthogroups | Ortholog group identification |
-| `ai_gigantic_trees` | x_trees_species | Species tree generation |
-| `ai_gigantic_annotations` | x_annotations_hmms | HMM-based functional annotation |
+| `ai_gigantic_genomesdb` | genomesDB | Proteome database setup and BLAST |
+| `ai_gigantic_orthogroups` | orthogroups | Ortholog group identification |
+| `ai_gigantic_trees` | trees_species | Species tree generation |
+| `ai_gigantic_annotations` | annotations_hmms | HMM-based functional annotation |
 
 ## Manual Installation
 

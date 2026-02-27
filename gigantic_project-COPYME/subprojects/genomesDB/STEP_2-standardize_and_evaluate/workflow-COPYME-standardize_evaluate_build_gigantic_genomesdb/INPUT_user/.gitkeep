@@ -1,0 +1,4 @@
+# This directory is intentionally empty
+# Inputs for STEP_2 come from output_to_input directories of prerequisite subprojects:
+#   - phylonames subproject: species naming mapping
+#   - STEP_1-sources: proteomes, genomes, gene annotations

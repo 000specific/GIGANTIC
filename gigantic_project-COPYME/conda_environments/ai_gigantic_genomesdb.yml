@@ -1,7 +1,7 @@
 # GIGANTIC GenomesDB Environment
 # ================================
 #
-# Environment for the x_genomesDB subproject.
+# Environment for the genomesDB subproject.
 # Genome and proteome database setup, assembly statistics, and evaluation.
 #
 # INSTALLATION:
@@ -29,3 +29,6 @@ dependencies:
 
   # Assembly statistics (N50, scaffold/contig metrics)
   - gfastats
+
+  # Proteome completeness evaluation
+  - busco

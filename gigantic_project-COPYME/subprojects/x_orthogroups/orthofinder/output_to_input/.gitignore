@@ -1,0 +1,4 @@
+# Ignore all output data except README and .gitignore
+*
+!README.md
+!.gitignore
