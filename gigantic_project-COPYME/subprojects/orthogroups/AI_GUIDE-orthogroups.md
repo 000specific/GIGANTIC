@@ -6,14 +6,10 @@
 
 ---
 
-## ⚠️ CRITICAL: Surface Discrepancies - No Silent Changes
+## CRITICAL: Surface Discrepancies - No Silent Changes
 
-**The user is managing this project - you must surface discrepancies so the user can make decisions. Silent changes undermine project management.**
-
-- ❌ **NEVER** silently do something different than requested
-- ❌ **NEVER** assume you know better and proceed without asking
-- ✅ **ALWAYS** stop and explain the discrepancy
-- ✅ **ALWAYS** ask for clarification before proceeding
+- NEVER silently do something different than requested
+- ALWAYS stop and explain any discrepancy before proceeding
 
 ---
 
@@ -22,9 +18,10 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| Orthogroups concepts, comparison | This file |
-| OrthoFinder workflow | `orthofinder/AI_GUIDE-orthofinder.md` |
-| OrthoHMM workflow | `orthohmm/AI_GUIDE-orthohmm.md` |
+| Orthogroups concepts, tool comparison | This file |
+| OrthoFinder details | `orthofinder/AI_GUIDE-orthofinder.md` |
+| OrthoHMM details | `orthohmm/AI_GUIDE-orthohmm.md` |
+| Broccoli details | `broccoli/AI_GUIDE-broccoli.md` |
 
 ---
 
@@ -32,13 +29,29 @@
 
 **Purpose**: Identify orthologous gene groups (orthogroups) across species.
 
-**Input**: Proteomes from genomesDB (standardized T1 proteomes)
+**Input**: Proteomes from genomesDB (`genomesDB/output_to_input/speciesN_gigantic_T1_proteomes/`)
 
 **Output**: Gene family assignments - which genes from different species belong to the same gene family.
 
-**Two Tools Available**:
+**Three Tools Available**:
 1. **OrthoFinder** - Sequence similarity based (all-vs-all Diamond/BLAST)
 2. **OrthoHMM** - Profile HMM based (better for divergent sequences)
+3. **Broccoli** - Phylogeny-network based (fast phylogenies + label propagation)
+
+---
+
+## Tool Comparison
+
+| Feature | OrthoFinder | OrthoHMM | Broccoli |
+|---------|-------------|----------|----------|
+| Method | All-vs-all Diamond | Profile HMM | Phylogeny + network |
+| Speed | Fast | Slower (O(n^2)) | Moderate |
+| Sensitivity | Good for close relatives | Better for divergent sequences | Phylogeny-aware |
+| Extra output | Species tree, gene trees, HOGs | HMM profiles | Chimeric protein detection |
+| When to use | Standard comparative genomics | Divergent species, HMM annotation | Gene-fusion detection |
+| Implementation | Bash wrapper | NextFlow (6 scripts) | Pending |
+
+**All three can be run** - comparing results gives higher confidence.
 
 ---
 
@@ -48,6 +61,7 @@
 orthogroups/
 ├── README.md                    # Human documentation
 ├── AI_GUIDE-orthogroups.md      # THIS FILE
+├── TODO.md                      # Subproject tracking
 ├── RUN-clean_and_record_subproject.sh  # Cleanup utility
 ├── RUN-update_upload_to_server.sh      # Server update utility
 │
@@ -59,35 +73,30 @@ orthogroups/
 │   ├── upload_to_server/
 │   └── workflow-COPYME-run_orthofinder/
 │
-└── orthohmm/                    # OrthoHMM tool workspace
+├── orthohmm/                    # OrthoHMM tool workspace
+│   ├── README.md
+│   ├── AI_GUIDE-orthohmm.md
+│   ├── user_research/
+│   ├── output_to_input/
+│   ├── upload_to_server/
+│   └── workflow-COPYME-run_orthohmm/
+│
+└── broccoli/                    # Broccoli tool workspace (pending implementation)
     ├── README.md
-    ├── AI_GUIDE-orthohmm.md
+    ├── AI_GUIDE-broccoli.md
     ├── user_research/
     ├── output_to_input/
     ├── upload_to_server/
-    └── workflow-COPYME-run_orthohmm/
+    └── workflow-COPYME-run_broccoli/
 ```
-
----
-
-## OrthoFinder vs OrthoHMM
-
-| Feature | OrthoFinder | OrthoHMM |
-|---------|-------------|----------|
-| Method | All-vs-all BLAST/Diamond | Profile HMM search |
-| Speed | Fast | Slower |
-| Sensitivity | Good for close relatives | Better for divergent sequences |
-| Extra output | Species tree, gene trees | HMM profiles for annotation |
-| When to use | Standard comparative genomics | Divergent species, HMM annotation |
-
-**Both can be run** - they provide complementary information.
 
 ---
 
 ## Prerequisites
 
-1. **genomesDB complete**: `genomesDB/STEP_2.../output_to_input/gigantic_proteomes/`
+1. **genomesDB complete**: `genomesDB/output_to_input/speciesN_gigantic_T1_proteomes/`
 2. **Species selection**: Know which species set you're analyzing
+3. **Conda environment**: `ai_gigantic_orthogroups`
 
 ---
 
@@ -98,6 +107,8 @@ orthogroups/
 | "No proteomes found" | genomesDB incomplete | Complete genomesDB first |
 | Tool not found | Environment not loaded | `conda activate ai_gigantic_orthogroups` |
 | Slow performance | Many species | Use SLURM with more resources |
+| OrthoHMM timeout | O(n^2) scaling | Increase SLURM time limit |
+| OrthoFinder memory | Large all-vs-all | Increase SLURM memory |
 
 ---
 
@@ -105,9 +116,13 @@ orthogroups/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `orthofinder/workflow-*/INPUT_user/` | OrthoFinder proteomes | **YES** |
-| `orthohmm/workflow-*/INPUT_user/` | OrthoHMM proteomes | **YES** |
+| `orthofinder/workflow-*/INPUT_user/` | OrthoFinder inputs (proteomes + species tree) | **YES** |
+| `orthofinder/workflow-*/SLURM_orthofinder.sbatch` | OrthoFinder SLURM settings | **YES** (SLURM) |
+| `orthohmm/workflow-*/orthohmm_config.yaml` | OrthoHMM configuration | **YES** |
+| `orthohmm/workflow-*/RUN-orthohmm.sbatch` | OrthoHMM SLURM settings | **YES** (SLURM) |
+| `broccoli/workflow-*/` | Broccoli (pending implementation) | **YES** |
 | `RUN-clean_and_record_subproject.sh` | Cleanup utility | No |
+| `TODO.md` | Open items tracking | Review |
 
 ---
 
@@ -115,6 +130,9 @@ orthogroups/
 
 | Situation | Ask |
 |-----------|-----|
-| Choosing tool | "Do you need HMM profiles for downstream annotation?" |
+| Choosing tool | "Do you need HMM profiles for downstream annotation? (OrthoHMM)" |
+| Choosing tool | "Do you need chimeric protein detection? (Broccoli)" |
+| Choosing tool | "Do you need species tree and HOGs? (OrthoFinder)" |
 | Starting | "Which species set? Have you completed genomesDB?" |
-| Both tools | "Do you want to compare results from both tools?" |
+| Both tools | "Do you want to compare results from multiple tools?" |
+| Performance | "How many species? This affects runtime and memory needs." |

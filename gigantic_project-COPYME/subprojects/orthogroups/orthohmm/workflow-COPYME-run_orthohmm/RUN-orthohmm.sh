@@ -14,7 +14,7 @@
 #   bash RUN-orthohmm.sh
 #
 # BEFORE RUNNING:
-# 1. Complete genomesDB STEP_4 (provides proteomes in output_to_input/)
+# 1. Complete genomesDB STEP_2 (provides proteomes in output_to_input/)
 # 2. Edit orthohmm_config.yaml:
 #    - Set correct path to proteomes (speciesN_gigantic_T1_proteomes)
 #    - Adjust OrthoHMM parameters if needed

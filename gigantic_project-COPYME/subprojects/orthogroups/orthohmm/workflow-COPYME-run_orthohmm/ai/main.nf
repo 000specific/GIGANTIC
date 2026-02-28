@@ -99,9 +99,9 @@ process run_orthohmm {
 
     output:
         path "3-output/orthohmm_orthogroups.txt", emit: orthogroups
-        path "3-output/orthohmm_gene_count.txt", emit: gene_count, optional: true
-        path "3-output/orthohmm_single_copy_orthogroups.txt", emit: single_copy, optional: true
-        path "3-output/orthohmm_orthogroups", emit: orthogroup_fastas, optional: true
+        path "3-output/orthohmm_gene_count.txt", emit: gene_count
+        path "3-output/orthohmm_single_copy_orthogroups.txt", emit: single_copy
+        path "3-output/orthohmm_orthogroups", emit: orthogroup_fastas
         path "3-output/3_ai-log-run_orthohmm.log", emit: log
 
     script:
@@ -209,8 +209,9 @@ process restore_gigantic_identifiers {
 
     output:
         path "6-output/6_ai-orthogroups_gigantic_ids.txt", emit: orthogroups_gigantic
-        path "6-output/6_ai-gene_count_gigantic_ids.tsv", emit: gene_count_gigantic, optional: true
-        path "6-output/orthogroup_fastas", emit: restored_fastas, optional: true
+        path "6-output/6_ai-gene_count_gigantic_ids.tsv", emit: gene_count_gigantic
+        path "6-output/orthogroup_fastas", emit: restored_fastas
+        path "6-output/6_ai-per_species", emit: per_species_files
         path "6-output/6_ai-output_summary.txt", emit: output_summary
         path "6-output/6_ai-log-restore_gigantic_identifiers.log", emit: log
         // Pass through files for output_to_input publishing

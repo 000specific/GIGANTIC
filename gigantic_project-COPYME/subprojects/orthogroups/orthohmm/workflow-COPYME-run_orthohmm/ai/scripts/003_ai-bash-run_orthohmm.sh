@@ -153,20 +153,35 @@ orthohmm "${INPUT_DIR}" \
 log_message ""
 log_message "Validating OrthoHMM output..."
 
-# Check for expected output files
+# Check critical output file
 if [ ! -f "${OUTPUT_DIR}/orthohmm_orthogroups.txt" ]; then
-    log_message "WARNING: orthohmm_orthogroups.txt not found"
-    log_message "OrthoHMM may have failed or produced different output format"
+    log_message "CRITICAL ERROR: orthohmm_orthogroups.txt not found!"
+    log_message "OrthoHMM did not produce expected output."
+    log_message "Check the OrthoHMM log above for errors."
+    exit 1
 fi
 
-if [ -f "${OUTPUT_DIR}/orthohmm_orthogroups.txt" ]; then
-    ORTHOGROUP_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_orthogroups.txt")
-    log_message "Orthogroups identified: ${ORTHOGROUP_COUNT}"
+ORTHOGROUP_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_orthogroups.txt")
+log_message "Orthogroups identified: ${ORTHOGROUP_COUNT}"
+
+# Ensure all expected output files exist (create empty if OrthoHMM did not produce them)
+# This guarantees NextFlow process outputs are always satisfied
+if [ ! -f "${OUTPUT_DIR}/orthohmm_gene_count.txt" ]; then
+    touch "${OUTPUT_DIR}/orthohmm_gene_count.txt"
+    log_message "NOTE: orthohmm_gene_count.txt not produced by OrthoHMM - created empty file"
 fi
 
-if [ -f "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" ]; then
+if [ ! -f "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" ]; then
+    touch "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt"
+    log_message "NOTE: orthohmm_single_copy_orthogroups.txt not produced by OrthoHMM - created empty file"
+else
     SINGLE_COPY_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt")
     log_message "Single-copy orthogroups: ${SINGLE_COPY_COUNT}"
+fi
+
+if [ ! -d "${OUTPUT_DIR}/orthohmm_orthogroups" ]; then
+    mkdir -p "${OUTPUT_DIR}/orthohmm_orthogroups"
+    log_message "NOTE: orthohmm_orthogroups/ directory not produced by OrthoHMM - created empty directory"
 fi
 
 # =============================================================================

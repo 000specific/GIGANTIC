@@ -1,0 +1,116 @@
+# GIGANTIC STEP_3 Phylogenetic Analysis Configuration
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: User-editable configuration for phylogenetic analysis
+# Human: Eric Edsinger
+
+# ============================================================
+# QUICK START
+# ============================================================
+# 1. Ensure STEP_2 has completed (AGS files in output_to_input/)
+# 2. Place your RGS manifest in INPUT_user/rgs_manifest.tsv
+#    (same manifest used in STEP_2, only gene_family column needed)
+# 3. Choose tree-building methods below (tree_methods section)
+# 4. Run: bash RUN-phylogenetic_analysis.sh
+
+# ============================================================
+# INPUT CONFIGURATION
+# ============================================================
+
+input:
+  # Path to STEP_2 homolog sequences (relative to this workflow directory)
+  # Default: looks in STEP_2 output_to_input
+  step2_homolog_sequences_dir: "../../STEP_2-homolog_discovery/output_to_input/homolog_sequences"
+
+# ============================================================
+# PROJECT SETTINGS
+# ============================================================
+
+project:
+  name: "gene_families"
+  database: "species67_T1-species67"
+
+# ============================================================
+# TREE-BUILDING METHODS
+# ============================================================
+# Enable/disable each tree-building method.
+# At least one method must be enabled.
+
+tree_methods:
+  # FastTree: Fast approximate ML phylogeny
+  # Good for: Exploratory analysis, large datasets, rapid iteration
+  # Runtime: Minutes to hours
+  fasttree: true
+
+  # SuperFastTree: Parallelized FastTree for very large alignments
+  # FUTURE: Not yet implemented
+  superfasttree: false
+
+  # IQ-TREE: Full ML phylogeny with model selection and bootstrap
+  # Good for: Publication-quality analysis, rigorous statistical support
+  # Runtime: Hours to days (depends on dataset size)
+  iqtree: false
+
+  # PhyloBayes: Bayesian phylogenetic inference
+  # FUTURE: Not yet implemented
+  phylobayes: false
+
+# ============================================================
+# MAFFT ALIGNMENT PARAMETERS
+# ============================================================
+
+phylogenetics:
+  mafft:
+    maxiterate: 1000
+    reorder: true
+    bl: 45
+    originalseqonly: true
+    threads: 50
+
+  # ClipKit alignment trimming
+  clipkit:
+    mode: "smart-gap"
+
+  # IQ-TREE parameters (only used when iqtree: true above)
+  iqtree:
+    model: "MFP"       # Model finder plus (automatic model selection)
+    bootstrap: 2000    # Ultrafast bootstrap replicates
+    alrt: 2000         # SH-aLRT test replicates
+    bnni: true         # Optimize branch lengths
+    threads: "AUTO"    # Auto-detect thread count
+
+# ============================================================
+# CONDA ENVIRONMENTS
+# ============================================================
+
+conda:
+  env_mafft: "mafft"
+  env_clipkit: "clipkit"
+  env_fasttree: "fasttree"
+  env_iqtree: "iqtree"
+  env_visualization: "ai_tree_visualization"
+
+# ============================================================
+# SLURM CLUSTER SETTINGS (if running via SLURM)
+# ============================================================
+
+slurm:
+  account: "moroz"
+  qos: "moroz"
+
+  # MAFFT alignment resources
+  mafft:
+    cpus: 100
+    memory: "700 GB"
+    time: "100:00:00"
+
+  # IQ-TREE resources (only used when iqtree: true)
+  iqtree:
+    cpus: 100
+    memory: "700 GB"
+    time: "100:00:00"
+
+# ============================================================
+# OUTPUT CONFIGURATION
+# ============================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"

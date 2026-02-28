@@ -215,7 +215,7 @@ process summarize_quality {
 
 /*
  * Process 7: Copy species manifest to output_to_input
- * Note: Proteome symlinks are created by script 002 (clean_proteome_invalid_residues)
+ * Note: Proteomes are NOT copied here. STEP_4 creates the final species set in output_to_input/ after user review.
  */
 process copy_manifest_to_output_to_input {
     label 'local'
@@ -266,7 +266,7 @@ workflow {
     )
 
     // Step 7: Copy manifest to output_to_input
-    // Note: Proteome symlinks are created by script 002
+    // Note: Proteomes are copied to output_to_input by STEP_4 (after user review)
     copy_manifest_to_output_to_input(
         summarize_quality.out.manifest
     )

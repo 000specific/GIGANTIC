@@ -357,29 +357,10 @@ def main():
     logger.info( f"Correction map: {output_correction_map_path}" )
     logger.info( f"Summary: {output_summary_path}" )
     logger.info( f"Log: {output_log_path}" )
-    # ========================================================================
-    # CREATE SYMLINKS IN output_to_input FOR DOWNSTREAM SUBPROJECTS
-    # ========================================================================
 
-    logger.info( "" )
-    logger.info( "Creating symlinks in output_to_input/gigantic_T1_proteomes/" )
-
-    # Determine output_to_input path
-    # From OUTPUT_pipeline/2-output/ go up to workflow dir, then up to subproject's output_to_input
-    output_to_input_proteomes_directory = output_base_directory.parent.parent / 'output_to_input' / 'gigantic_T1_proteomes'
-    output_to_input_proteomes_directory.mkdir( parents = True, exist_ok = True )
-
-    symlinks_created = 0
-    for proteome_file in proteomes_directory.glob( '*-T1-proteome.aa' ):
-        symlink_path = output_to_input_proteomes_directory / proteome_file.name
-        # Remove existing symlink if present
-        if symlink_path.exists() or symlink_path.is_symlink():
-            symlink_path.unlink()
-        # Create symlink pointing to the cleaned proteome
-        symlink_path.symlink_to( proteome_file.resolve() )
-        symlinks_created += 1
-
-    logger.info( f"  Created {symlinks_created} symlinks in {output_to_input_proteomes_directory}" )
+    # NOTE: output_to_input is populated by STEP_4, not STEP_2.
+    # STEP_2 produces cleaned proteomes in OUTPUT_pipeline/2-output/ for user
+    # evaluation. STEP_4 then copies the selected species to output_to_input/.
 
     # ========================================================================
     # FINAL SUMMARY
@@ -394,7 +375,6 @@ def main():
     print( "" )
     print( f"Done! Cleaned {proteomes_with_corrections} proteomes with {total_corrections_all} total corrections." )
     print( f"Correction map: {output_correction_map_path}" )
-    print( f"Symlinks created: {symlinks_created} in {output_to_input_proteomes_directory}" )
 
 
 # ============================================================================

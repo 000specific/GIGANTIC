@@ -1,0 +1,38 @@
+# GIGANTIC STEP_1 RGS Validation Configuration
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: User-editable configuration for RGS validation
+# Human: Eric Edsinger
+
+# ============================================================
+# QUICK START
+# ============================================================
+# Each workflow copy validates ONE gene family's RGS file.
+# 1. Copy the template:
+#    cp -r workflow-COPYME-validate_rgs workflow-RUN_01-validate_rgs
+# 2. Edit this config file (set gene_family name and rgs_file)
+# 3. Place your RGS FASTA file in INPUT_user/
+# 4. Run: bash RUN-validate_rgs.sh
+
+# ============================================================
+# GENE FAMILY (EDIT THIS)
+# ============================================================
+
+gene_family:
+  # Name of the gene family being validated
+  name: "innexin_pannexin"
+
+  # Path to the RGS FASTA file (in INPUT_user/)
+  rgs_file: "INPUT_user/rgs3-innexin_pannexin-uniprot-2025november01.aa"
+
+# ============================================================
+# PROJECT SETTINGS
+# ============================================================
+
+project:
+  name: "gene_families"
+
+# ============================================================
+# OUTPUT CONFIGURATION
+# ============================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"

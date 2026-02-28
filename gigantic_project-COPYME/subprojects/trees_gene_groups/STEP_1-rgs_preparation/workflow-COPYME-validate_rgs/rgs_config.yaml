@@ -1,0 +1,24 @@
+# GIGANTIC STEP_1 RGS Validation Configuration
+# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: User-editable configuration for RGS validation
+# Human: Eric Edsinger
+
+# ============================================================
+# QUICK START
+# ============================================================
+# 1. Place your RGS FASTA files in INPUT_user/
+# 2. Create INPUT_user/rgs_manifest.tsv with gene family names and filenames
+# 3. Run: bash RUN-validate_rgs.sh
+
+# ============================================================
+# PROJECT SETTINGS
+# ============================================================
+
+project:
+  name: "gene_families"
+
+# ============================================================
+# OUTPUT CONFIGURATION
+# ============================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"

@@ -1,0 +1,54 @@
+# GIGANTIC Trees Environment
+# ==========================
+#
+# Environment for tree-building subprojects (trees_gene_families, trees_species).
+# Includes tools for homolog discovery (BLAST), alignment (MAFFT),
+# trimming (ClipKit), and phylogenetic inference (FastTree, IQ-TREE,
+# VeryFastTree, PhyloBayes).
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_trees.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_trees
+
+name: ai_gigantic_trees
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.9
+  - nextflow>=23.0
+
+  # BLAST+ for homolog discovery (STEP_2)
+  - blast
+
+  # Multiple sequence alignment (STEP_3)
+  - mafft
+
+  # Alignment trimming (STEP_3)
+  - clipkit
+
+  # ML phylogenetics - FastTree (STEP_3, default)
+  - fasttree
+
+  # ML phylogenetics - IQ-TREE (STEP_3, publication-quality)
+  - iqtree
+
+  # ML phylogenetics - VeryFastTree (STEP_3, large datasets)
+  - veryfasttree
+
+  # Bayesian phylogenetics - PhyloBayes-MPI (STEP_3, Bayesian counterpoint)
+  - phylobayes-mpi
+
+  # Tree visualization (STEP_3)
+  - ete3

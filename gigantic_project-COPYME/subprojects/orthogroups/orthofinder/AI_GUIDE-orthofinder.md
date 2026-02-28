@@ -60,12 +60,11 @@ orthofinder/
 │   └── upload_manifest.tsv
 │
 └── workflow-COPYME-run_orthofinder/
-    ├── RUN-orthofinder.sh       # Local execution
-    ├── RUN-orthofinder.sbatch   # SLURM execution
-    ├── orthofinder_config.yaml  # User configuration
-    ├── INPUT_user/              # Input proteomes
+    ├── RUN_orthofinder.sh       # Main workflow runner
+    ├── SLURM_orthofinder.sbatch # SLURM submission
+    ├── INPUT_user/              # Input proteomes + species tree
     ├── OUTPUT_pipeline/         # Results
-    └── ai/                      # Internal scripts
+    └── ai/                      # Workflow guide
 ```
 
 ---
@@ -74,8 +73,7 @@ orthofinder/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/orthofinder_config.yaml` | Project name, threads | **YES** |
-| `workflow-*/RUN-orthofinder.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `workflow-*/SLURM_orthofinder.sbatch` | SLURM account/qos/email | **YES** (SLURM) |
 | `workflow-*/INPUT_user/` | Proteome FASTAs | **YES** |
 | `output_to_input/Orthogroups/` | Output for downstream | No |
 

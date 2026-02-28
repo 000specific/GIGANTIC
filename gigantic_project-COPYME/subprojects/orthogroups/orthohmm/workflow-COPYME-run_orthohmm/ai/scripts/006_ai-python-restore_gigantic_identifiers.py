@@ -7,6 +7,7 @@
 
 Restores full GIGANTIC protein identifiers in OrthoHMM output files.
 This enables downstream subprojects to work with standard GIGANTIC naming.
+Also generates per-species orthogroup assignment files for QC and exploration.
 
 Input:
     --header-mapping: Path to 2_ai-header_mapping.tsv from script 002
@@ -21,6 +22,11 @@ Output:
 
     OUTPUT_pipeline/6-output/orthogroup_fastas/
         FASTA files per orthogroup with restored headers
+
+    OUTPUT_pipeline/6-output/6_ai-per_species/
+        Per-species TSV files listing orthogroup assignment for each sequence.
+        NOTE: These per-species files may be removed in future versions if not
+        needed by downstream subprojects. They are included for QC and exploration.
 
 Usage:
     python3 006_ai-python-restore_gigantic_identifiers.py \\
@@ -98,6 +104,8 @@ def main():
     output_directory.mkdir( parents = True, exist_ok = True )
     fasta_output_directory = output_directory / 'orthogroup_fastas'
     fasta_output_directory.mkdir( parents = True, exist_ok = True )
+    per_species_directory = output_directory / '6_ai-per_species'
+    per_species_directory.mkdir( parents = True, exist_ok = True )
 
     # Setup logging
     logger = setup_logging( output_directory )
@@ -143,6 +151,9 @@ def main():
 
     logger.info( f"Loaded {len( short_ids___original_headers )} header mappings" )
 
+    # Track per-sequence orthogroup assignments for per-species files
+    short_ids___orthogroup_ids = {}
+
     # Process orthogroups file
     # Input format: OG_ID: gene1 gene2 gene3 ...
     # Output format: OG_ID: original_header1 original_header2 ...
@@ -172,9 +183,12 @@ def main():
                     orthogroup_id = parts[ 0 ]
                     genes = parts[ 1: ]
 
-                # Restore original headers
+                # Restore original headers and track assignments
                 restored_genes = []
                 for gene in genes:
+                    # Track orthogroup assignment for per-species files
+                    short_ids___orthogroup_ids[ gene ] = orthogroup_id
+
                     if gene in short_ids___original_headers:
                         original_header = short_ids___original_headers[ gene ]
                         restored_genes.append( original_header )
@@ -255,6 +269,59 @@ def main():
     else:
         logger.info( "No orthogroup FASTA directory found" )
 
+    # =========================================================================
+    # Generate per-species orthogroup assignment files
+    # =========================================================================
+    # NOTE: These per-species files may be removed in future versions if not
+    # needed by downstream subprojects. Included for QC and exploration.
+
+    logger.info( "Generating per-species orthogroup assignment files..." )
+
+    # Group short IDs by species
+    species___short_ids = defaultdict( list )
+    for short_id in short_ids___original_headers:
+        if '-' in short_id:
+            species = short_id.rsplit( '-', 1 )[ 0 ]
+            species___short_ids[ species ].append( short_id )
+
+    per_species_file_count = 0
+    for genus_species in sorted( species___short_ids.keys() ):
+        short_ids = species___short_ids[ genus_species ]
+
+        per_species_file = per_species_directory / f'6_ai-{genus_species}-orthogroups_per_sequence.tsv'
+
+        with open( per_species_file, 'w' ) as output_per_species:
+            # Write header
+            header = 'Short_ID (short header used in OrthoHMM format Genus_species-N)' + '\t'
+            header += 'Original_Header (full GIGANTIC protein identifier)' + '\t'
+            header += 'Orthogroup_ID (orthogroup assignment or NONE if unassigned)' + '\n'
+            output_per_species.write( header )
+
+            # Write data rows for each sequence in this species
+            for short_id in sorted( short_ids ):
+                original_header = short_ids___original_headers[ short_id ]
+                orthogroup_id = short_ids___orthogroup_ids.get( short_id, 'NONE' )
+
+                output = short_id + '\t'
+                output += original_header + '\t'
+                output += orthogroup_id + '\n'
+                output_per_species.write( output )
+
+        per_species_file_count += 1
+
+    logger.info( f"Wrote {per_species_file_count} per-species files to: {per_species_directory}" )
+
+    # =========================================================================
+    # Ensure all expected output files exist (for NextFlow output declarations)
+    # =========================================================================
+
+    gene_count_output_path = output_directory / '6_ai-gene_count_gigantic_ids.tsv'
+    if not gene_count_output_path.exists():
+        # Create empty gene count file with header only
+        with open( gene_count_output_path, 'w' ) as output_gene_count:
+            output_gene_count.write( '# No gene count data available from OrthoHMM\n' )
+        logger.info( "NOTE: Created empty gene count file (OrthoHMM did not produce one)" )
+
     # Create summary of output files for output_to_input
     summary_file = output_directory / '6_ai-output_summary.txt'
 
@@ -270,6 +337,9 @@ def main():
 
         if fasta_output_directory.exists():
             output_summary.write( f"FASTA directory: {fasta_output_directory}\n" )
+
+        output_summary.write( f"Per-species files: {per_species_directory}\n" )
+        output_summary.write( f"Per-species file count: {per_species_file_count}\n" )
 
     logger.info( f"Wrote output summary to: {summary_file}" )
     logger.info( "Script 006 completed successfully" )

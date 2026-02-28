@@ -13,7 +13,7 @@
 # =============================================================================
 
 inputs:
-  # Path to proteomes from genomesDB output_to_input (populated by STEP_4)
+  # Path to proteomes from genomesDB output_to_input (populated by genomesDB STEP_2)
   # Replace speciesN with the actual species count (e.g., species69, species71)
   proteomes: "../../../genomesDB/output_to_input/speciesN_gigantic_T1_proteomes"
 

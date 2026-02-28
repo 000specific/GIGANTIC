@@ -28,11 +28,11 @@ cd workflow-RUN_01-run_orthohmm/
 # Run locally (ensure conda environment is active)
 module load conda  # HiPerGator only
 conda activate ai_gigantic_orthogroups
-bash RUN-workflow.sh
+bash RUN-orthohmm.sh
 
 # Or run on SLURM (edit account/qos first)
-nano RUN-workflow.sbatch  # Edit SBATCH headers
-sbatch RUN-workflow.sbatch
+nano RUN-orthohmm.sbatch  # Edit SBATCH headers
+sbatch RUN-orthohmm.sbatch
 ```
 
 ---
@@ -62,6 +62,7 @@ The workflow runs six scripts in sequence:
 | Statistics | `OUTPUT_pipeline/4-output/` | Summary and size distributions |
 | QC per species | `OUTPUT_pipeline/5-output/` | Per-species coverage |
 | GIGANTIC IDs | `OUTPUT_pipeline/6-output/` | Results with full identifiers |
+| Per-species assignments | `OUTPUT_pipeline/6-output/6_ai-per_species/` | Per-sequence orthogroup assignments by species (QC; may be removed later) |
 
 **Shared with downstream subprojects**: `output_to_input/`
 
@@ -76,8 +77,8 @@ orthohmm/
 ├── user_research/                  # Personal workspace
 ├── output_to_input/                # Outputs for downstream
 └── workflow-COPYME-run_orthohmm/   # Workflow template
-    ├── RUN-workflow.sh             # Main workflow runner
-    ├── RUN-workflow.sbatch         # SLURM submission
+    ├── RUN-orthohmm.sh             # Main workflow runner
+    ├── RUN-orthohmm.sbatch         # SLURM submission
     ├── OUTPUT_pipeline/            # Results directory
     └── ai/
         └── scripts/                # Processing scripts
