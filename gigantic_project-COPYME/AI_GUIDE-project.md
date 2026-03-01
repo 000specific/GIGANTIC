@@ -78,6 +78,8 @@ gigantic_project-[project_name]/
 └── subprojects/                     # ANALYSIS MODULES
     │
     └── [subproject_name]/           # Each subproject follows this pattern:
+        │                            # May contain STEP_N-name/ (sequential) or
+        │                            # BLOCK_name/ (standalone) subdirectories
         │
         ├── README.md                    # Human documentation
         ├── AI_GUIDE-[name].md           # AI guidance (references this project guide)
@@ -198,6 +200,24 @@ cd workflow-RUN_01-[name]
 - Increment the number (RUN_01, RUN_02, ...) for each new run
 - Each RUN directory preserves its own inputs and outputs for reproducibility
 
+### Subproject Internal Organization: STEPs and BLOCKs
+
+Subprojects organize their internal workflow directories using two patterns:
+
+| Pattern | Format | Relationship | Example |
+|---------|--------|-------------|---------|
+| **STEP** | `STEP_N-name/` | Sequential (N depends on N-1) | `STEP_1-sources/ → STEP_2-standardize/ → STEP_3-databases/` |
+| **BLOCK** | `BLOCK_name/` | Standalone (run independently) | `BLOCK_orthofinder/`, `BLOCK_orthohmm/`, `BLOCK_broccoli/` |
+
+**STEPs** are sequential: each step depends on the output of the previous step. Used when there is a linear pipeline (e.g., genomesDB: ingest → standardize → build databases → finalize species set). Each STEP contains its own `workflow-COPYME-*/` workflow.
+
+**BLOCKs** are standalone: each block can run independently and in parallel. Used when multiple equivalent analyses operate on the same input (e.g., orthogroups: three tools all run on the same proteomes). Each BLOCK contains its own `workflow-COPYME-*/` workflow.
+
+Both STEPs and BLOCKs follow the same internal structure: `output_to_input/`, `workflow-COPYME-*/`, `AI_GUIDE-*.md`, `README.md`.
+
+**Subprojects using STEPs**: genomesDB, trees_gene_families, trees_gene_groups
+**Subprojects using BLOCKs**: orthogroups
+
 ### Session Provenance Recording (AI-Native Feature)
 
 GIGANTIC automatically extracts Claude Code session summaries for research documentation:
@@ -280,7 +300,7 @@ genomesDB ──► hot_spots              # Evolutionary hotspot analysis
 |------------|---------------|---------|--------|
 | phylonames | None | Species name mappings from NCBI taxonomy | Operational |
 | genomesDB | phylonames | Proteome databases and BLAST setup | Operational |
-| orthogroups | genomesDB | Ortholog group identification | Functional |
+| orthogroups | genomesDB | Ortholog group identification (uses BLOCKs: orthofinder, orthohmm, broccoli, comparison) | Functional |
 | trees_gene_families | genomesDB | Gene family homolog discovery and phylogenetics | Functional |
 | trees_gene_groups | genomesDB | Orthogroup-based phylogenetics | Structural |
 | trees_species | phylonames | All possible species tree topologies | Planned |

@@ -13,9 +13,9 @@ nextflow.enable.dsl = 2
 //   2. Compare orthogroup methods (overlap, statistics, size distributions)
 //
 // Reads from:
-//   - orthofinder/output_to_input/
-//   - orthohmm/output_to_input/
-//   - broccoli/output_to_input/
+//   - BLOCK_orthofinder/output_to_input/
+//   - BLOCK_orthohmm/output_to_input/
+//   - BLOCK_broccoli/output_to_input/
 //
 // Final step copies comparison results to output_to_input/ for downstream use
 // =============================================================================

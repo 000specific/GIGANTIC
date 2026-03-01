@@ -10,9 +10,9 @@ conda activate ai_gigantic_orthogroups
 module load nextflow
 
 # Verify at least 2 tools have results
-ls ../../orthofinder/output_to_input/
-ls ../../orthohmm/output_to_input/
-ls ../../broccoli/output_to_input/
+ls ../../BLOCK_orthofinder/output_to_input/
+ls ../../BLOCK_orthohmm/output_to_input/
+ls ../../BLOCK_broccoli/output_to_input/
 
 bash ../RUN-workflow.sh
 # Or: sbatch ../RUN-workflow.sbatch

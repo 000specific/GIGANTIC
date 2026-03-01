@@ -17,10 +17,10 @@ Four equivalent, self-contained projects (mirroring genomesDB STEP pattern):
 
 | Project | Tool | Method |
 |---------|------|--------|
-| `orthofinder/` | OrthoFinder | Diamond + MCL clustering |
-| `orthohmm/` | OrthoHMM | Profile HMM (HMMER) + MCL |
-| `broccoli/` | Broccoli | Phylogeny (FastTree) + network label propagation |
-| `comparison/` | Cross-method | Compares results from all three tools |
+| `BLOCK_orthofinder/` | OrthoFinder | Diamond + MCL clustering |
+| `BLOCK_orthohmm/` | OrthoHMM | Profile HMM (HMMER) + MCL |
+| `BLOCK_broccoli/` | Broccoli | Phylogeny (FastTree) + network label propagation |
+| `BLOCK_comparison/` | Cross-method | Compares results from all three tools |
 
 Each tool project follows a common pipeline pattern: validate, prepare/convert, run tool, standardize/restore, statistics, QC. OrthoFinder uses 6 scripts (no header conversion needed, uses -X flag to preserve original identifiers). OrthoHMM and Broccoli each use 6 scripts (with header conversion and restoration). The comparison project uses 2 scripts.
 
@@ -38,8 +38,8 @@ Each tool project follows a common pipeline pattern: validate, prepare/convert, 
 
 ```bash
 # 1. Copy a workflow template for your run
-cp -r orthofinder/workflow-COPYME-run_orthofinder orthofinder/workflow-RUN_01-run_orthofinder
-cd orthofinder/workflow-RUN_01-run_orthofinder/
+cp -r BLOCK_orthofinder/workflow-COPYME-run_orthofinder BLOCK_orthofinder/workflow-RUN_01-run_orthofinder
+cd BLOCK_orthofinder/workflow-RUN_01-run_orthofinder/
 
 # 2. Edit configuration
 vi orthofinder_config.yaml
@@ -54,7 +54,7 @@ bash RUN-workflow.sh       # Local
 sbatch RUN-workflow.sbatch # SLURM (edit account/qos first)
 ```
 
-Same pattern for orthohmm, broccoli, and comparison.
+Same pattern for BLOCK_orthohmm, BLOCK_broccoli, and BLOCK_comparison.
 
 ---
 
@@ -83,7 +83,7 @@ orthogroups/
 ├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
-├── orthofinder/                         # OrthoFinder project (6 scripts)
+├── BLOCK_orthofinder/                   # OrthoFinder project (6 scripts)
 │   ├── AI_GUIDE-orthofinder.md
 │   ├── output_to_input/
 │   └── workflow-COPYME-run_orthofinder/
@@ -92,7 +92,7 @@ orthogroups/
 │       ├── RUN-workflow.sbatch
 │       └── orthofinder_config.yaml
 │
-├── orthohmm/                            # OrthoHMM project (6 scripts)
+├── BLOCK_orthohmm/                      # OrthoHMM project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
 │   ├── output_to_input/
 │   └── workflow-COPYME-run_orthohmm/
@@ -101,7 +101,7 @@ orthogroups/
 │       ├── RUN-workflow.sbatch
 │       └── orthohmm_config.yaml
 │
-├── broccoli/                            # Broccoli project (6 scripts)
+├── BLOCK_broccoli/                      # Broccoli project (6 scripts)
 │   ├── AI_GUIDE-broccoli.md
 │   ├── output_to_input/
 │   └── workflow-COPYME-run_broccoli/
@@ -110,7 +110,7 @@ orthogroups/
 │       ├── RUN-workflow.sbatch
 │       └── broccoli_config.yaml
 │
-└── comparison/                          # Cross-method comparison (2 scripts)
+└── BLOCK_comparison/                    # Cross-method comparison (2 scripts)
     ├── AI_GUIDE-comparison.md
     ├── output_to_input/
     └── workflow-COPYME-compare_methods/
@@ -125,5 +125,5 @@ orthogroups/
 ## See Also
 
 - `AI_GUIDE-orthogroups.md` - AI assistant guidance
-- `{tool}/AI_GUIDE-{tool}.md` - Tool-specific AI guides
+- `BLOCK_{tool}/AI_GUIDE-{tool}.md` - Tool-specific AI guides
 - `TODO.md` - Open items and tracking

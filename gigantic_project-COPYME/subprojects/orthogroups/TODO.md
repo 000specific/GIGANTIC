@@ -9,7 +9,7 @@
 
 ### Completed
 - [x] Removed old inconsistent structure (flat OrthoFinder, Nextflow OrthoHMM, empty Broccoli)
-- [x] Created four equivalent self-contained projects (orthofinder, orthohmm, broccoli, comparison)
+- [x] Created four equivalent self-contained BLOCK projects (BLOCK_orthofinder, BLOCK_orthohmm, BLOCK_broccoli, BLOCK_comparison)
 - [x] All projects mirror genomesDB STEP pattern
 - [x] Consistent naming: RUN-workflow.sh, RUN-workflow.sbatch, *_config.yaml
 - [x] OrthoHMM: 6 scripts, Nextflow pipeline, documentation
@@ -39,5 +39,5 @@
 - ~~File naming convention inconsistency (RUN_ vs RUN-)~~ → All use RUN-workflow.*
 - ~~Broccoli implementation pending~~ → Fully implemented
 - ~~OrthoFinder missing Nextflow pipeline~~ → Fully implemented
-- ~~No cross-method comparison~~ → comparison/ project created
+- ~~No cross-method comparison~~ → BLOCK_comparison/ project created
 - ~~Inconsistent output formats~~ → All tools produce identical standardized output

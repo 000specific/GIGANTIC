@@ -6,11 +6,11 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | Orthogroups subproject concepts | This file |
-| OrthoFinder details | `orthofinder/AI_GUIDE-orthofinder.md` |
-| OrthoHMM details | `orthohmm/AI_GUIDE-orthohmm.md` |
-| Broccoli details | `broccoli/AI_GUIDE-broccoli.md` |
-| Comparison details | `comparison/AI_GUIDE-comparison.md` |
-| Running a specific workflow | `{tool}/workflow-COPYME-run_{tool}/ai/AI_GUIDE-{tool}_workflow.md` |
+| OrthoFinder details | `BLOCK_orthofinder/AI_GUIDE-orthofinder.md` |
+| OrthoHMM details | `BLOCK_orthohmm/AI_GUIDE-orthohmm.md` |
+| Broccoli details | `BLOCK_broccoli/AI_GUIDE-broccoli.md` |
+| Comparison details | `BLOCK_comparison/AI_GUIDE-comparison.md` |
+| Running a specific workflow | `BLOCK_{tool}/workflow-COPYME-run_{tool}/ai/AI_GUIDE-{tool}_workflow.md` |
 
 ---
 
@@ -24,10 +24,10 @@ The orthogroups subproject contains **four equivalent, self-contained projects**
 
 ```
 orthogroups/                          # Subproject root (mirrors genomesDB root)
-├── orthofinder/                      # Tool project (mirrors a genomesDB STEP)
-├── orthohmm/                         # Tool project
-├── broccoli/                         # Tool project
-└── comparison/                       # Cross-method comparison project
+├── BLOCK_orthofinder/                      # Tool project (mirrors a genomesDB STEP)
+├── BLOCK_orthohmm/                         # Tool project
+├── BLOCK_broccoli/                         # Tool project
+└── BLOCK_comparison/                       # Cross-method comparison project
 ```
 
 Each tool project is fully self-contained: it validates inputs, runs its tool, standardizes output, generates statistics, and performs QC. The comparison project reads standardized output from all three tools.
@@ -64,7 +64,7 @@ orthogroups/
 ├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
-├── orthofinder/                         # OrthoFinder tool project (6 scripts)
+├── BLOCK_orthofinder/                         # OrthoFinder tool project (6 scripts)
 │   ├── AI_GUIDE-orthofinder.md          # Level 2 per-project guide
 │   ├── output_to_input/                 # Standardized outputs
 │   └── workflow-COPYME-run_orthofinder/
@@ -74,7 +74,7 @@ orthogroups/
 │       ├── RUN-workflow.sbatch
 │       └── orthofinder_config.yaml
 │
-├── orthohmm/                            # OrthoHMM tool project (6 scripts)
+├── BLOCK_orthohmm/                            # OrthoHMM tool project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
 │   ├── output_to_input/
 │   └── workflow-COPYME-run_orthohmm/
@@ -84,7 +84,7 @@ orthogroups/
 │       ├── RUN-workflow.sbatch
 │       └── orthohmm_config.yaml
 │
-├── broccoli/                            # Broccoli tool project (6 scripts)
+├── BLOCK_broccoli/                            # Broccoli tool project (6 scripts)
 │   ├── AI_GUIDE-broccoli.md
 │   ├── output_to_input/
 │   └── workflow-COPYME-run_broccoli/
@@ -94,7 +94,7 @@ orthogroups/
 │       ├── RUN-workflow.sbatch
 │       └── broccoli_config.yaml
 │
-└── comparison/                          # Cross-method comparison project (2 scripts)
+└── BLOCK_comparison/                          # Cross-method comparison project (2 scripts)
     ├── AI_GUIDE-comparison.md
     ├── output_to_input/
     └── workflow-COPYME-compare_methods/
@@ -132,16 +132,16 @@ genomesDB/output_to_input/gigantic_proteomes/
               │
     ┌─────────┼──────────┬───────────┐
     ▼         ▼          ▼           │
-orthofinder/ orthohmm/  broccoli/    │
-(6 scripts)  (6 scripts) (6 scripts)  │
-    │         │          │           │
-    ▼         ▼          ▼           │
-  output_   output_    output_       │
-  to_input/ to_input/  to_input/     │
-    │         │          │           │
-    └─────────┼──────────┘           │
-              ▼                      │
-         comparison/ ◄───────────────┘
+BLOCK_orthofinder/ BLOCK_orthohmm/ BLOCK_broccoli/ │
+(6 scripts)       (6 scripts)     (6 scripts)     │
+    │                │               │            │
+    ▼                ▼               ▼            │
+  output_          output_         output_        │
+  to_input/        to_input/       to_input/      │
+    │                │               │            │
+    └────────────────┼───────────────┘            │
+                     ▼                            │
+         BLOCK_comparison/ ◄──────────────────────┘
          (2 scripts)
               │
               ▼

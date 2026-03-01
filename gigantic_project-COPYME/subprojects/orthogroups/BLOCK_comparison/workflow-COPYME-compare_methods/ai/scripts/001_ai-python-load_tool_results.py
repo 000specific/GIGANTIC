@@ -16,9 +16,9 @@ Each tool project produces identical output_to_input/ contents:
     - per_species_summary.tsv (per-species orthogroup statistics)
 
 Input:
-    --orthofinder-dir: Path to orthofinder/output_to_input/
-    --orthohmm-dir: Path to orthohmm/output_to_input/
-    --broccoli-dir: Path to broccoli/output_to_input/
+    --orthofinder-dir: Path to BLOCK_orthofinder/output_to_input/
+    --orthohmm-dir: Path to BLOCK_orthohmm/output_to_input/
+    --broccoli-dir: Path to BLOCK_broccoli/output_to_input/
 
 Output:
     OUTPUT_pipeline/1-output/1_ai-loaded_tool_results_summary.tsv
@@ -29,9 +29,9 @@ Output:
 
 Usage:
     python3 001_ai-python-load_tool_results.py \\
-        --orthofinder-dir ../../orthofinder/output_to_input \\
-        --orthohmm-dir ../../orthohmm/output_to_input \\
-        --broccoli-dir ../../broccoli/output_to_input
+        --orthofinder-dir ../../BLOCK_orthofinder/output_to_input \\
+        --orthohmm-dir ../../BLOCK_orthohmm/output_to_input \\
+        --broccoli-dir ../../BLOCK_broccoli/output_to_input
 """
 
 import argparse
@@ -154,22 +154,22 @@ def main():
     parser.add_argument(
         '--orthofinder-dir',
         type = str,
-        default = '../../orthofinder/output_to_input',
-        help = 'Path to orthofinder/output_to_input/ (default: ../../orthofinder/output_to_input)'
+        default = '../../BLOCK_orthofinder/output_to_input',
+        help = 'Path to BLOCK_orthofinder/output_to_input/ (default: ../../BLOCK_orthofinder/output_to_input)'
     )
 
     parser.add_argument(
         '--orthohmm-dir',
         type = str,
-        default = '../../orthohmm/output_to_input',
-        help = 'Path to orthohmm/output_to_input/ (default: ../../orthohmm/output_to_input)'
+        default = '../../BLOCK_orthohmm/output_to_input',
+        help = 'Path to BLOCK_orthohmm/output_to_input/ (default: ../../BLOCK_orthohmm/output_to_input)'
     )
 
     parser.add_argument(
         '--broccoli-dir',
         type = str,
-        default = '../../broccoli/output_to_input',
-        help = 'Path to broccoli/output_to_input/ (default: ../../broccoli/output_to_input)'
+        default = '../../BLOCK_broccoli/output_to_input',
+        help = 'Path to BLOCK_broccoli/output_to_input/ (default: ../../BLOCK_broccoli/output_to_input)'
     )
 
     parser.add_argument(
