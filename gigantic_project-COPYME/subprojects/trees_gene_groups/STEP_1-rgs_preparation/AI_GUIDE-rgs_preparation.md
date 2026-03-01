@@ -31,7 +31,7 @@
 **Process**:
 1. User provides an RGS FASTA file with curated protein sequences
 2. Workflow validates filename format, header format, and sequence content
-3. Validated RGS is copied to output_to_input for STEP_2
+3. Validated RGS is symlinked to output_to_input for STEP_2 (by RUN-workflow.sh)
 
 **Note**: STEP_1 is optional. Users can also provide RGS files directly to STEP_2 via INPUT_user/. STEP_1 adds validation and standardization.
 

@@ -14,14 +14,14 @@ nextflow.enable.dsl=2
 //
 // PROCESSES:
 // 1. validate_rgs           - Validate RGS FASTA format, headers, duplicates
-// 2. copy_to_output_to_input - Export validated RGS to output_to_input
+// (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
 //
 // INPUT:
 // User places RGS FASTA files in INPUT_user/ and creates rgs_manifest.tsv
 //
 // OUTPUT:
 // Validated RGS files in OUTPUT_pipeline/<gene_family>/1-output/
-// Validated RGS copied to output_to_input/rgs_sequences/<gene_family>/
+// Validated RGS symlinked to output_to_input/ (by RUN-workflow.sh)
 //
 // ============================================================================
 
@@ -109,30 +109,8 @@ process validate_rgs {
     """
 }
 
-// Process 2: Copy validated RGS to output_to_input
-process copy_to_output_to_input {
-    tag "${gene_family}"
-    label 'local'
-
-    // Publish to STEP-level output_to_input
-    publishDir "${projectDir}/../../output_to_input/rgs_sequences/${gene_family}", mode: 'copy', overwrite: true
-
-    // Publish to subproject-level output_to_input
-    publishDir "${projectDir}/../../../output_to_input/STEP_1-rgs/${gene_family}", mode: 'copy', overwrite: true
-
-    input:
-        tuple val( gene_family ), path( validated_rgs )
-
-    output:
-        path "RGS-${gene_family}.aa"
-
-    script:
-    """
-    cp ${validated_rgs} "RGS-${gene_family}.aa"
-
-    echo "Exported validated RGS for ${gene_family} to output_to_input"
-    """
-}
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/1-output/.
 
 // ============================================================================
 // Workflow
@@ -167,6 +145,6 @@ workflow {
     // Process 1: Validate RGS files
     validate_rgs( rgs_channel )
 
-    // Process 2: Copy to output_to_input
-    copy_to_output_to_input( validate_rgs.out.validated_rgs )
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+    // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/1-output/.
 }

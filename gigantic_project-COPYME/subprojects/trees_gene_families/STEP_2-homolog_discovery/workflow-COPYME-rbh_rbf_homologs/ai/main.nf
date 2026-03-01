@@ -21,11 +21,11 @@
  *    8: Filter species by keeper list (script 014)
  *    9: Remap CGS identifiers to GIGANTIC phylonames (script 015)
  *   10: Concatenate RGS + CGS into final AGS (script 016)
- *   11: Copy AGS to output_to_input for STEP_3
+ *   (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
  *
  * Data Flow:
  *   Config gene_family + rgs_file → single gene family through all 11 processes
- *   Final AGS fasta → output_to_input/ags_fastas/<gene_family>/
+ *   Final AGS fasta → OUTPUT_pipeline/16-output/ (symlinks in output_to_input/ by RUN-workflow.sh)
  *
  * Script Generators:
  *   Scripts 002, 005, 011 generate bash scripts that are then executed.
@@ -578,36 +578,10 @@ process concatenate_final_gene_set {
 }
 
 // ============================================================================
-// PROCESS 11: Copy AGS to output_to_input for STEP_3
-// ============================================================================
-
-process copy_to_output_to_input {
-    tag "${gene_family}"
-    label 'local'
-
-    input:
-        tuple val(gene_family), path(ags_fasta)
-
-    output:
-        path "output_to_input_done.txt", emit: done
-
-    script:
-    """
-    # Copy to STEP-level output_to_input
-    mkdir -p ${projectDir}/../../output_to_input/ags_fastas/${gene_family}
-    cp ${ags_fasta} ${projectDir}/../../output_to_input/ags_fastas/${gene_family}/
-
-    # Copy to subproject-level output_to_input
-    mkdir -p ${projectDir}/../../../output_to_input/step_2/ags_fastas/${gene_family}
-    cp ${ags_fasta} ${projectDir}/../../../output_to_input/step_2/ags_fastas/${gene_family}/
-
-    echo "Copied AGS for ${gene_family} to output_to_input at \$(date)" > output_to_input_done.txt
-    """
-}
-
-// ============================================================================
 // WORKFLOW
 // ============================================================================
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
 workflow {
     log.info """
@@ -745,8 +719,8 @@ workflow {
 
     concatenate_final_gene_set( concat_input )
 
-    // ---- Process 11: Copy to output_to_input ----
-    copy_to_output_to_input( concatenate_final_gene_set.out.ags_done )
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+    // pipeline completes. Real files only live in OUTPUT_pipeline/16-output/.
 }
 
 // ============================================================================
@@ -781,9 +755,9 @@ workflow.onComplete {
         println "  15-output/: Remapped CGS identifiers"
         println "  16-output/: Final AGS (All Gene Set)"
         println ""
-        println "AGS files also copied to:"
-        println "  STEP_2-homolog_discovery/output_to_input/ags_fastas/${params.gene_family}/"
-        println "  trees_gene_families/output_to_input/step_2/ags_fastas/${params.gene_family}/"
+        println "Symlinks created by RUN-workflow.sh in:"
+        println "  ../output_to_input/ags_fastas/${params.gene_family}/  (for downstream STEP_3)"
+        println "  ai/output_to_input/                                    (archival with this run)"
         println ""
         println "Next: Run STEP_3 phylogenetic analysis with AGS file"
     }

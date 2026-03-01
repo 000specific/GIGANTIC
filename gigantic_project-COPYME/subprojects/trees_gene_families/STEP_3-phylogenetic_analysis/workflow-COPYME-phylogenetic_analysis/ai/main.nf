@@ -27,11 +27,7 @@ nextflow.enable.dsl=2
 // 5d. run_phylobayes               - PhyloBayes Bayesian phylogeny
 // 6. visualize_trees_human         - Human-friendly tree visualization
 // 7. visualize_trees_computer_vision - Computer-vision tree visualization
-// 8. copy_to_output_to_input       - Export alignment + trimmed + trees
-//
-// output_to_input:
-//   STEP-level:       output_to_input/trees/<gene_family>/
-//   Subproject-level:  output_to_input/step_3/trees/<gene_family>/
+// (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
 //
 // ============================================================================
 
@@ -477,40 +473,11 @@ process visualize_trees_computer_vision {
     """
 }
 
-// Process 8: Copy results to output_to_input (STEP-level and subproject-level)
-process copy_to_output_to_input {
-    tag "${gene_family}"
-    label 'local'
-
-    input:
-        tuple val( gene_family ), path( all_files )
-
-    output:
-        path "output_to_input_done.txt", emit: done
-
-    script:
-    """
-    # Copy to STEP-level output_to_input
-    mkdir -p ${projectDir}/../../output_to_input/trees/${gene_family}
-    for f in ${all_files}; do
-        cp "\${f}" ${projectDir}/../../output_to_input/trees/${gene_family}/
-    done
-
-    # Copy to subproject-level output_to_input
-    mkdir -p ${projectDir}/../../../output_to_input/step_3/trees/${gene_family}
-    for f in ${all_files}; do
-        cp "\${f}" ${projectDir}/../../../output_to_input/step_3/trees/${gene_family}/
-    done
-
-    echo "Copied files for ${gene_family} to output_to_input at \$(date)" > output_to_input_done.txt
-    echo "Files exported:"
-    ls -la ${all_files}
-    """
-}
-
 // ============================================================================
 // Workflow
 // ============================================================================
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
 workflow {
 
@@ -598,14 +565,6 @@ workflow {
     // Process 7: Computer-vision visualization
     visualize_trees_computer_vision( tree_forked.for_cv_viz )
 
-    // Process 8: Copy to output_to_input
-    // Combine alignment, trimmed alignment, and tree files into a flat list
-    output_to_input_channel = run_mafft_alignment.out.alignment
-        .join( run_clipkit_trimming.out.trimmed_alignment )
-        .join( tree_forked.for_export )
-        .map { gene_family, alignment, trimmed, tree_files ->
-            [ gene_family, [ alignment, trimmed ] + tree_files ]
-        }
-
-    copy_to_output_to_input( output_to_input_channel )
+    // NOTE: Symlinks from output_to_input/ to OUTPUT_pipeline/ files
+    // are created by RUN-workflow.sh after pipeline completes.
 }

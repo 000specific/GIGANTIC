@@ -1,8 +1,9 @@
 # GIGANTIC One Direction Homologs Environment
-# ====================================
+# ============================================
 #
-# Placeholder environment for the one_direction_homologs subproject.
-# Specific tool dependencies will be added as this subproject is developed.
+# Environment for the one_direction_homologs subproject.
+# Provides DIAMOND for protein similarity search against NCBI nr,
+# plus Python and NextFlow for pipeline orchestration.
 #
 # INSTALLATION:
 #   From project root:
@@ -27,4 +28,5 @@ dependencies:
   - python>=3.9
   - nextflow>=23.0
 
-  # Tool-specific dependencies will be added as the subproject is developed
+  # DIAMOND: fast protein similarity search (~1000x faster than BLAST)
+  - diamond>=2.0

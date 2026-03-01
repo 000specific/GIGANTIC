@@ -107,15 +107,80 @@ nextflow run ai/main.nf
 
 EXIT_CODE=$?
 
-echo ""
-echo "========================================================================"
-if [ $EXIT_CODE -eq 0 ]; then
-    echo "SUCCESS! Pipeline completed."
-else
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "========================================================================"
     echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
     echo "Check the logs above for error details."
+    echo "========================================================================"
+    exit $EXIT_CODE
 fi
+
+# ============================================================================
+# Create symlinks for output_to_input directories
+# ============================================================================
+# Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
+# Symlinks are created in two locations:
+#   1. ../../output_to_input/  (canonical, for downstream subprojects)
+#   2. ai/output_to_input/     (archival, with this workflow run)
+#
+# STEP_4 creates per-species directories (species*_gigantic_T1_proteomes,
+# species*_gigantic_T1_blastp) which are discovered dynamically.
+# ============================================================================
+
+echo ""
+echo "Creating symlinks for downstream subprojects..."
+
+# --- STEP-level output_to_input (canonical) ---
+STEP_SHARED_DIR="../../output_to_input"
+mkdir -p "${STEP_SHARED_DIR}"
+
+# Remove any stale species directory symlinks from previous runs
+for old_link in "${STEP_SHARED_DIR}"/species*_gigantic_T1_*; do
+    if [ -L "$old_link" ]; then
+        rm "$old_link"
+    fi
+done
+
+# Create symlinks for each species directory in 2-output/
+for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_T1_*; do
+    if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
+        dir_name=$(basename "$species_dir")
+        ln -sf "../STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/OUTPUT_pipeline/2-output/${dir_name}" \
+            "${STEP_SHARED_DIR}/${dir_name}"
+    fi
+done
+
+echo "  STEP output_to_input/ -> symlinks created"
+
+# --- Workflow-level ai/output_to_input (archival) ---
+WORKFLOW_SHARED_DIR="ai/output_to_input"
+mkdir -p "${WORKFLOW_SHARED_DIR}"
+
+# Remove any stale symlinks from previous runs
+find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
+
+# Create symlinks for each species directory
+for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_T1_*; do
+    if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
+        dir_name=$(basename "$species_dir")
+        ln -sf "../../OUTPUT_pipeline/2-output/${dir_name}" \
+            "${WORKFLOW_SHARED_DIR}/${dir_name}"
+    fi
+done
+
+echo "  Workflow ai/output_to_input/ -> symlinks created"
+
+echo ""
+echo "========================================================================"
+echo "SUCCESS! STEP_4 pipeline complete."
+echo ""
+echo "Research outputs (real files):"
+echo "  OUTPUT_pipeline/1-output/  Validated species list"
+echo "  OUTPUT_pipeline/2-output/  Final species set directories"
+echo ""
+echo "Downstream symlinks:"
+echo "  ../../output_to_input/  (for downstream subprojects)"
+echo "  ai/output_to_input/     (archival with this run)"
 echo "========================================================================"
 echo "Completed: $(date)"
-
-exit $EXIT_CODE

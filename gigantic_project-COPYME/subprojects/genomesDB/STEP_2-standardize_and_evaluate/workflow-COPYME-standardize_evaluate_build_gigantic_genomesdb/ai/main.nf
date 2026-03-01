@@ -213,34 +213,11 @@ process summarize_quality {
     """
 }
 
-/*
- * Process 7: Copy species manifest to output_to_input
- * Note: Proteomes are NOT copied here. STEP_4 creates the final species set in output_to_input/ after user review.
- */
-process copy_manifest_to_output_to_input {
-    label 'local'
-
-    input:
-        path species_manifest
-
-    output:
-        path "output_to_input_done.txt", emit: done
-
-    script:
-    """
-    # Create output_to_input directory
-    mkdir -p ${projectDir}/../../output_to_input
-
-    # Copy species manifest
-    cp ${species_manifest} ${projectDir}/../../output_to_input/species_selection_manifest.tsv
-
-    echo "Copied manifest to output_to_input at \$(date)" > output_to_input_done.txt
-    """
-}
-
 // ============================================================================
 // WORKFLOW
 // ============================================================================
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
 workflow {
     // Step 1: Standardize proteome phylonames
@@ -265,11 +242,9 @@ workflow {
         standardize_proteome_phylonames.out.manifest
     )
 
-    // Step 7: Copy manifest to output_to_input
-    // Note: Proteomes are copied to output_to_input by STEP_4 (after user review)
-    copy_manifest_to_output_to_input(
-        summarize_quality.out.manifest
-    )
+    // NOTE: Symlinks from output_to_input/ to OUTPUT_pipeline/6-output/
+    // are created by RUN-workflow.sh after pipeline completes.
+    // Proteomes are symlinked to output_to_input by STEP_4 (after user review).
 }
 
 // ============================================================================
@@ -292,6 +267,9 @@ workflow.onComplete {
         println "  4-output/: Genome assembly statistics"
         println "  5-output/: BUSCO proteome completeness evaluation"
         println "  6-output/: Quality summary and species manifest"
+        println ""
+        println ""
+        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
         println ""
         println "Next: Run STEP_4 to create final species set in output_to_input/"
     }

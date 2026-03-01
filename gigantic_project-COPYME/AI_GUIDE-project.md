@@ -311,7 +311,7 @@ genomesDB ──► hot_spots              # Evolutionary hotspot analysis
 | synteny | genomesDB | Gene order conservation analysis | Planned |
 | dark_proteome | genomesDB | Uncharacterized protein analysis | Planned |
 | hot_spots | genomesDB | Evolutionary hotspot analysis | Planned |
-| one_direction_homologs | genomesDB | One-way BLAST homolog identification | Planned |
+| one_direction_homologs | genomesDB | One-way DIAMOND homolog identification against NCBI nr | Structural |
 | xenologs_vs_artifacts | genomesDB | Xenolog detection and artifact filtering | Planned |
 | transcriptomes | genomesDB | Transcriptome integration | Planned |
 | rnaseq_integration | genomesDB | RNA-seq expression data integration | Planned |

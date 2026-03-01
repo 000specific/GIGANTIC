@@ -111,15 +111,65 @@ nextflow run ai/main.nf
 
 EXIT_CODE=$?
 
-echo ""
-echo "========================================================================"
-if [ $EXIT_CODE -eq 0 ]; then
-    echo "SUCCESS! Pipeline completed."
-else
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "========================================================================"
     echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
     echo "Check the logs above for error details."
+    echo "========================================================================"
+    exit $EXIT_CODE
 fi
+
+# ============================================================================
+# Create symlinks for output_to_input directories
+# ============================================================================
+# Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
+# Symlinks are created in two locations:
+#   1. ../../output_to_input/  (canonical, for downstream subprojects)
+#   2. ai/output_to_input/     (archival, with this workflow run)
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
+# ============================================================================
+
+echo ""
+echo "Creating symlinks for downstream subprojects..."
+
+# --- STEP-level output_to_input (canonical) ---
+STEP_SHARED_DIR="../../output_to_input"
+mkdir -p "${STEP_SHARED_DIR}"
+
+# Remove any stale symlinks from previous runs
+find "${STEP_SHARED_DIR}" -maxdepth 1 -type l -delete 2>/dev/null
+
+ln -sf "../STEP_2-standardize_and_evaluate/workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
+    "${STEP_SHARED_DIR}/species_selection_manifest.tsv"
+
+echo "  STEP output_to_input/ -> symlinks created"
+
+# --- Workflow-level ai/output_to_input (archival) ---
+WORKFLOW_SHARED_DIR="ai/output_to_input"
+mkdir -p "${WORKFLOW_SHARED_DIR}"
+
+# Remove any stale symlinks from previous runs
+find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
+
+ln -sf "../../OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
+    "${WORKFLOW_SHARED_DIR}/species_selection_manifest.tsv"
+
+echo "  Workflow ai/output_to_input/ -> symlinks created"
+
+echo ""
+echo "========================================================================"
+echo "SUCCESS! STEP_2 pipeline complete."
+echo ""
+echo "Research outputs (real files):"
+echo "  OUTPUT_pipeline/1-output/ through 6-output/"
+echo ""
+echo "Downstream symlinks:"
+echo "  ../../output_to_input/  (for downstream subprojects)"
+echo "  ai/output_to_input/     (archival with this run)"
+echo ""
+echo "Next: Run STEP_4 to create final species set in output_to_input/"
 echo "========================================================================"
 echo "Completed: $(date)"
-
-exit $EXIT_CODE

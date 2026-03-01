@@ -98,15 +98,8 @@ process create_species_mapping {
     // Publish to OUTPUT_pipeline with full directory structure
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
-    // Publish ONLY the mapping file to output_to_input/maps (flatten structure)
-    publishDir "${projectDir}/../../output_to_input/maps", mode: 'copy', overwrite: true,
-               saveAs: { filename ->
-                   if (filename.contains('map-genus_species')) {
-                       // Extract just the filename, not the full path
-                       return filename.tokenize('/').last()
-                   }
-                   return null
-               }
+    // NOTE: Symlinks for output_to_input/maps/ are created by RUN-workflow.sh
+    // after pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
     input:
         path master_mapping
@@ -223,15 +216,8 @@ process apply_user_phylonames {
     // Publish to OUTPUT_pipeline with full directory structure
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
-    // Publish final mapping to output_to_input/maps (flatten structure)
-    publishDir "${projectDir}/../../output_to_input/maps", mode: 'copy', overwrite: true,
-               saveAs: { filename ->
-                   if (filename.contains('final_project_mapping')) {
-                       // Extract just the filename, add project name prefix
-                       return "${params.project_name}_" + filename.tokenize('/').last()
-                   }
-                   return null
-               }
+    // NOTE: Symlinks for output_to_input/maps/ are created by RUN-workflow.sh
+    // after pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
     input:
         path project_mapping
@@ -331,7 +317,7 @@ workflow.onComplete {
         println "  - ${params.output_dir}/5-output/${params.project_name}_taxonomy_summary.md"
         println "  - ${params.output_dir}/5-output/${params.project_name}_taxonomy_summary.html"
         println ""
-        println "Files copied to output_to_input/maps/ for downstream subprojects"
+        println "Symlinks created in output_to_input/maps/ (by RUN-workflow.sh)"
         println "Taxonomy summary copied to upload_to_server/taxonomy_summaries/"
         println "Run log written to research_notebook/research_ai/subproject-phylonames/logs/"
         if (params.user_phylonames) {

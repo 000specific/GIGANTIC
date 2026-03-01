@@ -17,14 +17,13 @@ nextflow.enable.dsl=2
 //
 // PROCESSES:
 // 1. validate_rgs           - Validate RGS FASTA format, headers, duplicates
-// 2. copy_to_output_to_input - Export validated RGS to output_to_input
+// (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
 //
 // INPUT:
 // User places RGS FASTA file in INPUT_user/ and sets gene_family in config.
 //
 // OUTPUT:
 // Validated RGS file in OUTPUT_pipeline/1-output/
-// Validated RGS copied to output_to_input/rgs_fastas/<gene_family>/
 //
 // ============================================================================
 
@@ -83,34 +82,11 @@ process validate_rgs {
     """
 }
 
-// Process 2: Copy validated RGS to output_to_input
-process copy_to_output_to_input {
-    tag "${gene_family}"
-    label 'local'
-
-    // Publish to STEP-level output_to_input
-    publishDir "${projectDir}/../../output_to_input/rgs_fastas/${gene_family}", mode: 'copy', overwrite: true
-
-    // Publish to subproject-level output_to_input
-    publishDir "${projectDir}/../../../output_to_input/step_1/rgs_fastas/${gene_family}", mode: 'copy', overwrite: true
-
-    input:
-        tuple val( gene_family ), path( validated_rgs )
-
-    output:
-        path "rgs-${gene_family}.aa"
-
-    script:
-    """
-    cp ${validated_rgs} "rgs-${gene_family}.aa"
-
-    echo "Exported validated RGS for ${gene_family} to output_to_input"
-    """
-}
-
 // ============================================================================
 // Workflow
 // ============================================================================
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
 workflow {
 
@@ -147,6 +123,6 @@ workflow {
     // Process 1: Validate RGS file
     validate_rgs( rgs_channel )
 
-    // Process 2: Copy to output_to_input
-    copy_to_output_to_input( validate_rgs.out.validated_rgs )
+    // NOTE: Symlinks from output_to_input/ to OUTPUT_pipeline/1-output/
+    // are created by RUN-workflow.sh after pipeline completes.
 }

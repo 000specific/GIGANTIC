@@ -62,14 +62,8 @@ process copy_selected_files {
 
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
-    // Also publish to output_to_input for downstream subprojects
-    publishDir "${projectDir}/../../output_to_input", mode: 'copy', overwrite: true,
-               saveAs: { filename ->
-                   if (filename.contains('species') && filename.contains('gigantic_T1')) {
-                       return filename.tokenize('/').last()
-                   }
-                   return null
-               }
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+    // pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
     input:
         path validated_list
@@ -126,9 +120,9 @@ workflow.onComplete {
         println "  1-output/: Validated species list and count"
         println "  2-output/: Final species set directories"
         println ""
-        println "Final outputs copied to: ../../output_to_input/"
-        println "  speciesN_gigantic_T1_proteomes/"
-        println "  speciesN_gigantic_T1_blastp/"
+        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
+        println "  speciesN_gigantic_T1_proteomes/ -> OUTPUT_pipeline/2-output/"
+        println "  speciesN_gigantic_T1_blastp/ -> OUTPUT_pipeline/2-output/"
     }
     println "========================================================================"
 }

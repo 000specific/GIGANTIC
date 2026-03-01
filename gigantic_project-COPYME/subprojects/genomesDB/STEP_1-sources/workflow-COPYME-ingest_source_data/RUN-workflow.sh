@@ -23,10 +23,11 @@
 # Use the SLURM version instead:
 #   sbatch RUN-workflow.sbatch
 #
-# WHAT THE WORKFLOW DOES (3 steps, each with visible output):
+# WHAT THE WORKFLOW DOES (2 steps, each with visible output):
 #   Step 1 -> OUTPUT_pipeline/1-output/  Validate manifest (check files exist)
 #   Step 2 -> OUTPUT_pipeline/2-output/  Ingest data (hard copy files)
-#   Step 3 -> OUTPUT_pipeline/3-output/  Create symlinks (for STEP_2)
+#
+# After pipeline: RUN-workflow.sh creates symlinks for downstream STEP_2
 #
 ################################################################################
 
@@ -105,21 +106,89 @@ if [ $NF_EXIT_CODE -ne 0 ]; then
     exit $NF_EXIT_CODE
 fi
 
+# ============================================================================
+# Create symlinks for output_to_input directories
+# ============================================================================
+# Real files live in OUTPUT_pipeline/2-output/ (created by NextFlow above).
+# Symlinks are created in two locations:
+#   1. ../output_to_input/  (STEP-level, for downstream STEP_2)
+#   2. ai/output_to_input/  (archival, with this workflow run)
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
+# ============================================================================
+
+echo ""
+echo "Creating symlinks for downstream workflows..."
+
+WORKFLOW_NAME=$(basename "${SCRIPT_DIR}")
+
+# --- STEP-level output_to_input ---
+STEP_SHARED_DIR="../output_to_input"
+
+# --- Workflow-level ai/output_to_input (archival) ---
+WORKFLOW_SHARED_DIR="ai/output_to_input"
+
+# Data types to symlink
+DATA_TYPES=("T1_proteomes" "genomes" "gene_annotations")
+
+TOTAL_LINKED=0
+
+for DATA_TYPE in "${DATA_TYPES[@]}"; do
+    SOURCE_SUBDIR="OUTPUT_pipeline/2-output/${DATA_TYPE}"
+
+    if [ ! -d "${SOURCE_SUBDIR}" ]; then
+        continue
+    fi
+
+    # STEP-level symlinks
+    mkdir -p "${STEP_SHARED_DIR}/${DATA_TYPE}"
+    find "${STEP_SHARED_DIR}/${DATA_TYPE}" -type l -delete 2>/dev/null
+
+    # Workflow-level archival symlinks
+    mkdir -p "${WORKFLOW_SHARED_DIR}/${DATA_TYPE}"
+    find "${WORKFLOW_SHARED_DIR}/${DATA_TYPE}" -type l -delete 2>/dev/null
+
+    LINKED=0
+
+    for source_file in "${SOURCE_SUBDIR}"/*; do
+        [ -e "$source_file" ] || continue
+
+        filename=$(basename "$source_file")
+
+        # STEP-level symlink
+        ln -sf "../../${WORKFLOW_NAME}/${source_file}" \
+            "${STEP_SHARED_DIR}/${DATA_TYPE}/${filename}"
+
+        # Workflow-level archival symlink
+        ln -sf "../../../${source_file}" \
+            "${WORKFLOW_SHARED_DIR}/${DATA_TYPE}/${filename}"
+
+        LINKED=$((LINKED + 1))
+    done
+
+    TOTAL_LINKED=$((TOTAL_LINKED + LINKED))
+    echo "  ${DATA_TYPE}: ${LINKED} symlinks created"
+done
+
+echo "  Total: ${TOTAL_LINKED} symlinks"
+echo "  STEP output_to_input/ -> symlinks created"
+echo "  Workflow ai/output_to_input/ -> symlinks created"
+
+echo ""
 echo "========================================================================"
 echo "SUCCESS!"
 echo ""
-echo "Output:"
+echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/  Validation report"
 echo "  OUTPUT_pipeline/2-output/  Ingested data"
-echo "  OUTPUT_pipeline/3-output/  Symlink manifest"
 echo ""
-echo "Symlinks for STEP_2:"
-echo "  ../../output_to_input/T1_proteomes/"
-echo "  ../../output_to_input/genomes/"
-echo "  ../../output_to_input/gene_annotations/"
+echo "Downstream symlinks:"
+echo "  ../output_to_input/T1_proteomes/   (for downstream STEP_2)"
+echo "  ../output_to_input/genomes/        (for downstream STEP_2)"
+echo "  ../output_to_input/gene_annotations/ (for downstream STEP_2)"
+echo "  ai/output_to_input/                (archival with this run)"
 echo ""
 echo "Next step: Run STEP_2-standardize_and_evaluate workflow"
 echo "========================================================================"
 echo "Completed: $(date)"
-
-exit 0

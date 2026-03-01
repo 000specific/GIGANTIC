@@ -7,13 +7,15 @@
  * Purpose: Ingest user-provided source data (proteomes, genomes, GFFs)
  *          into GIGANTIC structure for downstream processing by STEP_2.
  *
- * Architecture: 3 scripts, 3 output directories, 1:1 match.
+ * Architecture: 2 scripts, 2 output directories, 1:1 match.
  *   Script 001 -> OUTPUT_pipeline/1-output/  (validation report)
  *   Script 002 -> OUTPUT_pipeline/2-output/  (ingested data copies)
- *   Script 003 -> OUTPUT_pipeline/3-output/  (symlink manifest)
  *
  * Scripts write DIRECTLY to OUTPUT_pipeline/ (no publishDir).
  * NextFlow sequences the scripts but does not move files.
+ *
+ * Symlinks for output_to_input/ are created by RUN-workflow.sh
+ * AFTER the pipeline completes (not inside NextFlow).
  *
  * Typical runtime: ~1-10 minutes (depends on file sizes and count)
  */
@@ -88,32 +90,6 @@ process ingest_source_data {
     """
 }
 
-/*
- * Process 3: Create output_to_input Symlinks
- * Calls: scripts/003_ai-bash-create_output_symlinks.sh
- *
- * Creates symlinks in ../../output_to_input/ pointing to the
- * hard copies in OUTPUT_pipeline/2-output/. Writes a symlink
- * manifest to OUTPUT_pipeline/3-output/.
- */
-process create_output_symlinks {
-    label 'local'
-
-    input:
-        val ingestion_done
-
-    output:
-        val true, emit: symlinks_complete
-
-    script:
-    """
-    bash ${projectDir}/scripts/003_ai-bash-create_output_symlinks.sh \
-        ${params.workflow_root}/${params.output_dir}/2-output \
-        ${params.workflow_root}/../output_to_input \
-        ${params.workflow_root}/${params.output_dir}/3-output
-    """
-}
-
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -125,8 +101,8 @@ workflow {
     // Step 2: Ingest source data (waits for validation)
     ingest_source_data( validate_source_manifest.out.validation_complete )
 
-    // Step 3: Create symlinks (waits for ingestion)
-    create_output_symlinks( ingest_source_data.out.ingestion_complete )
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh
+    // AFTER this pipeline completes successfully.
 }
 
 // ============================================================================
@@ -145,12 +121,8 @@ workflow.onComplete {
         println "Output:"
         println "  1-output/  Validation report"
         println "  2-output/  Ingested data (T1_proteomes, genomes, gene_annotations)"
-        println "  3-output/  Symlink manifest"
         println ""
-        println "Symlinks for STEP_2:"
-        println "  ../../output_to_input/T1_proteomes/"
-        println "  ../../output_to_input/genomes/"
-        println "  ../../output_to_input/gene_annotations/"
+        println "Symlinks for STEP_2 will be created by RUN-workflow.sh"
     }
     println "========================================================================"
 }

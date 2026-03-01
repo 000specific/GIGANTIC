@@ -119,15 +119,86 @@ nextflow run ai/main.nf
 
 EXIT_CODE=$?
 
-echo ""
-echo "========================================================================"
-if [ $EXIT_CODE -eq 0 ]; then
-    echo "SUCCESS! Pipeline completed."
-else
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "========================================================================"
     echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
     echo "Check the logs above for error details."
+    echo "========================================================================"
+    exit $EXIT_CODE
 fi
+
+# ============================================================================
+# Create symlinks for output_to_input directories
+# ============================================================================
+# Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
+# Symlinks are created in two locations:
+#   1. ../output_to_input/maps/  (canonical, for downstream subprojects)
+#   2. ai/output_to_input/maps/  (archival, with this workflow run)
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
+# ============================================================================
+
+echo ""
+echo "Creating symlinks for downstream subprojects..."
+
+# Read project_name from config
+PROJECT_NAME=$(grep "^project_name:" phylonames_config.yaml 2>/dev/null | awk '{print $2}' | tr -d '"' | tr -d "'")
+if [ -z "${PROJECT_NAME}" ]; then
+    PROJECT_NAME="my_project"
+fi
+
+# --- Subproject-level output_to_input (canonical) ---
+SUBPROJECT_SHARED_DIR="../output_to_input/maps"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
+
+# Remove any stale symlinks from previous runs
+find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
+
+# Symlink the project mapping from 3-output
+ln -sf "../../workflow-COPYME-generate_phylonames/OUTPUT_pipeline/3-output/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv"
+
+# Symlink the final project mapping from 4-output (if user phylonames were applied)
+if [ -f "OUTPUT_pipeline/4-output/final_project_mapping.tsv" ]; then
+    ln -sf "../../workflow-COPYME-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv" \
+        "${SUBPROJECT_SHARED_DIR}/${PROJECT_NAME}_final_project_mapping.tsv"
+fi
+
+echo "  Subproject output_to_input/maps/ -> symlinks created"
+
+# --- Workflow-level ai/output_to_input (archival) ---
+WORKFLOW_SHARED_DIR="ai/output_to_input/maps"
+mkdir -p "${WORKFLOW_SHARED_DIR}"
+
+# Remove any stale symlinks from previous runs
+find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
+
+ln -sf "../../../OUTPUT_pipeline/3-output/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv" \
+    "${WORKFLOW_SHARED_DIR}/${PROJECT_NAME}_map-genus_species_X_phylonames.tsv"
+
+if [ -f "OUTPUT_pipeline/4-output/final_project_mapping.tsv" ]; then
+    ln -sf "../../../OUTPUT_pipeline/4-output/final_project_mapping.tsv" \
+        "${WORKFLOW_SHARED_DIR}/${PROJECT_NAME}_final_project_mapping.tsv"
+fi
+
+echo "  Workflow ai/output_to_input/maps/ -> symlinks created"
+
+echo ""
+echo "========================================================================"
+echo "SUCCESS! Phylonames pipeline complete."
+echo ""
+echo "Research outputs (real files):"
+echo "  OUTPUT_pipeline/2-output/  NCBI phylonames data"
+echo "  OUTPUT_pipeline/3-output/  Project-specific mapping"
+if [ -f "OUTPUT_pipeline/4-output/final_project_mapping.tsv" ]; then
+echo "  OUTPUT_pipeline/4-output/  User phylonames applied"
+fi
+echo "  OUTPUT_pipeline/5-output/  Taxonomy summary"
+echo ""
+echo "Downstream symlinks:"
+echo "  ../output_to_input/maps/  (for downstream subprojects)"
+echo "  ai/output_to_input/maps/  (archival with this run)"
 echo "========================================================================"
 echo "Completed: $(date)"
-
-exit $EXIT_CODE

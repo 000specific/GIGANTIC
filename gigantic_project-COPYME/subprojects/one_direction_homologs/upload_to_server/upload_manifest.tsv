@@ -1,0 +1,11 @@
+# Upload to Server Manifest for one_direction_homologs
+# Format: source_path<TAB>include
+# - source_path is relative to subproject root
+# - include must be "yes" to create symlink in upload_to_server/
+# - Lines starting with # are comments
+#
+# Run: bash RUN-update_upload_to_server.sh
+# Preview: bash RUN-update_upload_to_server.sh --dry-run
+#
+# Add entries below as outputs are generated:
+# source_path	include

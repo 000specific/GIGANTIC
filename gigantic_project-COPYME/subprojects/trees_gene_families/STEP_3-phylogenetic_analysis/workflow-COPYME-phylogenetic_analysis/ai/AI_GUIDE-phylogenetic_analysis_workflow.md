@@ -79,7 +79,7 @@ workflow-COPYME-phylogenetic_analysis/
 | run_phylobayes | 005_d | PhyloBayes Bayesian MCMC (2 chains + convergence) |
 | visualize_trees_human | 006 | Human-friendly tree visualizations (SVG/PDF) |
 | visualize_trees_cv | 007 | Computer-vision-friendly visualizations |
-| copy_to_output_to_input | - | Export trees and alignments |
+| *(symlinks by RUN-workflow.sh)* | - | Export trees and alignments to output_to_input |
 
 ### Conditional Tree Building
 

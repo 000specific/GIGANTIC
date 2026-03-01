@@ -16,7 +16,7 @@ nextflow.enable.dsl = 2
 //   5. Generate summary statistics
 //   6. Per-species QC analysis
 //
-// Final step copies standardized results to output_to_input/ for downstream use
+// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
 
 // Script directory
@@ -152,31 +152,13 @@ process qc_analysis_per_species {
     """
 }
 
-process copy_to_output_to_input {
-    publishDir "${projectDir}/OUTPUT_to_input", mode: 'copy', overwrite: true
-    publishDir "${projectDir}/../../output_to_input", mode: 'copy', overwrite: true
-
-    input:
-        path orthogroups_gigantic
-        path gene_count_gigantic
-        path summary_statistics
-        path per_species_summary
-
-    output:
-        path 'orthogroups_gigantic_ids.tsv'
-        path 'gene_count_gigantic_ids.tsv'
-        path 'summary_statistics.tsv'
-        path 'per_species_summary.tsv'
-
-    script:
-    """
-    cp ${orthogroups_gigantic} orthogroups_gigantic_ids.tsv
-    cp ${gene_count_gigantic} gene_count_gigantic_ids.tsv
-    cp ${summary_statistics} summary_statistics.tsv
-    cp ${per_species_summary} per_species_summary.tsv
-    """
-}
-
+// ============================================================================
+// Workflow
+// ============================================================================
+// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
+// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
+// real files to OUTPUT_pipeline/N-output/ directories.
+// ============================================================================
 workflow {
     // Step 1: Validate proteomes
     validate_proteomes( params.proteomes_dir )
@@ -204,13 +186,5 @@ workflow {
     qc_analysis_per_species(
         validate_proteomes.out.proteome_list,
         restore_identifiers.out.orthogroups_gigantic
-    )
-
-    // Copy to output_to_input for downstream use
-    copy_to_output_to_input(
-        restore_identifiers.out.orthogroups_gigantic,
-        restore_identifiers.out.gene_count_gigantic,
-        generate_summary_statistics.out.summary_statistics,
-        qc_analysis_per_species.out.per_species_summary
     )
 }

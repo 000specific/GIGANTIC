@@ -604,33 +604,8 @@ process concatenate_final_gene_set {
     """
 }
 
-// ============================================================================
-// PROCESS 11: Copy AGS to output_to_input for STEP_3
-// ============================================================================
-
-process copy_to_output_to_input {
-    tag "${gene_family}"
-    label 'local'
-
-    input:
-        tuple val(gene_family), path(ags_fasta)
-
-    output:
-        path "output_to_input_done.txt", emit: done
-
-    script:
-    """
-    # Copy to STEP-level output_to_input
-    mkdir -p ${projectDir}/../../output_to_input/homolog_sequences/${gene_family}
-    cp ${ags_fasta} ${projectDir}/../../output_to_input/homolog_sequences/${gene_family}/
-
-    # Copy to subproject-level output_to_input
-    mkdir -p ${projectDir}/../../../output_to_input/STEP_2-homologs/${gene_family}
-    cp ${ags_fasta} ${projectDir}/../../../output_to_input/STEP_2-homologs/${gene_family}/
-
-    echo "Copied AGS for ${gene_family} to output_to_input at \$(date)" > output_to_input_done.txt
-    """
-}
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/16-output/.
 
 // ============================================================================
 // WORKFLOW
@@ -800,8 +775,8 @@ workflow {
 
     concatenate_final_gene_set( concat_input )
 
-    // ---- Process 11: Copy to output_to_input ----
-    copy_to_output_to_input( concatenate_final_gene_set.out.ags_done )
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+    // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/16-output/.
 
     log.info "\nPipeline submitted. All gene families processing..."
 }
@@ -837,9 +812,9 @@ workflow.onComplete {
         println "  15-output/: Remapped CGS identifiers"
         println "  16-output/: Final AGS (All Gene Set)"
         println ""
-        println "AGS files also copied to:"
-        println "  STEP_2-homolog_discovery/output_to_input/homolog_sequences/<gene_family>/"
-        println "  trees_gene_families/output_to_input/STEP_2-homologs/<gene_family>/"
+        println "Symlinks created by RUN-workflow.sh in:"
+        println "  ../../output_to_input/  (STEP-level, for downstream STEP_3)"
+        println "  ai/output_to_input/     (archival with this workflow run)"
         println ""
         println "Next: Run STEP_3 phylogenetic analysis with AGS files"
     }

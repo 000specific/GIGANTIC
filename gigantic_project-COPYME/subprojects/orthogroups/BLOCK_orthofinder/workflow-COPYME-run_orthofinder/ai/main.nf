@@ -19,7 +19,7 @@ nextflow.enable.dsl = 2
 // OrthoFinder supports the -X flag to preserve original GIGANTIC identifiers,
 // so no header conversion/restoration is needed (unlike OrthoHMM and Broccoli).
 //
-// Final step copies standardized results to output_to_input/ for downstream use
+// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
 
 scripts_dir = "${projectDir}/scripts"
@@ -154,31 +154,13 @@ process qc_analysis_per_species {
     """
 }
 
-process copy_to_output_to_input {
-    publishDir "${projectDir}/OUTPUT_to_input", mode: 'copy', overwrite: true
-    publishDir "${projectDir}/../../output_to_input", mode: 'copy', overwrite: true
-
-    input:
-        path orthogroups_gigantic
-        path gene_count_gigantic
-        path summary_statistics
-        path per_species_summary
-
-    output:
-        path 'orthogroups_gigantic_ids.tsv'
-        path 'gene_count_gigantic_ids.tsv'
-        path 'summary_statistics.tsv'
-        path 'per_species_summary.tsv'
-
-    script:
-    """
-    cp ${orthogroups_gigantic} orthogroups_gigantic_ids.tsv
-    cp ${gene_count_gigantic} gene_count_gigantic_ids.tsv
-    cp ${summary_statistics} summary_statistics.tsv
-    cp ${per_species_summary} per_species_summary.tsv
-    """
-}
-
+// ============================================================================
+// Workflow
+// ============================================================================
+// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
+// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
+// real files to OUTPUT_pipeline/N-output/ directories.
+// ============================================================================
 workflow {
     validate_proteomes( params.proteomes_dir )
     prepare_proteomes( validate_proteomes.out.proteome_list )
@@ -195,11 +177,5 @@ workflow {
     qc_analysis_per_species(
         validate_proteomes.out.proteome_list,
         standardize_output.out.orthogroups_gigantic
-    )
-    copy_to_output_to_input(
-        standardize_output.out.orthogroups_gigantic,
-        standardize_output.out.gene_count_gigantic,
-        generate_summary_statistics.out.summary_statistics,
-        qc_analysis_per_species.out.per_species_summary
     )
 }

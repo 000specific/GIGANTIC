@@ -1,0 +1,52 @@
+# GIGANTIC One-Direction Homologs Configuration
+# =============================================
+#
+# Edit this file before running the workflow.
+# All paths are relative to this workflow directory unless absolute.
+#
+# Run: bash RUN-workflow.sh (local) or sbatch RUN-workflow.sbatch (SLURM)
+
+# --------------------------------------------------------------------------
+# Project Settings
+# --------------------------------------------------------------------------
+project:
+  # Your project name (used in output filenames)
+  name: "my_project"
+
+  # Path to proteome manifest (relative to this workflow directory)
+  proteome_manifest: "INPUT_user/proteome_manifest.tsv"
+
+# --------------------------------------------------------------------------
+# DIAMOND Search Settings
+# --------------------------------------------------------------------------
+diamond:
+  # Path to DIAMOND-formatted NCBI nr database
+  # REQUIRED: You must create this database before running the pipeline
+  #
+  # To create:
+  #   wget https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
+  #   diamond makedb --in nr.gz --db nr.dmnd
+  #
+  database: "/path/to/nr.dmnd"
+
+  # E-value threshold for DIAMOND hits
+  evalue: "1e-5"
+
+  # Maximum number of target sequences per query
+  max_target_sequences: 10
+
+  # Number of parts to split each proteome into (for parallelization)
+  # With 67 species and 40 parts = 2,680 parallel DIAMOND jobs
+  # Adjust based on your cluster's CPU limits
+  num_parts: 40
+
+  # CPU threads per DIAMOND job
+  # Using 1 thread per job maximizes parallelization on SLURM clusters
+  threads_per_job: 1
+
+# --------------------------------------------------------------------------
+# Output Settings
+# --------------------------------------------------------------------------
+output:
+  # Base directory for pipeline output (relative to this workflow directory)
+  base_dir: "OUTPUT_pipeline"

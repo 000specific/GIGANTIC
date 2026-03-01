@@ -17,7 +17,7 @@ nextflow.enable.dsl = 2
 //   - BLOCK_orthohmm/output_to_input/
 //   - BLOCK_broccoli/output_to_input/
 //
-// Final step copies comparison results to output_to_input/ for downstream use
+// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
 
 scripts_dir = "${projectDir}/scripts"
@@ -65,28 +65,13 @@ process compare_methods {
     """
 }
 
-process copy_to_output_to_input {
-    publishDir "${projectDir}/OUTPUT_to_input", mode: 'copy', overwrite: true
-    publishDir "${projectDir}/../../output_to_input", mode: 'copy', overwrite: true
-
-    input:
-        path method_comparison
-        path gene_overlap
-        path size_comparison
-
-    output:
-        path 'method_comparison_summary.tsv'
-        path 'gene_overlap_between_methods.tsv'
-        path 'orthogroup_size_comparison.tsv'
-
-    script:
-    """
-    cp ${method_comparison} method_comparison_summary.tsv
-    cp ${gene_overlap} gene_overlap_between_methods.tsv
-    cp ${size_comparison} orthogroup_size_comparison.tsv
-    """
-}
-
+// ============================================================================
+// Workflow
+// ============================================================================
+// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
+// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
+// real files to OUTPUT_pipeline/N-output/ directories.
+// ============================================================================
 workflow {
     load_tool_results(
         params.orthofinder_dir,
@@ -94,9 +79,4 @@ workflow {
         params.broccoli_dir
     )
     compare_methods( load_tool_results.out.tool_orthogroups_dir )
-    copy_to_output_to_input(
-        compare_methods.out.method_comparison,
-        compare_methods.out.gene_overlap,
-        compare_methods.out.size_comparison
-    )
 }

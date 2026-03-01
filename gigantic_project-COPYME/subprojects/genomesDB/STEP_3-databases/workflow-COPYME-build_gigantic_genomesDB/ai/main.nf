@@ -59,8 +59,8 @@ process build_blast_databases {
 
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
-    // Also publish to output_to_input for downstream subprojects
-    publishDir "${projectDir}/../../output_to_input", mode: 'copy', overwrite: true, pattern: "2-output/${params.database_name}/**", saveAs: { filename -> filename.replace("2-output/", "") }
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+    // pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
     input:
         path filtered_manifest
@@ -113,7 +113,7 @@ workflow.onComplete {
         println "  1-output/: Filtered species manifest (Include=YES only)"
         println "  2-output/: Per-genome BLAST protein databases"
         println ""
-        println "BLAST databases copied to: ../../output_to_input/${params.database_name}/"
+        println "BLAST database symlinks created in output_to_input/ (by RUN-workflow.sh)"
         println ""
         println "To use with blastp:"
         println "  blastp -db OUTPUT_pipeline/2-output/${params.database_name}/PHYLONAME-proteome.aa -query sequences.fasta"

@@ -21,7 +21,7 @@ nextflow.enable.dsl=2
 // 5c. run_iqtree                   - IQ-TREE ML phylogeny (configurable)
 // 6. visualize_trees_human         - Human-friendly tree visualization
 // 7. visualize_trees_computer_vision - Computer-vision tree visualization
-// 8. copy_to_output_to_input       - Export alignment + trimmed + trees
+// (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
 //
 // CONFIGURABLE TREE METHODS:
 // Set in phylogenetic_analysis_config.yaml under tree_methods:
@@ -392,43 +392,8 @@ process visualize_trees_computer_vision {
     """
 }
 
-// Process 8: Copy results to output_to_input (STEP-level and subproject-level)
-process copy_to_output_to_input {
-    tag "${gene_family}"
-    label 'local'
-
-    // Publish to STEP-level output_to_input
-    publishDir "${projectDir}/../../output_to_input/trees/${gene_family}", mode: 'copy', overwrite: true
-
-    // Publish to subproject-level output_to_input
-    publishDir "${projectDir}/../../../output_to_input/STEP_3-trees/${gene_family}", mode: 'copy', overwrite: true
-
-    input:
-        tuple val( gene_family ), path( alignment ), path( trimmed_alignment ), path( tree_files )
-
-    output:
-        path "*.mafft"
-        path "*.clipkit-smartgap"
-        path "*.fasttree", optional: true
-        path "*.treefile", optional: true
-
-    script:
-    """
-    # Copy alignment
-    cp ${alignment} .
-
-    # Copy trimmed alignment
-    cp ${trimmed_alignment} .
-
-    # Copy tree files (may include fasttree, iqtree, etc.)
-    for tree_file in ${tree_files}; do
-        cp "\${tree_file}" .
-    done
-
-    echo "Exported to output_to_input for ${gene_family}:"
-    ls -la *.mafft *.clipkit-smartgap *.fasttree *.treefile 2>/dev/null || true
-    """
-}
+// NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+// pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/N-output/.
 
 // ============================================================================
 // Workflow
@@ -519,14 +484,6 @@ workflow {
     // Process 7: Computer-vision visualization
     visualize_trees_computer_vision( tree_files_channel )
 
-    // Process 8: Copy to output_to_input
-    // Combine alignment, trimmed alignment, and tree files
-    output_to_input_channel = run_mafft_alignment.out.alignment
-        .join( run_clipkit_trimming.out.trimmed_alignment )
-        .join( tree_files_channel )
-        .map { gene_family, alignment, trimmed, tree_files ->
-            [ gene_family, alignment, trimmed, tree_files ]
-        }
-
-    copy_to_output_to_input( output_to_input_channel )
+    // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
+    // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/N-output/.
 }
