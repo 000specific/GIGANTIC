@@ -14,8 +14,8 @@ The modified genomes contain:
 1. Original genome sequences (with GIGANTIC headers)
 2. RGS sequences (with truncated headers suitable for BLAST databases) replacing sequences that were top BLAST hits
 
-This replacement allows reciprocal BLAST to identify which CGS sequences hit
-back to RGS sequences, forming the basis of RBF (Reciprocal Best Family) filtering.
+This replacement allows reciprocal BLAST to identify which BGS sequences hit
+back to RGS sequences, forming the basis of RBH/RBF filtering to produce the CGS.
 
 Workflow Context:
     Script 006 → RGS genome BLAST → Script 007 → Lists → Script 008 → Mapping →

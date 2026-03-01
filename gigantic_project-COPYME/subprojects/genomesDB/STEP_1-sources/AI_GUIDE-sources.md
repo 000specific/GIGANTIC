@@ -1,6 +1,6 @@
 # AI Guide: STEP_1-sources (genomesDB)
 
-**For AI Assistants**: This guide covers STEP_1 of the genomesDB subproject. For genomesDB overview and three-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_1 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_1-sources/`
 
@@ -22,7 +22,7 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| genomesDB concepts, three-step structure | `../AI_GUIDE-genomesDB.md` |
+| genomesDB concepts, four-step structure | `../AI_GUIDE-genomesDB.md` |
 | STEP_1 sources concepts (this step) | This file |
 | Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-ingest_sources_workflow.md` |
 
@@ -237,14 +237,14 @@ research_notebook/research_ai/subproject-genomesDB/
 
 4. **Copy workflow template**:
    ```bash
-   cp -r workflow-COPYME-ingest_source_proteomes workflow-RUN_01-ingest_source_proteomes
+   cp -r workflow-COPYME-ingest_source_data workflow-RUN_01-ingest_source_data
    ```
 
 5. **Add manifest and run**:
    ```bash
-   cd workflow-RUN_01-ingest_source_proteomes
+   cd workflow-RUN_01-ingest_source_data
    # Create INPUT_user/source_manifest.tsv
-   bash RUN-ingest_sources.sh
+   bash RUN-workflow.sh
    ```
 
 **After ingestion**: Guide to STEP_2-standardize_and_evaluate for format standardization and phyloname application.
@@ -263,10 +263,10 @@ STEP_1-sources/
 │       └── proteome_manifest.tsv
 ├── user_research/               # User's personal workspace
 │   └── README.md                # Only this is part of GIGANTIC
-└── workflow-COPYME-ingest_source_proteomes/
+└── workflow-COPYME-ingest_source_data/
     ├── README.md
-    ├── RUN-ingest_sources.sh
-    ├── RUN-ingest_sources.sbatch
+    ├── RUN-workflow.sh
+    ├── RUN-workflow.sbatch
     ├── ingest_sources_config.yaml
     ├── INPUT_user/
     │   ├── source_manifest.tsv      # User creates this (4 columns)
@@ -280,7 +280,7 @@ STEP_1-sources/
         ├── main.nf
         ├── nextflow.config
         └── scripts/
-            ├── 001_ai-python-ingest_proteomes.py
-            ├── 002_ai-bash-create_output_symlinks.sh
-            └── 003_ai-python-write_run_log.py
+            ├── 001_ai-python-validate_source_manifest.py
+            ├── 002_ai-python-ingest_source_data.py
+            └── 003_ai-bash-create_output_symlinks.sh
 ```

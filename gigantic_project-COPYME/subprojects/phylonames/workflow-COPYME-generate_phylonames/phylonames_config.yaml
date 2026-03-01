@@ -9,7 +9,7 @@
 # This configuration file controls how the phylonames workflow runs.
 # Most users only need to edit the "Project Settings" section below.
 #
-# After editing, run: bash RUN-phylonames.sh
+# After editing, run: bash RUN-workflow.sh
 #
 # ============================================================================
 

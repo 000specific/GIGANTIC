@@ -1,6 +1,6 @@
 # AI Guide: STEP_2-standardize_and_evaluate (genomesDB)
 
-**For AI Assistants**: This guide covers STEP_2 of the genomesDB subproject. For genomesDB overview and three-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_2 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_2-standardize_and_evaluate/`
 
@@ -22,7 +22,7 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| genomesDB concepts, three-step structure | `../AI_GUIDE-genomesDB.md` |
+| genomesDB concepts, four-step structure | `../AI_GUIDE-genomesDB.md` |
 | STEP_2 standardize_and_evaluate concepts (this step) | This file |
 | Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 
@@ -30,17 +30,18 @@
 
 ## What This Step Does
 
-**Purpose**: Standardize data formats, apply phylonames, and evaluate genome/proteome quality through five analysis areas.
+**Purpose**: Standardize data formats, apply phylonames, and evaluate genome/proteome quality through six analysis areas.
 
-**Five Analysis Areas**:
+**Six Analysis Areas**:
 
 | # | Analysis | Input | Script | Status |
 |---|----------|-------|--------|--------|
-| 1 | Proteome phyloname standardization | T1 proteomes (71) + phylonames mapping | `001_ai-python-standardize_proteome_phylonames.py` | Complete |
-| 2 | Genome N50 statistics | Genomes (64) | `002_ai-python-calculate_genome_n50_statistics.py` | Planned |
-| 3 | BUSCO quality assessment | Proteomes (71) | TBD | Planned |
-| 4 | Gene structure stats (GFFs) | Gene annotations (69) | TBD | Planned |
-| 5 | Protein length stats | T1 proteomes (71) | TBD | Planned |
+| 1 | Proteome phyloname standardization | T1 proteomes + phylonames mapping | `001_ai-python-standardize_proteome_phylonames.py` | Complete |
+| 2 | Proteome cleaning (invalid residues) | Standardized proteomes | `002_ai-python-clean_proteome_invalid_residues.py` | Complete |
+| 3 | Genome/annotation phyloname standardization | Genomes + gene annotations + phylonames | `003_ai-python-standardize_genome_and_annotation_phylonames.py` | Complete |
+| 4 | Assembly quality statistics (gfastats) | Phyloname-named genomes | `004_ai-python-calculate_genome_assembly_statistics.py` | Complete |
+| 5 | BUSCO proteome evaluation | Cleaned proteomes + lineage assignments | `005_ai-python-run_busco_proteome_evaluation.py` | Complete |
+| 6 | Quality summary and species manifest | All quality data | `006_ai-python-summarize_quality_and_generate_species_manifest.py` | Complete |
 
 ---
 
@@ -76,7 +77,7 @@ Each script:
 
 ## Analysis Area Details
 
-### 1. Proteome Phyloname Standardization (Complete)
+### 1. Proteome Phyloname Standardization
 
 **What it does**: Renames proteome files and FASTA headers to use GIGANTIC phylonames.
 
@@ -86,11 +87,23 @@ Each script:
 **Header convention**: `>g_(source_gene_id)-t_(source_transcript_id)-p_(source_protein_id)-n_(phyloname)`
 - Example: `>g_GeneID123-t_XM_456-p_XP_789-n_Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens`
 
-**Key mapping**: genus_species extracted from input filenames → looked up in phylonames mapping → phyloname applied to filename and all headers.
+**Key mapping**: genus_species extracted from input filenames --> looked up in phylonames mapping --> phyloname applied to filename and all headers.
 
-### 2. Genome N50 Statistics (Next)
+### 2. Proteome Cleaning
 
-**What it does**: Calculates assembly quality metrics for all available genomes.
+**What it does**: Replaces invalid amino acid characters ('.' used for stop codons in some proteomes) with 'X'.
+
+**Why needed**: BLAST and BUSCO require valid amino acid characters. Some source proteomes use '.' for stop codons.
+
+### 3. Genome/Annotation Standardization
+
+**What it does**: Creates phyloname-named symlinks to original genome and annotation files.
+
+**Preserves source data** while providing consistent naming across the pipeline.
+
+### 4. Assembly Quality Statistics
+
+**What it does**: Uses `gfastats` to calculate assembly quality metrics for all available genomes.
 
 **Statistics produced per genome**:
 - Scaffold/contig count
@@ -99,13 +112,17 @@ Each script:
 - N50 (bp) - weighted median scaffold length at 50% of total size
 - N90 (bp) - weighted median scaffold length at 90% of total size
 
-**GIGANTIC_0 reference**: The original workflow used an external `N50.sh` bash script. GIGANTIC_1 reimplements this as pure Python for portability and to eliminate the external dependency.
+**Requires**: `ai_gigantic_genomesdb` conda environment with `gfastats` installed.
 
-**Input**: 64 genome files from `../STEP_1-sources/output_to_input/genomes/`
+### 5. BUSCO Proteome Evaluation
 
-### 3-5. Remaining Analyses
+**What it does**: Runs BUSCO to assess proteome completeness using lineage-specific databases.
 
-See `README.md` for current status and planned scope.
+**Requires**: `ai_gigantic_genomesdb` conda environment with `busco` installed. BUSCO lineage assignments in `INPUT_user/busco_lineages.txt`.
+
+### 6. Quality Summary and Species Manifest
+
+**What it does**: Combines all quality metrics into summary tables and generates a species selection manifest for STEP_3/STEP_4.
 
 ---
 
@@ -126,17 +143,28 @@ From this step directory, project root is at `../../../`:
 workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 ├── OUTPUT_pipeline/
 │   ├── 1-output/                          # Proteome standardization
-│   │   ├── gigantic_proteomes/            # 71 standardized .aa files
+│   │   ├── gigantic_proteomes/            # Standardized .aa files
 │   │   └── 1_ai-standardization_manifest.tsv
-│   ├── 2-output/                          # N50 statistics
-│   ├── 3-output/                          # BUSCO reports
-│   ├── 4-output/                          # Gene structure stats
-│   └── 5-output/                          # Protein length stats
+│   ├── 2-output/                          # Cleaned proteomes
+│   │   └── gigantic_proteomes_cleaned/
+│   ├── 3-output/                          # Genome/annotation symlinks
+│   │   ├── gigantic_genomes/
+│   │   └── gigantic_gene_annotations/
+│   ├── 4-output/                          # Assembly statistics
+│   │   └── 4_ai-genome_assembly_statistics.tsv
+│   ├── 5-output/                          # BUSCO reports
+│   │   └── 5_ai-busco_summary.tsv
+│   └── 6-output/                          # Quality summary and species manifest
+│       ├── 6_ai-quality_summary.tsv
+│       └── 6_ai-species_selection_manifest.tsv
 └── ai/
     └── scripts/
         ├── 001_ai-python-standardize_proteome_phylonames.py
-        ├── 002_ai-python-calculate_genome_n50_statistics.py  (planned)
-        └── ...
+        ├── 002_ai-python-clean_proteome_invalid_residues.py
+        ├── 003_ai-python-standardize_genome_and_annotation_phylonames.py
+        ├── 004_ai-python-calculate_genome_assembly_statistics.py
+        ├── 005_ai-python-run_busco_proteome_evaluation.py
+        └── 006_ai-python-summarize_quality_and_generate_species_manifest.py
 ```
 
 ---

@@ -32,8 +32,8 @@ The 16-step pipeline is organized into 10 NextFlow processes for efficiency:
 workflow-COPYME-rbh_rbf_homologs/
 │
 ├── README.md
-├── RUN-rbh_rbf_homologs.sh         # Local: bash RUN-rbh_rbf_homologs.sh
-├── RUN-rbh_rbf_homologs.sbatch     # SLURM: sbatch RUN-rbh_rbf_homologs.sbatch
+├── RUN-workflow.sh         # Local: bash RUN-workflow.sh
+├── RUN-workflow.sbatch     # SLURM: sbatch RUN-workflow.sbatch
 ├── rbh_rbf_homologs_config.yaml    # User configuration
 │
 ├── INPUT_user/
@@ -71,7 +71,7 @@ workflow-COPYME-rbh_rbf_homologs/
 | 001 | 001_ai-python | setup_and_list_databases | List BLAST databases |
 | 002 | 002_ai-python | generate_and_run_forward_blast | Generate forward BLAST commands |
 | 003 | (bash) | generate_and_run_forward_blast | Execute forward BLAST |
-| 004 | 004_ai-python | extract_cgs_sequences | Extract CGS (fullseqs + hitregions) |
+| 004 | 004_ai-python | extract_bgs_sequences | Extract BGS (fullseqs + hitregions) |
 | 005 | 005_ai-python | generate_and_run_rgs_blast | Generate RGS genome BLAST commands |
 | 006 | (bash) | generate_and_run_rgs_blast | Execute RGS genome BLAST |
 | 007 | 007_ai-python | map_rgs_and_build_reciprocal_db | List RGS BLAST files |
@@ -80,7 +80,7 @@ workflow-COPYME-rbh_rbf_homologs/
 | 010 | 010_ai-python | map_rgs_and_build_reciprocal_db | Build combined BLAST DB |
 | 011 | 011_ai-python | run_reciprocal_blast | Generate reciprocal BLAST commands |
 | 012 | (bash) | run_reciprocal_blast | Execute reciprocal BLAST |
-| 013 | 013_ai-python | extract_rbf_sequences | Extract RBF sequences |
+| 013 | 013_ai-python | extract_cgs_sequences | Extract CGS sequences |
 | 014 | 014_ai-python | filter_species | Filter by keeper list |
 | 015 | 015_ai-python | remap_identifiers | Remap to GIGANTIC phylonames |
 | 016 | 016_ai-python | create_ags_and_export | Create final AGS |
@@ -136,12 +136,12 @@ echo "Drosophila_melanogaster" >> INPUT_user/species_keeper_list.tsv
 
 **Local**:
 ```bash
-bash RUN-rbh_rbf_homologs.sh
+bash RUN-workflow.sh
 ```
 
 **SLURM** (edit account/qos first):
 ```bash
-sbatch RUN-rbh_rbf_homologs.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -181,13 +181,13 @@ done
 # Check forward BLAST found hits
 wc -l OUTPUT_pipeline/3-output/*.blastp 2>/dev/null
 
-# Check CGS extraction
+# Check BGS extraction
 grep -c ">" OUTPUT_pipeline/4-output/*fullseqs* 2>/dev/null
 
 # Check reciprocal BLAST
 wc -l OUTPUT_pipeline/12-output/*.blastp 2>/dev/null
 
-# Check RBF filtering
+# Check CGS filtering
 grep -c ">" OUTPUT_pipeline/13-output/*.aa 2>/dev/null
 
 # Check species filtering
@@ -244,8 +244,8 @@ ls ../../../../genomesDB/output_to_input/gigantic_T1_blastp_header_map
 **Diagnose**:
 ```bash
 # Check counts at each filter step
-echo "CGS:"; grep -c ">" OUTPUT_pipeline/4-output/*fullseqs*
-echo "RBF:"; grep -c ">" OUTPUT_pipeline/13-output/*.aa
+echo "BGS:"; grep -c ">" OUTPUT_pipeline/4-output/*fullseqs*
+echo "CGS:"; grep -c ">" OUTPUT_pipeline/13-output/*.aa
 echo "Species filter:"; grep -c ">" OUTPUT_pipeline/14-output/*.aa
 echo "Final AGS:"; grep -c ">" OUTPUT_pipeline/16-output/*.aa
 ```
@@ -257,7 +257,7 @@ echo "Final AGS:"; grep -c ">" OUTPUT_pipeline/16-output/*.aa
 **Clean and retry**:
 ```bash
 rm -rf work .nextflow .nextflow.log*
-bash RUN-rbh_rbf_homologs.sh
+bash RUN-workflow.sh
 ```
 
 ---

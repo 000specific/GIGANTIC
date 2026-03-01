@@ -47,13 +47,13 @@ nano INPUT_user/selected_species.txt
 
 **Run locally:**
 ```bash
-bash RUN-create_final_species_set.sh
+bash RUN-workflow.sh
 ```
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-create_final_species_set.sbatch to set --account and --qos
-sbatch RUN-create_final_species_set.sbatch
+# Edit RUN-workflow.sbatch to set --account and --qos
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -72,8 +72,8 @@ sbatch RUN-create_final_species_set.sbatch
 ```
 workflow-COPYME-create_final_species_set/
 ├── README.md                              # This file
-├── RUN-create_final_species_set.sh        # Local runner (calls NextFlow)
-├── RUN-create_final_species_set.sbatch    # SLURM wrapper
+├── RUN-workflow.sh        # Local runner (calls NextFlow)
+├── RUN-workflow.sbatch    # SLURM wrapper
 ├── final_species_set_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User inputs
 │   └── selected_species.txt               # Species selection (optional)

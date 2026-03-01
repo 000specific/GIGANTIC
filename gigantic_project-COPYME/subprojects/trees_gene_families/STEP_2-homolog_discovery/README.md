@@ -1,6 +1,6 @@
 # STEP_2: Homolog Discovery
 
-Find homologous sequences across project species using Reciprocal Best Hit/Fit (RBH/RBF) BLAST.
+Find homologous sequences across project species using Reciprocal Best Hit/Family (RBH/RBF) BLAST.
 
 ## Purpose
 
@@ -13,7 +13,7 @@ cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
 cd workflow-RUN_01-rbh_rbf_homologs/
 # Edit rbh_rbf_homologs_config.yaml (set gene_family name, rgs_file, database paths)
 # Place RGS file and species_keeper_list.tsv in INPUT_user/
-bash RUN-rbh_rbf_homologs.sh
+bash RUN-workflow.sh
 ```
 
 ## Prerequisites
@@ -27,7 +27,7 @@ bash RUN-rbh_rbf_homologs.sh
 1. List BLAST databases
 2. Generate forward BLAST commands
 3. Execute forward BLAST
-4. Extract candidate gene sequences (CGS)
+4. Extract blast gene sequences (BGS)
 5. Generate RGS genome BLAST commands
 6. Execute RGS genome BLAST
 7. List RGS BLAST files
@@ -36,7 +36,7 @@ bash RUN-rbh_rbf_homologs.sh
 10. Build combined reciprocal BLAST database
 11. Generate reciprocal BLAST commands
 12. Execute reciprocal BLAST
-13. Extract reciprocal best fit (RBF) sequences
+13. Extract candidate gene sequences (CGS)
 14. Filter by species keeper list
 15. Remap CGS identifiers to GIGANTIC phylonames
 16. Concatenate RGS + CGS into final AGS (All Gene Set)

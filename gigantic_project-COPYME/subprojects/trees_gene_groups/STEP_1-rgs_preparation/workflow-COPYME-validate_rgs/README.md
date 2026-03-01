@@ -53,12 +53,12 @@ piezo	rgs5-piezo-ncbi-2025november15.aa
 
 **Run locally:**
 ```bash
-bash RUN-validate_rgs.sh
+bash RUN-workflow.sh
 ```
 
 **Run on SLURM:**
 ```bash
-sbatch RUN-validate_rgs.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -76,8 +76,8 @@ sbatch RUN-validate_rgs.sbatch
 ```
 workflow-COPYME-validate_rgs/
 ├── README.md                              # This file
-├── RUN-validate_rgs.sh                    # Local runner
-├── RUN-validate_rgs.sbatch                # SLURM wrapper
+├── RUN-workflow.sh                    # Local runner
+├── RUN-workflow.sbatch                # SLURM wrapper
 ├── rgs_config.yaml                        # Configuration
 ├── INPUT_user/                            # User-provided RGS files
 │   └── rgs_manifest.tsv                   # Gene family manifest

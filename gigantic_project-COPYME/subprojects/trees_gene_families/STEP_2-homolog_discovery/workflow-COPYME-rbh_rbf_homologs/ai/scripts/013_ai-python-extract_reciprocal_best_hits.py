@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # GIGANTIC BLOCK 2 - Script 013: Extract Reciprocal Best Hits
-# AI: Claude Code | Sonnet 4.5 | 2025 November 11 16:05 | Purpose: Extract reciprocal best fit (RBF) sequences
+# AI: Claude Code | Sonnet 4.5 | 2025 November 11 16:05 | Purpose: Extract candidate gene sequences (CGS) from reciprocal best hits
 # Human: Eric Edsinger
 
 """
-Extract Reciprocal Best Fit (RBF) sequences.
+Extract Candidate Gene Sequences (CGS) from Reciprocal Best Hits.
 
-This script performs reciprocal best fit analysis by:
+This script performs reciprocal best family analysis by:
 1. Loading RGS identifiers
 2. Parsing reciprocal BLAST results (hits back to model species)
 3. Filtering sequences that hit model species but are not in original RGS
@@ -18,7 +18,7 @@ Input:
     - output/8-output/8_ai-map-rgs-to-genome-identifiers.txt: RGS ID mapping
 
 Output:
-    - output/13-output/13_ai-rbf-{project_db}-{gene_family}.aa: rbf sequences (FASTA)
+    - output/13-output/13_ai-cgs-{project_db}-{gene_family}.aa: candidate gene sequences (FASTA)
     - output/13-output/13_ai-log-dropped-sequences-{gene_family}: Log of dropped sequences (TSV)
 
 Log:
@@ -223,7 +223,7 @@ def extract_keeper_sequences(
 def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(
-        description='Extract reciprocal best fit (RBF) sequences'
+        description='Extract candidate gene sequences (CGS) from reciprocal best hits'
     )
     
     parser.add_argument(
@@ -250,8 +250,8 @@ def main():
     parser.add_argument(
         '--output-fasta',
         type=Path,
-        default=Path( 'output/13-output/13_ai-all-reciprocal_best_fit-sequences.aa' ),
-        help='Output FASTA with RBF sequences'
+        default=Path( 'output/13-output/13_ai-cgs-all-reciprocal_best_hits.aa' ),
+        help='Output FASTA with CGS sequences'
     )
     
     parser.add_argument(
@@ -278,7 +278,7 @@ def main():
     logger = setup_logging( log_file )
     
     logger.info( "="*80 )
-    logger.info( "Extract Reciprocal Best Fit (RBF) Sequences" )
+    logger.info( "Extract Candidate Gene Sequences (CGS) from Reciprocal Best Hits" )
     logger.info( "="*80 )
     logger.info( f"Script started at: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"RBH species: {', '.join(rbh_species_list)}" )
@@ -332,7 +332,7 @@ def main():
     logger.info( "\n" + "="*80 )
     logger.info( "SCRIPT COMPLETE" )
     logger.info( "="*80 )
-    logger.info( f"\nRBF sequences: {args.output_fasta} ({extracted_count} sequences)" )
+    logger.info( f"\nCGS sequences: {args.output_fasta} ({extracted_count} sequences)" )
     logger.info( f"Filtered log: {args.output_filtered}" )
     logger.info( f"Log file: {log_file}" )
     logger.info( f"\nScript completed at: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )

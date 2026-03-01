@@ -25,8 +25,8 @@
 ################################################################################
 
 #SBATCH --job-name=genomesDB_step3
-#SBATCH --account=moroz
-#SBATCH --qos=moroz
+#SBATCH --account=YOUR_ACCOUNT
+#SBATCH --qos=YOUR_QOS
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8

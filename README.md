@@ -72,23 +72,34 @@ Currently, all subprojects are in development (`x_phylonames/`, `x_genomesDB/`, 
 
 ## Subprojects
 
-| # | Subproject | Description | Type |
-|---|-----------|-------------|------|
-| 1 | `genomesDB` | Proteome database curation, BLAST database construction | Setup |
-| 2 | `phylonames` | GIGANTIC phylogenetic naming system and species mapping | Setup |
-| 3 | `annotations_hmms` | Multi-tool protein functional annotation pipeline | NextFlow |
-| 4 | `orthogroups` | Ortholog group identification (OrthoHMM + OrthoFinder) | NextFlow |
-| 5 | `trees_species` | Exhaustive species tree topology generation | NextFlow |
-| 6 | `trees_gene_families` | Gene family phylogenetic analysis | NextFlow |
-| 7 | `orthogroups_X_ocl` | Evolutionary dynamics across all tree topologies | NextFlow |
-| 8 | `annotations_X_ocl` | Functional annotation integrated with OCL analysis | NextFlow |
-| 9 | `synteny` | Gene order conservation analysis across species | NextFlow |
-| 10 | `dark_proteome` | Uncharacterized/unknown function protein analysis | NextFlow |
-| 11 | `hot_spots` | Evolutionary hotspots and rapid change regions | NextFlow |
-| 12 | `rnaseq_integration` | RNA-seq expression data integration | NextFlow |
-| 13 | `hgnc_automation` | Automated reference gene family gene set generation | NextFlow |
-| 14 | `gene_names` | Comprehensive gene naming system | NextFlow |
-| 15 | `one_direction_homologs` | One-way BLAST homolog identification | NextFlow |
+### Core Pipeline
+
+| # | Subproject | Description | Status |
+|---|-----------|-------------|--------|
+| 1 | `phylonames` | GIGANTIC phylogenetic naming system and species mapping | Operational |
+| 2 | `genomesDB` | Proteome database curation, standardization, and BLAST setup | Operational |
+| 3 | `orthogroups` | Ortholog group identification (OrthoHMM, OrthoFinder, Broccoli) | Functional |
+| 4 | `trees_species` | Exhaustive species tree topology generation | Planned |
+| 5 | `annotations_hmms` | Multi-tool protein functional annotation pipeline | Planned |
+| 6 | `orthogroups_X_ocl` | Evolutionary dynamics across all tree topologies | Planned |
+| 7 | `annotations_X_ocl` | Functional annotation integrated with OCL analysis | Planned |
+
+### Additional Subprojects
+
+| # | Subproject | Description | Status |
+|---|-----------|-------------|--------|
+| 8 | `trees_gene_families` | Gene family homolog discovery and phylogenetic analysis | Functional |
+| 9 | `trees_gene_groups` | Orthogroup-based phylogenetic analysis | Structural |
+| 10 | `gene_sizes` | Protein and gene size analysis | Planned |
+| 11 | `synteny` | Gene order conservation analysis across species | Planned |
+| 12 | `dark_proteome` | Uncharacterized/unknown function protein analysis | Planned |
+| 13 | `hot_spots` | Evolutionary hotspots and rapid change regions | Planned |
+| 14 | `one_direction_homologs` | One-way BLAST homolog identification | Planned |
+| 15 | `xenologs_vs_artifacts` | Xenolog detection and artifact filtering | Planned |
+| 16 | `transcriptomes` | Transcriptome integration | Planned |
+| 17 | `rnaseq_integration` | RNA-seq expression data integration | Planned |
+| 18 | `gene_names` | Comprehensive gene naming system | Planned |
+| 19 | `hgnc_automation` | Automated reference gene set generation | Planned |
 
 ## Quick Start
 
@@ -147,11 +158,11 @@ subproject/
 ├── AI_GUIDE-subproject.md             # AI assistant guidance
 ├── user_research/                     # Personal workspace for notes and exploration
 ├── output_to_input/                   # Outputs shared to downstream subprojects
-└── workflow-COPYME/             # NextFlow workflow (copy this to run)
+└── workflow-COPYME-[name]/            # NextFlow workflow (copy this to run)
     ├── README.md                      # Quick start guide
     ├── RUN-workflow.sh                # Local: bash RUN-workflow.sh
     ├── RUN-workflow.sbatch            # SLURM: sbatch RUN-workflow.sbatch
-    ├── config.yaml                    # User configuration (edit this)
+    ├── [name]_config.yaml             # User configuration (edit this)
     ├── INPUT_user/                    # User-provided inputs
     ├── OUTPUT_pipeline/               # Results appear here
     └── ai/                            # Internal (don't touch)
@@ -265,21 +276,21 @@ research_notebook/research_ai/
 
 ### Running Workflows
 
-Every workflow has two RUN files - the file extension tells you how to run it:
+Every workflow has two RUN files with standardized names:
 
 ```
-workflow-COPYME/
-├── RUN-phylonames.sh      ← bash RUN-phylonames.sh      (local machine)
-├── RUN-phylonames.sbatch  ← sbatch RUN-phylonames.sbatch (SLURM cluster)
+workflow-COPYME-generate_phylonames/
+├── RUN-workflow.sh      ← bash RUN-workflow.sh      (local machine)
+├── RUN-workflow.sbatch  ← sbatch RUN-workflow.sbatch (SLURM cluster)
 └── ...
 ```
 
 | File | Command | Where it runs |
 |------|---------|---------------|
-| `RUN-*.sh` | `bash RUN-*.sh` | Your local machine |
-| `RUN-*.sbatch` | `sbatch RUN-*.sbatch` | SLURM cluster |
+| `RUN-workflow.sh` | `bash RUN-workflow.sh` | Your local machine |
+| `RUN-workflow.sbatch` | `sbatch RUN-workflow.sbatch` | SLURM cluster |
 
-**That's it.** Scan the directory, see two RUN files, pick the one for your environment.
+**That's it.** The workflow directory name tells you what it does. The RUN files are always named the same way across all subprojects.
 
 ### NextFlow Execution Patterns (Internal Detail)
 

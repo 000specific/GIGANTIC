@@ -100,8 +100,8 @@ gigantic_project-[project_name]/
         │   │                                # Only ONE COPYME per workflow type
         │   │
         │   ├── README.md                    # Quick start guide
-        │   ├── RUN-[workflow].sh            # Local execution: bash RUN-*.sh
-        │   ├── RUN-[workflow].sbatch        # SLURM execution: sbatch RUN-*.sbatch
+        │   ├── RUN-workflow.sh              # Local execution: bash RUN-workflow.sh
+        │   ├── RUN-workflow.sbatch          # SLURM execution: sbatch RUN-workflow.sbatch
         │   ├── [workflow]_config.yaml       # User configuration
         │   │
         │   ├── INPUT_user/                  # WORKFLOW INPUTS
@@ -159,10 +159,14 @@ upload_to_server/[symlinks]           # GIGANTIC server scans these
 
 ### RUN File Convention
 
+Every workflow has exactly two runner files with standardized names:
+
 | File | Command | Use When |
 |------|---------|----------|
-| `RUN-*.sh` | `bash RUN-*.sh` | Local machine, workstation |
-| `RUN-*.sbatch` | `sbatch RUN-*.sbatch` | SLURM cluster (edit account/qos first) |
+| `RUN-workflow.sh` | `bash RUN-workflow.sh` | Local machine, workstation |
+| `RUN-workflow.sbatch` | `sbatch RUN-workflow.sbatch` | SLURM cluster (edit account/qos first) |
+
+The workflow directory name provides context (e.g., `workflow-COPYME-generate_phylonames/RUN-workflow.sh`). The RUN files themselves are always named `RUN-workflow.*` for consistency across all subprojects.
 
 ### Workflow Naming Convention (COPYME/RUN)
 
@@ -227,6 +231,8 @@ research_notebook/research_ai/
 
 ## Subproject Dependency Chain
 
+### Core Pipeline
+
 ```
 [1] phylonames                 # MUST RUN FIRST - generates species identifiers
        │
@@ -249,17 +255,48 @@ research_notebook/research_ai/
 [7] annotations_X_ocl
 ```
 
-**Quick reference**:
-| Subproject | Prerequisites | Purpose |
-|------------|---------------|---------|
-| phylonames | None | Species name mappings from NCBI taxonomy |
-| genomesDB | phylonames | Proteome databases and BLAST setup |
-| trees_species | phylonames | All possible species tree topologies |
-| orthogroups | genomesDB + trees_species | Ortholog group identification |
-| annotations_hmms | genomesDB | Functional protein annotation |
-| orthogroups_X_ocl | orthogroups + trees_species | Origin-Conservation-Loss analysis |
-| annotations_X_ocl | annotations_hmms + orthogroups_X_ocl | Annotation-OCL integration |
-| trees_gene_families | genomesDB + phylonames | Gene family phylogenies |
+### Additional Subprojects
+
+These subprojects connect to the core pipeline at various points:
+
+```
+genomesDB ──► trees_gene_families    # Gene family homolog discovery and phylogenetics
+genomesDB ──► trees_gene_groups      # Orthogroup-based phylogenetics
+genomesDB ──► gene_sizes             # Protein/gene size analysis
+genomesDB ──► synteny                # Gene order conservation analysis
+genomesDB ──► dark_proteome          # Uncharacterized protein analysis
+genomesDB ──► one_direction_homologs # One-way BLAST homolog identification
+genomesDB ──► xenologs_vs_artifacts  # Xenolog detection and artifact filtering
+genomesDB ──► transcriptomes         # Transcriptome integration
+genomesDB ──► rnaseq_integration     # RNA-seq expression data integration
+genomesDB ──► gene_names             # Comprehensive gene naming
+genomesDB ──► hgnc_automation        # Automated reference gene set generation
+genomesDB ──► hot_spots              # Evolutionary hotspot analysis
+```
+
+### Complete Subproject Reference
+
+| Subproject | Prerequisites | Purpose | Status |
+|------------|---------------|---------|--------|
+| phylonames | None | Species name mappings from NCBI taxonomy | Operational |
+| genomesDB | phylonames | Proteome databases and BLAST setup | Operational |
+| orthogroups | genomesDB | Ortholog group identification | Functional |
+| trees_gene_families | genomesDB | Gene family homolog discovery and phylogenetics | Functional |
+| trees_gene_groups | genomesDB | Orthogroup-based phylogenetics | Structural |
+| trees_species | phylonames | All possible species tree topologies | Planned |
+| annotations_hmms | genomesDB | Functional protein annotation | Planned |
+| orthogroups_X_ocl | orthogroups + trees_species | Origin-Conservation-Loss analysis | Planned |
+| annotations_X_ocl | annotations_hmms + orthogroups_X_ocl | Annotation-OCL integration | Planned |
+| gene_sizes | genomesDB | Protein/gene size analysis | Planned |
+| synteny | genomesDB | Gene order conservation analysis | Planned |
+| dark_proteome | genomesDB | Uncharacterized protein analysis | Planned |
+| hot_spots | genomesDB | Evolutionary hotspot analysis | Planned |
+| one_direction_homologs | genomesDB | One-way BLAST homolog identification | Planned |
+| xenologs_vs_artifacts | genomesDB | Xenolog detection and artifact filtering | Planned |
+| transcriptomes | genomesDB | Transcriptome integration | Planned |
+| rnaseq_integration | genomesDB | RNA-seq expression data integration | Planned |
+| gene_names | genomesDB | Comprehensive gene naming | Planned |
+| hgnc_automation | genomesDB | Automated reference gene set generation | Planned |
 
 ---
 

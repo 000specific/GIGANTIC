@@ -25,14 +25,25 @@ channels:
 dependencies:
   # Core requirements
   - python>=3.10
+  - nextflow>=23.0
+
+  # OrthoFinder (includes Diamond aligner internally)
+  - orthofinder
 
   # HMMER suite (required by OrthoHMM)
   - hmmer
 
-  # MCL clustering algorithm (required by OrthoHMM)
+  # MCL clustering algorithm (required by OrthoHMM and Broccoli)
   - mcl
 
-  # OrthoHMM via pip (not available in conda)
+  # Diamond aligner (required by Broccoli and OrthoFinder)
+  - diamond
+
+  # FastTree (required by Broccoli and OrthoFinder for gene tree inference)
+  - fasttree
+
+  # OrthoHMM and Broccoli via pip (not available in conda)
   - pip
   - pip:
     - orthohmm
+    - broccoli

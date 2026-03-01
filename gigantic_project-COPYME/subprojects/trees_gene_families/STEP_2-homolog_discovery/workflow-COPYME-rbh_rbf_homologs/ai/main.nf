@@ -4,7 +4,7 @@
  * AI: Claude Code | Opus 4.6 | 2026 February 27
  * Human: Eric Edsinger
  *
- * Purpose: Discover homologs via Reciprocal Best Hit (RBH) / Reciprocal Best Fit (RBF)
+ * Purpose: Discover homologs via Reciprocal Best Hit (RBH) / Reciprocal Best Family (RBF)
  *          BLAST methodology for a SINGLE gene family.
  *
  * Usage: Each workflow copy processes ONE gene family. Copy the template,
@@ -13,11 +13,11 @@
  * Process Overview:
  *    1: List BLAST databases
  *    2: BLAST RGS vs project database (script 002 + execute generated commands)
- *    3: Extract candidate gene sequences (script 004)
+ *    3: Extract blast gene sequences (script 004)
  *    4: BLAST RGS vs RGS source genomes (script 005 + execute generated commands)
  *    5: Prepare reciprocal BLAST (scripts 007, 008, 009 + combine + makeblastdb)
  *    6: Run reciprocal BLAST (script 011 + execute generated commands)
- *    7: Extract reciprocal best hits (script 013)
+ *    7: Extract candidate gene sequences (script 013)
  *    8: Filter species by keeper list (script 014)
  *    9: Remap CGS identifiers to GIGANTIC phylonames (script 015)
  *   10: Concatenate RGS + CGS into final AGS (script 016)
@@ -232,11 +232,11 @@ process blast_rgs_versus_project_database {
 }
 
 // ============================================================================
-// PROCESS 3: Extract Candidate Gene Sequences
+// PROCESS 3: Extract Blast Gene Sequences
 // Script: 004
 // ============================================================================
 
-process extract_candidate_gene_sequences {
+process extract_blast_gene_sequences {
     tag "${gene_family}"
     label 'local'
 
@@ -247,23 +247,23 @@ process extract_candidate_gene_sequences {
 
     output:
         tuple val(gene_family), path(rgs_fasta),
-              path("4-output/4_ai-cgs-${params.project_database}-${gene_family}-fullseqs.aa"),
-              path("4-output/4_ai-cgs-${params.project_database}-${gene_family}-hitregions.aa"),
-              emit: cgs_done
+              path("4-output/4_ai-bgs-${params.project_database}-${gene_family}-fullseqs.aa"),
+              path("4-output/4_ai-bgs-${params.project_database}-${gene_family}-hitregions.aa"),
+              emit: bgs_done
         path "4-output"
 
     script:
     """
     mkdir -p 4-output
 
-    echo "Extracting candidate gene sequences for ${gene_family}..."
+    echo "Extracting blast gene sequences for ${gene_family}..."
     python3 ${projectDir}/scripts/004_ai-python-extract_gene_set_sequences.py \\
         --database-list ${db_list} \\
         --report-list ${blast_report_list} \\
-        --output-full 4-output/4_ai-cgs-${params.project_database}-${gene_family}-fullseqs.aa \\
-        --output-regions 4-output/4_ai-cgs-${params.project_database}-${gene_family}-hitregions.aa
+        --output-full 4-output/4_ai-bgs-${params.project_database}-${gene_family}-fullseqs.aa \\
+        --output-regions 4-output/4_ai-bgs-${params.project_database}-${gene_family}-hitregions.aa
 
-    echo "CGS extraction complete for ${gene_family}"
+    echo "BGS extraction complete for ${gene_family}"
     """
 }
 
@@ -396,7 +396,7 @@ process run_reciprocal_blast {
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
-        tuple val(gene_family), path(cgs_fullseqs), path(blastdb_files)
+        tuple val(gene_family), path(bgs_fullseqs), path(blastdb_files)
 
     output:
         tuple val(gene_family),
@@ -413,7 +413,7 @@ process run_reciprocal_blast {
 
     echo "Generating reciprocal BLAST commands for ${gene_family}..."
     python3 ${projectDir}/scripts/011_ai-python-generate_reciprocal_blast_commands.py \\
-        --query-fasta ${cgs_fullseqs} \\
+        --query-fasta ${bgs_fullseqs} \\
         --database-prefix ${blastdb_prefix} \\
         --output-script 11-output/11_ai-bash-execute_reciprocal_blast.sh \\
         --output-report 12-output/12_ai-reciprocal-blast-report.txt \\
@@ -446,7 +446,7 @@ process extract_reciprocal_best_hits {
 
     output:
         tuple val(gene_family),
-              path("13-output/13_ai-rbf-${params.project_database}-${gene_family}.aa"),
+              path("13-output/13_ai-cgs-${params.project_database}-${gene_family}.aa"),
               emit: rbh_done
         path "13-output"
 
@@ -460,7 +460,7 @@ process extract_reciprocal_best_hits {
         --database-list ${db_list} \\
         --blast-report ${reciprocal_report} \\
         --rgs-mapping ${rgs_mapping} \\
-        --output-fasta 13-output/13_ai-rbf-${params.project_database}-${gene_family}.aa \\
+        --output-fasta 13-output/13_ai-cgs-${params.project_database}-${gene_family}.aa \\
         --output-filtered 13-output/13_ai-log-dropped-sequences-${gene_family} \\
         --rbh-species "${rbh_species}"
 
@@ -480,7 +480,7 @@ process filter_species {
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
-        tuple val(gene_family), path(rbf_fasta)
+        tuple val(gene_family), path(cgs_fasta)
         path species_keeper_list
 
     output:
@@ -495,7 +495,7 @@ process filter_species {
 
     echo "Filtering species for ${gene_family}..."
     python3 ${projectDir}/scripts/014_ai-python-filter_species_for_tree_building.py \\
-        --input-fasta ${rbf_fasta} \\
+        --input-fasta ${cgs_fasta} \\
         --species-keeper-list ${species_keeper_list} \\
         --output-fasta 14-output/14_ai-cgs-${params.project_database}-${gene_family}-filtered.aa
 
@@ -671,16 +671,16 @@ workflow {
     // ---- Process 2: BLAST RGS vs project database ----
     blast_rgs_versus_project_database( setup_blast_database_list.out.setup_done )
 
-    // ---- Process 3: Extract candidate gene sequences ----
-    extract_candidate_gene_sequences( blast_rgs_versus_project_database.out.blast_done )
+    // ---- Process 3: Extract blast gene sequences ----
+    extract_blast_gene_sequences( blast_rgs_versus_project_database.out.blast_done )
 
     // ---- Process 4: BLAST RGS vs RGS source genomes ----
     def rgs_for_genome_blast = Channel.of( [ params.gene_family, rgs_path ] )
     blast_rgs_versus_rgs_genomes( rgs_for_genome_blast )
 
     // ---- Process 5: Prepare reciprocal BLAST ----
-    def prep_input = extract_candidate_gene_sequences.out.cgs_done
-        .map { gene_family, rgs_fasta, cgs_fullseqs, cgs_hitregions ->
+    def prep_input = extract_blast_gene_sequences.out.bgs_done
+        .map { gene_family, rgs_fasta, bgs_fullseqs, bgs_hitregions ->
             [ gene_family, rgs_fasta ]
         }
         .join( blast_rgs_versus_rgs_genomes.out.rgs_blast_done )
@@ -693,9 +693,9 @@ workflow {
     prepare_reciprocal_blast( prep_input, rbh_species_channel )
 
     // ---- Process 6: Run reciprocal BLAST ----
-    def reciprocal_input = extract_candidate_gene_sequences.out.cgs_done
-        .map { gene_family, rgs_fasta, cgs_fullseqs, cgs_hitregions ->
-            [ gene_family, cgs_fullseqs ]
+    def reciprocal_input = extract_blast_gene_sequences.out.bgs_done
+        .map { gene_family, rgs_fasta, bgs_fullseqs, bgs_hitregions ->
+            [ gene_family, bgs_fullseqs ]
         }
         .join(
             prepare_reciprocal_blast.out.reciprocal_prep_done
@@ -703,8 +703,8 @@ workflow {
                     [ gene_family, blastdb_files ]
                 }
         )
-        .map { gene_family, cgs_fullseqs, blastdb_files ->
-            [ gene_family, cgs_fullseqs, blastdb_files ]
+        .map { gene_family, bgs_fullseqs, blastdb_files ->
+            [ gene_family, bgs_fullseqs, blastdb_files ]
         }
 
     run_reciprocal_blast( reciprocal_input )
@@ -767,7 +767,7 @@ workflow.onComplete {
         println "   1-output/: BLAST database listing"
         println "   2-output/: Project database BLAST report listing"
         println "   3-output/: Project database BLAST reports"
-        println "   4-output/: Candidate gene sequences (CGS)"
+        println "   4-output/: Blast gene sequences (BGS)"
         println "   5-output/: RGS genome BLAST report listing"
         println "   6-output/: RGS genome BLAST reports"
         println "   7-output/: RBH species file listings"
@@ -776,7 +776,7 @@ workflow.onComplete {
         println "  10-output/: Combined genomes and BLAST database"
         println "  11-output/: Reciprocal BLAST commands"
         println "  12-output/: Reciprocal BLAST report"
-        println "  13-output/: Reciprocal best hit sequences (RBF)"
+        println "  13-output/: Candidate gene sequences (CGS)"
         println "  14-output/: Species-filtered sequences"
         println "  15-output/: Remapped CGS identifiers"
         println "  16-output/: Final AGS (All Gene Set)"

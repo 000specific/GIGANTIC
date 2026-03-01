@@ -70,13 +70,13 @@ nano INPUT_user/rgs_species_map.tsv
 
 **Run locally:**
 ```bash
-bash RUN-rbh_rbf_homologs.sh
+bash RUN-workflow.sh
 ```
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-rbh_rbf_homologs.sbatch to set --account and --qos
-sbatch RUN-rbh_rbf_homologs.sbatch
+# Edit RUN-workflow.sbatch to set --account and --qos
+sbatch RUN-workflow.sbatch
 ```
 
 The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all processes, with explicit outputs at each step for research transparency.
@@ -97,8 +97,8 @@ The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all processe
 ```
 workflow-COPYME-rbh_rbf_homologs/
 ├── README.md                              # This file
-├── RUN-rbh_rbf_homologs.sh               # Local runner (calls NextFlow)
-├── RUN-rbh_rbf_homologs.sbatch           # SLURM wrapper
+├── RUN-workflow.sh               # Local runner (calls NextFlow)
+├── RUN-workflow.sbatch           # SLURM wrapper
 ├── rbh_rbf_homologs_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   ├── rgs_manifest.tsv                   # Gene families and RGS file paths

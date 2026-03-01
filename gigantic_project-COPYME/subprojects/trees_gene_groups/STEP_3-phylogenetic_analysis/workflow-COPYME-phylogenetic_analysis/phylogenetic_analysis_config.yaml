@@ -9,7 +9,7 @@
 # 2. Place your RGS manifest in INPUT_user/rgs_manifest.tsv
 #    (same manifest used in STEP_2, only gene_family column needed)
 # 3. Choose tree-building methods below (tree_methods section)
-# 4. Run: bash RUN-phylogenetic_analysis.sh
+# 4. Run: bash RUN-workflow.sh
 
 # ============================================================
 # INPUT CONFIGURATION

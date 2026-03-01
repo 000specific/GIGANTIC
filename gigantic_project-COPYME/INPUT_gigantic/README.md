@@ -34,7 +34,7 @@ This gives you:
 2. Run the phylonames subproject first:
    ```bash
    cd subprojects/phylonames/workflow-COPYME-generate_phylonames/
-   bash RUN-phylonames.sh
+   bash RUN-workflow.sh
    ```
 3. The RUN script will automatically copy your species list for archival
 

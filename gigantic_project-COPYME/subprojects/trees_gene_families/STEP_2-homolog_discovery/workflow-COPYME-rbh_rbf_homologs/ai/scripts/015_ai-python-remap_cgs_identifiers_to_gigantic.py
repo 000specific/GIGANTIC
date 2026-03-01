@@ -14,11 +14,11 @@ because:
 3. The mapping file connects: short_id → full_gigantic_phyloname
 
 Input:
-    - output/14-output/14_ai-CGS-{project_db}-{gene_family}-filtered.aa: CGS with short IDs
+    - output/14-output/14_ai-cgs-{project_db}-{gene_family}-filtered.aa: CGS with short IDs
     - Mapping file: Provided via --mapping-file argument (configurable via gene_families_config.yaml)
 
 Output:
-    - output/15-output/15_ai-CGS-{project_db}-{gene_family}-remapped.aa: CGS with full GIGANTIC IDs
+    - output/15-output/15_ai-cgs-{project_db}-{gene_family}-remapped.aa: CGS with full GIGANTIC IDs
 
 Log:
     - 015_ai-log-remap_cgs_identifiers.log

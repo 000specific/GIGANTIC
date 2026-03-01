@@ -8,8 +8,8 @@
 #SBATCH --mem=280gb
 #SBATCH --time=100:00:00
 #SBATCH --output=slurm-003-mafft-%j.log
-#SBATCH --account=moroz
-#SBATCH --qos=moroz
+#SBATCH --account=YOUR_ACCOUNT
+#SBATCH --qos=YOUR_QOS
 
 # GIGANTIC BLOCK 3 - Script 003: Run MAFFT Alignment
 # AI: Claude Code | Sonnet 4.5 | 2025 November 07 03:55 | Purpose: MAFFT multiple sequence alignment

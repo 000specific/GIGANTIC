@@ -1,42 +1,19 @@
-# OrthoHMM Workflow Configuration
-# AI: Claude Code | Opus 4.5 | 2026 February 27
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: OrthoHMM pipeline configuration
 # Human: Eric Edsinger
-#
-# Edit this file to configure the OrthoHMM workflow for your run.
-# All paths are relative to this workflow directory.
-#
-# GIGANTIC RULE: Inter-subproject inputs ALWAYS come from output_to_input/
-# NEVER from X-output/ directories
 
 # =============================================================================
-# INPUT PATHS
+# OrthoHMM Pipeline Configuration
 # =============================================================================
+# Edit these parameters before running the pipeline.
+# These values are passed to nextflow.config via command-line overrides.
 
-inputs:
-  # Path to proteomes from genomesDB output_to_input (populated by genomesDB STEP_2)
-  # Replace speciesN with the actual species count (e.g., species69, species71)
-  proteomes: "../../../genomesDB/output_to_input/speciesN_gigantic_T1_proteomes"
+# Input proteomes directory (from genomesDB output_to_input)
+proteomes_dir: "../../genomesDB/STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes"
 
-# =============================================================================
-# OUTPUT SETTINGS
-# =============================================================================
+# OrthoHMM parameters
+cpus: 8
+evalue: "0.0001"
+single_copy_threshold: "0.5"
 
-output:
-  base_dir: "OUTPUT_pipeline"
-
-# =============================================================================
-# ORTHOHMM SETTINGS
-# =============================================================================
-
-orthohmm:
-  # Number of CPUs for OrthoHMM parallelization
-  # Recommendation: Match SLURM allocation (100 CPUs for large datasets)
-  cpus: 100
-
-  # E-value threshold for sequence similarity
-  # Lower values = more stringent clustering
-  evalue: "0.0001"
-
-  # Single-copy orthogroup threshold
-  # Fraction of species that must have single-copy representation
-  single_copy_threshold: "0.5"
+# Conda environment name
+conda_environment: "ai_gigantic_orthogroups"

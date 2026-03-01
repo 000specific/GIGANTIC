@@ -9,7 +9,7 @@
 # This configuration file controls how the STEP_4 workflow runs.
 # Edit the paths below to match your project setup.
 #
-# After editing, run: bash RUN-create_final_species_set.sh
+# After editing, run: bash RUN-workflow.sh
 #
 # ============================================================================
 

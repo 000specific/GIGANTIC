@@ -13,7 +13,7 @@ cp -r workflow-COPYME-validate_rgs workflow-RUN_01-validate_rgs
 cd workflow-RUN_01-validate_rgs/
 # Edit rgs_config.yaml (set gene_family name and rgs_file path)
 # Place your RGS FASTA in INPUT_user/
-bash RUN-validate_rgs.sh
+bash RUN-workflow.sh
 ```
 
 ## Optional Step

@@ -12,7 +12,7 @@ Takes the All Gene Set (AGS) from STEP_2, aligns sequences with MAFFT, trims wit
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 cd workflow-RUN_01-phylogenetic_analysis/
 # Edit phylogenetic_analysis_config.yaml (set gene_family name, choose tree methods)
-bash RUN-phylogenetic_analysis.sh
+bash RUN-workflow.sh
 ```
 
 ## Prerequisites

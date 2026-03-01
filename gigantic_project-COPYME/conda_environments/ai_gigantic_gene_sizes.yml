@@ -1,0 +1,30 @@
+# GIGANTIC Gene Sizes Environment
+# ====================================
+#
+# Placeholder environment for the gene_sizes subproject.
+# Specific tool dependencies will be added as this subproject is developed.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_gene_sizes.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_gene_sizes
+
+name: ai_gigantic_gene_sizes
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.9
+  - nextflow>=23.0
+
+  # Tool-specific dependencies will be added as the subproject is developed

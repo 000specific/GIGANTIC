@@ -11,7 +11,7 @@
 # 2. Edit this config file (set gene_family name)
 # 3. Ensure STEP_2 has completed (AGS files in output_to_input/)
 # 4. Choose tree-building methods below (tree_methods section)
-# 5. Run: bash RUN-phylogenetic_analysis.sh
+# 5. Run: bash RUN-workflow.sh
 
 # ============================================================
 # GENE FAMILY (EDIT THIS)

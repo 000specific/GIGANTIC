@@ -7,73 +7,67 @@
 
 ## Purpose
 
-Identify orthologous gene groups (orthogroups) across species. An orthogroup is a set of genes from different species that descended from a single gene in the last common ancestor.
+Identify orthologous gene groups (orthogroups) across species using three independent methods, then compare results. An orthogroup is a set of genes from different species that descended from a single gene in the last common ancestor.
 
-This subproject provides three complementary tools:
+---
 
-1. **OrthoFinder** - Sequence similarity based ortholog detection (all-vs-all Diamond/BLAST)
-2. **OrthoHMM** - Profile HMM based ortholog detection (better sensitivity for divergent sequences)
-3. **Broccoli** - Phylogeny-network ortholog detection (fast phylogenetic analysis + label propagation)
+## Architecture
+
+Four equivalent, self-contained projects (mirroring genomesDB STEP pattern):
+
+| Project | Tool | Method |
+|---------|------|--------|
+| `orthofinder/` | OrthoFinder | Diamond + MCL clustering |
+| `orthohmm/` | OrthoHMM | Profile HMM (HMMER) + MCL |
+| `broccoli/` | Broccoli | Phylogeny (FastTree) + network label propagation |
+| `comparison/` | Cross-method | Compares results from all three tools |
+
+Each tool project follows a common pipeline pattern: validate, prepare/convert, run tool, standardize/restore, statistics, QC. OrthoFinder uses 6 scripts (no header conversion needed, uses -X flag to preserve original identifiers). OrthoHMM and Broccoli each use 6 scripts (with header conversion and restoration). The comparison project uses 2 scripts.
 
 ---
 
 ## Prerequisites
 
-1. **genomesDB complete**: Proteomes in `genomesDB/output_to_input/speciesN_gigantic_T1_proteomes/`
-2. **Conda environment**: `ai_gigantic_orthogroups` (contains OrthoFinder, OrthoHMM, Diamond, HMMER, MCL)
-
----
-
-## Tool Comparison
-
-| Feature | OrthoFinder | OrthoHMM | Broccoli |
-|---------|-------------|----------|----------|
-| Method | All-vs-all Diamond | Profile HMM | Phylogeny + network |
-| Speed | Fast | Slower (O(n^2)) | Moderate |
-| Sensitivity | Good for close relatives | Better for divergent sequences | Phylogeny-aware |
-| Extra output | Species tree, gene trees, HOGs | HMM profiles for annotation | Chimeric protein detection |
-| When to use | Standard comparative genomics | Divergent species, HMM annotation | Gene-fusion detection, quick phylogenies |
-
-**All three tools can be run** - they provide complementary information. Comparing results across methods gives higher confidence in orthogroup assignments.
+1. **genomesDB complete**: Proteomes in `genomesDB/output_to_input/gigantic_proteomes/`
+2. **Conda environment**: `ai_gigantic_orthogroups`
+3. **Nextflow**: `module load nextflow`
 
 ---
 
 ## Quick Start
 
-### OrthoFinder
-
 ```bash
+# 1. Copy a workflow template for your run
 cp -r orthofinder/workflow-COPYME-run_orthofinder orthofinder/workflow-RUN_01-run_orthofinder
 cd orthofinder/workflow-RUN_01-run_orthofinder/
 
-# Add inputs (see INPUT_user/README.md)
+# 2. Edit configuration
+vi orthofinder_config.yaml
+
+# 3. Activate environment
 module load conda
 conda activate ai_gigantic_orthogroups
-bash RUN_orthofinder.sh        # Local
-sbatch SLURM_orthofinder.sbatch  # SLURM
+module load nextflow
+
+# 4. Run
+bash RUN-workflow.sh       # Local
+sbatch RUN-workflow.sbatch # SLURM (edit account/qos first)
 ```
 
-### OrthoHMM
+Same pattern for orthohmm, broccoli, and comparison.
 
-```bash
-cp -r orthohmm/workflow-COPYME-run_orthohmm orthohmm/workflow-RUN_01-run_orthohmm
-cd orthohmm/workflow-RUN_01-run_orthohmm/
+---
 
-# Edit orthohmm_config.yaml (set proteomes path)
-module load conda
-conda activate ai_gigantic_orthogroups
-bash RUN-orthohmm.sh          # Local
-sbatch RUN-orthohmm.sbatch    # SLURM
-```
+## Standardized Output
 
-### Broccoli
+All three tools produce identical files in `output_to_input/`:
 
-```bash
-cp -r broccoli/workflow-COPYME-run_broccoli broccoli/workflow-RUN_01-run_broccoli
-cd broccoli/workflow-RUN_01-run_broccoli/
-
-# (workflow pending implementation - see broccoli/README.md)
-```
+| File | Contents |
+|------|----------|
+| `orthogroups_gigantic_ids.tsv` | Orthogroup assignments with full GIGANTIC identifiers |
+| `gene_count_gigantic_ids.tsv` | Gene counts per orthogroup per species |
+| `summary_statistics.tsv` | Overall clustering statistics |
+| `per_species_summary.tsv` | Per-species orthogroup statistics |
 
 ---
 
@@ -81,106 +75,55 @@ cd broccoli/workflow-RUN_01-run_broccoli/
 
 ```
 orthogroups/
-├── README.md                          # This file
-├── AI_GUIDE-orthogroups.md            # AI assistant guide
-├── TODO.md                            # Subproject tracking
-├── RUN-clean_and_record_subproject.sh # Cleanup utility
-├── RUN-update_upload_to_server.sh     # Server update utility
+├── README.md                            # This file
+├── AI_GUIDE-orthogroups.md              # AI assistant guide (Level 2)
+├── TODO.md
+├── output_to_input/                     # Final outputs for downstream
+├── upload_to_server/
+├── RUN-clean_and_record_subproject.sh
+├── RUN-update_upload_to_server.sh
 │
-├── orthofinder/                       # OrthoFinder workspace
-│   ├── README.md
+├── orthofinder/                         # OrthoFinder project (6 scripts)
 │   ├── AI_GUIDE-orthofinder.md
-│   ├── user_research/
 │   ├── output_to_input/
-│   ├── upload_to_server/
 │   └── workflow-COPYME-run_orthofinder/
-│       ├── RUN_orthofinder.sh
-│       ├── SLURM_orthofinder.sbatch
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       └── ai/
+│       ├── ai/ (main.nf, nextflow.config, scripts/)
+│       ├── RUN-workflow.sh
+│       ├── RUN-workflow.sbatch
+│       └── orthofinder_config.yaml
 │
-├── orthohmm/                          # OrthoHMM workspace
-│   ├── README.md
+├── orthohmm/                            # OrthoHMM project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
-│   ├── user_research/
 │   ├── output_to_input/
-│   ├── upload_to_server/
 │   └── workflow-COPYME-run_orthohmm/
-│       ├── RUN-orthohmm.sh
-│       ├── RUN-orthohmm.sbatch
-│       ├── orthohmm_config.yaml
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       └── ai/
+│       ├── ai/ (main.nf, nextflow.config, scripts/)
+│       ├── RUN-workflow.sh
+│       ├── RUN-workflow.sbatch
+│       └── orthohmm_config.yaml
 │
-└── broccoli/                          # Broccoli workspace (pending implementation)
-    ├── README.md
-    ├── AI_GUIDE-broccoli.md
-    ├── user_research/
+├── broccoli/                            # Broccoli project (6 scripts)
+│   ├── AI_GUIDE-broccoli.md
+│   ├── output_to_input/
+│   └── workflow-COPYME-run_broccoli/
+│       ├── ai/ (main.nf, nextflow.config, scripts/)
+│       ├── RUN-workflow.sh
+│       ├── RUN-workflow.sbatch
+│       └── broccoli_config.yaml
+│
+└── comparison/                          # Cross-method comparison (2 scripts)
+    ├── AI_GUIDE-comparison.md
     ├── output_to_input/
-    ├── upload_to_server/
-    └── workflow-COPYME-run_broccoli/
-        ├── INPUT_user/
-        ├── OUTPUT_pipeline/
-        └── ai/
-```
-
----
-
-## Outputs
-
-| Tool | Output | Location |
-|------|--------|----------|
-| OrthoFinder | Orthogroups.tsv | `orthofinder/output_to_input/` |
-| OrthoFinder | Species tree, HOGs | `orthofinder/output_to_input/` |
-| OrthoHMM | orthogroups_gigantic_ids.txt | `orthohmm/output_to_input/` |
-| OrthoHMM | gene_count_gigantic_ids.tsv | `orthohmm/output_to_input/` |
-| OrthoHMM | header_mapping.tsv | `orthohmm/output_to_input/` |
-| Broccoli | orthologous_groups.txt | `broccoli/output_to_input/` (pending) |
-| Broccoli | chimeric_proteins.txt | `broccoli/output_to_input/` (pending) |
-
----
-
-## Orthogroup Output Formats
-
-### OrthoFinder Orthogroups.tsv
-```
-OG0000001: gene1_speciesA gene2_speciesA gene1_speciesB gene3_speciesC
-OG0000002: gene5_speciesA gene4_speciesB gene6_speciesC gene7_speciesC
-```
-
-### OrthoHMM orthohmm_orthogroups.txt
-```
-OrthoHMM0001	gene1_speciesA,gene2_speciesA,gene1_speciesB
-OrthoHMM0002	gene5_speciesA,gene4_speciesB,gene6_speciesC
-```
-
-### Broccoli orthologous_groups.txt
-```
-#OG_name	protein_names
-OG_0001	gene1_speciesA gene2_speciesA gene1_speciesB
-OG_0002	gene5_speciesA gene4_speciesB gene6_speciesC
-```
-
----
-
-## Dependencies
-
-All dependencies are provided by the `ai_gigantic_orthogroups` conda environment:
-
-```bash
-# Activate before running workflows
-module load conda
-conda activate ai_gigantic_orthogroups
+    └── workflow-COPYME-compare_methods/
+        ├── ai/ (main.nf, nextflow.config, scripts/)
+        ├── RUN-workflow.sh
+        ├── RUN-workflow.sbatch
+        └── comparison_config.yaml
 ```
 
 ---
 
 ## See Also
 
-- `orthofinder/README.md` - OrthoFinder details
-- `orthohmm/README.md` - OrthoHMM details
-- `broccoli/README.md` - Broccoli details
 - `AI_GUIDE-orthogroups.md` - AI assistant guidance
+- `{tool}/AI_GUIDE-{tool}.md` - Tool-specific AI guides
 - `TODO.md` - Open items and tracking

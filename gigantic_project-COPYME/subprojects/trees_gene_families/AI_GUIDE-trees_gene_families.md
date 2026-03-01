@@ -35,7 +35,7 @@
 
 **Three-Step Pipeline**:
 1. **RGS Preparation** - Validate Reference Gene Set (RGS) FASTA files
-2. **Homolog Discovery** - Find homologs via Reciprocal Best Hit / Reciprocal Best Fit (RBH/RBF)
+2. **Homolog Discovery** - Find homologs via Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF)
 3. **Phylogenetic Analysis** - Align sequences, trim, build trees, visualize
 
 **Critical**: Run genomesDB subproject FIRST - trees_gene_families depends on genomesDB for BLAST databases and proteome files.
@@ -49,11 +49,11 @@
 | Term | Abbreviation | Meaning |
 |------|-------------|---------|
 | Reference Gene Set | rgs | Curated sequences from model organisms (e.g., UniProt) |
-| Candidate Gene Set | cgs | Sequences found by BLAST against project species |
-| Reciprocal Best Fit | rbf | Sequences confirmed by reciprocal BLAST |
+| Blast Gene Set | bgs | Sequences found by forward BLAST against project species |
+| Candidate Gene Set | cgs | BGS sequences confirmed as homologs by reciprocal BLAST |
 | All Gene Set | ags | Final combined set (rgs + cgs after filtering) |
 
-**Filenames always use lowercase**: `rgs-`, `cgs-`, `rbf-`, `ags-`
+**Filenames always use lowercase**: `rgs-`, `bgs-`, `cgs-`, `ags-`
 
 ### One Gene Family Per Run
 
@@ -86,7 +86,8 @@ Where N is the total sequence count in the file.
 ### STEP_1-rgs_preparation
 
 **Directory**: `STEP_1-rgs_preparation/`
-**Workflow**: `workflow-COPYME-validate_rgs`
+**Workflow template**: `workflow-COPYME-validate_rgs`
+**Run scripts**: `RUN-workflow.sh` (local), `RUN-workflow.sbatch` (SLURM)
 
 **Function**:
 - Validate RGS FASTA file format (headers, sequences)
@@ -99,13 +100,14 @@ Where N is the total sequence count in the file.
 ### STEP_2-homolog_discovery
 
 **Directory**: `STEP_2-homolog_discovery/`
-**Workflow**: `workflow-COPYME-rbh_rbf_homologs`
+**Workflow template**: `workflow-COPYME-rbh_rbf_homologs`
+**Run scripts**: `RUN-workflow.sh` (local), `RUN-workflow.sbatch` (SLURM)
 
 **Function**:
 - BLAST RGS against all project species (forward search)
-- Extract candidate gene sequences (cgs)
+- Extract blast gene sequences (BGS)
 - Build reciprocal BLAST databases
-- Reciprocal BLAST to confirm homologs (rbf)
+- Reciprocal BLAST to confirm homologs --> candidate gene set (CGS)
 - Filter by species keeper list
 - Remap identifiers to GIGANTIC phylonames
 - Concatenate into final AGS
@@ -116,7 +118,8 @@ Where N is the total sequence count in the file.
 ### STEP_3-phylogenetic_analysis
 
 **Directory**: `STEP_3-phylogenetic_analysis/`
-**Workflow**: `workflow-COPYME-phylogenetic_analysis`
+**Workflow template**: `workflow-COPYME-phylogenetic_analysis`
+**Run scripts**: `RUN-workflow.sh` (local), `RUN-workflow.sbatch` (SLURM)
 
 **Function**:
 - Multiple sequence alignment (MAFFT)
@@ -227,8 +230,8 @@ Step directories are nested ONE level deeper than standard subprojects:
 
 ## Conda Environment
 
-**Environment name**: `ai_gigantic_trees`
-**Definition file**: `../../conda_environments/ai_gigantic_trees.yml`
+**Environment name**: `ai_gigantic_trees_gene_families`
+**Definition file**: `../../conda_environments/ai_gigantic_trees_gene_families.yml`
 
 **Includes**: Python, NextFlow, BLAST, MAFFT, ClipKit, FastTree, IQ-TREE, VeryFastTree, PhyloBayes-MPI, ete3
 

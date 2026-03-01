@@ -75,18 +75,20 @@ FASTA sequence headers follow this structure:
 
 ---
 
-## Three-Step Structure
+## Four-Step Structure
 
-genomesDB is organized as three sequential steps, each with its own workflow:
+genomesDB is organized as four sequential steps, each with its own workflow:
 
 ```
 genomesDB/
 ├── STEP_1-sources/                    # Ingest user-provided genome/proteome files
-│   └── workflow-COPYME-ingest_source_proteomes/
+│   └── workflow-COPYME-ingest_source_data/
 ├── STEP_2-standardize_and_evaluate/   # Standardize and evaluate quality
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
-└── STEP_3-databases/                  # Build BLAST databases
-    └── workflow-COPYME-build_gigantic_genomesDB/
+├── STEP_3-databases/                  # Build BLAST databases
+│   └── workflow-COPYME-build_gigantic_genomesDB/
+└── STEP_4-create_final_species_set/   # Select and copy final species set
+    └── workflow-COPYME-create_final_species_set/
 ```
 
 ### STEP_1-sources (USER-DRIVEN)
@@ -95,7 +97,7 @@ genomesDB/
 
 **Key Concept**: STEP_1 does NOT automatically download data. Users provide source data from outside GIGANTIC.
 
-**Workflow**: `STEP_1-sources/workflow-COPYME-ingest_source_proteomes/`
+**Workflow**: `STEP_1-sources/workflow-COPYME-ingest_source_data/`
 
 **Inputs**: Source manifest listing genome, GTF, and proteome paths
 **Outputs**: Proteome files organized in GIGANTIC structure
@@ -118,6 +120,15 @@ genomesDB/
 **Inputs**: Standardized proteomes from STEP_2
 **Outputs**: BLAST databases, species manifests, proteome indices
 
+### STEP_4-create_final_species_set
+
+**Purpose**: Select and copy final species set for downstream subprojects.
+
+**Workflow**: `STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/`
+
+**Inputs**: Cleaned proteomes from STEP_2, BLAST databases from STEP_3, optional species selection
+**Outputs**: Final proteomes and BLAST databases with `speciesN_` naming convention
+
 ---
 
 ## Directory Structure
@@ -138,9 +149,11 @@ genomesDB/
 │   ├── RUN-clean_and_record_subproject.sh  # Step-level cleanup
 │   ├── user_research/                  # Step-specific workspace (user's source data)
 │   ├── output_to_input/                # Outputs passed to STEP_2
-│   └── workflow-COPYME-ingest_source_proteomes/
+│   └── workflow-COPYME-ingest_source_data/
 │       ├── INPUT_user/                 # Source manifest goes here
 │       ├── OUTPUT_pipeline/            # Workflow outputs
+│       ├── RUN-workflow.sh             # Local execution
+│       ├── RUN-workflow.sbatch         # SLURM execution
 │       └── ai/                         # Pipeline scripts
 │
 ├── STEP_2-standardize_and_evaluate/
@@ -152,17 +165,34 @@ genomesDB/
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 │       ├── INPUT_user/
 │       ├── OUTPUT_pipeline/
+│       ├── RUN-workflow.sh             # Local execution
+│       ├── RUN-workflow.sbatch         # SLURM execution
 │       └── ai/
 │
-└── STEP_3-databases/
+├── STEP_3-databases/
+│   ├── README.md
+│   ├── AI_GUIDE-databases.md
+│   ├── RUN-clean_and_record_subproject.sh
+│   ├── user_research/
+│   ├── output_to_input/                # Step outputs (also copied to subproject root)
+│   └── workflow-COPYME-build_gigantic_genomesDB/
+│       ├── INPUT_user/
+│       ├── OUTPUT_pipeline/
+│       ├── RUN-workflow.sh             # Local execution
+│       ├── RUN-workflow.sbatch         # SLURM execution
+│       └── ai/
+│
+└── STEP_4-create_final_species_set/
     ├── README.md
-    ├── AI_GUIDE-databases.md
+    ├── AI_GUIDE-create_final_species_set.md
     ├── RUN-clean_and_record_subproject.sh
     ├── user_research/
-    ├── output_to_input/                # Step outputs (also copied to subproject root)
-    └── workflow-COPYME-build_gigantic_genomesDB/
+    ├── output_to_input/                # Final species set for downstream subprojects
+    └── workflow-COPYME-create_final_species_set/
         ├── INPUT_user/
         ├── OUTPUT_pipeline/
+        ├── RUN-workflow.sh             # Local execution
+        ├── RUN-workflow.sbatch         # SLURM execution
         └── ai/
 ```
 
@@ -171,13 +201,13 @@ genomesDB/
 ## Data Flow
 
 ```
-STEP_1-sources → STEP_2-standardize_and_evaluate → STEP_3-databases → Downstream Subprojects
-      ↓                      ↓                           ↓
- output_to_input        output_to_input          genomesDB/output_to_input
-                                                 (shared with other subprojects)
+STEP_1-sources → STEP_2-standardize_and_evaluate → STEP_3-databases → STEP_4-create_final_species_set → Downstream Subprojects
+      ↓                      ↓                           ↓                        ↓
+ output_to_input        output_to_input          output_to_input         STEP_4/output_to_input
+                                                                         (shared with other subprojects)
 ```
 
-Each step passes outputs to the next step via its `output_to_input/` directory. STEP_3's outputs are also copied to the main `genomesDB/output_to_input/` for use by other GIGANTIC subprojects.
+Each step passes outputs to the next step via its `output_to_input/` directory. STEP_4's outputs are the final species set that downstream GIGANTIC subprojects reference.
 
 ---
 
@@ -186,10 +216,10 @@ Each step passes outputs to the next step via its `output_to_input/` directory. 
 ### Running All Steps
 
 ```bash
-# STEP_1: Ingest source proteomes
-cd STEP_1-sources/workflow-COPYME-ingest_source_proteomes/
+# STEP_1: Ingest source data
+cd STEP_1-sources/workflow-COPYME-ingest_source_data/
 # Create INPUT_user/source_manifest.tsv with your data
-bash RUN-ingest_sources.sh
+bash RUN-workflow.sh
 
 # STEP_2: Standardize and evaluate
 cd ../../STEP_2-standardize_and_evaluate/workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
@@ -197,6 +227,11 @@ bash RUN-workflow.sh
 
 # STEP_3: Build databases
 cd ../../STEP_3-databases/workflow-COPYME-build_gigantic_genomesDB/
+bash RUN-workflow.sh
+
+# STEP_4: Create final species set
+cd ../../STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/
+# Optional: edit INPUT_user/selected_species.txt to filter species
 bash RUN-workflow.sh
 ```
 

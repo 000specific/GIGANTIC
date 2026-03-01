@@ -87,19 +87,19 @@ FASTA headers must follow:
 ## Workflow
 
 ```bash
-cd workflow-COPYME-ingest_source_proteomes/
+cd workflow-COPYME-ingest_source_data/
 
 # 1. Create your manifest with all 4 columns
 nano INPUT_user/source_manifest.tsv
 
 # 2. Local execution:
-bash RUN-ingest_sources.sh
+bash RUN-workflow.sh
 
 # 3. Or SLURM (edit account/qos first):
-sbatch RUN-ingest_sources.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
-See `workflow-COPYME-ingest_source_proteomes/README.md` for detailed instructions.
+See `workflow-COPYME-ingest_source_data/README.md` for detailed instructions.
 
 ---
 
@@ -149,10 +149,10 @@ STEP_1-sources/
 │   └── proteomes/               # Created by workflow
 ├── user_research/               # Your personal workspace (not part of GIGANTIC)
 │   └── README.md                # Only this README is in GIGANTIC
-└── workflow-COPYME-ingest_source_proteomes/  # The ingestion workflow template
+└── workflow-COPYME-ingest_source_data/  # The ingestion workflow template
     ├── README.md
-    ├── RUN-ingest_sources.sh
-    ├── RUN-ingest_sources.sbatch
+    ├── RUN-workflow.sh
+    ├── RUN-workflow.sbatch
     ├── ingest_sources_config.yaml
     ├── INPUT_user/
     │   └── source_manifest.tsv  # 4-column manifest (genus_species, genome, gtf, proteome)

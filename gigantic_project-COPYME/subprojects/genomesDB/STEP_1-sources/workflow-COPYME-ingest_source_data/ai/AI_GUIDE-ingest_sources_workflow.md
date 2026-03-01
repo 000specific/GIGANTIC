@@ -1,6 +1,6 @@
 # AI Guide: Source Data Ingestion Workflow
 
-**For AI Assistants**: This guide covers workflow execution. For genomesDB concepts and three-step architecture, see `../../../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers workflow execution. For genomesDB concepts and four-step architecture, see `../../../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE-project.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_1-sources/workflow-COPYME-ingest_source_data/`
 
@@ -60,7 +60,7 @@ cd workflow-RUN_01-ingest_source_data
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| genomesDB concepts, three-step architecture | `../../../AI_GUIDE-genomesDB.md` |
+| genomesDB concepts, four-step architecture | `../../../AI_GUIDE-genomesDB.md` |
 | STEP_1 sources concepts | `../../AI_GUIDE-sources.md` |
 | Running the workflow | This file |
 
@@ -74,8 +74,8 @@ cd workflow-RUN_01-ingest_source_data
 workflow-COPYME-ingest_source_data/
 │
 ├── README.md                       # Quick start guide
-├── RUN-ingest_sources.sh           # Local: bash RUN-ingest_sources.sh
-├── RUN-ingest_sources.sbatch       # SLURM: sbatch RUN-ingest_sources.sbatch
+├── RUN-workflow.sh           # Local: bash RUN-workflow.sh
+├── RUN-workflow.sbatch       # SLURM: sbatch RUN-workflow.sbatch
 ├── ingest_sources_config.yaml      # Project name and ingestion options
 │
 ├── INPUT_user/                     # User creates manifest here
@@ -175,16 +175,16 @@ project:
 
 **Local**:
 ```bash
-bash RUN-ingest_sources.sh
+bash RUN-workflow.sh
 ```
 
 **SLURM** (edit account/qos first):
 ```bash
-# Edit RUN-ingest_sources.sbatch:
+# Edit RUN-workflow.sbatch:
 #SBATCH --account=YOUR_ACCOUNT
 #SBATCH --qos=YOUR_QOS
 
-sbatch RUN-ingest_sources.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -275,7 +275,7 @@ ls -la /path/to/source.fasta
 ls -la OUTPUT_pipeline/
 
 # Make scripts executable
-chmod +x RUN-ingest_sources.sh
+chmod +x RUN-workflow.sh
 chmod +x ai/scripts/*.sh
 ```
 
@@ -301,7 +301,7 @@ bash ai/scripts/003_ai-bash-create_output_symlinks.sh \
 **Clean and retry**:
 ```bash
 rm -rf work .nextflow .nextflow.log*
-bash RUN-ingest_sources.sh
+bash RUN-workflow.sh
 ```
 
 ---

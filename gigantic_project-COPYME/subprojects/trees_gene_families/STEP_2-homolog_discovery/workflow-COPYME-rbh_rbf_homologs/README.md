@@ -7,7 +7,7 @@
 
 ## Purpose
 
-STEP_2 workflow template for discovering homologs via Reciprocal Best Hit (RBH) / Reciprocal Best Fit (RBF) BLAST methodology for **one gene family per workflow copy**.
+STEP_2 workflow template for discovering homologs via Reciprocal Best Hit (RBH) / Reciprocal Best Family (RBF) BLAST methodology for **one gene family per workflow copy**.
 
 **Part of**: STEP_2-homolog_discovery (see `../README.md`)
 
@@ -20,7 +20,7 @@ STEP_2 workflow template for discovering homologs via Reciprocal Best Hit (RBH) 
 
 2. **Forward BLAST** (Processes 2-3)
    - BLASTs RGS against all project databases (script 002 + execute)
-   - Extracts candidate gene sequences (CGS) from BLAST hits (script 004)
+   - Extracts blast gene sequences (BGS) from BLAST hits (script 004)
 
 3. **RGS Genome BLAST** (Process 4)
    - BLASTs RGS against source genomes of RGS species (script 005 + execute)
@@ -33,7 +33,7 @@ STEP_2 workflow template for discovering homologs via Reciprocal Best Hit (RBH) 
 
 5. **Reciprocal BLAST** (Processes 6-7)
    - Runs reciprocal BLAST: CGS full proteins vs RGS genome database (script 011 + execute)
-   - Extracts reciprocal best hits (script 013)
+   - Extracts candidate gene sequences from reciprocal BLAST (script 013)
 
 6. **Finalization** (Processes 8-10)
    - Filters by species keeper list (script 014)
@@ -81,13 +81,13 @@ nano INPUT_user/rgs_species_map.tsv
 
 **Run locally:**
 ```bash
-bash RUN-rbh_rbf_homologs.sh
+bash RUN-workflow.sh
 ```
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-rbh_rbf_homologs.sbatch to set --account and --qos
-sbatch RUN-rbh_rbf_homologs.sbatch
+# Edit RUN-workflow.sbatch to set --account and --qos
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -106,8 +106,8 @@ sbatch RUN-rbh_rbf_homologs.sbatch
 ```
 workflow-COPYME-rbh_rbf_homologs/
 ├── README.md                              # This file
-├── RUN-rbh_rbf_homologs.sh               # Local runner (calls NextFlow)
-├── RUN-rbh_rbf_homologs.sbatch           # SLURM wrapper
+├── RUN-workflow.sh               # Local runner (calls NextFlow)
+├── RUN-workflow.sbatch           # SLURM wrapper
 ├── rbh_rbf_homologs_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   ├── <rgs_file>.aa                      # RGS FASTA for this gene family
@@ -117,7 +117,7 @@ workflow-COPYME-rbh_rbf_homologs/
 │   ├── 1-output/                          # BLAST database listing
 │   ├── 2-output/                          # BLAST report listing
 │   ├── 3-output/                          # BLAST reports (RGS vs project DB)
-│   ├── 4-output/                          # Candidate gene sequences (CGS)
+│   ├── 4-output/                          # Blast gene sequences (BGS)
 │   ├── 5-output/                          # RGS genome BLAST report listing
 │   ├── 6-output/                          # RGS genome BLAST reports
 │   ├── 7-output/                          # RBH species file listings
@@ -159,14 +159,14 @@ workflow-COPYME-rbh_rbf_homologs/
 | Database listing | `1-output/1_ai-list-projectdb-blastdbs` | Available BLAST databases |
 | BLAST report list | `2-output/2_ai-list-projectdb-blast-reports` | Catalog of BLAST reports |
 | BLAST reports | `3-output/3_ai-blast-report-*.blastp` | RGS vs project DB reports |
-| CGS full sequences | `4-output/4_ai-cgs-*-fullseqs.aa` | Full-length candidate sequences |
-| CGS hit regions | `4-output/4_ai-cgs-*-hitregions.aa` | BLAST hit region sequences |
+| BGS full sequences | `4-output/4_ai-bgs-*-fullseqs.aa` | Full-length blast gene sequences |
+| BGS hit regions | `4-output/4_ai-bgs-*-hitregions.aa` | BLAST hit region sequences |
 | RGS genome reports | `6-output/6_ai-blast-report-*.blastp` | RGS vs RGS genome reports |
 | RGS mapping | `8-output/8_ai-map-rgs-to-genome-identifiers.txt` | RGS-to-genome ID mapping |
 | Modified genomes | `9-output/9_ai-*.aa-rgs` | Genomes with RGS sequences |
 | Combined BLAST DB | `10-output/10_ai-rgs-all-genomes-combined-blastdb*` | Reciprocal BLAST database |
 | Reciprocal report | `12-output/12_ai-reciprocal-blast-report.txt` | Reciprocal BLAST results |
-| RBF sequences | `13-output/13_ai-rbf-*.aa` | Reciprocal best fit sequences |
+| CGS sequences | `13-output/13_ai-cgs-*.aa` | Candidate gene sequences |
 | Filtered sequences | `14-output/14_ai-cgs-*-filtered.aa` | Species-filtered sequences |
 | Remapped sequences | `15-output/15_ai-cgs-*-remapped.aa` | GIGANTIC phyloname identifiers |
 | **Final AGS** | `16-output/16_ai-ags-*-homologs.aa` | **Final All Gene Set** |

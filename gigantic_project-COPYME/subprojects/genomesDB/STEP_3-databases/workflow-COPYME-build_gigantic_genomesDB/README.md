@@ -15,7 +15,7 @@ Build per-genome BLAST protein databases from standardized proteomes. Each speci
 
 1. **STEP_2 complete**: Standardized proteomes in `STEP_2/output_to_input/gigantic_proteomes/`
 2. **Species manifest edited**: User has reviewed and set `Include=YES/NO` in the species selection manifest
-3. **BLAST+ tools available**: `makeblastdb` must be in PATH
+3. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `ai_gigantic_genomesdb` conda environment)
 
 ---
 
@@ -100,6 +100,17 @@ workflow-COPYME-build_gigantic_genomesDB/
         ├── 001_ai-python-filter_species_manifest.py
         └── 002_ai-python-build_per_genome_blastdbs.py
 ```
+
+---
+
+## Next Step
+
+After this workflow completes, proceed to:
+```
+STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/
+```
+
+STEP_4 selects and copies the final species set (proteomes + BLAST databases) for downstream subprojects.
 
 ---
 

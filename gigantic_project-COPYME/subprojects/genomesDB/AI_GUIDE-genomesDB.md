@@ -1,6 +1,6 @@
 # AI Guide: genomesDB Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers genomesDB-specific concepts and the three-step architecture.
+**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers genomesDB-specific concepts and the four-step architecture.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/`
 
@@ -22,10 +22,11 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| genomesDB concepts, three-step structure | This file |
+| genomesDB concepts, four-step structure | This file |
 | STEP_1 sources workflow | `STEP_1-sources/workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 | STEP_2 standardize_and_evaluate workflow | `STEP_2-standardize_and_evaluate/workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 | STEP_3 databases workflow | `STEP_3-databases/workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
+| STEP_4 create_final_species_set workflow | `STEP_4-create_final_species_set/workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 
 ---
 
@@ -33,10 +34,11 @@
 
 **Purpose**: Manage genome and proteome data for GIGANTIC projects.
 
-**Three-Step Pipeline**:
+**Four-Step Pipeline**:
 1. **Sources** - Ingest user-provided proteome files (USER-DRIVEN, no auto-downloads)
 2. **Standardize and Evaluate** - Standardize formats, apply phylonames, evaluate quality
 3. **Databases** - Build BLAST databases and search indices
+4. **Create Final Species Set** - Select and copy final species set for downstream subprojects
 
 **Critical**: Run phylonames subproject FIRST - genomesDB depends on phylonames for species naming.
 
@@ -117,12 +119,12 @@ Homo_sapiens-genome-GCF_000001405.40-20240115.aa
 
 ---
 
-## Three-Step Architecture
+## Four-Step Architecture
 
 ### STEP_1-sources (USER-DRIVEN)
 
 **Directory**: `STEP_1-sources/`
-**Workflow**: `workflow-COPYME-ingest_source_proteomes`
+**Workflow**: `workflow-COPYME-ingest_source_data`
 
 **Critical Concept**: STEP_1 does NOT download data automatically. Users provide their own source files.
 
@@ -162,7 +164,21 @@ Homo_sapiens-genome-GCF_000001405.40-20240115.aa
 
 **Outputs**:
 - `STEP_3-databases/output_to_input/` - BLAST databases
-- `genomesDB/output_to_input/` - Shared with downstream subprojects
+
+### STEP_4-create_final_species_set
+
+**Directory**: `STEP_4-create_final_species_set/`
+**Workflow**: `workflow-COPYME-create_final_species_set`
+
+**Function**:
+- User reviews STEP_2 quality metrics and selects species to keep
+- Validates species selection against STEP_2 and STEP_3 outputs
+- Copies selected proteomes and BLAST databases
+- Creates `speciesN_` named directories for downstream subprojects
+
+**Outputs**:
+- `STEP_4-create_final_species_set/output_to_input/speciesN_gigantic_T1_proteomes/` - Final proteomes
+- `STEP_4-create_final_species_set/output_to_input/speciesN_gigantic_T1_blastp/` - Final BLAST databases
 
 ---
 
@@ -185,10 +201,12 @@ genomesDB/
 │   ├── RUN-clean_and_record_subproject.sh
 │   ├── user_research/                  # User's source data storage
 │   ├── output_to_input/                # → STEP_2 inputs
-│   └── workflow-COPYME-ingest_source_proteomes/
+│   └── workflow-COPYME-ingest_source_data/
 │       ├── INPUT_user/
 │       │   └── source_manifest.tsv     # User creates this
 │       ├── OUTPUT_pipeline/
+│       ├── RUN-workflow.sh             # Local execution
+│       ├── RUN-workflow.sbatch         # SLURM execution
 │       └── ai/
 │
 ├── STEP_2-standardize_and_evaluate/
@@ -200,17 +218,34 @@ genomesDB/
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 │       ├── INPUT_user/
 │       ├── OUTPUT_pipeline/
+│       ├── RUN-workflow.sh             # Local execution
+│       ├── RUN-workflow.sbatch         # SLURM execution
 │       └── ai/
 │
-└── STEP_3-databases/
+├── STEP_3-databases/
+│   ├── README.md
+│   ├── AI_GUIDE-databases.md
+│   ├── RUN-clean_and_record_subproject.sh
+│   ├── user_research/
+│   ├── output_to_input/                # → STEP_4 inputs
+│   └── workflow-COPYME-build_gigantic_genomesDB/
+│       ├── INPUT_user/
+│       ├── OUTPUT_pipeline/
+│       ├── RUN-workflow.sh             # Local execution
+│       ├── RUN-workflow.sbatch         # SLURM execution
+│       └── ai/
+│
+└── STEP_4-create_final_species_set/
     ├── README.md
-    ├── AI_GUIDE-databases.md
+    ├── AI_GUIDE-create_final_species_set.md
     ├── RUN-clean_and_record_subproject.sh
     ├── user_research/
-    ├── output_to_input/                # → genomesDB/output_to_input
-    └── workflow-COPYME-build_gigantic_genomesDB/
+    ├── output_to_input/                # Final species set for downstream subprojects
+    └── workflow-COPYME-create_final_species_set/
         ├── INPUT_user/
         ├── OUTPUT_pipeline/
+        ├── RUN-workflow.sh             # Local execution
+        ├── RUN-workflow.sbatch         # SLURM execution
         └── ai/
 ```
 
@@ -223,9 +258,11 @@ STEP_1-sources/output_to_input/ → STEP_2-standardize_and_evaluate/INPUT_user/
                                               ↓
 STEP_2-standardize_and_evaluate/output_to_input/ → STEP_3-databases/INPUT_user/
                                                             ↓
-                        STEP_3-databases/output_to_input/ → genomesDB/output_to_input/
-                                                                  ↓
-                                              (Other GIGANTIC subprojects)
+          STEP_2 + STEP_3 outputs → STEP_4-create_final_species_set
+                                              ↓
+                   STEP_4-create_final_species_set/output_to_input/
+                                              ↓
+                              (Other GIGANTIC subprojects)
 ```
 
 ---
@@ -265,6 +302,8 @@ This consolidates documentation regardless of which step generated it.
 | STEP_2 can't find inputs | STEP_1 not run | Run STEP_1-sources workflow first |
 | STEP_3 can't find inputs | STEP_2 not run | Run STEP_2-standardize_and_evaluate first |
 | BLAST database empty | No proteomes passed QC | Check STEP_2 evaluation reports |
+| STEP_4 can't find inputs | STEP_2 or STEP_3 not run | Run STEP_2 and STEP_3 first |
+| STEP_4 species not found | Species in selection but not in STEP_2/STEP_3 | Check spelling in selected_species.txt |
 | "No phyloname mapping" | Missing mapping file | Run phylonames, check output_to_input |
 | Manifest format error | Wrong columns or delimiter | Use 4 tab-separated columns |
 
@@ -280,9 +319,11 @@ ls STEP_1-sources/output_to_input/
 # Check STEP_2 outputs
 ls STEP_2-standardize_and_evaluate/output_to_input/
 
-# Check STEP_3 outputs (final)
+# Check STEP_3 outputs
 ls STEP_3-databases/output_to_input/
-ls output_to_input/
+
+# Check STEP_4 outputs (final species set)
+ls STEP_4-create_final_species_set/output_to_input/
 ```
 
 ---
@@ -294,7 +335,9 @@ ls output_to_input/
 | `STEP_1-sources/workflow-*/INPUT_user/source_manifest.tsv` | List of genomes/proteomes to ingest | **YES** |
 | `STEP_2-standardize_and_evaluate/workflow-*/INPUT_user/` | (from STEP_1) | No |
 | `STEP_3-databases/workflow-*/INPUT_user/` | (from STEP_2) | No |
-| `output_to_input/` | Final databases | No |
+| `STEP_4-create_final_species_set/workflow-*/final_species_set_config.yaml` | Paths to STEP_2/STEP_3 outputs | **YES** |
+| `STEP_4-create_final_species_set/workflow-*/INPUT_user/selected_species.txt` | Species selection (optional) | **YES** (optional) |
+| `STEP_4-create_final_species_set/output_to_input/` | Final species set | No |
 | `upload_to_server/upload_manifest.tsv` | What to share | **YES** |
 
 ---
@@ -308,6 +351,7 @@ ls output_to_input/
 | Manifest creation | "Are your files named with the GIGANTIC convention? (genus_species-genome-source_id-date.ext)" |
 | Header format | "Do your FASTA headers follow the convention? (genus_species-gene_id-transcript_id-protein_id)" |
 | Quality thresholds | "What quality thresholds should we use for evaluation?" |
+| Before STEP_4 | "Have STEP_2 and STEP_3 completed? Do you want all species or a subset?" |
 | Error occurred | "Which step failed? What error message?" |
 
 ---

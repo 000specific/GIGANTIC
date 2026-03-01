@@ -44,8 +44,8 @@ cd workflow-RUN_01-validate_rgs/
 workflow-COPYME-validate_rgs/
 │
 ├── README.md
-├── RUN-validate_rgs.sh            # Local: bash RUN-validate_rgs.sh
-├── RUN-validate_rgs.sbatch        # SLURM: sbatch RUN-validate_rgs.sbatch
+├── RUN-workflow.sh            # Local: bash RUN-workflow.sh
+├── RUN-workflow.sbatch        # SLURM: sbatch RUN-workflow.sbatch
 ├── rgs_config.yaml                # User configuration
 │
 ├── INPUT_user/                    # User places RGS file here
@@ -107,12 +107,12 @@ If your RGS headers use short species names, create `INPUT_user/rgs_species_map.
 
 **Local**:
 ```bash
-bash RUN-validate_rgs.sh
+bash RUN-workflow.sh
 ```
 
 **SLURM** (edit account/qos first):
 ```bash
-sbatch RUN-validate_rgs.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -177,7 +177,7 @@ cat OUTPUT_pipeline/1-output/1_ai-rgs-*-validation_report.txt
 **Clean and retry**:
 ```bash
 rm -rf work .nextflow .nextflow.log*
-bash RUN-validate_rgs.sh
+bash RUN-workflow.sh
 ```
 
 ---

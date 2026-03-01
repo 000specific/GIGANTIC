@@ -8,8 +8,8 @@
 #SBATCH --mem=280gb
 #SBATCH --time=100:00:00
 #SBATCH --output=slurm-006-iqtree-%j.log
-#SBATCH --account=moroz
-#SBATCH --qos=moroz
+#SBATCH --account=YOUR_ACCOUNT
+#SBATCH --qos=YOUR_QOS
 
 # GIGANTIC BLOCK 3 - Script 006: Run IQ-TREE
 # AI: Claude Code | Sonnet 4.5 | 2025 November 07 04:10 | Purpose: IQ-TREE ML phylogenetic inference

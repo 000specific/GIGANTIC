@@ -59,8 +59,8 @@ cd workflow-RUN_01-generate_phylonames
 workflow-COPYME-generate_phylonames/
 │
 ├── README.md                    # Quick start guide
-├── RUN-phylonames.sh            # Local: bash RUN-phylonames.sh
-├── RUN-phylonames.sbatch        # SLURM: sbatch RUN-phylonames.sbatch
+├── RUN-workflow.sh               # Local: bash RUN-workflow.sh
+├── RUN-workflow.sbatch           # SLURM: sbatch RUN-workflow.sbatch
 ├── phylonames_config.yaml       # Project name and options
 │
 ├── INPUT_user/                  # Copied from INPUT_gigantic/ at runtime
@@ -124,16 +124,16 @@ project:
 
 **Local**:
 ```bash
-bash RUN-phylonames.sh
+bash RUN-workflow.sh
 ```
 
 **SLURM** (edit account/qos first):
 ```bash
-# Edit RUN-phylonames.sbatch:
+# Edit RUN-workflow.sbatch:
 #SBATCH --account=YOUR_ACCOUNT
 #SBATCH --qos=YOUR_QOS
 
-sbatch RUN-phylonames.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -241,7 +241,7 @@ ping google.com
 curl -I ftp.ncbi.nlm.nih.gov
 
 # Try again (often resolves itself)
-bash RUN-phylonames.sh
+bash RUN-workflow.sh
 ```
 
 ### "No database directory"
@@ -257,7 +257,7 @@ bash ai/scripts/001_ai-bash-download_ncbi_taxonomy.sh
 
 **Solution**:
 ```bash
-chmod +x RUN-phylonames.sh
+chmod +x RUN-workflow.sh
 chmod +x ai/scripts/*.sh
 ```
 
@@ -266,7 +266,7 @@ chmod +x ai/scripts/*.sh
 **Clean and retry**:
 ```bash
 rm -rf work .nextflow .nextflow.log*
-bash RUN-phylonames.sh
+bash RUN-workflow.sh
 ```
 
 ---

@@ -7,7 +7,7 @@
 # ============================================================
 # 1. Place your RGS FASTA files in INPUT_user/
 # 2. Create INPUT_user/rgs_manifest.tsv with gene family names and filenames
-# 3. Run: bash RUN-validate_rgs.sh
+# 3. Run: bash RUN-workflow.sh
 
 # ============================================================
 # PROJECT SETTINGS

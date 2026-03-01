@@ -26,18 +26,18 @@
 
 ## What This Step Does
 
-**Purpose**: Find homologous sequences across all project species using Reciprocal Best Hit / Reciprocal Best Fit (RBH/RBF) BLAST.
+**Purpose**: Find homologous sequences across all project species using Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF) BLAST.
 
 **16-Step Process**:
 
 | Steps | Phase | What Happens |
 |-------|-------|--------------|
 | 001-003 | Forward BLAST | BLAST RGS against all project species databases |
-| 004 | Extract CGS | Extract candidate gene sequences from BLAST hits |
+| 004 | Extract BGS | Extract blast gene sequences from BLAST hits |
 | 005-006 | RGS Genome BLAST | BLAST RGS against source organism genomes |
 | 007-010 | Reciprocal Setup | Map RGS to genomes, create modified BLAST databases |
 | 011-012 | Reciprocal BLAST | BLAST candidates back against RGS+genome databases |
-| 013 | Filter RBF | Extract sequences confirmed by reciprocal best fit |
+| 013 | Extract CGS | Extract candidate gene sequences confirmed by reciprocal BLAST |
 | 014 | Species Filter | Keep only species in the keeper list |
 | 015 | Remap IDs | Convert short BLAST IDs back to full GIGANTIC phylonames |
 | 016 | Create AGS | Concatenate RGS + filtered CGS into final All Gene Set |
@@ -90,7 +90,7 @@ OUTPUT_pipeline/
 ├── 1-output/    # BLAST database list
 ├── 2-output/    # Forward BLAST commands
 ├── 3-output/    # Forward BLAST results
-├── 4-output/    # CGS extracted sequences (fullseqs + hitregions)
+├── 4-output/    # BGS extracted sequences (fullseqs + hitregions)
 ├── 5-output/    # RGS genome BLAST commands
 ├── 6-output/    # RGS genome BLAST results
 ├── 7-output/    # RGS BLAST file list
@@ -99,7 +99,7 @@ OUTPUT_pipeline/
 ├── 10-output/   # Combined BLAST database
 ├── 11-output/   # Reciprocal BLAST commands
 ├── 12-output/   # Reciprocal BLAST results
-├── 13-output/   # RBF filtered sequences
+├── 13-output/   # CGS filtered sequences
 ├── 14-output/   # Species-filtered sequences
 ├── 15-output/   # Remapped to GIGANTIC phylonames
 └── 16-output/   # Final AGS (All Gene Set)
@@ -124,8 +124,8 @@ STEP_2-homolog_discovery/
 │   └── ags_fastas/                    # Final AGS by gene family
 └── workflow-COPYME-rbh_rbf_homologs/
     ├── README.md
-    ├── RUN-rbh_rbf_homologs.sh
-    ├── RUN-rbh_rbf_homologs.sbatch
+    ├── RUN-workflow.sh
+    ├── RUN-workflow.sbatch
     ├── rbh_rbf_homologs_config.yaml
     ├── INPUT_user/
     │   ├── species_keeper_list.tsv
@@ -185,13 +185,13 @@ STEP_2-homolog_discovery/
 # Check forward BLAST results
 wc -l OUTPUT_pipeline/3-output/*.blastp
 
-# Check CGS sequence counts
+# Check BGS sequence counts
 grep -c ">" OUTPUT_pipeline/4-output/*fullseqs*
 
 # Check reciprocal BLAST results
 wc -l OUTPUT_pipeline/12-output/*.blastp
 
-# Check RBF sequence counts
+# Check CGS sequence counts
 grep -c ">" OUTPUT_pipeline/13-output/*.aa
 
 # Check species filter results

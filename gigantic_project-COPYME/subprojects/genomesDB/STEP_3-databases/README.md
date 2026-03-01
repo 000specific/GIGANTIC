@@ -58,7 +58,7 @@ research_notebook/research_ai/subproject-genomesDB/
 ## Dependencies
 
 - STEP_2-standardize_and_evaluate must complete first
-- BLAST+ tools
+- BLAST+ tools (available in `ai_gigantic_genomesdb` conda environment)
 
 ---
 

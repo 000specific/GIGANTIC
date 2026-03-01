@@ -171,7 +171,7 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 phylonames/
 ├── README.md                           # This file
 ├── AI_GUIDE-phylonames.md              # AI assistant guidance (subproject level)
-├── RUN-clean_subproject.sh             # Cleanup script (work/, .nextflow*)
+├── RUN-clean_and_record_subproject.sh   # Cleanup + AI session recording
 ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
 ├── user_research/                      # Personal workspace
 ├── output_to_input/                    # Outputs for downstream subprojects
@@ -182,11 +182,11 @@ phylonames/
 │   └── [symlinks to selected outputs]
 └── workflow-COPYME-generate_phylonames/
     ├── README.md                       # Quick start guide
-    ├── RUN-phylonames.sh               # bash RUN-phylonames.sh (local)
-    ├── RUN-phylonames.sbatch           # sbatch RUN-phylonames.sbatch (SLURM)
+    ├── RUN-workflow.sh                  # bash RUN-workflow.sh (local)
+    ├── RUN-workflow.sbatch              # sbatch RUN-workflow.sbatch (SLURM)
     ├── phylonames_config.yaml          # Edit this for your project
     ├── INPUT_user/                     # Workflow-specific inputs (archived copy)
-    │   └── species_list.txt            # Copied from INPUT_gigantic at runtime
+    │   └── species_list_example.txt     # Example species list (template)
     ├── OUTPUT_pipeline/                # Generated phylonames and mappings
     └── ai/                             # Internal (don't touch)
         ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
@@ -197,7 +197,8 @@ phylonames/
             ├── 002_ai-python-generate_phylonames.py
             ├── 003_ai-python-create_species_mapping.py
             ├── 004_ai-python-apply_user_phylonames.py
-            └── 005_ai-python-write_run_log.py
+            ├── 005_ai-python-generate_taxonomy_summary.py
+            └── 006_ai-python-write_run_log.py
 ```
 
 **AI Documentation**: Each workflow run creates a timestamped log in:
@@ -258,10 +259,10 @@ project:
 cd workflow-COPYME-generate_phylonames
 
 # Local machine:
-bash RUN-phylonames.sh
+bash RUN-workflow.sh
 
 # SLURM cluster (edit account/qos first):
-sbatch RUN-phylonames.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 The pipeline will:

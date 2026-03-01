@@ -42,8 +42,8 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 5. Edit `ingest_sources_config.yaml` with your project name
 
 6. Run the workflow:
-   - **Local**: `bash RUN-ingest_sources.sh`
-   - **SLURM**: Edit account/qos in `RUN-ingest_sources.sbatch`, then `sbatch RUN-ingest_sources.sbatch`
+   - **Local**: `bash RUN-workflow.sh`
+   - **SLURM**: Edit account/qos in `RUN-workflow.sbatch`, then `sbatch RUN-workflow.sbatch`
 
 ## What This Workflow Does (3 Steps)
 

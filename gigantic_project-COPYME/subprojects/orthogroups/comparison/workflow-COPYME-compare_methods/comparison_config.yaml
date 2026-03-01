@@ -1,0 +1,11 @@
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Comparison pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# Cross-Method Comparison Pipeline Configuration
+# =============================================================================
+
+# Paths to tool output_to_input directories (relative to workflow directory)
+orthofinder_dir: "../../orthofinder/output_to_input"
+orthohmm_dir: "../../orthohmm/output_to_input"
+broccoli_dir: "../../broccoli/output_to_input"

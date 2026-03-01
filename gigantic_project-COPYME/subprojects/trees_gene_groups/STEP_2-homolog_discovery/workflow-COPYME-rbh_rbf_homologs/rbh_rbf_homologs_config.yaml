@@ -9,7 +9,7 @@
 # This configuration file controls how the STEP_2 homolog discovery workflow runs.
 # Edit the paths below to match your project setup.
 #
-# After editing, run: bash RUN-rbh_rbf_homologs.sh
+# After editing, run: bash RUN-workflow.sh
 #
 # ============================================================================
 

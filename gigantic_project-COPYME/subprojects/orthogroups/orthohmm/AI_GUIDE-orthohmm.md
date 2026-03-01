@@ -1,148 +1,40 @@
-# AI Guide: OrthoHMM Tool
+# AI_GUIDE-orthohmm.md (Level 2: Tool Project Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for orthogroups overview and concepts. This guide covers OrthoHMM-specific usage.
-
-**Location**: `gigantic_project-COPYME/subprojects/orthogroups/orthohmm/`
-
----
-
-## ⚠️ CRITICAL: Surface Discrepancies - No Silent Changes
-
-**The user is managing this project - you must surface discrepancies so the user can make decisions. Silent changes undermine project management.**
-
-- ❌ **NEVER** silently do something different than requested
-- ❌ **NEVER** assume you know better and proceed without asking
-- ✅ **ALWAYS** stop and explain the discrepancy
-- ✅ **ALWAYS** ask for clarification before proceeding
-
----
-
-## Quick Reference
+**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and tool comparison. This guide covers OrthoHMM-specific concepts.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| Orthogroups concepts (OrthoFinder vs OrthoHMM) | `../AI_GUIDE-orthogroups.md` |
-| Running OrthoHMM workflow | `workflow-COPYME-*/ai/AI_GUIDE-orthohmm_workflow.md` |
+| GIGANTIC overview | `../../AI_GUIDE-project.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
+| OrthoHMM concepts | This file |
+| Running the workflow | `workflow-COPYME-run_orthohmm/ai/AI_GUIDE-orthohmm_workflow.md` |
 
----
+## OrthoHMM Overview
 
-## What OrthoHMM Does
+OrthoHMM identifies orthogroups using profile Hidden Markov Models (HMMER) for sequence comparison, followed by MCL graph-based clustering. Profile HMMs capture position-specific amino acid preferences and are more sensitive than pairwise sequence comparison for detecting distant homologs.
 
-**Purpose**: Identify orthologs using profile HMM (Hidden Markov Model) searches for improved sensitivity.
+**Key advantage**: Better sensitivity for divergent sequences compared to simple pairwise methods. Produces HMM profiles that can be used for downstream annotation.
 
-**Input**: Proteomes (FASTA files) from genomesDB STEP_2 output_to_input
+**Header requirement**: OrthoHMM requires short sequence headers in `Genus_species-N` format. The pipeline handles header conversion (script 002) and restoration (script 004).
 
-**Output**:
-- Orthogroups with full GIGANTIC identifiers
-- Gene counts per orthogroup per species
-- Per-species QC summaries
-- Header mapping (short ID to GIGANTIC ID)
+## Pipeline Scripts (6 steps)
 
-**When to use**: When you need better sensitivity for divergent sequences or want HMM profiles for downstream annotation
+| # | Script | Purpose |
+|---|--------|---------|
+| 001 | `001_ai-python-validate_proteomes.py` | Validate proteomes from genomesDB |
+| 002 | `002_ai-python-convert_headers_to_short_ids.py` | Convert GIGANTIC headers to short IDs |
+| 003 | `003_ai-bash-run_orthohmm.sh` | Run OrthoHMM clustering |
+| 004 | `004_ai-python-restore_gigantic_identifiers.py` | Restore full GIGANTIC identifiers |
+| 005 | `005_ai-python-generate_summary_statistics.py` | Summary statistics |
+| 006 | `006_ai-python-qc_analysis_per_species.py` | Per-species QC analysis |
 
----
+## Header Conversion
 
-## Workflow Overview
+GIGANTIC headers (`g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_..._Genus_species`) are converted to `Genus_species-N` format for OrthoHMM compatibility. Script 002 creates a mapping file (`2_ai-header_mapping.tsv`) that script 004 uses to restore the original identifiers in the final output.
 
-The OrthoHMM workflow consists of six scripts:
+## Configuration
 
-| Script | Purpose |
-|--------|---------|
-| 001 | Validate proteomes from genomesDB and create inventory |
-| 002 | Convert FASTA headers to short IDs (Genus_species-N format) |
-| 003 | Run OrthoHMM clustering (main compute-intensive step) |
-| 004 | Generate summary statistics (coverage, sizes, etc.) |
-| 005 | Per-species QC analysis (identify unassigned sequences) |
-| 006 | Restore full GIGANTIC identifiers in output files |
-
----
-
-## Directory Structure
-
-```
-orthohmm/
-├── README.md                    # Human documentation
-├── AI_GUIDE-orthohmm.md         # THIS FILE
-│
-├── user_research/               # Personal workspace
-│
-├── output_to_input/             # Outputs for downstream subprojects
-│   ├── 6_ai-orthogroups_gigantic_ids.txt
-│   ├── 2_ai-header_mapping.tsv
-│   └── 4_ai-orthohmm_summary_statistics.tsv
-│
-├── upload_to_server/            # Server sharing
-│
-└── workflow-COPYME-run_orthohmm/
-    ├── RUN-workflow.sh          # Local execution
-    ├── RUN-workflow.sbatch      # SLURM execution
-    ├── OUTPUT_pipeline/         # Results by script
-    │   ├── 1-output/
-    │   ├── 2-output/
-    │   ├── 3-output/
-    │   ├── 4-output/
-    │   ├── 5-output/
-    │   └── 6-output/
-    └── ai/scripts/              # Processing scripts
-```
-
----
-
-## Key Files
-
-| File | Purpose | User Edits? |
-|------|---------|-------------|
-| `workflow-*/RUN-workflow.sh` | Main workflow | No (just run it) |
-| `workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
-| `output_to_input/` | Output for downstream | No (auto-populated) |
-
----
-
-## Input Requirements
-
-The workflow automatically reads proteomes from:
-```
-../../../genomesDB/STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes/
-```
-
-No manual INPUT_user setup required - the workflow uses proteomes directly from genomesDB output.
-
----
-
-## Troubleshooting
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "proteomes directory not found" | genomesDB incomplete | Run genomesDB STEP_2 first |
-| "orthohmm command not found" | Wrong environment | `conda activate ai_gigantic_orthogroups` |
-| "No proteome files found" | Empty gigantic_proteomes | Check genomesDB output_to_input |
-| Out of memory | Large dataset | Increase SLURM memory (200GB+) |
-| Timeout | Many species | Increase SLURM time (200 hours) |
-
----
-
-## Questions to Ask Users
-
-| Situation | Ask |
-|-----------|-----|
-| Starting fresh | "Has genomesDB STEP_2 completed? Are proteomes in output_to_input?" |
-| Error occurred | "Which script failed? Check slurm_logs/ or OUTPUT_pipeline/N-output/" |
-| Slow progress | "How many species? OrthoHMM is O(n²) - 70 species takes ~100 hours" |
-
----
-
-## Conda Environment
-
-**Environment name**: `ai_gigantic_orthogroups`
-
-**Key packages**:
-- orthohmm (via pip)
-- hmmer
-- mcl
-
-**Installation**:
-```bash
-cd gigantic_project-COPYME/
-mamba env create -f conda_environments/ai_gigantic_orthogroups.yml
-```
+Edit `workflow-COPYME-run_orthohmm/orthohmm_config.yaml`:
+- `cpus`: Number of threads (default: 8)
+- `evalue`: E-value threshold (default: 0.0001)
+- `single_copy_threshold`: Threshold for single-copy orthogroups (default: 0.5)

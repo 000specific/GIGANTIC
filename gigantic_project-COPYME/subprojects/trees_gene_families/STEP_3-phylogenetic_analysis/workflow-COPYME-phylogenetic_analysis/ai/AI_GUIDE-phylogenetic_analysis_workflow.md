@@ -30,8 +30,8 @@
 workflow-COPYME-phylogenetic_analysis/
 │
 ├── README.md
-├── RUN-phylogenetic_analysis.sh       # Local: bash RUN-phylogenetic_analysis.sh
-├── RUN-phylogenetic_analysis.sbatch   # SLURM: sbatch RUN-phylogenetic_analysis.sbatch
+├── RUN-workflow.sh       # Local: bash RUN-workflow.sh
+├── RUN-workflow.sbatch   # SLURM: sbatch RUN-workflow.sbatch
 ├── phylogenetic_analysis_config.yaml  # User configuration
 │
 ├── INPUT_user/                        # (empty - reads from STEP_2 output_to_input)
@@ -131,12 +131,12 @@ tree_methods:
 
 **Local**:
 ```bash
-bash RUN-phylogenetic_analysis.sh
+bash RUN-workflow.sh
 ```
 
 **SLURM** (edit account/qos first):
 ```bash
-sbatch RUN-phylogenetic_analysis.sbatch
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -275,7 +275,7 @@ ls OUTPUT_pipeline/5_*-output/*
 **Clean and retry**:
 ```bash
 rm -rf work .nextflow .nextflow.log*
-bash RUN-phylogenetic_analysis.sh
+bash RUN-workflow.sh
 ```
 
 ---

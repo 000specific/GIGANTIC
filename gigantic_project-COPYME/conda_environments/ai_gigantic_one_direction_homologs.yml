@@ -1,0 +1,30 @@
+# GIGANTIC One Direction Homologs Environment
+# ====================================
+#
+# Placeholder environment for the one_direction_homologs subproject.
+# Specific tool dependencies will be added as this subproject is developed.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_one_direction_homologs.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_one_direction_homologs
+
+name: ai_gigantic_one_direction_homologs
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.9
+  - nextflow>=23.0
+
+  # Tool-specific dependencies will be added as the subproject is developed

@@ -58,8 +58,8 @@ phylonames/
 │   └── upload_manifest.tsv
 │
 └── workflow-COPYME-generate_phylonames/
-    ├── RUN-phylonames.sh            # bash RUN-phylonames.sh
-    ├── RUN-phylonames.sbatch        # sbatch RUN-phylonames.sbatch
+    ├── RUN-workflow.sh               # bash RUN-workflow.sh
+    ├── RUN-workflow.sbatch           # sbatch RUN-workflow.sbatch
     ├── phylonames_config.yaml       # User edits project name here
     ├── INPUT_user/                  # Copied from INPUT_gigantic at runtime
     ├── OUTPUT_pipeline/             # Results
@@ -193,7 +193,7 @@ research_notebook/research_ai/subproject-phylonames/logs/
 |------|---------|-------------|
 | `../../INPUT_gigantic/species_list.txt` | Canonical species list | **YES** |
 | `workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
-| `workflow-*/RUN-phylonames.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
 | `output_to_input/maps/*.tsv` | Output for downstream | No |
 

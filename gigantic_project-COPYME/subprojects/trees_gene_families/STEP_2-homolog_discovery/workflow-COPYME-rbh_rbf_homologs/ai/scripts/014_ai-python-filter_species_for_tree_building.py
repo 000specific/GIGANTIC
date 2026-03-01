@@ -6,15 +6,15 @@
 """
 Filter sequences by species keeper list.
 
-This script filters RBF sequences to only include species specified in the
+This script filters CGS sequences to only include species specified in the
 keeper list for tree building.
 
 Input:
-    - output/13-output/13_ai-RBF-{project_db}-{gene_family}.aa: All RBF sequences
+    - output/13-output/13_ai-cgs-{project_db}-{gene_family}.aa: All CGS sequences
     - input/species-keeper-list: List of species to keep
 
 Output:
-    - output/14-output/14_ai-CGS-{project_db}-{gene_family}-filtered.aa: Filtered sequences
+    - output/14-output/14_ai-cgs-{project_db}-{gene_family}-filtered.aa: Filtered sequences
 
 Log:
     - 014_ai-log-filter_species_for_tree_building.log
@@ -149,7 +149,7 @@ def main():
     parser.add_argument(
         '--input-fasta',
         type=Path,
-        default=Path( 'output/13-output/13_ai-all-reciprocal_best_fit-sequences.aa' ),
+        default=Path( 'output/13-output/13_ai-cgs-all-reciprocal_best_hits.aa' ),
         help='Input FASTA file (from script 013)'
     )
     
@@ -163,7 +163,7 @@ def main():
     parser.add_argument(
         '--output-fasta',
         type=Path,
-        default=Path( 'output/14-output/14_ai-filtered_by_species-reciprocal_best_fit-sequences.aa' ),
+        default=Path( 'output/14-output/14_ai-cgs-filtered_by_species.aa' ),
         help='Output FASTA file'
     )
     

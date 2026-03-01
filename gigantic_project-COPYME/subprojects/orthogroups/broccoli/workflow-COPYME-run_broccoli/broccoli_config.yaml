@@ -1,0 +1,16 @@
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Broccoli pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# Broccoli Pipeline Configuration
+# =============================================================================
+
+# Input proteomes directory (from genomesDB output_to_input)
+proteomes_dir: "../../genomesDB/STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes"
+
+# Broccoli parameters
+cpus: 8
+tree_method: "nj"  # nj (neighbor joining), me (minimum evolution), ml (maximum likelihood)
+
+# Conda environment name
+conda_environment: "ai_gigantic_orthogroups"

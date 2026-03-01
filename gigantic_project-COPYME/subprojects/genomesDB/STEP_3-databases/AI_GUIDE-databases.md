@@ -1,6 +1,6 @@
 # AI Guide: STEP_3-databases (genomesDB)
 
-**For AI Assistants**: This guide covers STEP_3 of the genomesDB subproject. For genomesDB overview and three-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_3 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_3-databases/`
 
@@ -22,7 +22,7 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| genomesDB concepts, three-step structure | `../AI_GUIDE-genomesDB.md` |
+| genomesDB concepts, four-step structure | `../AI_GUIDE-genomesDB.md` |
 | STEP_3 databases concepts (this step) | This file |
 | Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 
@@ -88,4 +88,10 @@ research_notebook/research_ai/subproject-genomesDB/
 ## Dependencies
 
 - STEP_2-standardize_and_evaluate must complete first
-- BLAST+ tools must be installed
+- BLAST+ tools must be installed (available in `ai_gigantic_genomesdb` conda environment)
+
+---
+
+## Next Step
+
+After STEP_3 completes, proceed to **STEP_4-create_final_species_set** to select and copy the final species set for downstream subprojects.

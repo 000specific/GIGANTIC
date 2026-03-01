@@ -6,14 +6,14 @@
 """
 Generate Reciprocal BLAST Commands
 
-This script generates the command to perform reciprocal BLAST - searching candidate
-gene sequences (from project database BLAST) back against RGS genome databases.
+This script generates the command to perform reciprocal BLAST - searching blast gene
+sequences (BGS, from forward BLAST against project databases) back against RGS genome databases.
 
-This is the critical step in Reciprocal Best Fit (RBF) analysis:
+This is the critical step in reciprocal best hit / reciprocal best family (RBH/RBF) analysis:
 1. Forward BLAST: RGS → Project databases (scripts 002-004)
 2. RGS genome BLAST: RGS → RGS genomes (scripts 005-006) 
-3. **Reciprocal BLAST: Candidate genes → RGS databases (this script)**
-4. Extract RBF: Identify bidirectional best hits (script 012)
+3. **Reciprocal BLAST: BGS → RGS databases (this script)**
+4. Extract CGS: Identify reciprocal best hits (script 013)
 
 Workflow Context:
     Script 010 → makeblastdb → **Script 011** → Reciprocal BLAST → Script 012
@@ -160,7 +160,7 @@ def main():
         '--query-fasta',
         type=str,
         required=True,
-        help='Candidate gene sequences FASTA file (from script 004)'
+        help='Blast gene sequences (BGS) FASTA file (from script 004)'
     )
     
     parser.add_argument(

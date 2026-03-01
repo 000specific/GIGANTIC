@@ -20,8 +20,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../../AI_GUIDE-project.md` |
-| genomesDB subproject overview | `../../AI_GUIDE-standardize_and_evaluate.md` |
+| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE-project.md` |
+| genomesDB subproject overview | `../../../AI_GUIDE-genomesDB.md` |
+| STEP_2 concepts, troubleshooting | `../../AI_GUIDE-standardize_and_evaluate.md` |
 | Running this workflow | This file |
 
 ---
@@ -37,8 +38,11 @@ This workflow applies GIGANTIC phyloname conventions to data from STEP_1 and cal
 | Script | Purpose | Required Inputs |
 |--------|---------|-----------------|
 | 001 | Standardize proteome filenames and FASTA headers | Phylonames mapping, T1 proteomes from STEP_1 |
-| 002 | Create phyloname symlinks for genomes/annotations | Phylonames mapping, genomes, gene annotations from STEP_1 |
-| 003 | Calculate genome assembly statistics (gfastats) | Phyloname-named genomes from script 002 |
+| 002 | Clean proteome invalid residues ('.' to 'X') | Standardized proteomes from script 001 |
+| 003 | Create phyloname symlinks for genomes/annotations | Phylonames mapping, genomes, gene annotations from STEP_1 |
+| 004 | Calculate genome assembly statistics (gfastats) | Phyloname-named genomes from script 003 |
+| 005 | Run BUSCO proteome evaluation | Cleaned proteomes from script 002, lineage assignments |
+| 006 | Summarize quality and generate species manifest | All quality data from scripts 001-005 |
 
 ---
 
@@ -69,8 +73,8 @@ bash RUN-workflow.sh
 **SLURM execution:**
 ```bash
 cd workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
-# Edit SLURM-workflow.sbatch to set --account and --qos
-sbatch SLURM-workflow.sbatch
+# Edit RUN-workflow.sbatch to set --account and --qos
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -94,9 +98,13 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 |----------|----------|
 | `OUTPUT_pipeline/1-output/gigantic_proteomes/` | Phyloname-standardized proteome files |
 | `OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv` | Proteome transformation log |
-| `OUTPUT_pipeline/2-output/gigantic_genomes/` | Phyloname symlinks to genomes |
-| `OUTPUT_pipeline/2-output/gigantic_gene_annotations/` | Phyloname symlinks to annotations |
-| `OUTPUT_pipeline/3-output/3_ai-genome_assembly_statistics.tsv` | Assembly quality metrics |
+| `OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned/` | Cleaned proteomes (ready for BLAST/BUSCO) |
+| `OUTPUT_pipeline/3-output/gigantic_genomes/` | Phyloname symlinks to genomes |
+| `OUTPUT_pipeline/3-output/gigantic_gene_annotations/` | Phyloname symlinks to annotations |
+| `OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv` | Assembly quality metrics |
+| `OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv` | Proteome completeness scores |
+| `OUTPUT_pipeline/6-output/6_ai-quality_summary.tsv` | Combined quality metrics |
+| `OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv` | Species selection for STEP_3/STEP_4 |
 
 ---
 
@@ -116,10 +124,15 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 | File | User Edits? | Description |
 |------|-------------|-------------|
 | `RUN-workflow.sh` | No | Main workflow script |
-| `SLURM-workflow.sbatch` | Yes (account/qos) | SLURM job wrapper |
+| `RUN-workflow.sbatch` | Yes (account/qos) | SLURM job wrapper |
+| `standardize_evaluate_config.yaml` | Yes (project settings) | User-editable configuration |
+| `INPUT_user/busco_lineages.txt` | Yes (lineage assignments) | BUSCO lineage per species |
 | `ai/scripts/001_*.py` | No | Proteome standardization |
-| `ai/scripts/002_*.py` | No | Genome/annotation symlink creation |
-| `ai/scripts/003_*.py` | No | Assembly statistics |
+| `ai/scripts/002_*.py` | No | Proteome cleaning |
+| `ai/scripts/003_*.py` | No | Genome/annotation symlink creation |
+| `ai/scripts/004_*.py` | No | Assembly statistics (gfastats) |
+| `ai/scripts/005_*.py` | No | BUSCO proteome evaluation |
+| `ai/scripts/006_*.py` | No | Quality summary and species manifest |
 
 ---
 
@@ -128,16 +141,27 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 ```
 STEP_1-sources/output_to_input/
 ├── T1_proteomes/         ──► Script 001 ──► 1-output/gigantic_proteomes/
-├── genomes/              ──► Script 002 ──► 2-output/gigantic_genomes/ ──► Script 003 ──► 3-output/stats
-└── gene_annotations/     ──► Script 002 ──► 2-output/gigantic_gene_annotations/
+│                                                      │
+│                                            Script 002 ──► 2-output/gigantic_proteomes_cleaned/
+│                                                                    │
+│                                                          Script 005 ──► 5-output/busco_summary
+│
+├── genomes/              ──► Script 003 ──► 3-output/gigantic_genomes/
+│                                                      │
+│                                            Script 004 ──► 4-output/assembly_stats
+│
+└── gene_annotations/     ──► Script 003 ──► 3-output/gigantic_gene_annotations/
 
 phylonames/output_to_input/maps/
-└── species71_map*.tsv    ──► Scripts 001, 002, 003 (all need phylonames)
+└── species71_map*.tsv    ──► Scripts 001, 003 (need phylonames)
+
+All quality data ──► Script 006 ──► 6-output/quality_summary + species_manifest
 ```
 
 ---
 
-## Passing Data to STEP_3
+## Passing Data to STEP_3 and STEP_4
 
-After this workflow completes, STEP_3 will use:
-- `OUTPUT_pipeline/1-output/gigantic_proteomes/` for building BLAST databases
+After this workflow completes:
+- **STEP_3** will use cleaned proteomes from `OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned/` for building BLAST databases
+- **STEP_4** will use the species selection manifest from `OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv` and cleaned proteomes

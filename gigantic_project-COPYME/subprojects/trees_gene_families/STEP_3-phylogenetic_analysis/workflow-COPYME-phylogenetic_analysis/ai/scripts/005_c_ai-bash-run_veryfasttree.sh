@@ -10,7 +10,7 @@
 # Activate conda environment
 module load python
 module load conda
-conda activate ai_gigantic_trees
+conda activate ai_gigantic_trees_gene_families
 
 # Parse arguments
 HOMOLOG_ID=$1

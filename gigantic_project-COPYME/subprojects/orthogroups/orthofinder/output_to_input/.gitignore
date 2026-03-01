@@ -1,4 +1,3 @@
-# Ignore all output data except README and .gitignore
+# Ignore all files in this directory except .gitignore
 *
-!README.md
 !.gitignore

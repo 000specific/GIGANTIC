@@ -4,7 +4,7 @@ Build phylogenetic trees for individual gene families across GIGANTIC project sp
 
 ## Overview
 
-This subproject takes curated reference gene sequences (RGS), finds homologs across all project species via reciprocal best hit/fit (RBH/RBF) BLAST, and builds phylogenetic trees.
+This subproject takes curated reference gene sequences (RGS), finds homologs across all project species via reciprocal best hit/family (RBH/RBF) BLAST, and builds phylogenetic trees.
 
 ## Three-Step Pipeline
 
@@ -23,21 +23,21 @@ cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
 cd workflow-RUN_01-rbh_rbf_homologs/
 # Edit rbh_rbf_homologs_config.yaml (set gene_family name, rgs_file)
 # Place RGS file and species_keeper_list.tsv in INPUT_user/
-bash RUN-rbh_rbf_homologs.sh
+bash RUN-workflow.sh
 
 # 2. Run STEP_3
 cd ../../STEP_3-phylogenetic_analysis/
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 cd workflow-RUN_01-phylogenetic_analysis/
 # Edit phylogenetic_analysis_config.yaml (set gene_family name, choose tree methods)
-bash RUN-phylogenetic_analysis.sh
+bash RUN-workflow.sh
 ```
 
 ## Prerequisites
 
 - **genomesDB** subproject must be complete (BLAST databases required)
 - **phylonames** subproject must be complete (species naming)
-- Conda environment: `ai_gigantic_trees` (see `../../conda_environments/`)
+- Conda environment: `ai_gigantic_trees_gene_families` (see `../../conda_environments/`)
 
 ## One Gene Family Per Run
 

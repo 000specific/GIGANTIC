@@ -14,12 +14,12 @@ NEW: RGS sequences are now also remapped to full GIGANTIC identifiers using the
 
 Input:
     - input/rgs.aa: Reference Gene Set
-    - output/15-output/15_ai-CGS-{project_db}-{gene_family}-remapped.aa: Remapped CGS with full GIGANTIC IDs
+    - output/15-output/15_ai-cgs-{project_db}-{gene_family}-remapped.aa: Remapped CGS with full GIGANTIC IDs
     - output/8-output/8_ai-map-rgs-to-genome-identifiers.txt: RGS to CGS ID mapping
     - Main mapping file: CGS short ID to full GIGANTIC ID mapping
 
 Output:
-    - output/16-output/16_ai-AGS-{project_db}-{gene_family}-homologs.aa: Combined AGS file (both RGS and CGS remapped)
+    - output/16-output/16_ai-ags-{project_db}-{gene_family}-homologs.aa: Combined AGS file (both RGS and CGS remapped)
 
 Log:
     - 016_ai-log-concatenate_sequences.log

@@ -8,8 +8,8 @@
 #SBATCH --mem=280gb
 #SBATCH --time=100:00:00
 #SBATCH --output=slurm-005_b-iqtree-%j.log
-#SBATCH --account=moroz
-#SBATCH --qos=moroz
+#SBATCH --account=YOUR_ACCOUNT
+#SBATCH --qos=YOUR_QOS
 
 # GIGANTIC STEP_3 - Script 005_b: Run IQ-TREE
 # AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: IQ-TREE ML phylogenetic inference (publication-quality)
@@ -21,7 +21,7 @@ echo "Running IQ-TREE on $SLURM_CPUS_ON_NODE CPU cores"
 # Activate conda environment
 module load python
 module load conda
-conda activate ai_gigantic_trees
+conda activate ai_gigantic_trees_gene_families
 
 # Parse arguments
 HOMOLOG_ID=$1

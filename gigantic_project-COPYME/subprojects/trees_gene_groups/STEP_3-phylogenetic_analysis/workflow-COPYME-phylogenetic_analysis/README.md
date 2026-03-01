@@ -74,13 +74,13 @@ tree_methods:
 
 **Run locally:**
 ```bash
-bash RUN-phylogenetic_analysis.sh
+bash RUN-workflow.sh
 ```
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-phylogenetic_analysis.sbatch to set --account and --qos
-sbatch RUN-phylogenetic_analysis.sbatch
+# Edit RUN-workflow.sbatch to set --account and --qos
+sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -99,8 +99,8 @@ sbatch RUN-phylogenetic_analysis.sbatch
 ```
 workflow-COPYME-phylogenetic_analysis/
 ├── README.md                              # This file
-├── RUN-phylogenetic_analysis.sh           # Local runner (calls NextFlow)
-├── RUN-phylogenetic_analysis.sbatch       # SLURM wrapper
+├── RUN-workflow.sh           # Local runner (calls NextFlow)
+├── RUN-workflow.sbatch       # SLURM wrapper
 ├── phylogenetic_analysis_config.yaml      # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   └── rgs_manifest.tsv                   # Gene family names

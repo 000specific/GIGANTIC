@@ -12,7 +12,7 @@
 #   2. Hard copies data into organized directories  -> OUTPUT_pipeline/2-output/
 #   3. Creates symlinks for STEP_2 access           -> OUTPUT_pipeline/3-output/
 #
-# After editing, run: bash RUN-ingest_sources.sh
+# After editing, run: bash RUN-workflow.sh
 #
 # ============================================================================
 

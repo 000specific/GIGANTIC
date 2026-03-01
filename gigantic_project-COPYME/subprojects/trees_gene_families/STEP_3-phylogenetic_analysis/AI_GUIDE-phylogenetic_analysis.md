@@ -108,8 +108,8 @@ STEP_3-phylogenetic_analysis/
 │   └── trees/                          # Trees by gene family
 └── workflow-COPYME-phylogenetic_analysis/
     ├── README.md
-    ├── RUN-phylogenetic_analysis.sh
-    ├── RUN-phylogenetic_analysis.sbatch
+    ├── RUN-workflow.sh
+    ├── RUN-workflow.sbatch
     ├── phylogenetic_analysis_config.yaml
     ├── INPUT_user/
     ├── OUTPUT_pipeline/

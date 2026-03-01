@@ -99,8 +99,8 @@ STEP_1-rgs_preparation/
 │   └── rgs_fastas/                 # Validated RGS by gene family
 └── workflow-COPYME-validate_rgs/
     ├── README.md
-    ├── RUN-validate_rgs.sh
-    ├── RUN-validate_rgs.sbatch
+    ├── RUN-workflow.sh
+    ├── RUN-workflow.sbatch
     ├── rgs_config.yaml
     ├── INPUT_user/
     │   ├── rgs_species_map.tsv

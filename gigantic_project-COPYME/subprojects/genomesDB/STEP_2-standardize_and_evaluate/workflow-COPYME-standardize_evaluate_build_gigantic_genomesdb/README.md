@@ -58,13 +58,13 @@ nano standardize_evaluate_config.yaml
 
 **Run locally:**
 ```bash
-bash RUN-standardize_evaluate.sh
+bash RUN-workflow.sh
 ```
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-standardize_evaluate.sbatch to set --account and --qos
-sbatch RUN-standardize_evaluate.sbatch
+# Edit RUN-workflow.sbatch to set --account and --qos
+sbatch RUN-workflow.sbatch
 ```
 
 The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all 6 scripts sequentially, with explicit outputs at each step for research transparency.
@@ -85,8 +85,8 @@ The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all 6 script
 ```
 workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 ├── README.md                              # This file
-├── RUN-standardize_evaluate.sh            # Local runner (calls NextFlow)
-├── RUN-standardize_evaluate.sbatch        # SLURM wrapper
+├── RUN-workflow.sh            # Local runner (calls NextFlow)
+├── RUN-workflow.sbatch        # SLURM wrapper
 ├── standardize_evaluate_config.yaml       # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   └── busco_lineages.txt                 # BUSCO lineage assignments

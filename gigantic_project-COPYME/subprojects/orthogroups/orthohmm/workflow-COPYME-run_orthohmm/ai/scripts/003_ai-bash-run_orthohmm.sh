@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.5 | 2026 February 27 | Purpose: Run OrthoHMM clustering on proteomes
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Run OrthoHMM clustering on proteomes
 # Human: Eric Edsinger
 
 # =============================================================================
@@ -164,24 +164,19 @@ fi
 ORTHOGROUP_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_orthogroups.txt")
 log_message "Orthogroups identified: ${ORTHOGROUP_COUNT}"
 
-# Ensure all expected output files exist (create empty if OrthoHMM did not produce them)
-# This guarantees NextFlow process outputs are always satisfied
-if [ ! -f "${OUTPUT_DIR}/orthohmm_gene_count.txt" ]; then
-    touch "${OUTPUT_DIR}/orthohmm_gene_count.txt"
-    log_message "NOTE: orthohmm_gene_count.txt not produced by OrthoHMM - created empty file"
+# Check for gene count file
+if [ -f "${OUTPUT_DIR}/orthohmm_gene_count.txt" ]; then
+    log_message "Gene count file: present"
+else
+    log_message "WARNING: orthohmm_gene_count.txt not produced by OrthoHMM"
 fi
 
-if [ ! -f "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" ]; then
-    touch "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt"
-    log_message "NOTE: orthohmm_single_copy_orthogroups.txt not produced by OrthoHMM - created empty file"
-else
+# Check for single-copy orthogroups
+if [ -f "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" ]; then
     SINGLE_COPY_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt")
     log_message "Single-copy orthogroups: ${SINGLE_COPY_COUNT}"
-fi
-
-if [ ! -d "${OUTPUT_DIR}/orthohmm_orthogroups" ]; then
-    mkdir -p "${OUTPUT_DIR}/orthohmm_orthogroups"
-    log_message "NOTE: orthohmm_orthogroups/ directory not produced by OrthoHMM - created empty directory"
+else
+    log_message "WARNING: orthohmm_single_copy_orthogroups.txt not produced by OrthoHMM"
 fi
 
 # =============================================================================
