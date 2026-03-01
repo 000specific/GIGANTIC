@@ -63,7 +63,7 @@ while [ "$PROJECT_ROOT" != "/" ]; do
 done
 
 if [ "$PROJECT_ROOT" == "/" ]; then
-    PROJECT_ROOT="$SCRIPT_DIR/../.."  # Fallback: assume subprojects/[name]/
+    PROJECT_ROOT="$SCRIPT_DIR/../../.."  # Fallback: assume subprojects/[name]/BLOCK_*/
 fi
 
 # Options (default: all off)
@@ -368,7 +368,7 @@ clean_work_directories() {
 harden_softlinks() {
     echo -e "${YELLOW}=== Hardening softlinks in upload_to_server/ ===${NC}"
 
-    upload_dir="$SCRIPT_DIR/upload_to_server"
+    upload_dir="$SCRIPT_DIR/../upload_to_server"
 
     if [ ! -d "$upload_dir" ]; then
         echo "  No upload_to_server/ directory found."

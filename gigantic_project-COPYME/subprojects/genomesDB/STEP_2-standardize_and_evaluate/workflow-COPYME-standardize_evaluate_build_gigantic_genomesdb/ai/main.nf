@@ -22,7 +22,7 @@ nextflow.enable.dsl = 2
 // PARAMETERS (from config.yaml via nextflow.config)
 // ============================================================================
 
-params.phylonames_mapping = "../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
+params.phylonames_mapping = "../../../phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
 params.input_proteomes = "../../STEP_1-sources/output_to_input/T1_proteomes"
 params.input_genomes = "../../STEP_1-sources/output_to_input/genomes"
 params.input_gene_annotations = "../../STEP_1-sources/output_to_input/gene_annotations"

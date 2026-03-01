@@ -44,7 +44,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # Path to project-level INPUT_gigantic (relative to this workflow)
-INPUT_GIGANTIC="../../../INPUT_gigantic"
+INPUT_GIGANTIC="../../../../INPUT_gigantic"
 
 # Copy species list from INPUT_gigantic if it exists and has content
 # This provides a single source of truth at project level while archiving
@@ -77,11 +77,11 @@ else
         echo ""
         echo "Please run the environment setup script first:"
         echo ""
-        echo "  cd ../../../  # Go to project root"
+        echo "  cd ../../../../  # Go to project root"
         echo "  bash RUN-setup_environments.sh"
         echo ""
         echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_phylonames.yml"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_phylonames.yml"
         echo ""
         exit 1
     fi
@@ -133,7 +133,7 @@ fi
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
 # Symlinks are created in two locations:
-#   1. ../output_to_input/maps/  (canonical, for downstream subprojects)
+#   1. ../output_to_input/maps/  (canonical, at BLOCK level for downstream subprojects)
 #   2. ai/output_to_input/maps/  (archival, with this workflow run)
 #
 # Symlink targets are RELATIVE paths from the symlink location to
@@ -149,7 +149,7 @@ if [ -z "${PROJECT_NAME}" ]; then
     PROJECT_NAME="my_project"
 fi
 
-# --- Subproject-level output_to_input (canonical) ---
+# --- BLOCK-level output_to_input (canonical) ---
 SUBPROJECT_SHARED_DIR="../output_to_input/maps"
 mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
@@ -166,7 +166,7 @@ if [ -f "OUTPUT_pipeline/4-output/final_project_mapping.tsv" ]; then
         "${SUBPROJECT_SHARED_DIR}/${PROJECT_NAME}_final_project_mapping.tsv"
 fi
 
-echo "  Subproject output_to_input/maps/ -> symlinks created"
+echo "  BLOCK output_to_input/maps/ -> symlinks created"
 
 # --- Workflow-level ai/output_to_input (archival) ---
 WORKFLOW_SHARED_DIR="ai/output_to_input/maps"

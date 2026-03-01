@@ -19,7 +19,7 @@
 
 inputs:
   # Path to phylonames mapping file (from phylonames subproject)
-  phylonames_mapping: "../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
+  phylonames_mapping: "../../../phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
 
   # Path to source proteomes (from STEP_1)
   proteomes: "../../STEP_1-sources/output_to_input/T1_proteomes"

@@ -45,7 +45,7 @@ NC='\033[0m' # No Color
 
 # Script directory (subproject root)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-UPLOAD_DIR="${SCRIPT_DIR}/upload_to_server"
+UPLOAD_DIR="${SCRIPT_DIR}/../upload_to_server"
 MANIFEST="${UPLOAD_DIR}/upload_manifest.tsv"
 
 # Options

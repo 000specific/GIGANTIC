@@ -214,7 +214,7 @@ trees_gene_groups/output_to_input/step_3/trees/
 |------------|------|------|
 | genomesDB | BLAST databases (per-species .aa files) | `../genomesDB/output_to_input/gigantic_T1_blastp/` |
 | genomesDB | Header mapping file (short → full IDs) | `../genomesDB/output_to_input/gigantic_T1_blastp_header_map` |
-| phylonames | Species name mappings | `../phylonames/output_to_input/maps/` |
+| phylonames | Species name mappings | `../phylonames/BLOCK_generate_phylonames/output_to_input/maps/` |
 | orthogroups | Gene group definitions (optional) | `../orthogroups/output_to_input/` |
 
 ### Outputs TO

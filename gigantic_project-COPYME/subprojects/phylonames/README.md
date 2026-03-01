@@ -171,34 +171,36 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 phylonames/
 ├── README.md                           # This file
 ├── AI_GUIDE-phylonames.md              # AI assistant guidance (subproject level)
-├── RUN-clean_and_record_subproject.sh   # Cleanup + AI session recording
-├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
 ├── user_research/                      # Personal workspace
-├── output_to_input/                    # Outputs for downstream subprojects
-│   └── maps/                           # Species mapping files
-│       └── [project]_map-genus_species_X_phylonames.tsv
 ├── upload_to_server/                   # Files to share via GIGANTIC server
-│   ├── upload_manifest.tsv             # Controls what gets shared
-│   └── [symlinks to selected outputs]
-└── workflow-COPYME-generate_phylonames/
-    ├── README.md                       # Quick start guide
-    ├── RUN-workflow.sh                  # bash RUN-workflow.sh (local)
-    ├── RUN-workflow.sbatch              # sbatch RUN-workflow.sbatch (SLURM)
-    ├── phylonames_config.yaml          # Edit this for your project
-    ├── INPUT_user/                     # Workflow-specific inputs (archived copy)
-    │   └── species_list_example.txt     # Example species list (template)
-    ├── OUTPUT_pipeline/                # Generated phylonames and mappings
-    └── ai/                             # Internal (don't touch)
-        ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
-        ├── main.nf                     # NextFlow pipeline
-        ├── nextflow.config             # NextFlow settings
-        └── scripts/                    # Python/Bash scripts
-            ├── 001_ai-bash-download_ncbi_taxonomy.sh
-            ├── 002_ai-python-generate_phylonames.py
-            ├── 003_ai-python-create_species_mapping.py
-            ├── 004_ai-python-apply_user_phylonames.py
-            ├── 005_ai-python-generate_taxonomy_summary.py
-            └── 006_ai-python-write_run_log.py
+│
+└── BLOCK_generate_phylonames/
+    ├── AI_GUIDE-generate_phylonames.md  # BLOCK-level AI guide
+    ├── RUN-clean_and_record_subproject.sh   # Cleanup + AI session recording
+    ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
+    ├── output_to_input/                    # Outputs for downstream subprojects
+    │   └── maps/                           # Species mapping files
+    │       └── [project]_map-genus_species_X_phylonames.tsv
+    │
+    └── workflow-COPYME-generate_phylonames/
+        ├── README.md                       # Quick start guide
+        ├── RUN-workflow.sh                  # bash RUN-workflow.sh (local)
+        ├── RUN-workflow.sbatch              # sbatch RUN-workflow.sbatch (SLURM)
+        ├── phylonames_config.yaml          # Edit this for your project
+        ├── INPUT_user/                     # Workflow-specific inputs (archived copy)
+        │   └── species_list_example.txt     # Example species list (template)
+        ├── OUTPUT_pipeline/                # Generated phylonames and mappings
+        └── ai/                             # Internal (don't touch)
+            ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
+            ├── main.nf                     # NextFlow pipeline
+            ├── nextflow.config             # NextFlow settings
+            └── scripts/                    # Python/Bash scripts
+                ├── 001_ai-bash-download_ncbi_taxonomy.sh
+                ├── 002_ai-python-generate_phylonames.py
+                ├── 003_ai-python-create_species_mapping.py
+                ├── 004_ai-python-apply_user_phylonames.py
+                ├── 005_ai-python-generate_taxonomy_summary.py
+                └── 006_ai-python-write_run_log.py
 ```
 
 **AI Documentation**: Each workflow run creates a timestamped log in:
@@ -232,7 +234,7 @@ This creates the `ai_gigantic_phylonames` conda environment with all required de
 
 Or edit the workflow-specific copy (for advanced use):
 ```
-workflow-COPYME-generate_phylonames/INPUT_user/species_list.txt
+BLOCK_generate_phylonames/workflow-COPYME-generate_phylonames/INPUT_user/species_list.txt
 ```
 
 Format (one species per line):
@@ -256,7 +258,7 @@ project:
 ### Step 3: Run the Pipeline
 
 ```bash
-cd workflow-COPYME-generate_phylonames
+cd BLOCK_generate_phylonames/workflow-COPYME-generate_phylonames
 
 # Local machine:
 bash RUN-workflow.sh
@@ -275,7 +277,7 @@ The pipeline will:
 
 Your mapping file will be at:
 ```
-output_to_input/maps/[project_name]_map-genus_species_X_phylonames.tsv
+BLOCK_generate_phylonames/output_to_input/maps/[project_name]_map-genus_species_X_phylonames.tsv
 ```
 
 ---
@@ -339,7 +341,7 @@ Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_cal
 
 Other GIGANTIC subprojects reference phylonames via:
 ```
-phylonames/output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv
+phylonames/BLOCK_generate_phylonames/output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv
 ```
 
 **Dependent subprojects**:
@@ -373,16 +375,16 @@ A symlink `database-ncbi_taxonomy_latest` always points to the most recent downl
 To share outputs with collaborators:
 
 1. **Edit the manifest**: `upload_to_server/upload_manifest.tsv`
-2. **Run the update script**: `bash RUN-update_upload_to_server.sh`
+2. **Run the update script**: `bash BLOCK_generate_phylonames/RUN-update_upload_to_server.sh`
 
 The script creates symlinks in `upload_to_server/` based on your manifest. The GIGANTIC server periodically scans this directory.
 
 ```bash
 # Preview what would be done
-bash RUN-update_upload_to_server.sh --dry-run
+bash BLOCK_generate_phylonames/RUN-update_upload_to_server.sh --dry-run
 
 # Create/update symlinks
-bash RUN-update_upload_to_server.sh
+bash BLOCK_generate_phylonames/RUN-update_upload_to_server.sh
 ```
 
 ---

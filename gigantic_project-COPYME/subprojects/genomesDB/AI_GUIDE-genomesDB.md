@@ -311,7 +311,7 @@ This consolidates documentation regardless of which step generated it.
 
 ```bash
 # Check phylonames dependency
-ls ../phylonames/output_to_input/maps/
+ls ../phylonames/BLOCK_generate_phylonames/output_to_input/maps/
 
 # Check STEP_1 outputs
 ls STEP_1-sources/output_to_input/

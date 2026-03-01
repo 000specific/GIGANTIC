@@ -87,7 +87,7 @@ Source data from STEP_1-sources, accessed via `output_to_input/`:
 | Gene annotations | 69 | `../STEP_1-sources/output_to_input/gene_annotations/` |
 
 Also requires:
-- **Phylonames mapping**: `../../phylonames/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
+- **Phylonames mapping**: `../../phylonames/BLOCK_generate_phylonames/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
 
 ---
 

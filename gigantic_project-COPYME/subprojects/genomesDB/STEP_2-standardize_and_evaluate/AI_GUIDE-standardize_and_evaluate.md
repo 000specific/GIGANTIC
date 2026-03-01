@@ -56,7 +56,7 @@ STEP_2 reads from STEP_1's `output_to_input/` directory (relative path: `../STEP
 | Gene annotations | 69 | `gene_annotations/` | `.gff3` and `.gtf` files |
 
 **Phylonames mapping** (from phylonames subproject):
-- `../../phylonames/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
+- `../../phylonames/BLOCK_generate_phylonames/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
 
 ---
 

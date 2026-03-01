@@ -23,7 +23,8 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | Phylonames concepts, troubleshooting | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-phylonames_workflow.md` |
+| BLOCK overview | `BLOCK_generate_phylonames/AI_GUIDE-generate_phylonames.md` |
+| Running the workflow | `BLOCK_generate_phylonames/workflow-COPYME-*/ai/AI_GUIDE-phylonames_workflow.md` |
 
 ---
 
@@ -45,25 +46,25 @@
 phylonames/
 ├── README.md                        # Human documentation
 ├── AI_GUIDE-phylonames.md           # THIS FILE
-├── RUN-clean_and_record_subproject.sh  # Cleanup + AI session recording
-├── RUN-update_upload_to_server.sh      # Update server symlinks
 │
 ├── user_research/                   # Personal workspace for this subproject
-│
-├── output_to_input/                 # Outputs for downstream subprojects
-│   └── maps/
-│       └── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK
-│
 ├── upload_to_server/                # Server sharing
-│   └── upload_manifest.tsv
 │
-└── workflow-COPYME-generate_phylonames/
-    ├── RUN-workflow.sh               # bash RUN-workflow.sh
-    ├── RUN-workflow.sbatch           # sbatch RUN-workflow.sbatch
-    ├── phylonames_config.yaml       # User edits project name here
-    ├── INPUT_user/                  # Copied from INPUT_gigantic at runtime
-    ├── OUTPUT_pipeline/             # Results
-    └── ai/                          # Internal
+└── BLOCK_generate_phylonames/
+    ├── AI_GUIDE-generate_phylonames.md  # BLOCK-level guide
+    ├── RUN-clean_and_record_subproject.sh  # Cleanup + AI session recording
+    ├── RUN-update_upload_to_server.sh      # Update server symlinks
+    ├── output_to_input/                 # Outputs for downstream subprojects
+    │   └── maps/
+    │       └── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK
+    │
+    └── workflow-COPYME-generate_phylonames/
+        ├── RUN-workflow.sh               # bash RUN-workflow.sh
+        ├── RUN-workflow.sbatch           # sbatch RUN-workflow.sbatch
+        ├── phylonames_config.yaml       # User edits project name here
+        ├── INPUT_user/                  # Copied from INPUT_gigantic at runtime
+        ├── OUTPUT_pipeline/             # Results
+        └── ai/                          # Internal
 ```
 
 ---
@@ -192,10 +193,10 @@ research_notebook/research_ai/subproject-phylonames/logs/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `../../INPUT_gigantic/species_list.txt` | Canonical species list | **YES** |
-| `workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
-| `workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
-| `workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
-| `output_to_input/maps/*.tsv` | Output for downstream | No |
+| `BLOCK_*/workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
+| `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `BLOCK_*/workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
+| `BLOCK_*/output_to_input/maps/*.tsv` | Output for downstream | No |
 
 ---
 
