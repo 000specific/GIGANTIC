@@ -268,6 +268,21 @@ Every workflow has exactly two execution scripts:
 
 The SBATCH file is a thin wrapper (~25 lines) containing only SLURM resource directives that calls `bash RUN-workflow.sh`. All workflow logic - including conda environment activation, pipeline execution, output symlink creation, and environment deactivation - lives in `RUN-workflow.sh`. This keeps cluster-specific settings separate from workflow logic and ensures identical behavior whether running locally or on a cluster.
 
+### Long-Running Jobs
+
+Some workflows run for days or weeks (e.g., OrthoFinder, IQ-TREE). How to handle this depends on your execution method:
+
+| Method | Safe for Long Jobs? | Notes |
+|--------|-------------------|-------|
+| `sbatch RUN-workflow.sbatch` | Yes | SLURM manages the job - disconnect freely |
+| `bash RUN-workflow.sh` via SSH | No - use `screen` or `tmux` | SSH disconnect kills the process |
+| `bash RUN-workflow.sh` locally | Use `screen` or `tmux` | Terminal closure kills the process |
+
+**Recommended approach:**
+- **SLURM clusters**: Always use `sbatch` for long jobs - it's fire-and-forget
+- **Non-SLURM servers**: Run inside `screen` or `tmux` (`screen -S my_workflow`, then `bash RUN-workflow.sh`)
+- **Safety net**: If interrupted, Nextflow's `-resume` flag can restart from where it left off: `nextflow run ai/main.nf -resume`
+
 ### Configuration
 
 Each workflow has a single human-readable YAML config file:

@@ -195,6 +195,53 @@ The workflow directory name provides context (e.g., `workflow-COPYME-generate_ph
 
 **Conda lifecycle**: All environment activation and deactivation is handled within `RUN-workflow.sh`. The `.sbatch` file is a thin wrapper (~25 lines) containing only SLURM resource directives and `bash RUN-workflow.sh` - it never manages conda.
 
+### Long-Running Jobs
+
+Some GIGANTIC workflows run for days or even weeks (e.g., OrthoFinder on large species sets, IQ-TREE phylogenetics). How to handle this depends on how you're running the workflow:
+
+| Execution Method | Duration Safety | What Happens if You Disconnect |
+|------------------|----------------|-------------------------------|
+| `sbatch RUN-workflow.sbatch` | Safe - SLURM manages the job | Job keeps running. Reconnect anytime. |
+| `bash RUN-workflow.sh` via SSH | **Dangerous** - process tied to SSH session | Job is killed when SSH drops |
+| `bash RUN-workflow.sh` on local machine | Process tied to terminal | Job is killed if terminal closes |
+
+**For SLURM clusters (recommended for long jobs):**
+
+Use `sbatch` - this is the safest option. Once submitted, the job is managed entirely by the SLURM scheduler. You can close your laptop, disconnect from SSH, or log out. The job continues running. Check on it later with `squeue -u $USER` or `sacct`.
+
+**For non-SLURM remote servers (SSH):**
+
+Use `screen` or `tmux` to create a persistent terminal session that survives SSH disconnections:
+
+```bash
+# Start a screen session
+screen -S my_workflow
+
+# Run the workflow inside screen
+cd workflow-RUN_01-generate_phylonames/
+bash RUN-workflow.sh
+
+# Detach from screen (workflow keeps running): Ctrl+A then D
+# Reconnect later:
+screen -r my_workflow
+```
+
+**For local machines:**
+
+Long-running workflows are rare on local machines, but if needed, use `screen` or `tmux` as described above to protect against accidental terminal closure.
+
+**Nextflow's `-resume` as a safety net:**
+
+If a workflow is interrupted for any reason, Nextflow can pick up where it left off:
+
+```bash
+cd workflow-RUN_01-generate_phylonames/
+# Re-run with -resume flag - completed steps are cached and skipped
+nextflow run ai/main.nf -resume
+```
+
+This works because Nextflow caches completed process outputs in the `work/` directory. Only incomplete or failed steps are re-executed. Note: this must be run from the workflow directory, not through `RUN-workflow.sh` (which runs fresh by default).
+
 ### Workflow Naming Convention (COPYME/RUN)
 
 GIGANTIC uses a **COPYME/RUN naming system** for workflows:
@@ -458,6 +505,9 @@ Users may not be bioinformatics experts. Give specific commands, not general adv
 
 **"Something failed, what now?"**
 → Check error message, read the workflow's AI_GUIDE, check log files
+
+**"My workflow will run for days - how do I keep it running?"**
+→ Use `sbatch` on SLURM (safest). For SSH sessions, use `screen` or `tmux`. See "Long-Running Jobs" above.
 
 ---
 
