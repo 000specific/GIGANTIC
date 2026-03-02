@@ -195,3 +195,8 @@ echo "  speciesN_gigantic_T1_blastp/          BLAST databases"
 echo "  speciesN_gigantic_gene_annotations/   GFF/GTF files (subset with annotations)"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

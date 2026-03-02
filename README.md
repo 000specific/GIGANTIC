@@ -237,6 +237,8 @@ GIGANTIC explores what research software looks like when AI assistance is assume
 
 **Why this differs from traditional software design**: Traditional CS would centralize environments to avoid duplication. But that creates a disconnect between "where I'm working" and "what I need to work." For AI-assisted workflows, **discoverability > avoiding minor duplication**. Each subproject is an autonomous modular unit containing everything needed to run it.
 
+- **Graceful species dropping**: Not all species have all data types (gene annotations, transcriptomes, etc.). Rather than failing the entire pipeline when one species lacks data, GIGANTIC classifies each species as PROCESSED, SKIPPED_NO_DATA, or SKIPPED_INCOMPLETE - processing what it can and clearly reporting what was skipped. This is a deliberate departure from fail-hard for data availability limitations (not pipeline errors).
+
 This is new territory. Users are not CS experts, and AI-user research workflows are inventing conventions as they go. We're learning what works. If you find patterns that work well (or don't), we'd love to hear about it.
 
 ### Session Provenance Recording
@@ -291,6 +293,8 @@ workflow-COPYME-generate_phylonames/
 | `RUN-workflow.sbatch` | `sbatch RUN-workflow.sbatch` | SLURM cluster |
 
 **That's it.** The workflow directory name tells you what it does. The RUN files are always named the same way across all subprojects.
+
+`RUN-workflow.sh` handles everything: activating the conda environment, running the pipeline, creating output symlinks, and deactivating the environment. `RUN-workflow.sbatch` is a thin wrapper (~25 lines) that just provides SLURM resource directives and calls `bash RUN-workflow.sh`.
 
 ### NextFlow Execution Patterns (Internal Detail)
 

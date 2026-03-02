@@ -193,6 +193,8 @@ Every workflow has exactly two runner files with standardized names:
 
 The workflow directory name provides context (e.g., `workflow-COPYME-generate_phylonames/RUN-workflow.sh`). The RUN files themselves are always named `RUN-workflow.*` for consistency across all subprojects.
 
+**Conda lifecycle**: All environment activation and deactivation is handled within `RUN-workflow.sh`. The `.sbatch` file is a thin wrapper (~25 lines) containing only SLURM resource directives and `bash RUN-workflow.sh` - it never manages conda.
+
 ### Workflow Naming Convention (COPYME/RUN)
 
 GIGANTIC uses a **COPYME/RUN naming system** for workflows:
@@ -222,6 +224,41 @@ cd workflow-RUN_01-[name]
 - All actual work happens in RUN_XX directories
 - Increment the number (RUN_01, RUN_02, ...) for each new run
 - Each RUN directory preserves its own inputs and outputs for reproducibility
+
+### Graceful Species Dropping (Data Availability Pattern)
+
+Some subprojects require per-species input data that may not be available for all species
+in the GIGANTIC set (e.g., gene annotations, transcriptomes, experimental data). For these
+subprojects, GIGANTIC uses a **three-tier species processing status** instead of fail-hard:
+
+| Status | Meaning |
+|--------|---------|
+| **PROCESSED** | Species has valid input data and was fully processed |
+| **SKIPPED_NO_DATA** | No input file provided by user (expected for many species) |
+| **SKIPPED_INCOMPLETE** | File exists but data failed validation |
+
+**Why not fail-hard?** Missing per-species data is a **data availability limitation**, not a
+pipeline error. Not all species have published gene annotations, transcriptomes, or other
+specialized data types. The pipeline processes what it can and clearly reports what was
+skipped and why.
+
+**When to use this pattern**:
+- Subproject inputs depend on external data availability (not all species have it)
+- User provides per-species files and some species genuinely lack source data
+- Skipping a species does not invalidate the analysis for other species
+
+**When NOT to use this pattern** (use fail-hard instead):
+- Core pipeline data (proteomes, species lists) - these MUST be present
+- Intermediate pipeline outputs - if Script 002 fails, Script 003 should not run
+- Data that should always exist if upstream subprojects completed successfully
+
+**Implementation pattern**:
+1. Script 001 validates all species and classifies each as PROCESSED/SKIPPED_NO_DATA/SKIPPED_INCOMPLETE
+2. Produces a `species_processing_status.tsv` documenting every species and its status
+3. Downstream scripts only process PROCESSED species
+4. Final summary includes the processing status for transparency
+
+**Current subprojects using this pattern**: gene_sizes
 
 ### Subproject Internal Organization: STEPs and BLOCKs
 
@@ -330,7 +367,7 @@ genomesDB ──► hot_spots              # Evolutionary hotspot analysis
 | annotations_hmms | genomesDB | Functional protein annotation | Planned |
 | orthogroups_X_ocl | orthogroups + trees_species | Origin-Conservation-Loss analysis | Planned |
 | annotations_X_ocl | annotations_hmms + orthogroups_X_ocl | Annotation-OCL integration | Planned |
-| gene_sizes | genomesDB | Protein/gene size analysis | Planned |
+| gene_sizes | genomesDB | Gene structure size analysis (user-provided CDS intervals) | Functional |
 | synteny | genomesDB | Gene order conservation analysis | Planned |
 | dark_proteome | genomesDB | Uncharacterized protein analysis | Planned |
 | hot_spots | genomesDB | Evolutionary hotspot analysis | Planned |

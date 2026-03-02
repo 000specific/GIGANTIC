@@ -173,3 +173,8 @@ echo ""
 echo "Next: Run STEP_4 to create final species set in output_to_input/"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

@@ -182,3 +182,8 @@ echo "  ../output_to_input/trees/${GENE_FAMILY}/  (for downstream use)"
 echo "  ai/output_to_input/trees/${GENE_FAMILY}/  (archival with this run)"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

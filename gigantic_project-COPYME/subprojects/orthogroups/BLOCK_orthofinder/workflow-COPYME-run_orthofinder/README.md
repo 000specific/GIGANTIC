@@ -4,10 +4,10 @@ Runs OrthoFinder orthogroup detection with Diamond similarity search and MCL clu
 
 ## Prerequisites
 
-- `module load conda`
-- `conda activate ai_gigantic_orthogroups`
-- `module load nextflow`
 - genomesDB proteomes available
+- `ai_gigantic_orthogroups` conda environment created (run `bash RUN-setup_environments.sh` at project root)
+
+**Note:** `RUN-workflow.sh` automatically activates and deactivates the conda environment.
 
 ## Usage
 

@@ -194,3 +194,8 @@ echo "  ../../output_to_input/  (for downstream subprojects)"
 echo "  ai/output_to_input/     (archival with this run)"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

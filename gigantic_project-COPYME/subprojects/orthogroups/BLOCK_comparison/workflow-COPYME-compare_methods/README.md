@@ -6,7 +6,9 @@ Compares orthogroup detection results from OrthoFinder, OrthoHMM, and Broccoli.
 
 - At least 2 of 3 tool projects must have completed pipelines
 - Tool `output_to_input/` directories must be populated
-- `module load conda && conda activate ai_gigantic_orthogroups && module load nextflow`
+- `ai_gigantic_orthogroups` conda environment created (run `bash RUN-setup_environments.sh` at project root)
+
+**Note:** `RUN-workflow.sh` automatically activates and deactivates the conda environment.
 
 ## Usage
 

@@ -396,10 +396,9 @@ All dependencies are provided by the `ai_gigantic_phylonames` conda environment:
 ```bash
 # Set up (from project root - run once)
 bash RUN-setup_environments.sh
-
-# Activate before running workflows
-conda activate ai_gigantic_phylonames
 ```
+
+**Note:** `RUN-workflow.sh` automatically activates and deactivates the conda environment - no manual activation required.
 
 **Environment provides:**
 - Python 3.9+

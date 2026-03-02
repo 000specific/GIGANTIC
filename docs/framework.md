@@ -266,7 +266,7 @@ Every workflow has exactly two execution scripts:
 | `RUN-workflow.sh` | `bash RUN-workflow.sh` | Local machine or workstation |
 | `RUN-workflow.sbatch` | `sbatch RUN-workflow.sbatch` | SLURM HPC cluster |
 
-The SBATCH file is a thin wrapper (~40 lines) containing only SLURM resource directives that calls `RUN-workflow.sh`. This keeps cluster-specific settings separate from workflow logic.
+The SBATCH file is a thin wrapper (~25 lines) containing only SLURM resource directives that calls `bash RUN-workflow.sh`. All workflow logic - including conda environment activation, pipeline execution, output symlink creation, and environment deactivation - lives in `RUN-workflow.sh`. This keeps cluster-specific settings separate from workflow logic and ensures identical behavior whether running locally or on a cluster.
 
 ### Configuration
 

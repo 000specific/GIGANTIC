@@ -188,3 +188,8 @@ echo "  ../output_to_input/rgs_sequences/<gene_family>/  (for downstream STEPs)"
 echo "  ai/output_to_input/rgs_sequences/<gene_family>/  (archival with this run)"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

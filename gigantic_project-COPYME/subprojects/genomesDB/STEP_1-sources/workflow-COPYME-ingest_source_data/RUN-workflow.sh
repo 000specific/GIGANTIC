@@ -192,3 +192,8 @@ echo ""
 echo "Next step: Run STEP_2-standardize_and_evaluate workflow"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

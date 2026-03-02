@@ -209,4 +209,9 @@ echo "  ai/output_to_input/ncbi_nr_top_hits/  (archival with this run)"
 echo "========================================================================"
 echo "Completed: $(date)"
 
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true
+
 exit 0

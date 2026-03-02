@@ -169,3 +169,8 @@ echo ""
 echo "Next: Run STEP_3 phylogenetic analysis with AGS files"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

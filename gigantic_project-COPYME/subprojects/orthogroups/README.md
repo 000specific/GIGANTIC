@@ -44,17 +44,14 @@ cd BLOCK_orthofinder/workflow-RUN_01-run_orthofinder/
 # 2. Edit configuration
 vi orthofinder_config.yaml
 
-# 3. Activate environment
-module load conda
-conda activate ai_gigantic_orthogroups
-module load nextflow
-
-# 4. Run
+# 3. Run (conda environment is activated automatically by the script)
 bash RUN-workflow.sh       # Local
 sbatch RUN-workflow.sbatch # SLURM (edit account/qos first)
 ```
 
 Same pattern for BLOCK_orthohmm, BLOCK_broccoli, and BLOCK_comparison.
+
+**Note:** `RUN-workflow.sh` automatically activates and deactivates the `ai_gigantic_orthogroups` conda environment. No manual activation required.
 
 ---
 
