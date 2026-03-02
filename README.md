@@ -297,7 +297,7 @@ workflow-COPYME-generate_phylonames/
 
 `RUN-workflow.sh` handles everything: activating the conda environment, running the pipeline, creating output symlinks, and deactivating the environment. `RUN-workflow.sbatch` is a thin wrapper (~25 lines) that just provides SLURM resource directives and calls `bash RUN-workflow.sh`.
 
-**Long-running jobs:** Some workflows run for days or weeks. Use `sbatch` on SLURM clusters (job persists after disconnect) or run inside `screen`/`tmux` on non-SLURM servers. If interrupted, Nextflow's `-resume` flag can restart from where it left off. See [Framework Architecture](docs/framework.md) for details.
+**Long-running jobs:** Some workflows run for days or weeks. Use `sbatch` on SLURM clusters (job persists after disconnect) or run inside `screen`/`tmux` on non-SLURM servers. If interrupted, Nextflow's `-resume` flag can restart from where it left off. See [Framework Architecture](docs/gigantic_project-framework.md) for details.
 
 ### NextFlow Execution Patterns (Internal Detail)
 
@@ -345,7 +345,7 @@ Key bioinformatics tools (installed via conda environments):
 - [Getting Started](docs/getting_started.md) - Full setup walkthrough
 - [Installation Guide](docs/installation.md) - Software dependencies and environments
 - [Architecture Overview](docs/overview.md) - How subprojects connect
-- [Phyloname System](docs/phylonames_system.md) - The GIGANTIC naming convention
+- [Phyloname System](docs/gigantic_subproject-phylonames.md) - The GIGANTIC naming convention
 - [Conventions](docs/conventions.md) - Coding style and file format standards
 - [Tutorials](docs/tutorials/) - Step-by-step guides for each subproject
 

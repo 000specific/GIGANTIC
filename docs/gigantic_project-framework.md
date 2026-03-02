@@ -59,7 +59,7 @@ genus_species = parts[5] + '_' + '_'.join(parts[6:])
 phylum = phyloname.split('_')[1]  # e.g., "Chordata", "Arthropoda"
 ```
 
-See [The Phyloname System](phylonames_system.md) for full details.
+See [The Phyloname System](gigantic_subproject-phylonames.md) for full details.
 
 ---
 
