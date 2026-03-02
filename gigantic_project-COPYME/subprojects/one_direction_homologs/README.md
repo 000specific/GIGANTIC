@@ -57,7 +57,7 @@ Update the database path in `diamond_ncbi_nr_config.yaml`.
 
 ### Step 2: Edit Configuration
 
-Edit `workflow-COPYME-diamond_ncbi_nr/diamond_ncbi_nr_config.yaml`:
+Edit `BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/diamond_ncbi_nr_config.yaml`:
 
 ```yaml
 project:
@@ -70,7 +70,7 @@ diamond:
 ### Step 3: Run the Pipeline
 
 ```bash
-cd workflow-COPYME-diamond_ncbi_nr
+cd BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr
 
 # Local machine:
 bash RUN-workflow.sh
@@ -101,26 +101,30 @@ one_direction_homologs/
 ├── README.md                                   # This file
 ├── AI_GUIDE-one_direction_homologs.md          # AI assistant guidance
 ├── TODO.md                                     # Project tracking
-├── RUN-clean_and_record_subproject.sh          # Cleanup + AI session recording
-├── RUN-update_upload_to_server.sh              # Update server sharing symlinks
 ├── user_research/                              # Personal workspace
-├── output_to_input/                            # Outputs for downstream subprojects
-│   └── ncbi_nr_top_hits/                       # Per-species top hits + statistics
 ├── upload_to_server/                           # Files for GIGANTIC server
 │   └── upload_manifest.tsv
-└── workflow-COPYME-diamond_ncbi_nr/
-    ├── README.md                               # Quick start guide
-    ├── RUN-workflow.sh                         # bash RUN-workflow.sh (local)
-    ├── RUN-workflow.sbatch                     # sbatch RUN-workflow.sbatch (SLURM)
-    ├── diamond_ncbi_nr_config.yaml             # Edit this for your project
-    ├── INPUT_user/                             # Workflow inputs
-    │   └── proteome_manifest_example.tsv       # Example manifest
-    ├── OUTPUT_pipeline/                        # Generated results
-    └── ai/                                     # Internal (don't touch)
-        ├── AI_GUIDE-diamond_ncbi_nr_workflow.md
-        ├── main.nf
-        ├── nextflow.config
-        └── scripts/                            # Pipeline scripts
+│
+└── BLOCK_diamond_ncbi_nr/
+    ├── AI_GUIDE-diamond_ncbi_nr.md             # BLOCK-level AI guidance
+    ├── RUN-clean_and_record_subproject.sh      # Cleanup + AI session recording
+    ├── RUN-update_upload_to_server.sh          # Update server sharing symlinks
+    ├── output_to_input/                        # Outputs for downstream subprojects
+    │   └── ncbi_nr_top_hits/                   # Per-species top hits + statistics
+    │
+    └── workflow-COPYME-diamond_ncbi_nr/
+        ├── README.md                           # Quick start guide
+        ├── RUN-workflow.sh                     # bash RUN-workflow.sh (local)
+        ├── RUN-workflow.sbatch                 # sbatch RUN-workflow.sbatch (SLURM)
+        ├── diamond_ncbi_nr_config.yaml         # Edit this for your project
+        ├── INPUT_user/                         # Workflow inputs
+        │   └── proteome_manifest_example.tsv   # Example manifest
+        ├── OUTPUT_pipeline/                    # Generated results
+        └── ai/                                 # Internal (don't touch)
+            ├── AI_GUIDE-diamond_ncbi_nr_workflow.md
+            ├── main.nf
+            ├── nextflow.config
+            └── scripts/                        # Pipeline scripts
 ```
 
 ---
@@ -146,7 +150,7 @@ one_direction_homologs/
 
 ### Shared Downstream
 
-**Location**: `output_to_input/ncbi_nr_top_hits/`
+**Location**: `BLOCK_diamond_ncbi_nr/output_to_input/ncbi_nr_top_hits/`
 
 | File | Description |
 |------|-------------|

@@ -43,9 +43,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Script directory (subproject root)
+# Script directory (BLOCK level, inside subproject)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-UPLOAD_DIR="${SCRIPT_DIR}/upload_to_server"
+UPLOAD_DIR="${SCRIPT_DIR}/../upload_to_server"
 MANIFEST="${UPLOAD_DIR}/upload_manifest.tsv"
 
 # Options
@@ -134,7 +134,7 @@ while IFS=$'\t' read -r source_path include || [ -n "$source_path" ]; do
     fi
 
     # Expand glob patterns
-    full_pattern="${SCRIPT_DIR}/${source_path}"
+    full_pattern="${SCRIPT_DIR}/../${source_path}"
 
     # Use compgen to safely expand globs
     matches=$(compgen -G "$full_pattern" 2>/dev/null || true)

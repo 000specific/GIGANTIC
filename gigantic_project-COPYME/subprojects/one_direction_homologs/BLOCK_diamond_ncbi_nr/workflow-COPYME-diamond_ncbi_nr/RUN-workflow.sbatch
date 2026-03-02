@@ -59,7 +59,7 @@ mkdir -p slurm_logs
 cd "${SLURM_SUBMIT_DIR}"
 
 # Path to project-level INPUT_gigantic (relative to this workflow)
-INPUT_GIGANTIC="../../../INPUT_gigantic"
+INPUT_GIGANTIC="../../../../INPUT_gigantic"
 
 # Copy proteome manifest from INPUT_gigantic if it exists
 if [ -f "${INPUT_GIGANTIC}/proteome_manifest.tsv" ]; then
@@ -85,11 +85,11 @@ else
         echo ""
         echo "Please run the environment setup script first:"
         echo ""
-        echo "  cd ../../../  # Go to project root"
+        echo "  cd ../../../../  # Go to project root"
         echo "  bash RUN-setup_environments.sh"
         echo ""
         echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_one_direction_homologs.yml"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_one_direction_homologs.yml"
         echo ""
         exit 1
     fi

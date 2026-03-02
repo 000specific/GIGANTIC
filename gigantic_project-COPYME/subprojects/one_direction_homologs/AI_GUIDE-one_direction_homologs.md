@@ -12,7 +12,8 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | one_direction_homologs concepts, troubleshooting | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-diamond_ncbi_nr_workflow.md` |
+| BLOCK concepts, DIAMOND search | `BLOCK_diamond_ncbi_nr/AI_GUIDE-diamond_ncbi_nr.md` |
+| Running the workflow | `BLOCK_diamond_ncbi_nr/workflow-COPYME-*/ai/AI_GUIDE-diamond_ncbi_nr_workflow.md` |
 
 ---
 
@@ -32,27 +33,29 @@
 
 ```
 one_direction_homologs/
-├── README.md                        # Human documentation
+├── README.md                           # Human documentation
 ├── AI_GUIDE-one_direction_homologs.md  # THIS FILE
-├── TODO.md                          # Project tracking
-├── RUN-clean_and_record_subproject.sh
-├── RUN-update_upload_to_server.sh
+├── TODO.md                             # Project tracking
 │
-├── user_research/                   # Personal workspace
+├── user_research/                      # Personal workspace
 │
-├── output_to_input/                 # Outputs for downstream subprojects
-│   └── ncbi_nr_top_hits/            # Top hits + statistics for downstream
-│
-├── upload_to_server/                # Server sharing
+├── upload_to_server/                   # Server sharing
 │   └── upload_manifest.tsv
 │
-└── workflow-COPYME-diamond_ncbi_nr/
-    ├── RUN-workflow.sh              # bash RUN-workflow.sh
-    ├── RUN-workflow.sbatch          # sbatch RUN-workflow.sbatch
-    ├── diamond_ncbi_nr_config.yaml  # User edits DIAMOND settings here
-    ├── INPUT_user/                  # Proteome manifest
-    ├── OUTPUT_pipeline/             # Results (6 numbered directories)
-    └── ai/                          # Internal
+└── BLOCK_diamond_ncbi_nr/
+    ├── AI_GUIDE-diamond_ncbi_nr.md     # BLOCK-level AI guidance
+    ├── RUN-clean_and_record_subproject.sh
+    ├── RUN-update_upload_to_server.sh
+    ├── output_to_input/                # Outputs for downstream subprojects
+    │   └── ncbi_nr_top_hits/           # Top hits + statistics for downstream
+    │
+    └── workflow-COPYME-diamond_ncbi_nr/
+        ├── RUN-workflow.sh             # bash RUN-workflow.sh
+        ├── RUN-workflow.sbatch         # sbatch RUN-workflow.sbatch
+        ├── diamond_ncbi_nr_config.yaml # User edits DIAMOND settings here
+        ├── INPUT_user/                 # Proteome manifest
+        ├── OUTPUT_pipeline/            # Results (6 numbered directories)
+        └── ai/                         # Internal
 ```
 
 ---
@@ -163,11 +166,11 @@ output_to_input/ncbi_nr_top_hits/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/diamond_ncbi_nr_config.yaml` | Project name, database path, options | **YES** |
-| `workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
-| `workflow-*/INPUT_user/proteome_manifest.tsv` | Species and proteome paths | **YES** (or auto-generated) |
-| `output_to_input/ncbi_nr_top_hits/*.tsv` | Top hits + statistics for downstream | No |
-| `ai/scripts/*` | Pipeline scripts | No |
+| `BLOCK_*/workflow-*/diamond_ncbi_nr_config.yaml` | Project name, database path, options | **YES** |
+| `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `BLOCK_*/workflow-*/INPUT_user/proteome_manifest.tsv` | Species and proteome paths | **YES** (or auto-generated) |
+| `BLOCK_*/output_to_input/ncbi_nr_top_hits/*.tsv` | Top hits + statistics for downstream | No |
+| `BLOCK_*/workflow-*/ai/scripts/*` | Pipeline scripts | No |
 
 ---
 

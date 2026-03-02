@@ -47,7 +47,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # Path to project-level INPUT_gigantic (relative to this workflow)
-INPUT_GIGANTIC="../../../INPUT_gigantic"
+INPUT_GIGANTIC="../../../../INPUT_gigantic"
 
 # Copy proteome manifest from INPUT_gigantic if it exists
 if [ -f "${INPUT_GIGANTIC}/proteome_manifest.tsv" ]; then
@@ -77,11 +77,11 @@ else
         echo ""
         echo "Please run the environment setup script first:"
         echo ""
-        echo "  cd ../../../  # Go to project root"
+        echo "  cd ../../../../  # Go to project root"
         echo "  bash RUN-setup_environments.sh"
         echo ""
         echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_one_direction_homologs.yml"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_one_direction_homologs.yml"
         echo ""
         exit 1
     fi
@@ -142,8 +142,8 @@ fi
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
 # Symlinks are created in two locations:
-#   1. subproject/output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/          (archival, with this workflow run)
+#   1. BLOCK/output_to_input/  (canonical, for downstream subprojects)
+#   2. ai/output_to_input/    (archival, with this workflow run)
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -152,7 +152,7 @@ fi
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- Subproject-level output_to_input (canonical) ---
+# --- BLOCK-level output_to_input (canonical) ---
 # Symlink location: ../output_to_input/ncbi_nr_top_hits/
 # Real files:       OUTPUT_pipeline/5-output/ and OUTPUT_pipeline/6-output/
 # Relative from symlink to real: ../../workflow-COPYME-diamond_ncbi_nr/OUTPUT_pipeline/...
@@ -172,7 +172,7 @@ done
 ln -sf "../../workflow-COPYME-diamond_ncbi_nr/OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv" \
     "${SUBPROJECT_SHARED_DIR}/all_species_statistics.tsv"
 
-echo "  Subproject output_to_input/ncbi_nr_top_hits/ -> symlinks created"
+echo "  BLOCK output_to_input/ncbi_nr_top_hits/ -> symlinks created"
 
 # --- Workflow-level ai/output_to_input (archival) ---
 # Symlink location: ai/output_to_input/ncbi_nr_top_hits/

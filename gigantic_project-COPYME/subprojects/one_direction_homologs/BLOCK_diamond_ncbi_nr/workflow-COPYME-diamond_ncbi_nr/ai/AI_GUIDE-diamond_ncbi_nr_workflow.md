@@ -1,6 +1,6 @@
 # AI Guide: DIAMOND NCBI nr Workflow
 
-**For AI Assistants**: Read the subproject guide first (`../../AI_GUIDE-one_direction_homologs.md`) for concepts and troubleshooting. This guide focuses on running the workflow.
+**For AI Assistants**: Read the subproject guide first (`../../../AI_GUIDE-one_direction_homologs.md`) for concepts and troubleshooting. This guide focuses on running the workflow.
 
 ---
 
@@ -8,8 +8,8 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Subproject concepts | `../../AI_GUIDE-one_direction_homologs.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
+| Subproject concepts | `../../../AI_GUIDE-one_direction_homologs.md` |
 | Running the workflow | This file |
 
 ---
