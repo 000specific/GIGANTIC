@@ -142,7 +142,7 @@ orthogroups/
 
 **Each BLOCK runs independently. BLOCK_comparison runs after the tool blocks are done.**
 
-Subprojects using BLOCKs: **orthogroups** (4 blocks), **one_direction_homologs** (1 block)
+Subprojects using BLOCKs: **orthogroups** (4 blocks), **one_direction_homologs** (1 block), **gene_sizes** (1 block)
 
 #### Consistent Internal Structure
 

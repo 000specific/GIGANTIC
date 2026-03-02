@@ -413,4 +413,15 @@ A `database-ncbi_taxonomy_latest` symlink always points to the most recent downl
 
 ---
 
+## External Tools and References
+
+| Tool/Resource | Purpose in phylonames | Citation | Repository/URL |
+|---------------|----------------------|----------|----------------|
+| **NCBI Taxonomy** | Source taxonomic database (`rankedlineage.dmp`) | Schoch et al. (2020) *Database* 2020:baaa062. [DOI](https://doi.org/10.1093/database/baaa062) | [ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/](https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/) |
+| **Nextflow** | Workflow orchestration | Di Tommaso et al. (2017) *Nature Biotechnology* 35:316-319. [DOI](https://doi.org/10.1038/nbt.3820) | [github.com/nextflow-io/nextflow](https://github.com/nextflow-io/nextflow) |
+
+The phylonames pipeline uses only Python 3 standard library and Bash - no additional bioinformatics packages are required beyond Nextflow for workflow management.
+
+---
+
 *For AI assistant guidance, see `AI_GUIDE-phylonames.md` and workflow-level `AI_GUIDE-phylonames_workflow.md`*
