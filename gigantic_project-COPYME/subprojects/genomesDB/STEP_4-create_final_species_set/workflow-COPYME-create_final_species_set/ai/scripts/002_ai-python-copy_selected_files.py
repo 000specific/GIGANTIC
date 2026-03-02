@@ -6,20 +6,25 @@
 GIGANTIC genomesDB STEP_4 - Script 002: Copy Selected Files
 
 Purpose:
-    Copies proteomes from STEP_2 and BLAST databases from STEP_3 for the
-    validated species selection. Creates output directories with speciesN_
-    naming convention (e.g., species69_gigantic_T1_proteomes).
+    Copies proteomes from STEP_2, BLAST databases from STEP_3, and gene
+    annotations (GFF/GTF) from STEP_2 for the validated species selection.
+    Creates output directories with speciesN_ naming convention
+    (e.g., species69_gigantic_T1_proteomes). Gene annotations are optional -
+    only species that have GFF/GTF files will be included.
 
 Inputs:
     --validated-species: Path to validated species list from Script 001
     --species-count: Path to species count file from Script 001
+    --species-with-annotations: Path to species with gene annotations list from Script 001
     --step2-proteomes: Path to STEP_2 cleaned proteomes directory
     --step3-blastp: Path to STEP_3 BLAST databases directory
+    --step2-gene-annotations: Path to STEP_2 gene annotations directory (optional)
     --output-dir: Output directory
 
 Outputs:
     2-output/speciesN_gigantic_T1_proteomes/ - Copied proteome files
     2-output/speciesN_gigantic_T1_blastp/ - Copied BLAST database files
+    2-output/speciesN_gigantic_gene_annotations/ - Copied GFF/GTF files (subset with annotations)
     2-output/2_ai-copy_manifest.tsv - Manifest of all copied files
     2-output/2_ai-log-copy_selected_files.log - Execution log
 """
@@ -119,6 +124,24 @@ def find_blastp_files( blastp_dir: Path, genus_species: str ) -> list:
     return db_files
 
 
+def find_gene_annotation_file( gene_annotations_dir: Path, genus_species: str ) -> Path:
+    """Find gene annotation file (GFF3 or GTF) for a given species."""
+    # Gene annotation files are named: phyloname-genome.gff3 or phyloname-genome.gtf
+    for annotation_file in list( gene_annotations_dir.glob( '*.gff3' ) ) + list( gene_annotations_dir.glob( '*.gtf' ) ):
+        filename = annotation_file.stem  # phyloname-genome
+        parts_filename = filename.split( '-genome' )
+        if len( parts_filename ) >= 1:
+            phyloname = parts_filename[ 0 ]
+            parts_phyloname = phyloname.split( '_' )
+            if len( parts_phyloname ) >= 7:
+                genus = parts_phyloname[ 5 ]
+                species = '_'.join( parts_phyloname[ 6: ] )
+                file_genus_species = genus + '_' + species
+                if file_genus_species == genus_species:
+                    return annotation_file
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(
         description = 'Copy selected species files with speciesN naming'
@@ -127,10 +150,14 @@ def main():
                         help = 'Path to validated species list' )
     parser.add_argument( '--species-count', required = True,
                         help = 'Path to species count file' )
+    parser.add_argument( '--species-with-annotations', required = False, default = '',
+                        help = 'Path to species with gene annotations list' )
     parser.add_argument( '--step2-proteomes', required = True,
                         help = 'Path to STEP_2 cleaned proteomes directory' )
     parser.add_argument( '--step3-blastp', required = True,
                         help = 'Path to STEP_3 BLAST databases directory' )
+    parser.add_argument( '--step2-gene-annotations', required = False, default = '',
+                        help = 'Path to STEP_2 gene annotations directory (optional)' )
     parser.add_argument( '--output-dir', required = True,
                         help = 'Output directory' )
 
@@ -139,8 +166,10 @@ def main():
     # Convert paths
     validated_species_file = Path( args.validated_species )
     species_count_file = Path( args.species_count )
+    species_with_annotations_file = Path( args.species_with_annotations ) if args.species_with_annotations else None
     step2_proteomes_dir = Path( args.step2_proteomes )
     step3_blastp_dir = Path( args.step3_blastp )
+    step2_gene_annotations_dir = Path( args.step2_gene_annotations ) if args.step2_gene_annotations else None
     output_dir = Path( args.output_dir )
 
     # Ensure output directory exists
@@ -221,6 +250,45 @@ def main():
 
     logger.info( f'  Copied {blastp_files_copied} BLAST database files for {blastp_species_copied} species' )
 
+    # Copy gene annotations (optional - only species that have them)
+    # Always create the directory so Nextflow outputs are consistent
+    gene_annotations_output_dir = output_dir / f'species{species_count}_gigantic_gene_annotations'
+    gene_annotations_output_dir.mkdir( parents = True, exist_ok = True )
+    annotations_copied = 0
+
+    if step2_gene_annotations_dir and step2_gene_annotations_dir.exists() and species_with_annotations_file and species_with_annotations_file.exists():
+        species_with_annotations = load_validated_species( species_with_annotations_file )
+
+        if species_with_annotations:
+            logger.info( '' )
+            logger.info( f'Copying gene annotations from STEP_2 ({len( species_with_annotations )} species with annotations)...' )
+            logger.info( f'Gene annotations output: {gene_annotations_output_dir}' )
+
+            for genus_species in species_with_annotations:
+                annotation_file = find_gene_annotation_file( step2_gene_annotations_dir, genus_species )
+                if annotation_file:
+                    # Follow symlinks and copy actual file content
+                    source_path = annotation_file.resolve()
+                    dest_file = gene_annotations_output_dir / annotation_file.name
+                    shutil.copy2( source_path, dest_file )
+                    annotations_copied += 1
+
+                    output = 'gene_annotation' + '\t' + genus_species + '\t' + str( annotation_file ) + '\t' + str( dest_file )
+                    manifest_entries.append( output )
+
+                    if annotations_copied % 10 == 0:
+                        logger.info( f'  Copied {annotations_copied} gene annotations...' )
+                else:
+                    logger.warning( f'  WARNING: Gene annotation file not found for {genus_species} (listed in species_with_annotations but file missing)' )
+
+            logger.info( f'  Copied {annotations_copied} gene annotation files' )
+        else:
+            logger.info( '' )
+            logger.info( 'No species with gene annotations in selection - directory created empty' )
+    else:
+        logger.info( '' )
+        logger.info( 'No gene annotations directory specified or found - directory created empty' )
+
     # Write manifest
     manifest_file = output_dir / '2_ai-copy_manifest.tsv'
     with open( manifest_file, 'w' ) as output_file:
@@ -234,6 +302,10 @@ def main():
     logger.info( '=' * 70 )
     logger.info( f'SUCCESS: Created species{species_count}_gigantic_T1_proteomes/' )
     logger.info( f'SUCCESS: Created species{species_count}_gigantic_T1_blastp/' )
+    if annotations_copied > 0:
+        logger.info( f'SUCCESS: Created species{species_count}_gigantic_gene_annotations/ ({annotations_copied} files)' )
+    else:
+        logger.info( 'NOTE: No gene annotations copied (none available for selected species)' )
     logger.info( '=' * 70 )
 
 

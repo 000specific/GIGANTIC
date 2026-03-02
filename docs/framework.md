@@ -173,18 +173,57 @@ workflow-*/INPUT_user/species_list.txt  # Archived copy for this specific run
 
 **Why:** One place to edit your species list, but each workflow run gets its own archived copy. You can update the master list without affecting previously completed runs.
 
+### Pipeline Output Organization and Disk Efficiency
+
+Each workflow has a clear data lifecycle that balances human readability with disk efficiency:
+
+```
+1. Nextflow executes scripts in work/ (cryptic hashed directories)
+       |
+       v (publishDir copies to human-readable location)
+2. OUTPUT_pipeline/
+   ├── 1-output/    # Script 001 outputs
+   ├── 2-output/    # Script 002 outputs
+   ├── 3-output/    # Script 003 outputs
+   └── ...          # One directory per script, numbered to match
+       |
+       v (RUN-workflow.sh creates symlinks after pipeline completes)
+3. output_to_input/
+   └── [symlinks]   # Point to OUTPUT_pipeline/ files
+                     # Downstream subprojects read from here
+```
+
+**Step 1 - Nextflow execution**: Scripts run inside Nextflow's `work/` directory, which uses cryptic hashed subdirectory names for caching and parallelization. These are not meant for human navigation.
+
+**Step 2 - Human-readable output**: Each Nextflow process uses `publishDir` to copy its final outputs into `OUTPUT_pipeline/N-output/`, where N matches the script number (001 → `1-output/`, 002 → `2-output/`, etc.). You can browse your results by script.
+
+**Step 3 - Downstream sharing**: After the pipeline completes successfully, `RUN-workflow.sh` creates symlinks in two locations:
+- **STEP/BLOCK level** `output_to_input/` - canonical location for downstream subprojects
+- **Workflow level** `ai/output_to_input/` - archival copy preserved with this specific run
+
+**Why symlinks?** Data files exist in exactly one place (`OUTPUT_pipeline/`). Everything else points to them. This means inter-subproject data sharing adds zero additional disk usage - important when working with dozens of species.
+
+**Cleanup**: After a successful run, you can reclaim disk space:
+```bash
+# From the subproject directory
+bash RUN-clean_and_record_subproject.sh --all
+```
+
+This removes Nextflow's temporary `work/` directory and log files while preserving all scientific outputs in `OUTPUT_pipeline/` and all downstream access through `output_to_input/` symlinks.
+
 ### Inter-Subproject Sharing: `output_to_input/`
 
 ```
 genomesDB/output_to_input/
 ├── proteomes/                    # Standardized proteome files
+├── gene_annotations/             # Phyloname-named GFF/GTF files
 └── blast_databases/              # Per-species BLAST databases
         |
         v (downstream subprojects read from here)
 orthogroups/BLOCK_orthofinder/workflow-COPYME-.../INPUT_user/
 ```
 
-Each subproject (and each STEP/BLOCK) publishes its outputs as symlinks in `output_to_input/`. Downstream subprojects reference these directories as input. This creates an explicit, traceable dependency chain.
+Each subproject (and each STEP/BLOCK) publishes its outputs as symlinks in `output_to_input/`. Downstream subprojects reference these directories as input. This creates an explicit, traceable dependency chain with no data duplication.
 
 ### Server Sharing: `upload_to_server/`
 

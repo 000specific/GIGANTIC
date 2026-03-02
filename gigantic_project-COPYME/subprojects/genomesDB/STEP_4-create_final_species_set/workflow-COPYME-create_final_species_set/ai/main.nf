@@ -20,6 +20,7 @@ nextflow.enable.dsl = 2
 
 params.step2_proteomes = "../STEP_2-standardize_and_evaluate/workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned"
 params.step3_blastp = "../STEP_3-databases/workflow-RUN_01-build_gigantic_blastp_databases/OUTPUT_pipeline/1-output/gigantic_blastp"
+params.step2_gene_annotations = "../STEP_2-standardize_and_evaluate/workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/3-output/gigantic_gene_annotations"
 params.selected_species = "INPUT_user/selected_species.txt"
 params.output_dir = "OUTPUT_pipeline"
 
@@ -39,6 +40,7 @@ process validate_species_selection {
     output:
         path "1-output/1_ai-validated_species_list.txt", emit: validated_list
         path "1-output/1_ai-species_count.txt", emit: species_count
+        path "1-output/1_ai-species_with_gene_annotations.txt", emit: species_with_annotations
         path "1-output/1_ai-log-validate_species_selection.log", emit: log
 
     script:
@@ -48,6 +50,7 @@ process validate_species_selection {
     python3 ${projectDir}/scripts/001_ai-python-validate_species_selection.py \\
         --step2-proteomes ${projectDir}/../${params.step2_proteomes} \\
         --step3-blastp ${projectDir}/../${params.step3_blastp} \\
+        --step2-gene-annotations ${projectDir}/../${params.step2_gene_annotations} \\
         --selected-species ${projectDir}/../${params.selected_species} \\
         --output-dir 1-output
     """
@@ -68,10 +71,12 @@ process copy_selected_files {
     input:
         path validated_list
         path species_count
+        path species_with_annotations
 
     output:
         path "2-output/species*_gigantic_T1_proteomes", emit: proteomes_dir
         path "2-output/species*_gigantic_T1_blastp", emit: blastp_dir
+        path "2-output/species*_gigantic_gene_annotations", emit: gene_annotations_dir
         path "2-output/2_ai-copy_manifest.tsv", emit: manifest
         path "2-output/2_ai-log-copy_selected_files.log", emit: log
 
@@ -82,8 +87,10 @@ process copy_selected_files {
     python3 ${projectDir}/scripts/002_ai-python-copy_selected_files.py \\
         --validated-species ${validated_list} \\
         --species-count ${species_count} \\
+        --species-with-annotations ${species_with_annotations} \\
         --step2-proteomes ${projectDir}/../${params.step2_proteomes} \\
         --step3-blastp ${projectDir}/../${params.step3_blastp} \\
+        --step2-gene-annotations ${projectDir}/../${params.step2_gene_annotations} \\
         --output-dir 2-output
     """
 }
@@ -99,7 +106,8 @@ workflow {
     // Step 2: Copy selected files with speciesN naming
     copy_selected_files(
         validate_species_selection.out.validated_list,
-        validate_species_selection.out.species_count
+        validate_species_selection.out.species_count,
+        validate_species_selection.out.species_with_annotations
     )
 }
 
@@ -117,12 +125,13 @@ workflow.onComplete {
     println ""
     if (workflow.success) {
         println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Validated species list and count"
+        println "  1-output/: Validated species list, count, and annotation availability"
         println "  2-output/: Final species set directories"
         println ""
         println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
-        println "  speciesN_gigantic_T1_proteomes/ -> OUTPUT_pipeline/2-output/"
-        println "  speciesN_gigantic_T1_blastp/ -> OUTPUT_pipeline/2-output/"
+        println "  speciesN_gigantic_T1_proteomes/       -> OUTPUT_pipeline/2-output/"
+        println "  speciesN_gigantic_T1_blastp/           -> OUTPUT_pipeline/2-output/"
+        println "  speciesN_gigantic_gene_annotations/    -> OUTPUT_pipeline/2-output/"
     }
     println "========================================================================"
 }

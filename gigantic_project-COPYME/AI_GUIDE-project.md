@@ -139,15 +139,38 @@ workflow-*/INPUT_user/species_list.txt  # Archived copy for this run
 
 **Why**: One place to edit, but each workflow run has its own archived copy.
 
+### Pipeline Output Lifecycle: work/ → OUTPUT_pipeline/ → output_to_input/
+
+GIGANTIC workflows follow a three-stage data lifecycle:
+
+```
+1. Nextflow runs scripts in work/         # Cryptic hashed directories (for caching)
+       ↓ (publishDir)
+2. OUTPUT_pipeline/N-output/              # Human-readable, numbered by script
+       ↓ (RUN-workflow.sh creates symlinks)
+3. output_to_input/                       # Downstream subprojects read from here
+```
+
+**Stage 1**: Nextflow executes scripts in `work/` using hashed subdirectory names. Not human-navigable.
+
+**Stage 2**: Each script's outputs are copied via `publishDir` to `OUTPUT_pipeline/N-output/` (where N matches the script number: 001 → `1-output/`). This is where users browse results.
+
+**Stage 3**: After the pipeline completes, `RUN-workflow.sh` creates symlinks in two locations:
+- **STEP/BLOCK level** `output_to_input/` → canonical access for downstream subprojects
+- **Workflow level** `ai/output_to_input/` → archival copy preserved with this run
+
+**Disk efficiency**: Data files exist only in `OUTPUT_pipeline/`. Symlinks add zero disk usage. The `RUN-clean_and_record_subproject.sh` script removes `work/`, `.nextflow/`, and `.nextflow.log*` after successful runs to reclaim temporary disk space while preserving all outputs and symlinks.
+
 ### output_to_input Pattern
 
 ```
-workflow-*/OUTPUT_pipeline/3-output/map.tsv  # ACTUAL FILE
-        ↓ (symlinked)
+workflow-*/OUTPUT_pipeline/3-output/map.tsv  # ACTUAL FILE (only copy)
+        ↓ (symlinked by RUN-workflow.sh)
 output_to_input/maps/map.tsv                  # SYMLINK (downstream subprojects read here)
+ai/output_to_input/maps/map.tsv               # SYMLINK (archival with this workflow run)
 ```
 
-**Why**: Single source of truth, no duplication, clear provenance.
+**Why**: Single source of truth, no data duplication, clear provenance, minimal disk footprint.
 
 ### upload_to_server Pattern
 

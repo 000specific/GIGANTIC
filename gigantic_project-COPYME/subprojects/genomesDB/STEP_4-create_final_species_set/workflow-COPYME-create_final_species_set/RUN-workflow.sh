@@ -26,14 +26,18 @@
 #
 # WHAT THIS DOES:
 # 1. Validates species selection against STEP_2 and STEP_3 outputs
-# 2. Copies selected proteomes from STEP_2 with speciesN naming
-# 3. Copies selected BLAST databases from STEP_3 with speciesN naming
-# 4. Creates output_to_input/speciesN_gigantic_T1_proteomes/
-# 5. Creates output_to_input/speciesN_gigantic_T1_blastp/
+# 2. Scans for available gene annotations (GFF/GTF) from STEP_2
+# 3. Copies selected proteomes from STEP_2 with speciesN naming
+# 4. Copies selected BLAST databases from STEP_3 with speciesN naming
+# 5. Copies gene annotations for species that have them
+# 6. Creates output_to_input/speciesN_gigantic_T1_proteomes/
+# 7. Creates output_to_input/speciesN_gigantic_T1_blastp/
+# 8. Creates output_to_input/speciesN_gigantic_gene_annotations/
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output and 2-output/
 # Final species set copied to ../../output_to_input/
+# NOTE: Gene annotations are optional - not all species have GFF/GTF files.
 #
 ################################################################################
 
@@ -125,7 +129,8 @@ fi
 #   2. ai/output_to_input/     (archival, with this workflow run)
 #
 # STEP_4 creates per-species directories (species*_gigantic_T1_proteomes,
-# species*_gigantic_T1_blastp) which are discovered dynamically.
+# species*_gigantic_T1_blastp, species*_gigantic_gene_annotations) which
+# are discovered dynamically.
 # ============================================================================
 
 echo ""
@@ -136,14 +141,15 @@ STEP_SHARED_DIR="../../output_to_input"
 mkdir -p "${STEP_SHARED_DIR}"
 
 # Remove any stale species directory symlinks from previous runs
-for old_link in "${STEP_SHARED_DIR}"/species*_gigantic_T1_*; do
+for old_link in "${STEP_SHARED_DIR}"/species*_gigantic_T1_* "${STEP_SHARED_DIR}"/species*_gigantic_gene_annotations; do
     if [ -L "$old_link" ]; then
         rm "$old_link"
     fi
 done
 
 # Create symlinks for each species directory in 2-output/
-for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_T1_*; do
+# This catches T1_proteomes, T1_blastp, and gene_annotations
+for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_*; do
     if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
         dir_name=$(basename "$species_dir")
         ln -sf "../STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/OUTPUT_pipeline/2-output/${dir_name}" \
@@ -160,8 +166,8 @@ mkdir -p "${WORKFLOW_SHARED_DIR}"
 # Remove any stale symlinks from previous runs
 find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
 
-# Create symlinks for each species directory
-for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_T1_*; do
+# Create symlinks for each species directory (proteomes, blastp, gene_annotations)
+for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_*; do
     if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
         dir_name=$(basename "$species_dir")
         ln -sf "../../OUTPUT_pipeline/2-output/${dir_name}" \
@@ -176,11 +182,16 @@ echo "========================================================================"
 echo "SUCCESS! STEP_4 pipeline complete."
 echo ""
 echo "Research outputs (real files):"
-echo "  OUTPUT_pipeline/1-output/  Validated species list"
+echo "  OUTPUT_pipeline/1-output/  Validated species list, count, and annotation availability"
 echo "  OUTPUT_pipeline/2-output/  Final species set directories"
 echo ""
 echo "Downstream symlinks:"
 echo "  ../../output_to_input/  (for downstream subprojects)"
 echo "  ai/output_to_input/     (archival with this run)"
+echo ""
+echo "Published directories:"
+echo "  speciesN_gigantic_T1_proteomes/       Proteome files"
+echo "  speciesN_gigantic_T1_blastp/          BLAST databases"
+echo "  speciesN_gigantic_gene_annotations/   GFF/GTF files (subset with annotations)"
 echo "========================================================================"
 echo "Completed: $(date)"
