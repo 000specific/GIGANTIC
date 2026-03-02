@@ -24,7 +24,7 @@ channels:
 
 dependencies:
   # Core requirements
-  - python>=3.9
+  - python>=3.11
   - nextflow>=23.0
 
   # Assembly statistics (N50, scaffold/contig metrics)

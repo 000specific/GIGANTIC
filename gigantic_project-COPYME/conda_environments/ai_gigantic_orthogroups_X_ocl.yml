@@ -24,7 +24,7 @@ channels:
 
 dependencies:
   # Core requirements
-  - python>=3.9
+  - python>=3.11
   - nextflow>=23.0
 
   # Tool-specific dependencies will be added as the subproject is developed

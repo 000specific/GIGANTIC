@@ -25,7 +25,7 @@ channels:
 
 dependencies:
   # Core requirements
-  - python>=3.9
+  - python>=3.11
   - nextflow>=23.0
 
   # DIAMOND: fast protein similarity search (~1000x faster than BLAST)
