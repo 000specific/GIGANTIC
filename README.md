@@ -38,28 +38,28 @@ GIGANTIC is organized as a series of subprojects that build on each other:
        |
 [2] phylonames               Phylogenetic naming system (genus_species <-> full taxonomy)
        |
-       +---------------------------+--------------------------+
-       |                           |                          |
-[3] annotations_hmms      [4] orthogroups          [6] trees_gene_families
-    Functional annotation      Ortholog group             Gene family
-    (InterProScan, DeepLoc,    identification             phylogenetics
-     SignalP, tmbed,           (OrthoHMM,                 (BLAST, MAFFT,
+       +---------------------------+--------------------------+---------------------+
+       |                           |                          |                     |
+[3] annotations_hmms      [4] orthogroups          [6] trees_gene_families   [9] gene_sizes
+    Functional annotation      Ortholog group             Gene family            Gene structure
+    (InterProScan, DeepLoc,    identification             phylogenetics          metrics and
+     SignalP, tmbed,           (OrthoHMM,                 (BLAST, MAFFT,         size analysis
      MetaPredict)               OrthoFinder)               FastTree, IQ-TREE)
-       |                           |
-       |                    [5] trees_species
-       |                        All possible species
-       |                        tree topologies
-       |                           |
-       |                    [7] orthogroups_X_ocl
-       |                        Gene origin, conservation,
-       |                        and loss analysis (OCL)
-       |                           |
-       +---------------------------+
-                       |
-              [8] annotations_X_ocl
-                  Integration of functional
-                  annotations with evolutionary
-                  dynamics
+       |                           |                                              |
+       |                    [5] trees_species                                     |
+       |                        All possible species                              |
+       |                        tree topologies                                   |
+       |                           |                                              |
+       |                    [7] orthogroups_X_ocl                                 |
+       |                        Gene origin, conservation,                        |
+       |                        and loss analysis (OCL)                           |
+       |                           |                                              |
+       +---------------------------+                 orthogroups + gene_sizes -----+
+                       |                                        |
+              [8] annotations_X_ocl              [10] gene_sizes_X_integrations
+                  Integration of functional            dN/dS, rank deviation,
+                  annotations with evolutionary        functional enrichment
+                  dynamics                             by gene size
 ```
 
 Each subproject is self-contained with its own NextFlow workflows, Python scripts, documentation, and standardized input/output directories.
@@ -90,16 +90,17 @@ Currently, all subprojects are in development (`x_phylonames/`, `x_genomesDB/`, 
 |---|-----------|-------------|--------|
 | 8 | `trees_gene_families` | Gene family homolog discovery and phylogenetic analysis | Functional |
 | 9 | `trees_gene_groups` | Orthogroup-based phylogenetic analysis | Structural |
-| 10 | `gene_sizes` | Protein and gene size analysis | Planned |
-| 11 | `synteny` | Gene order conservation analysis across species | Planned |
-| 12 | `dark_proteome` | Uncharacterized/unknown function protein analysis | Planned |
-| 13 | `hot_spots` | Evolutionary hotspots and rapid change regions | Planned |
-| 14 | `one_direction_homologs` | One-way BLAST homolog identification | Planned |
-| 15 | `xenologs_vs_artifacts` | Xenolog detection and artifact filtering | Planned |
-| 16 | `transcriptomes` | Transcriptome integration | Planned |
-| 17 | `rnaseq_integration` | RNA-seq expression data integration | Planned |
-| 18 | `gene_names` | Comprehensive gene naming system | Planned |
-| 19 | `hgnc_automation` | Automated reference gene set generation | Planned |
+| 10 | `gene_sizes` | Gene structure metrics and cross-species gene size analysis | Functional |
+| 11 | `gene_sizes_X_integrations` | Gene size integration with orthogroups, dN/dS, and annotations | Planned |
+| 12 | `synteny` | Gene order conservation analysis across species | Planned |
+| 13 | `dark_proteome` | Uncharacterized/unknown function protein analysis | Planned |
+| 14 | `hot_spots` | Evolutionary hotspots and rapid change regions | Planned |
+| 15 | `one_direction_homologs` | One-way BLAST homolog identification | Planned |
+| 16 | `xenologs_vs_artifacts` | Xenolog detection and artifact filtering | Planned |
+| 17 | `transcriptomes` | Transcriptome integration | Planned |
+| 18 | `rnaseq_integration` | RNA-seq expression data integration | Planned |
+| 19 | `gene_names` | Comprehensive gene naming system | Planned |
+| 20 | `hgnc_automation` | Automated reference gene set generation | Planned |
 
 ## Quick Start
 

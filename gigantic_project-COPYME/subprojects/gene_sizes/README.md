@@ -8,9 +8,9 @@
 ## Purpose
 
 Compute gene structure metrics (gene length, exonic length, intronic length, exon count,
-protein size) from user-provided CDS interval data for all species in the GIGANTIC species set.
-Produces genome-wide statistics, relative size ranks (quantiles), and cross-species summaries
-for downstream comparative analyses.
+protein size, ordered exon sizes, ordered intron sizes) from user-provided CDS interval data
+for all species in the GIGANTIC species set. Produces genome-wide statistics, relative size
+ranks (quantiles), and cross-species summaries for downstream comparative analyses.
 
 This subproject follows GIGANTIC's established input pattern: the **user** handles species-specific
 GFF/GTF parsing and provides standardized gene structure data. The pipeline ingests and processes

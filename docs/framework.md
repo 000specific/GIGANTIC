@@ -89,6 +89,12 @@ genomesDB                     Proteome database curation and BLAST setup
     +--- one_direction_homologs   One-direction DIAMOND homolog identification
     |                             (searches against NCBI nr)
     |
+    +--- gene_sizes               Gene structure metrics and size analysis
+    |       |                     (user-provided CDS intervals)
+    |       v
+    |    gene_sizes_X_integrations   dN/dS, rank deviation, enrichment
+    |                                (requires orthogroups + gene_sizes)
+    |
     +--- [additional subprojects connect here as they are developed]
 ```
 

@@ -389,7 +389,8 @@ These subprojects connect to the core pipeline at various points:
 ```
 genomesDB ──► trees_gene_families    # Gene family homolog discovery and phylogenetics
 genomesDB ──► trees_gene_groups      # Orthogroup-based phylogenetics
-genomesDB ──► gene_sizes             # Protein/gene size analysis
+genomesDB ──► gene_sizes             # Gene structure metrics and size analysis
+gene_sizes + orthogroups ──► gene_sizes_X_integrations  # dN/dS, rank deviation, enrichment
 genomesDB ──► synteny                # Gene order conservation analysis
 genomesDB ──► dark_proteome          # Uncharacterized protein analysis
 genomesDB ──► one_direction_homologs # One-way BLAST homolog identification
@@ -415,6 +416,7 @@ genomesDB ──► hot_spots              # Evolutionary hotspot analysis
 | orthogroups_X_ocl | orthogroups + trees_species | Origin-Conservation-Loss analysis | Planned |
 | annotations_X_ocl | annotations_hmms + orthogroups_X_ocl | Annotation-OCL integration | Planned |
 | gene_sizes | genomesDB | Gene structure size analysis (user-provided CDS intervals) | Functional |
+| gene_sizes_X_integrations | gene_sizes + orthogroups | dN/dS, rank deviation, functional enrichment by gene size | Planned |
 | synteny | genomesDB | Gene order conservation analysis | Planned |
 | dark_proteome | genomesDB | Uncharacterized protein analysis | Planned |
 | hot_spots | genomesDB | Evolutionary hotspot analysis | Planned |

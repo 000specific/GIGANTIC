@@ -31,6 +31,8 @@ Metrics computed per gene:
     Exon_Count           - Number of CDS intervals
     CDS_Length           - Total coding sequence length (same as exonic length)
     Protein_Size         - Estimated amino acids (CDS length / 3)
+    Exon_Sizes_Ordered   - Individual exon sizes in 5-prime to 3-prime transcript order
+    Intron_Sizes_Ordered - Individual intron sizes in 5-prime to 3-prime transcript order
 """
 
 import argparse
@@ -251,6 +253,27 @@ def main():
             cds_length = exonic_length
             protein_size = cds_length // 3
 
+            # Compute ordered exon sizes (from merged intervals)
+            exon_sizes = [ interval_end - interval_start + 1 for interval_start, interval_end in merged_cds ]
+
+            # Compute ordered intron sizes (gaps between consecutive merged intervals)
+            intron_sizes = []
+            for gap_index in range( len( merged_cds ) - 1 ):
+                intron_start = merged_cds[ gap_index ][ 1 ] + 1
+                intron_end = merged_cds[ gap_index + 1 ][ 0 ] - 1
+                intron_size = intron_end - intron_start + 1
+                intron_sizes.append( max( intron_size, 0 ) )
+
+            # Order 5-prime to 3-prime along transcript
+            # For + strand genes: genomic low-to-high = 5-prime to 3-prime (already sorted)
+            # For - strand genes: genomic high-to-low = 5-prime to 3-prime (reverse)
+            if strand == '-':
+                exon_sizes = exon_sizes[ ::-1 ]
+                intron_sizes = intron_sizes[ ::-1 ]
+
+            exon_sizes_string = ','.join( str( size ) for size in exon_sizes )
+            intron_sizes_string = ','.join( str( size ) for size in intron_sizes ) if intron_sizes else ''
+
             # Look up GIGANTIC identifier
             gigantic_identifier = source_gene_ids___gigantic_identifiers.get( source_gene_id, '' )
 
@@ -266,7 +289,9 @@ def main():
                 'intronic_length': intronic_length,
                 'exon_count': exon_count,
                 'cds_length': cds_length,
-                'protein_size': protein_size
+                'protein_size': protein_size,
+                'exon_sizes_ordered': exon_sizes_string,
+                'intron_sizes_ordered': intron_sizes_string
             } )
 
     logger.info( f'  Computed metrics for {len( gene_metrics )} genes' )
@@ -300,7 +325,9 @@ def main():
                  'Intronic_Length (gene length minus exonic length in bp)' + '\t' + \
                  'Exon_Count (number of merged CDS intervals)' + '\t' + \
                  'CDS_Length (total coding sequence length in bp)' + '\t' + \
-                 'Protein_Size (estimated amino acids as CDS length divided by 3)' + '\n'
+                 'Protein_Size (estimated amino acids as CDS length divided by 3)' + '\t' + \
+                 'Exon_Sizes_Ordered (comma delimited individual exon sizes in bp ordered 5-prime to 3-prime along transcript)' + '\t' + \
+                 'Intron_Sizes_Ordered (comma delimited individual intron sizes in bp ordered 5-prime to 3-prime along transcript)' + '\n'
         output_file.write( output )
 
         for gene in gene_metrics:
@@ -315,7 +342,9 @@ def main():
                      str( gene[ 'intronic_length' ] ) + '\t' + \
                      str( gene[ 'exon_count' ] ) + '\t' + \
                      str( gene[ 'cds_length' ] ) + '\t' + \
-                     str( gene[ 'protein_size' ] ) + '\n'
+                     str( gene[ 'protein_size' ] ) + '\t' + \
+                     str( gene[ 'exon_sizes_ordered' ] ) + '\t' + \
+                     str( gene[ 'intron_sizes_ordered' ] ) + '\n'
             output_file.write( output )
 
     logger.info( '' )

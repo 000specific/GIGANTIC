@@ -168,7 +168,7 @@ def main():
             if not line:
                 continue
             parts = line.split( '\t' )
-            if len( parts ) < 12:
+            if len( parts ) < 14:
                 continue
 
             genes.append( {
@@ -183,7 +183,9 @@ def main():
                 'intronic_length': int( parts[ 8 ] ),
                 'exon_count': int( parts[ 9 ] ),
                 'cds_length': int( parts[ 10 ] ),
-                'protein_size': int( parts[ 11 ] )
+                'protein_size': int( parts[ 11 ] ),
+                'exon_sizes_ordered': parts[ 12 ],
+                'intron_sizes_ordered': parts[ 13 ]
             } )
 
     logger.info( f'Read {len( genes )} genes from {gene_metrics_file.name}' )
@@ -232,6 +234,8 @@ def main():
                      str( gene[ 'exon_count' ] ) + '\t' + \
                      str( gene[ 'cds_length' ] ) + '\t' + \
                      str( gene[ 'protein_size' ] ) + '\t' + \
+                     str( gene[ 'exon_sizes_ordered' ] ) + '\t' + \
+                     str( gene[ 'intron_sizes_ordered' ] ) + '\t' + \
                      str( gene_length_ranks[ index ] ) + '\t' + \
                      str( exonic_length_ranks[ index ] ) + '\t' + \
                      str( intronic_length_ranks[ index ] ) + '\t' + \

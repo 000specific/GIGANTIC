@@ -221,6 +221,6 @@ output_to_input/ (symlinks for downstream subprojects)
 
 **Upstream**: genomesDB (species list from STEP_4)
 
-**Downstream**: Other subprojects that need gene structure information for their analyses.
+**Downstream**: `gene_sizes_X_integrations` (dN/dS, rank deviation, functional enrichment by gene size). Also available to orthogroups and annotations subprojects for cross-integration analyses.
 
 **Conda environment**: `ai_gigantic_gene_sizes` (Python 3, Nextflow)
