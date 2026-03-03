@@ -1,0 +1,41 @@
+# GIGANTIC tmbed Environment
+# ===========================
+#
+# Environment for the annotations_hmms tmbed BLOCK.
+# tmbed predicts transmembrane protein topology using protein language models.
+#
+# GPU: tmbed benefits significantly from GPU acceleration.
+# CPU fallback is available but much slower.
+# Set use_gpu and cpu_fallback in tmbed_config.yaml.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_tmbed.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_tmbed
+
+name: ai_gigantic_tmbed
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # PyTorch for protein language model
+  - pytorch
+  - torchvision
+
+  # tmbed via pip
+  - pip
+  - pip:
+    - tmbed

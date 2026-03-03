@@ -1,0 +1,45 @@
+# GIGANTIC DeepLoc Environment
+# =============================
+#
+# Environment for the annotations_hmms DeepLoc BLOCK.
+# DeepLoc 2.1 predicts subcellular protein localization using deep learning.
+#
+# NOTE: DeepLoc requires Python 3.10 specifically (incompatible with 3.11+).
+# DeepLoc must be downloaded manually from DTU (requires academic license):
+#   https://services.healthtech.dtu.dk/services/DeepLoc-2.1/
+# After downloading, install with: pip install deeploc-2.1.tar.gz
+#
+# GPU: DeepLoc benefits from GPU acceleration (CUDA-compatible).
+# Set use_gpu in deeploc_config.yaml.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_deeploc.yml
+#   conda activate ai_gigantic_deeploc
+#   pip install /path/to/deeploc-2.1.tar.gz  # Manual step
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_deeploc
+
+name: ai_gigantic_deeploc
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements (Python 3.10 required by DeepLoc)
+  - python==3.10.*
+  - nextflow>=23.0
+
+  # PyTorch for deep learning (DeepLoc dependency)
+  - pytorch
+  - torchvision
+
+  # pip for DeepLoc installation (manual download from DTU)
+  - pip

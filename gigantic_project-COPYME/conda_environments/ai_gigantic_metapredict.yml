@@ -1,0 +1,34 @@
+# GIGANTIC MetaPredict Environment
+# ==================================
+#
+# Environment for the annotations_hmms MetaPredict BLOCK.
+# MetaPredict predicts intrinsic disorder, IDR boundaries, and pLDDT scores.
+# Lightweight CPU-only tool with fast execution.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_metapredict.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_metapredict
+
+name: ai_gigantic_metapredict
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # MetaPredict via pip
+  - pip
+  - pip:
+    - metapredict

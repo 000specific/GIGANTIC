@@ -1,8 +1,16 @@
-# GIGANTIC Annotations Hmms Environment
-# ====================================
+# GIGANTIC Annotations HMMs Environment
+# ======================================
 #
-# Placeholder environment for the annotations_hmms subproject.
-# Specific tool dependencies will be added as this subproject is developed.
+# Environment for the annotations_hmms BLOCK_build_annotation_database.
+# Pure Python environment for parsing tool outputs and building the
+# standardized annotation database. No heavy tool dependencies needed.
+#
+# NOTE: Each annotation tool has its own dedicated conda environment:
+#   - ai_gigantic_interproscan (InterProScan BLOCK)
+#   - ai_gigantic_deeploc (DeepLoc BLOCK)
+#   - ai_gigantic_signalp (SignalP BLOCK)
+#   - ai_gigantic_tmbed (tmbed BLOCK)
+#   - ai_gigantic_metapredict (MetaPredict BLOCK)
 #
 # INSTALLATION:
 #   From project root:
@@ -27,4 +35,5 @@ dependencies:
   - python>=3.11
   - nextflow>=23.0
 
-  # Tool-specific dependencies will be added as the subproject is developed
+  # Database building uses only Python standard library
+  # (pathlib, csv, json, collections, statistics, urllib)

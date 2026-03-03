@@ -1,0 +1,37 @@
+# GIGANTIC SignalP Environment
+# =============================
+#
+# Environment for the annotations_hmms SignalP BLOCK.
+# SignalP 6 predicts signal peptides and cleavage sites using deep learning.
+#
+# NOTE: SignalP 6 requires a license from DTU:
+#   https://services.healthtech.dtu.dk/services/SignalP-6.0/
+# After downloading, install with: pip install signalp-6-package/
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_signalp.yml
+#   conda activate ai_gigantic_signalp
+#   pip install /path/to/signalp-6-package/  # Manual step
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_signalp
+
+name: ai_gigantic_signalp
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # pip for SignalP installation (manual download from DTU)
+  - pip

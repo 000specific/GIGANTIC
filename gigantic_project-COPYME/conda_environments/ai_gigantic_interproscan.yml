@@ -1,0 +1,35 @@
+# GIGANTIC InterProScan Environment
+# ==================================
+#
+# Environment for the annotations_hmms InterProScan BLOCK.
+# InterProScan is a standalone Java application installed separately.
+# This environment provides Python for validation/chunking scripts and Nextflow.
+#
+# NOTE: InterProScan itself must be installed separately (standalone Java app).
+# Set interproscan_install_path in interproscan_config.yaml to its location.
+#
+# INSTALLATION:
+#   From project root:
+#   bash RUN-setup_environments.sh
+#
+#   Or manually:
+#   mamba env create -f conda_environments/ai_gigantic_interproscan.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_interproscan
+
+name: ai_gigantic_interproscan
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # InterProScan is standalone Java - not installed via conda
+  # Only Python standard library needed for validation and chunking scripts
