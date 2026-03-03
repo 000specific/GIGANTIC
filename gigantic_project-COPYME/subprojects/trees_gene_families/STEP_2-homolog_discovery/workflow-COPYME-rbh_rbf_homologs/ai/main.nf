@@ -25,7 +25,7 @@
  *
  * Data Flow:
  *   Config gene_family + rgs_file → single gene family through all 11 processes
- *   Final AGS fasta → OUTPUT_pipeline/16-output/ (symlinks in output_to_input/ by RUN-workflow.sh)
+ *   Final AGS fasta → OUTPUT_pipeline/16-output/ (symlinks in ../../output_to_input/STEP_2-homolog_discovery/ by RUN-workflow.sh)
  *
  * Script Generators:
  *   Scripts 002, 005, 011 generate bash scripts that are then executed.
@@ -756,8 +756,7 @@ workflow.onComplete {
         println "  16-output/: Final AGS (All Gene Set)"
         println ""
         println "Symlinks created by RUN-workflow.sh in:"
-        println "  ../output_to_input/ags_fastas/${params.gene_family}/  (for downstream STEP_3)"
-        println "  ai/output_to_input/                                    (archival with this run)"
+        println "  ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/${params.gene_family}/"
         println ""
         println "Next: Run STEP_3 phylogenetic analysis with AGS file"
     }

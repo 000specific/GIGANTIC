@@ -55,9 +55,9 @@ Final outputs appear in `output_to_input/`:
 
 ```
 output_to_input/
-├── step_1/rgs_fastas/<gene_family>/     # Validated RGS
-├── step_2/ags_fastas/<gene_family>/     # Homolog sequences (AGS)
-└── step_3/trees/<gene_family>/          # Trees and visualizations
+├── STEP_1-rgs_preparation/rgs_fastas/<gene_family>/     # Validated RGS
+├── STEP_2-homolog_discovery/ags_fastas/<gene_family>/   # Homolog sequences (AGS)
+└── STEP_3-phylogenetic_analysis/trees/<gene_family>/    # Trees and visualizations
 ```
 
 ## Tree Methods Available (STEP_3)

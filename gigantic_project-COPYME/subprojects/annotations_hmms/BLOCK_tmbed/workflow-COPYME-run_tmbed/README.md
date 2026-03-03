@@ -23,4 +23,4 @@ sbatch RUN-workflow.sbatch   # SLURM
 ## Outputs
 
 - Per-species 3-line format files with topology predictions (inside/outside/transmembrane per residue)
-- Results published to `OUTPUT_pipeline/` and `ai/output_to_input/`
+- Results published to `OUTPUT_pipeline/` and symlinked to `output_to_input/BLOCK_tmbed/`

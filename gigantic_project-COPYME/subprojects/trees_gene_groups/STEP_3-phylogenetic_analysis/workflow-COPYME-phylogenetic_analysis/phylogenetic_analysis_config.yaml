@@ -18,7 +18,7 @@
 input:
   # Path to STEP_2 homolog sequences (relative to this workflow directory)
   # Default: looks in STEP_2 output_to_input
-  step2_homolog_sequences_dir: "../../STEP_2-homolog_discovery/output_to_input/homolog_sequences"
+  step2_homolog_sequences_dir: "../../output_to_input/STEP_2-homolog_discovery/homolog_sequences"
 
 # ============================================================
 # PROJECT SETTINGS

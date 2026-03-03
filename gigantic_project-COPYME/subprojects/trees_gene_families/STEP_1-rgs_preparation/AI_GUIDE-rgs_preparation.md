@@ -31,7 +31,7 @@
 **Process**:
 1. User provides an RGS FASTA file with curated protein sequences
 2. Workflow validates filename format, header format, and sequence content
-3. Validated RGS is symlinked to output_to_input for STEP_2 (by RUN-workflow.sh)
+3. Validated RGS is symlinked to subproject-root output_to_input/STEP_1-rgs_preparation/ for STEP_2 (by RUN-workflow.sh)
 
 **Note**: STEP_1 is optional. Users can also provide RGS files directly to STEP_2 via INPUT_user/. STEP_1 adds validation and standardization.
 
@@ -80,12 +80,11 @@ worm	Caenorhabditis_elegans
 
 ### output_to_input
 
-Validated RGS is published to two locations:
+Validated RGS is published to the subproject-root output_to_input/:
 
 | Level | Path |
 |-------|------|
-| STEP-level | `output_to_input/rgs_fastas/<gene_family>/rgs-<gene_family>.aa` |
-| Subproject-level | `../output_to_input/step_1/rgs_fastas/<gene_family>/rgs-<gene_family>.aa` |
+| Subproject-root | `../output_to_input/STEP_1-rgs_preparation/rgs_fastas/<gene_family>/rgs-<gene_family>.aa` |
 
 ---
 
@@ -95,9 +94,8 @@ Validated RGS is published to two locations:
 STEP_1-rgs_preparation/
 ├── AI_GUIDE-rgs_preparation.md     # THIS FILE
 ├── README.md
-├── output_to_input/
-│   └── rgs_fastas/                 # Validated RGS by gene family
 └── workflow-COPYME-validate_rgs/
+# Note: output goes to ../output_to_input/STEP_1-rgs_preparation/rgs_fastas/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
@@ -124,7 +122,7 @@ STEP_1-rgs_preparation/
 | `workflow-*/rgs_config.yaml` | Gene family name, RGS file path | **YES** |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** (user provides) |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Short name to Genus_species mapping | **YES** (if needed) |
-| `output_to_input/rgs_fastas/` | Validated RGS | No (auto-created) |
+| `../output_to_input/STEP_1-rgs_preparation/rgs_fastas/` | Validated RGS | No (auto-created) |
 
 ---
 

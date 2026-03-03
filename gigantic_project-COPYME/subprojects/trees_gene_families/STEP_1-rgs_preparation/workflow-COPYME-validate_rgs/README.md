@@ -24,7 +24,7 @@ STEP_1 workflow template for validating and preparing a single RGS (Reference Ge
    - Creates standardized output and validation report
 
 2. **Export** (Process 2)
-   - Copies validated RGS to output_to_input for STEP_2
+   - Symlinks validated RGS to subproject-root output_to_input/STEP_1-rgs_preparation/ for STEP_2
 
 ---
 

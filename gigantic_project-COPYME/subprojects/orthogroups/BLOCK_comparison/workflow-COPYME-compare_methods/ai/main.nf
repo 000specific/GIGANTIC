@@ -9,13 +9,13 @@ nextflow.enable.dsl = 2
 // =============================================================================
 //
 // Two-step pipeline:
-//   1. Load standardized results from each tool's output_to_input/
+//   1. Load standardized results from subproject-root output_to_input/BLOCK_*/
 //   2. Compare orthogroup methods (overlap, statistics, size distributions)
 //
-// Reads from:
-//   - BLOCK_orthofinder/output_to_input/
-//   - BLOCK_orthohmm/output_to_input/
-//   - BLOCK_broccoli/output_to_input/
+// Reads from subproject-root output_to_input/:
+//   - output_to_input/BLOCK_orthofinder/
+//   - output_to_input/BLOCK_orthohmm/
+//   - output_to_input/BLOCK_broccoli/
 //
 // Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
@@ -68,8 +68,8 @@ process compare_methods {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
-// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
+// NOTE: Symlinks for output_to_input/BLOCK_comparison/ are created by
+// RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
 // real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================
 workflow {

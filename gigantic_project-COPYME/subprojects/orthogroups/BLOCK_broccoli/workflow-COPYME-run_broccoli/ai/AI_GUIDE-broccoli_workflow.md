@@ -29,7 +29,7 @@ bash ../RUN-workflow.sh
 ```bash
 ls OUTPUT_pipeline/*/
 wc -l OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv
-ls ../../output_to_input/
+ls ../../output_to_input/BLOCK_broccoli/
 ```
 
 ## Common Errors

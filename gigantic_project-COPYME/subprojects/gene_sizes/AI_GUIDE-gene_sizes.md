@@ -37,12 +37,12 @@ gene_sizes/
 ├── research_notebook/
 │   ├── ai_research/                    # Paper summaries
 │   └── user_research/                  # User notes
-├── output_to_input/                    # Symlinks → BLOCK output
+├── output_to_input/                    # Downstream output (contains BLOCK subdirs)
+│   └── BLOCK_analyze_gene_sizes/       # Symlinks to workflow output
 ├── upload_to_server/
 └── BLOCK_analyze_gene_sizes/
     ├── AI_GUIDE-analyze_gene_sizes.md
     ├── RUN-clean_and_record_subproject.sh
-    ├── output_to_input/                # Canonical downstream output
     └── workflow-COPYME-analyze_gene_sizes/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
@@ -53,7 +53,6 @@ gene_sizes/
             ├── AI_GUIDE-analyze_gene_sizes_workflow.md
             ├── main.nf
             ├── nextflow.config
-            ├── output_to_input/
             └── scripts/
                 ├── 001_ai-python-validate_gene_size_inputs.py
                 ├── 002_ai-python-extract_gene_metrics.py
@@ -186,7 +185,7 @@ Script 003: Compute genome-wide statistics and ranks (per species)
 Script 004: Compile cross-species summary
     │  → 4-output/: combined tables, processing status, downstream directories
     ▼
-output_to_input/ (symlinks for downstream subprojects)
+output_to_input/BLOCK_analyze_gene_sizes/ (symlinks for downstream subprojects)
 ```
 
 ---

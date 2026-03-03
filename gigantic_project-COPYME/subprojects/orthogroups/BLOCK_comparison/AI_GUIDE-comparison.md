@@ -11,15 +11,15 @@
 
 ## Comparison Overview
 
-The comparison project performs cross-method analysis of orthogroup detection results from OrthoFinder, OrthoHMM, and Broccoli. It reads standardized output from each tool's `output_to_input/` directory and produces comparative statistics.
+The comparison project performs cross-method analysis of orthogroup detection results from OrthoFinder, OrthoHMM, and Broccoli. It reads standardized output from the subproject-root `output_to_input/BLOCK_*/` directories and produces comparative statistics.
 
-**Prerequisite**: At least 2 of the 3 tool projects must have completed their pipelines and populated their `output_to_input/` directories.
+**Prerequisite**: At least 2 of the 3 tool projects must have completed their pipelines and populated their `output_to_input/BLOCK_*/` directories.
 
 ## Pipeline Scripts (2 steps)
 
 | # | Script | Purpose |
 |---|--------|---------|
-| 001 | `001_ai-python-load_tool_results.py` | Load standardized results from tool output_to_input/ |
+| 001 | `001_ai-python-load_tool_results.py` | Load standardized results from output_to_input/BLOCK_*/ |
 | 002 | `002_ai-python-compare_orthogroup_methods.py` | Cross-method comparison and statistics |
 
 ## Comparison Output

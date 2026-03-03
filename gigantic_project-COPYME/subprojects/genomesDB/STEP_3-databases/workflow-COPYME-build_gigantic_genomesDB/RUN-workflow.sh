@@ -24,7 +24,7 @@
 #
 # OUTPUTS:
 # - Per-genome BLAST databases in OUTPUT_pipeline/2-output/gigantic-T1-blastp/
-# - Databases symlinked to output_to_input/ for downstream use (by RUN-workflow.sh)
+# - Databases symlinked to ../../output_to_input/STEP_3-databases/ for downstream use (by RUN-workflow.sh)
 #
 ################################################################################
 
@@ -84,7 +84,7 @@ fi
 echo "  [OK] Configuration file found"
 
 # Check for species selection manifest
-MANIFEST_PATH="../../output_to_input/species_selection_manifest.tsv"
+MANIFEST_PATH="../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv"
 
 if [ ! -f "${MANIFEST_PATH}" ]; then
     echo "ERROR: Species selection manifest not found!"
@@ -140,12 +140,11 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. ../../output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/     (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/STEP_3-databases/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -154,32 +153,22 @@ fi
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- STEP-level output_to_input (canonical) ---
-STEP_SHARED_DIR="../../output_to_input"
-mkdir -p "${STEP_SHARED_DIR}"
+# Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_3-databases"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale BLAST database symlinks from previous runs
-# (use -maxdepth 1 to only remove top-level symlinks, not from other STEPs)
-if [ -L "${STEP_SHARED_DIR}/gigantic-T1-blastp" ]; then
-    rm "${STEP_SHARED_DIR}/gigantic-T1-blastp"
+if [ -L "${SUBPROJECT_SHARED_DIR}/gigantic-T1-blastp" ]; then
+    rm "${SUBPROJECT_SHARED_DIR}/gigantic-T1-blastp"
 fi
 
-ln -sf "../STEP_3-databases/workflow-COPYME-build_gigantic_genomesDB/OUTPUT_pipeline/2-output/gigantic-T1-blastp" \
-    "${STEP_SHARED_DIR}/gigantic-T1-blastp"
+ln -sf "../../STEP_3-databases/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/gigantic-T1-blastp" \
+    "${SUBPROJECT_SHARED_DIR}/gigantic-T1-blastp"
 
-echo "  STEP output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-ln -sf "../../OUTPUT_pipeline/2-output/gigantic-T1-blastp" \
-    "${WORKFLOW_SHARED_DIR}/gigantic-T1-blastp"
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_3-databases/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -190,8 +179,7 @@ echo "  OUTPUT_pipeline/1-output/  Filtered species manifest"
 echo "  OUTPUT_pipeline/2-output/  Per-genome BLAST databases"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/     (archival with this run)"
+echo "  ../../output_to_input/STEP_3-databases/  (for downstream subprojects)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

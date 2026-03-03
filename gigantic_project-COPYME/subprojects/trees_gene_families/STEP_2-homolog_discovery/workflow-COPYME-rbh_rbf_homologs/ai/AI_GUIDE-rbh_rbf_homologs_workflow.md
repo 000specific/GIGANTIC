@@ -197,7 +197,7 @@ grep -c ">" OUTPUT_pipeline/14-output/*.aa 2>/dev/null
 grep -c ">" OUTPUT_pipeline/16-output/*.aa 2>/dev/null
 
 # Verify output_to_input
-ls ../../output_to_input/ags_fastas/*/
+ls ../../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/
 ```
 
 ---
@@ -265,5 +265,5 @@ bash RUN-workflow.sh
 ## After Successful Run
 
 1. **Verify**: Check final AGS has expected sequence count
-2. **Check output_to_input**: `ls ../../output_to_input/ags_fastas/`
+2. **Check output_to_input**: `ls ../../../output_to_input/STEP_2-homolog_discovery/ags_fastas/`
 3. **Next step**: Proceed to STEP_3 phylogenetic analysis

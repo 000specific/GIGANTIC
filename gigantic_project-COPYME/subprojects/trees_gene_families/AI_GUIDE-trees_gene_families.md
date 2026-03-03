@@ -95,7 +95,7 @@ Where N is the total sequence count in the file.
 - Copy validated RGS to output_to_input
 
 **Outputs**:
-- `STEP_1-rgs_preparation/output_to_input/rgs_fastas/<gene_family>/rgs-<gene_family>.aa`
+- `output_to_input/STEP_1-rgs_preparation/rgs_fastas/<gene_family>/rgs-<gene_family>.aa`
 
 ### STEP_2-homolog_discovery
 
@@ -113,7 +113,7 @@ Where N is the total sequence count in the file.
 - Concatenate into final AGS
 
 **Outputs**:
-- `STEP_2-homolog_discovery/output_to_input/ags_fastas/<gene_family>/16_ai-ags-*.aa`
+- `output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/16_ai-ags-*.aa`
 
 ### STEP_3-phylogenetic_analysis
 
@@ -128,7 +128,7 @@ Where N is the total sequence count in the file.
 - Tree visualization (human-friendly and computer-vision)
 
 **Outputs**:
-- `STEP_3-phylogenetic_analysis/output_to_input/trees/<gene_family>/*.newick, *.svg`
+- `output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/*.newick, *.svg`
 
 ---
 
@@ -144,27 +144,24 @@ trees_gene_families/
 ├── user_research/                     # Personal workspace
 ├── upload_to_server/                  # Server sharing
 │
-├── output_to_input/                   # FINAL OUTPUTS for downstream
-│   ├── step_1/rgs_fastas/             # Validated RGS by gene family
-│   ├── step_2/ags_fastas/             # AGS homolog sequences by gene family
-│   └── step_3/trees/                  # Phylogenetic trees by gene family
+├── output_to_input/                   # FINAL OUTPUTS for downstream (single location)
+│   ├── STEP_1-rgs_preparation/rgs_fastas/    # Validated RGS by gene family
+│   ├── STEP_2-homolog_discovery/ags_fastas/  # AGS homolog sequences by gene family
+│   └── STEP_3-phylogenetic_analysis/trees/   # Phylogenetic trees by gene family
 │
 ├── STEP_1-rgs_preparation/
 │   ├── AI_GUIDE-rgs_preparation.md
 │   ├── README.md
-│   ├── output_to_input/rgs_fastas/
 │   └── workflow-COPYME-validate_rgs/
 │
 ├── STEP_2-homolog_discovery/
 │   ├── AI_GUIDE-homolog_discovery.md
 │   ├── README.md
-│   ├── output_to_input/ags_fastas/
 │   └── workflow-COPYME-rbh_rbf_homologs/
 │
 └── STEP_3-phylogenetic_analysis/
     ├── AI_GUIDE-phylogenetic_analysis.md
     ├── README.md
-    ├── output_to_input/trees/
     └── workflow-COPYME-phylogenetic_analysis/
 ```
 
@@ -176,16 +173,13 @@ trees_gene_families/
 User provides RGS FASTA + species keeper list
        │
        ▼
-STEP_1-rgs_preparation/output_to_input/rgs_fastas/
+output_to_input/STEP_1-rgs_preparation/rgs_fastas/
        │ (optional - user can also provide RGS directly to STEP_2)
        ▼
-STEP_2-homolog_discovery/output_to_input/ags_fastas/
+output_to_input/STEP_2-homolog_discovery/ags_fastas/
        │
        ▼
-STEP_3-phylogenetic_analysis/output_to_input/trees/
-       │
-       ▼
-trees_gene_families/output_to_input/step_3/trees/
+output_to_input/STEP_3-phylogenetic_analysis/trees/
        │
        ▼
 (Downstream subprojects or publication)
@@ -203,15 +197,15 @@ trees_gene_families/output_to_input/step_3/trees/
 |------------|------|------|
 | genomesDB | BLAST databases (per-species .aa files) | `../genomesDB/output_to_input/gigantic_T1_blastp/` |
 | genomesDB | Header mapping file (short → full IDs) | `../genomesDB/output_to_input/gigantic_T1_blastp_header_map` |
-| phylonames | Species name mappings | `../phylonames/BLOCK_generate_phylonames/output_to_input/maps/` |
+| phylonames | Species name mappings | `../phylonames/output_to_input/BLOCK_generate_phylonames/maps/` |
 
 ### Outputs TO
 
 | Location | What | Consumers |
 |----------|------|-----------|
-| `output_to_input/step_1/rgs_fastas/` | Validated RGS files | Internal (STEP_2) |
-| `output_to_input/step_2/ags_fastas/` | AGS homolog sets | Internal (STEP_3) |
-| `output_to_input/step_3/trees/` | Phylogenetic trees | Publication, downstream |
+| `output_to_input/STEP_1-rgs_preparation/rgs_fastas/` | Validated RGS files | Internal (STEP_2) |
+| `output_to_input/STEP_2-homolog_discovery/ags_fastas/` | AGS homolog sets | Internal (STEP_3) |
+| `output_to_input/STEP_3-phylogenetic_analysis/trees/` | Phylogenetic trees | Publication, downstream |
 
 ---
 
@@ -258,7 +252,7 @@ research_notebook/research_ai/subproject-trees_gene_families/
 | "RGS file not found" | Wrong path in config | Check `rgs_file` path in config YAML |
 | "Species not in keeper list" | Species not in species_keeper_list.tsv | Add species to INPUT_user/species_keeper_list.tsv |
 | "No BLAST hits" | E-value too stringent or wrong RGS | Try less stringent E-value or check RGS sequences |
-| STEP_3 can't find AGS | STEP_2 not complete | Run STEP_2 first, check output_to_input/ags_fastas/ |
+| STEP_3 can't find AGS | STEP_2 not complete | Run STEP_2 first, check output_to_input/STEP_2-homolog_discovery/ags_fastas/ |
 | Tree building fails | Insufficient sequences after filtering | Check species keeper list, may need more species |
 | "Header mapping not found" | genomesDB header map missing | Check genomesDB/output_to_input/gigantic_T1_blastp_header_map |
 
@@ -269,18 +263,13 @@ research_notebook/research_ai/subproject-trees_gene_families/
 ls ../genomesDB/output_to_input/gigantic_T1_blastp/ | head
 
 # Check STEP_1 outputs
-ls STEP_1-rgs_preparation/output_to_input/rgs_fastas/
+ls output_to_input/STEP_1-rgs_preparation/rgs_fastas/
 
 # Check STEP_2 outputs
-ls STEP_2-homolog_discovery/output_to_input/ags_fastas/
+ls output_to_input/STEP_2-homolog_discovery/ags_fastas/
 
 # Check STEP_3 outputs
-ls STEP_3-phylogenetic_analysis/output_to_input/trees/
-
-# Check subproject-level outputs
-ls output_to_input/step_1/rgs_fastas/
-ls output_to_input/step_2/ags_fastas/
-ls output_to_input/step_3/trees/
+ls output_to_input/STEP_3-phylogenetic_analysis/trees/
 ```
 
 ---

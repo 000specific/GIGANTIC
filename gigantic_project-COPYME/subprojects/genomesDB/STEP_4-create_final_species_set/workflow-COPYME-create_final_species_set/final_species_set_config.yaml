@@ -53,12 +53,12 @@ output:
 # 2. User edits INPUT_user/selected_species.txt (or uses all species by default)
 # 3. Script 001 validates the species selection against STEP_2 and STEP_3
 # 4. Script 002 copies selected proteomes, blastp databases, and gene annotations
-# 5. Outputs go to output_to_input/ with speciesN_ naming convention
+# 5. Outputs go to ../../output_to_input/STEP_4-create_final_species_set/ with speciesN_ naming convention
 #
 # OUTPUT STRUCTURE:
-#   output_to_input/speciesN_gigantic_T1_proteomes/       - Selected proteomes
-#   output_to_input/speciesN_gigantic_T1_blastp/          - Selected BLAST databases
-#   output_to_input/speciesN_gigantic_gene_annotations/   - Selected GFF/GTF files (subset - only species with annotations)
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/       - Selected proteomes
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/          - Selected BLAST databases
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_gene_annotations/   - Selected GFF/GTF files (subset - only species with annotations)
 #
 # Where N = count of selected species (e.g., species69, species71)
 # NOTE: Gene annotations are optional - not all species have GFF/GTF files.

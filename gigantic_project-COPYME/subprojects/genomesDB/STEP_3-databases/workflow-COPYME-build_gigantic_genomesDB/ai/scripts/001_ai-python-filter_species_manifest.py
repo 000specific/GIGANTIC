@@ -90,7 +90,7 @@ def filter_manifest(
     if not input_manifest_path.exists():
         logger.error( f"CRITICAL ERROR: Input manifest not found: {input_manifest_path}" )
         logger.error( "STEP_2 must be run before STEP_3." )
-        logger.error( "Expected location: STEP_2/output_to_input/species_selection_manifest.tsv" )
+        logger.error( "Expected location: output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv" )
         sys.exit( 1 )
 
     total_species = 0
@@ -185,8 +185,8 @@ def main():
     parser.add_argument(
         '--input-manifest',
         type = str,
-        default = '../../STEP_2-standardize_and_evaluate/output_to_input/species_selection_manifest.tsv',
-        help = 'Path to species selection manifest from STEP_2 (default: ../../STEP_2-standardize_and_evaluate/output_to_input/species_selection_manifest.tsv)'
+        default = '../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv',
+        help = 'Path to species selection manifest from STEP_2 (default: ../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv)'
     )
 
     parser.add_argument(

@@ -12,7 +12,7 @@ Generate standardized phylogenetic names from NCBI taxonomy.
 
 ## Results
 
-Your mapping file appears in `OUTPUT_pipeline/3-output/` and is also copied to `../output_to_input/maps/` for downstream subprojects.
+Your mapping file appears in `OUTPUT_pipeline/3-output/` and is also symlinked to `../../output_to_input/BLOCK_generate_phylonames/maps/` for downstream subprojects.
 
 A **taxonomy summary** (Markdown and HTML) is generated in `OUTPUT_pipeline/5-output/` showing:
 - Taxonomic distribution (species counts by kingdom/phylum)

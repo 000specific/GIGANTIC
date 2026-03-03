@@ -138,13 +138,13 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. BLOCK/output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/    (archival, with this workflow run)
+# Symlinks are created in the subproject-root output_to_input/ directory:
+#   ../../output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/
 #
+# This is the single canonical location for downstream subprojects.
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
 # ============================================================================
@@ -152,49 +152,27 @@ fi
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- BLOCK-level output_to_input (canonical) ---
-# Symlink location: ../output_to_input/ncbi_nr_top_hits/
+# --- Subproject-root output_to_input (canonical) ---
+# Symlink location: ../../output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/
 # Real files:       OUTPUT_pipeline/5-output/ and OUTPUT_pipeline/6-output/
-# Relative from symlink to real: ../../workflow-COPYME-diamond_ncbi_nr/OUTPUT_pipeline/...
+# Relative from symlink to real: ../../../BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/OUTPUT_pipeline/...
 
-SUBPROJECT_SHARED_DIR="../output_to_input/ncbi_nr_top_hits"
-mkdir -p "${SUBPROJECT_SHARED_DIR}"
+OUTPUT_TO_INPUT_DIR="../../output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits"
+mkdir -p "${OUTPUT_TO_INPUT_DIR}"
 
 # Remove any stale symlinks from previous runs
-find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
+find "${OUTPUT_TO_INPUT_DIR}" -type l -delete 2>/dev/null
 
 for file_path in OUTPUT_pipeline/5-output/*_top_hits.tsv OUTPUT_pipeline/5-output/*_statistics.tsv; do
     [ -f "${file_path}" ] || continue
     file_name="$(basename "${file_path}")"
-    ln -sf "../../workflow-COPYME-diamond_ncbi_nr/${file_path}" "${SUBPROJECT_SHARED_DIR}/${file_name}"
+    ln -sf "../../../BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/${file_path}" "${OUTPUT_TO_INPUT_DIR}/${file_name}"
 done
 
-ln -sf "../../workflow-COPYME-diamond_ncbi_nr/OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv" \
-    "${SUBPROJECT_SHARED_DIR}/all_species_statistics.tsv"
+ln -sf "../../../BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv" \
+    "${OUTPUT_TO_INPUT_DIR}/all_species_statistics.tsv"
 
-echo "  BLOCK output_to_input/ncbi_nr_top_hits/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-# Symlink location: ai/output_to_input/ncbi_nr_top_hits/
-# Real files:       OUTPUT_pipeline/5-output/ and OUTPUT_pipeline/6-output/
-# Relative from symlink to real: ../../OUTPUT_pipeline/...
-
-WORKFLOW_SHARED_DIR="ai/output_to_input/ncbi_nr_top_hits"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-for file_path in OUTPUT_pipeline/5-output/*_top_hits.tsv OUTPUT_pipeline/5-output/*_statistics.tsv; do
-    [ -f "${file_path}" ] || continue
-    file_name="$(basename "${file_path}")"
-    ln -sf "../../../OUTPUT_pipeline/5-output/${file_name}" "${WORKFLOW_SHARED_DIR}/${file_name}"
-done
-
-ln -sf "../../../OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv" \
-    "${WORKFLOW_SHARED_DIR}/all_species_statistics.tsv"
-
-echo "  Workflow ai/output_to_input/ncbi_nr_top_hits/ -> symlinks created"
+echo "  output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -204,8 +182,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 6-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/ncbi_nr_top_hits/  (for downstream subprojects)"
-echo "  ai/output_to_input/ncbi_nr_top_hits/  (archival with this run)"
+echo "  ../../output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/  (for downstream subprojects)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

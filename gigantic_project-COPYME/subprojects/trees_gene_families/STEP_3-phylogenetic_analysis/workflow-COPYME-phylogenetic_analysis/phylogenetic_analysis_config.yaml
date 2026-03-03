@@ -9,7 +9,7 @@
 # 1. Copy the template:
 #    cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 # 2. Edit this config file (set gene_family name)
-# 3. Ensure STEP_2 has completed (AGS files in output_to_input/)
+# 3. Ensure STEP_2 has completed (AGS files in trees_gene_families/output_to_input/STEP_2-homolog_discovery/)
 # 4. Choose tree-building methods below (tree_methods section)
 # 5. Run: bash RUN-workflow.sh
 
@@ -27,8 +27,8 @@ gene_family:
 
 input:
   # Path to STEP_2 AGS sequences (relative to this workflow directory)
-  # Default: looks in STEP_2 output_to_input
-  step2_ags_fastas_dir: "../../STEP_2-homolog_discovery/output_to_input/ags_fastas"
+  # Default: looks in subproject-root output_to_input/STEP_2-homolog_discovery
+  step2_ags_fastas_dir: "../../output_to_input/STEP_2-homolog_discovery/ags_fastas"
 
 # ============================================================
 # PROJECT SETTINGS

@@ -20,8 +20,8 @@ nextflow.enable.dsl = 2
 //   006: Compile master statistics    -> 6-output/
 //
 // All real output files go to OUTPUT_pipeline/N-output/ directories.
-// Symlinks for output_to_input/ are created by
-// RUN-workflow.sh after the pipeline completes (not by NextFlow).
+// Symlinks for the subproject-root output_to_input/BLOCK_diamond_ncbi_nr/
+// are created by RUN-workflow.sh after the pipeline completes (not by NextFlow).
 //
 // Research documentation: Every step produces visible, documented output
 // in OUTPUT_pipeline/. Nothing is passed silently between steps.
@@ -216,9 +216,9 @@ process compile_statistics {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
-// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
-// real files to OUTPUT_pipeline/N-output/ directories.
+// NOTE: Symlinks for the subproject-root output_to_input/BLOCK_diamond_ncbi_nr/
+// are created by RUN-workflow.sh AFTER this pipeline completes. NextFlow only
+// writes real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================
 workflow {
 

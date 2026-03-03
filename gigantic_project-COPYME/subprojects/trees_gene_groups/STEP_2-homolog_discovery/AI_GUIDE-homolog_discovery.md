@@ -109,8 +109,7 @@ OUTPUT_pipeline/
 
 | Level | Path |
 |-------|------|
-| STEP-level | `output_to_input/ags_fastas/<gene_group>/16_ai-ags-*.aa` |
-| Subproject-level | `../output_to_input/step_2/ags_fastas/<gene_group>/16_ai-ags-*.aa` |
+| Subproject-root | `../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_group>/16_ai-ags-*.aa` |
 
 ---
 
@@ -120,8 +119,6 @@ OUTPUT_pipeline/
 STEP_2-homolog_discovery/
 ├── AI_GUIDE-homolog_discovery.md      # THIS FILE
 ├── README.md
-├── output_to_input/
-│   └── ags_fastas/                    # Final AGS by gene group
 └── workflow-COPYME-rbh_rbf_homologs/
     ├── README.md
     ├── RUN-workflow.sh
@@ -155,7 +152,7 @@ STEP_2-homolog_discovery/
 | `workflow-*/INPUT_user/species_keeper_list.tsv` | Species to keep in final AGS | **YES** |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Map short names to Genus_species | **YES** (if needed) |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** |
-| `output_to_input/ags_fastas/` | Final AGS files | No (auto-created) |
+| `../output_to_input/STEP_2-homolog_discovery/ags_fastas/` | Final AGS files | No (auto-created) |
 
 ---
 

@@ -89,7 +89,7 @@ def load_discovery_manifest( manifest_path: Path, logger: logging.Logger ) -> di
 
     with open( manifest_path, 'r' ) as input_manifest:
         # Tool_Name (name of annotation tool)	Tool_Available (yes or no ...)	...
-        # metapredict	yes	/path/to/output_to_input	5	*_metapredict_idrs.tsv
+        # metapredict	yes	output_to_input/BLOCK_metapredict	5	*_metapredict_idrs.tsv
         for line in input_manifest:
             line = line.strip()
 
@@ -220,7 +220,7 @@ def parse_idr_boundaries( boundaries_string: str, protein_identifier: str,
 def parse_metapredict_files( metapredict_record: dict, output_directory: Path,
                               logger: logging.Logger ) -> None:
     """
-    Parse all MetaPredict IDR TSV files found in the output_to_input directory.
+    Parse all MetaPredict IDR TSV files found in the tool output directory.
     Create standardized TSV files per species.
     """
 

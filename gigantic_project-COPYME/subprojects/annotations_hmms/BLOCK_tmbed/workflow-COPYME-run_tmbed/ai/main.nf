@@ -20,7 +20,7 @@ nextflow.enable.dsl = 2
 //
 // Where: H/h = TM helix, B/b = beta barrel, S = signal peptide, . = other
 //
-// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
+// Symlinks for output_to_input/BLOCK_tmbed/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
 
 // Script directory
@@ -69,8 +69,8 @@ process run_tmbed {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
-// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
+// NOTE: Symlinks for output_to_input/BLOCK_tmbed/ are created by
+// RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
 // real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================
 workflow {

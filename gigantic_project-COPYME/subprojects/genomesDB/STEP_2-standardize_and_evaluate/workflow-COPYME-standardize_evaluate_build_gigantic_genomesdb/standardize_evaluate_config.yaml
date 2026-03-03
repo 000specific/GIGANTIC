@@ -19,16 +19,16 @@
 
 inputs:
   # Path to phylonames mapping file (from phylonames subproject)
-  phylonames_mapping: "../../../phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
+  phylonames_mapping: "../../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv"
 
   # Path to source proteomes (from STEP_1)
-  proteomes: "../../STEP_1-sources/output_to_input/T1_proteomes"
+  proteomes: "../../output_to_input/STEP_1-sources/T1_proteomes"
 
   # Path to source genomes (from STEP_1, optional)
-  genomes: "../../STEP_1-sources/output_to_input/genomes"
+  genomes: "../../output_to_input/STEP_1-sources/genomes"
 
   # Path to gene annotations (from STEP_1, optional)
-  gene_annotations: "../../STEP_1-sources/output_to_input/gene_annotations"
+  gene_annotations: "../../output_to_input/STEP_1-sources/gene_annotations"
 
   # Path to BUSCO lineages manifest (in INPUT_user/)
   busco_lineages: "INPUT_user/busco_lineages.txt"
@@ -72,5 +72,5 @@ busco:
 #   OUTPUT_pipeline/5-output/  - BUSCO results
 #   OUTPUT_pipeline/6-output/  - Quality summary and manifest
 #
-# The species manifest is also copied to ../../output_to_input/ for STEP_3.
+# The species manifest is also copied to ../../output_to_input/STEP_2-standardize_and_evaluate/ for STEP_3.
 #

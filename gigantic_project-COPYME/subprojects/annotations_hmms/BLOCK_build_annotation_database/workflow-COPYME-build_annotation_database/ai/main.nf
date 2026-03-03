@@ -45,7 +45,7 @@ nextflow.enable.dsl = 2
 // Nextflow work directories). Parser log files serve as ordering signals so
 // that downstream scripts wait for parsers to finish publishing.
 //
-// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
+// Symlinks for output_to_input/BLOCK_build_annotation_database/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
 
 scripts_dir = "${projectDir}/scripts"

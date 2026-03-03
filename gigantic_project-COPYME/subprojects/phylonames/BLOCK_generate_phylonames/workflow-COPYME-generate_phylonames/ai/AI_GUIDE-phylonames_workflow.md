@@ -181,7 +181,7 @@ sbatch RUN-workflow.sbatch
 ### Downstream Location
 
 ```
-../output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv
+../../output_to_input/BLOCK_generate_phylonames/maps/[project]_map-genus_species_X_phylonames.tsv
 ```
 
 This symlink is what other subprojects read.
@@ -207,7 +207,7 @@ head OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
 ls OUTPUT_pipeline/5-output/
 
 # Is symlink in place?
-ls -la ../output_to_input/maps/
+ls -la ../../output_to_input/BLOCK_generate_phylonames/maps/
 ```
 
 ---
@@ -301,6 +301,6 @@ python3 ai/scripts/003_ai-python-create_species_mapping.py \
 
 ## After Successful Run
 
-1. **Verify output**: `head ../output_to_input/maps/*_map*.tsv`
+1. **Verify output**: `head ../../output_to_input/BLOCK_generate_phylonames/maps/*_map*.tsv`
 2. **Next subproject**: Guide user to `genomesDB`
-3. **Keep results**: Other subprojects read from `output_to_input/maps/`
+3. **Keep results**: Other subprojects read from `../../output_to_input/BLOCK_generate_phylonames/maps/`

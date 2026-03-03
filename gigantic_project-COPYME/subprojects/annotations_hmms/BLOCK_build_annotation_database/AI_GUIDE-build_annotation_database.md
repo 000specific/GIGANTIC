@@ -57,7 +57,7 @@ From other tools (3): deeploc, signalp, tmbed, metapredict
 
 ## Auto-Discovery Pattern
 
-Script 001 scans `../BLOCK_*/output_to_input/` for available results:
+Script 001 scans `output_to_input/BLOCK_*/` (at subproject root) for available results:
 - Reports which tools were found and which are missing
 - Requires minimum 1 tool to proceed
 - Creates a discovery manifest used by downstream scripts

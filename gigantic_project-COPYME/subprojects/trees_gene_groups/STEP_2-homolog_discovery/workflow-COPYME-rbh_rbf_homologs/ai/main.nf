@@ -657,7 +657,7 @@ workflow {
             // Resolve RGS file path (check INPUT_user/ first, then STEP_1 output_to_input)
             def rgs_path = file( "${workflow_dir}/INPUT_user/${rgs_filename}" )
             if ( !rgs_path.exists() ) {
-                rgs_path = file( "${workflow_dir}/../../STEP_1-rgs_preparation/output_to_input/rgs_sequences/${family_name}/${rgs_filename}" )
+                rgs_path = file( "${workflow_dir}/../../output_to_input/STEP_1-rgs_preparation/rgs_sequences/${family_name}/${rgs_filename}" )
             }
             if ( !rgs_path.exists() ) {
                 error "RGS file not found for ${family_name}: ${rgs_filename}"
@@ -673,7 +673,7 @@ workflow {
     gene_families.each { family_name, rgs_filename ->
         def rgs_path = file( "${workflow_dir}/INPUT_user/${rgs_filename}" )
         if ( !rgs_path.exists() ) {
-            rgs_path = file( "${workflow_dir}/../../STEP_1-rgs_preparation/output_to_input/rgs_sequences/${family_name}/${rgs_filename}" )
+            rgs_path = file( "${workflow_dir}/../../output_to_input/STEP_1-rgs_preparation/rgs_sequences/${family_name}/${rgs_filename}" )
         }
         if ( rgs_path.exists() ) {
             log.info "\nDetermining RBH species for ${family_name}..."
@@ -813,8 +813,7 @@ workflow.onComplete {
         println "  16-output/: Final AGS (All Gene Set)"
         println ""
         println "Symlinks created by RUN-workflow.sh in:"
-        println "  ../../output_to_input/  (STEP-level, for downstream STEP_3)"
-        println "  ai/output_to_input/     (archival with this workflow run)"
+        println "  ../../output_to_input/STEP_2-homolog_discovery/  (for downstream STEP_3)"
         println ""
         println "Next: Run STEP_3 phylogenetic analysis with AGS files"
     }

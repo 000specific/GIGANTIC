@@ -90,7 +90,7 @@ def load_discovery_manifest( manifest_path: Path, logger: logging.Logger ) -> di
 
     with open( manifest_path, 'r' ) as input_manifest:
         # Tool_Name (name of annotation tool)	Tool_Available (yes or no ...)	...
-        # deeploc	yes	/path/to/output_to_input	5	*_deeploc_predictions.csv
+        # deeploc	yes	output_to_input/BLOCK_deeploc	5	*_deeploc_predictions.csv
         for line in input_manifest:
             line = line.strip()
 
@@ -169,7 +169,7 @@ def write_standardized_header() -> str:
 def parse_deeploc_files( deeploc_record: dict, output_directory: Path,
                           logger: logging.Logger ) -> None:
     """
-    Parse all DeepLoc CSV prediction files found in the output_to_input directory.
+    Parse all DeepLoc CSV prediction files found in the tool output directory.
     Create standardized TSV files per species.
     """
 

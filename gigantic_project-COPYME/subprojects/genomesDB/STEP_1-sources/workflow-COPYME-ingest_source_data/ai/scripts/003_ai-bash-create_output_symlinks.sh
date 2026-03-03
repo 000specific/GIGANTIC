@@ -6,9 +6,9 @@
 #
 # STEP 3 of 3 in the source data ingestion workflow.
 #
-# Creates symlinks in STEP_1-sources/output_to_input/ pointing to the
-# hard-copied files in OUTPUT_pipeline/2-output/. Also writes a manifest
-# documenting every symlink to OUTPUT_pipeline/3-output/.
+# Creates symlinks in output_to_input/STEP_1-sources/ (at subproject root)
+# pointing to the hard-copied files in OUTPUT_pipeline/2-output/.
+# Also writes a manifest documenting every symlink to OUTPUT_pipeline/3-output/.
 #
 # This provides a clean interface for STEP_2 while preserving the
 # archived copies in OUTPUT_pipeline/2-output/.

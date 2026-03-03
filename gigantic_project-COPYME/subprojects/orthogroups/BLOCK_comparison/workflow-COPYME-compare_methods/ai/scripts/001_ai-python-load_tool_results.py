@@ -5,20 +5,21 @@
 """
 001_ai-python-load_tool_results.py
 
-Loads standardized orthogroup results from each tool project's output_to_input/
-directory. Validates that all expected files are present and creates a unified
-dataset for cross-method comparison in script 002.
+Loads standardized orthogroup results from the subproject-root
+output_to_input/BLOCK_*/ directories. Validates that all expected files
+are present and creates a unified dataset for cross-method comparison
+in script 002.
 
-Each tool project produces identical output_to_input/ contents:
+Each tool project produces identical output_to_input/BLOCK_*/ contents:
     - orthogroups_gigantic_ids.tsv (orthogroup assignments)
     - gene_count_gigantic_ids.tsv (gene counts per species per orthogroup)
     - summary_statistics.tsv (overall clustering statistics)
     - per_species_summary.tsv (per-species orthogroup statistics)
 
 Input:
-    --orthofinder-dir: Path to BLOCK_orthofinder/output_to_input/
-    --orthohmm-dir: Path to BLOCK_orthohmm/output_to_input/
-    --broccoli-dir: Path to BLOCK_broccoli/output_to_input/
+    --orthofinder-dir: Path to output_to_input/BLOCK_orthofinder/
+    --orthohmm-dir: Path to output_to_input/BLOCK_orthohmm/
+    --broccoli-dir: Path to output_to_input/BLOCK_broccoli/
 
 Output:
     OUTPUT_pipeline/1-output/1_ai-loaded_tool_results_summary.tsv
@@ -29,9 +30,9 @@ Output:
 
 Usage:
     python3 001_ai-python-load_tool_results.py \\
-        --orthofinder-dir ../../BLOCK_orthofinder/output_to_input \\
-        --orthohmm-dir ../../BLOCK_orthohmm/output_to_input \\
-        --broccoli-dir ../../BLOCK_broccoli/output_to_input
+        --orthofinder-dir ../../output_to_input/BLOCK_orthofinder \\
+        --orthohmm-dir ../../output_to_input/BLOCK_orthohmm \\
+        --broccoli-dir ../../output_to_input/BLOCK_broccoli
 """
 
 import argparse
@@ -67,7 +68,7 @@ def setup_logging( output_directory: Path ) -> logging.Logger:
 
 def load_tool_results( tool_name: str, tool_directory: Path, output_tool_directory: Path, logger: logging.Logger ) -> dict:
     """
-    Load and validate results from one tool project's output_to_input/ directory.
+    Load and validate results from one tool's output_to_input/BLOCK_*/ directory.
 
     Returns dictionary with tool summary information.
     """
@@ -154,22 +155,22 @@ def main():
     parser.add_argument(
         '--orthofinder-dir',
         type = str,
-        default = '../../BLOCK_orthofinder/output_to_input',
-        help = 'Path to BLOCK_orthofinder/output_to_input/ (default: ../../BLOCK_orthofinder/output_to_input)'
+        default = '../../output_to_input/BLOCK_orthofinder',
+        help = 'Path to output_to_input/BLOCK_orthofinder/ (default: ../../output_to_input/BLOCK_orthofinder)'
     )
 
     parser.add_argument(
         '--orthohmm-dir',
         type = str,
-        default = '../../BLOCK_orthohmm/output_to_input',
-        help = 'Path to BLOCK_orthohmm/output_to_input/ (default: ../../BLOCK_orthohmm/output_to_input)'
+        default = '../../output_to_input/BLOCK_orthohmm',
+        help = 'Path to output_to_input/BLOCK_orthohmm/ (default: ../../output_to_input/BLOCK_orthohmm)'
     )
 
     parser.add_argument(
         '--broccoli-dir',
         type = str,
-        default = '../../BLOCK_broccoli/output_to_input',
-        help = 'Path to BLOCK_broccoli/output_to_input/ (default: ../../BLOCK_broccoli/output_to_input)'
+        default = '../../output_to_input/BLOCK_broccoli',
+        help = 'Path to output_to_input/BLOCK_broccoli/ (default: ../../output_to_input/BLOCK_broccoli)'
     )
 
     parser.add_argument(

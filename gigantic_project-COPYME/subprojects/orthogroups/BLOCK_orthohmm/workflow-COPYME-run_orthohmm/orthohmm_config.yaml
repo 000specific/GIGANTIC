@@ -8,7 +8,7 @@
 # These values are passed to nextflow.config via command-line overrides.
 
 # Input proteomes directory (from genomesDB output_to_input)
-proteomes_dir: "../../genomesDB/STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes"
+proteomes_dir: "../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes"
 
 # OrthoHMM parameters
 cpus: 8

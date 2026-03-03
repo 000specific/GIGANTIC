@@ -35,7 +35,7 @@ Create `INPUT_user/proteome_manifest.tsv`:
 
 ```tsv
 species_name	proteome_path	phyloname
-Homo_sapiens	../../genomesDB/output_to_input/proteomes/...aa	Metazoa_Chordata_..._Homo_sapiens
+Homo_sapiens	../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/...aa	Metazoa_Chordata_..._Homo_sapiens
 ```
 
 See `INPUT_user/proteome_manifest_example.tsv` for a complete example.

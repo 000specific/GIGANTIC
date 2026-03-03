@@ -22,7 +22,7 @@
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output/ through 16-output/
-# AGS files symlinked to output_to_input/ (by RUN-workflow.sh)
+# AGS files symlinked to ../../output_to_input/STEP_2-homolog_discovery/ (by RUN-workflow.sh)
 #
 ################################################################################
 
@@ -107,12 +107,11 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input (subproject root)
 # ============================================================================
 # Real files live in OUTPUT_pipeline/1-output/ through 16-output/ (created by
-# NextFlow above). Symlinks are created in two locations:
-#   1. ../output_to_input/  (STEP-level, for downstream STEP_3)
-#   2. ai/output_to_input/  (archival, with this workflow run)
+# NextFlow above). Symlinks are created at the subproject-root output_to_input/:
+#   ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -123,37 +122,22 @@ echo "Creating symlinks for downstream workflows..."
 
 # Extract gene family name from config
 GENE_FAMILY=$(grep -A1 "^gene_family:" rbh_rbf_homologs_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
-WORKFLOW_NAME=$(basename "${SCRIPT_DIR}")
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-# --- STEP-level output_to_input ---
-STEP_SHARED_DIR="../output_to_input"
-mkdir -p "${STEP_SHARED_DIR}/ags_fastas/${GENE_FAMILY}"
-find "${STEP_SHARED_DIR}/ags_fastas/${GENE_FAMILY}" -type l -delete 2>/dev/null
-
-for ags_file in OUTPUT_pipeline/16-output/16_ai-AGS-*.aa; do
-    if [ -f "$ags_file" ]; then
-        filename=$(basename "$ags_file")
-        ln -sf "../../../${WORKFLOW_NAME}/${ags_file}" \
-            "${STEP_SHARED_DIR}/ags_fastas/${GENE_FAMILY}/${filename}"
-    fi
-done
-
-echo "  STEP output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
+# --- Subproject-root output_to_input ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_2-homolog_discovery"
+mkdir -p "${SUBPROJECT_SHARED_DIR}/ags_fastas/${GENE_FAMILY}"
+find "${SUBPROJECT_SHARED_DIR}/ags_fastas/${GENE_FAMILY}" -type l -delete 2>/dev/null
 
 for ags_file in OUTPUT_pipeline/16-output/16_ai-AGS-*.aa; do
     if [ -f "$ags_file" ]; then
         filename=$(basename "$ags_file")
-        ln -sf "../../${ags_file}" \
-            "${WORKFLOW_SHARED_DIR}/${filename}"
+        ln -sf "../../../STEP_2-homolog_discovery/${WORKFLOW_DIR_NAME}/${ags_file}" \
+            "${SUBPROJECT_SHARED_DIR}/ags_fastas/${GENE_FAMILY}/${filename}"
     fi
 done
 
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_2-homolog_discovery/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -163,8 +147,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 16-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/ags_fastas/${GENE_FAMILY}/  (for downstream STEP_3)"
-echo "  ai/output_to_input/                             (archival with this run)"
+echo "  ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/${GENE_FAMILY}/"
 echo ""
 echo "Next: Run STEP_3 phylogenetic analysis with AGS files"
 echo "========================================================================"

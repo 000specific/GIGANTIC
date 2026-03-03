@@ -136,7 +136,7 @@ def load_discovery_manifest( manifest_path: Path, logger: logging.Logger ) -> di
 
     with open( manifest_path, 'r' ) as input_manifest:
         # Tool_Name (name of annotation tool)	Tool_Available (yes or no ...)	...
-        # interproscan	yes	/path/to/output_to_input	5	*_interproscan_results.tsv
+        # interproscan	yes	output_to_input/BLOCK_interproscan	5	*_interproscan_results.tsv
         for line in input_manifest:
             line = line.strip()
 

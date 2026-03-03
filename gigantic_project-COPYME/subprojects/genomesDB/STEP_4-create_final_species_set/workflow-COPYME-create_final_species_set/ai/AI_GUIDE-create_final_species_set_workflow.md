@@ -115,10 +115,10 @@ head OUTPUT_pipeline/2-output/2_ai-copy_manifest.tsv
 
 ```bash
 # Final proteomes for downstream
-ls ../../output_to_input/species*_gigantic_T1_proteomes/ | head
+ls ../../output_to_input/STEP_4-create_final_species_set/species*_gigantic_T1_proteomes/ | head
 
 # Final BLAST DBs for downstream
-ls ../../output_to_input/species*_gigantic_T1_blastp/ | head
+ls ../../output_to_input/STEP_4-create_final_species_set/species*_gigantic_T1_blastp/ | head
 ```
 
 ### Check logs
@@ -167,7 +167,7 @@ bash RUN-workflow.sh
 Once STEP_4 completes, downstream subprojects access the final species set at:
 
 ```
-genomesDB/STEP_4-create_final_species_set/output_to_input/
+genomesDB/output_to_input/STEP_4-create_final_species_set/
 ├── speciesN_gigantic_T1_proteomes/    # Proteome files
 └── speciesN_gigantic_T1_blastp/       # BLAST database files
 ```

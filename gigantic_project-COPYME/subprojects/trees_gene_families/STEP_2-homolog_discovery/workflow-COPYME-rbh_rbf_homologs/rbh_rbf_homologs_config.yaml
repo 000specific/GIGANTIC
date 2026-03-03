@@ -112,7 +112,6 @@ output:
 # OUTPUT STRUCTURE:
 #   OUTPUT_pipeline/1-output/ through 16-output/
 #
-# The final AGS fasta is also copied to:
-#   STEP_2-homolog_discovery/output_to_input/ags_fastas/<gene_family>/
-#   trees_gene_families/output_to_input/step_2/ags_fastas/<gene_family>/
+# The final AGS fasta is also symlinked to:
+#   trees_gene_families/output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/
 #

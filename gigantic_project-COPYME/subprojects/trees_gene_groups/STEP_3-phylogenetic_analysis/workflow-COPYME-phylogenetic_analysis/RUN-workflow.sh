@@ -102,7 +102,7 @@ echo "  [OK] RGS manifest found"
 STEP2_DIR=$(grep "step2_homolog_sequences_dir" phylogenetic_analysis_config.yaml | head -1 | sed 's/.*: *"\(.*\)"/\1/')
 if [ -n "${STEP2_DIR}" ] && [ -d "${STEP2_DIR}" ]; then
     echo "  [OK] STEP_2 output directory found: ${STEP2_DIR}"
-elif [ -d "../../STEP_2-homolog_discovery/output_to_input/homolog_sequences" ]; then
+elif [ -d "../../output_to_input/STEP_2-homolog_discovery/homolog_sequences" ]; then
     echo "  [OK] STEP_2 output directory found (default location)"
 else
     echo "  [WARNING] STEP_2 output directory not found. Ensure STEP_2 has completed."
@@ -134,9 +134,8 @@ fi
 # Create symlinks for output_to_input directories
 # ============================================================================
 # Real files live in OUTPUT_pipeline/<gene_family>/N-output/ (created by
-# NextFlow above). Symlinks are created in two locations:
-#   1. ../output_to_input/  (STEP-level, for downstream use)
-#   2. ai/output_to_input/  (archival, with this workflow run)
+# NextFlow above). Symlinks are created at the subproject-root
+# output_to_input/STEP_3-phylogenetic_analysis/ directory for downstream use.
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -145,20 +144,17 @@ fi
 echo ""
 echo "Creating symlinks for downstream workflows..."
 
-WORKFLOW_NAME=$(basename "${SCRIPT_DIR}")
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-# --- STEP-level output_to_input ---
-STEP_SHARED_DIR="../output_to_input"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
+# --- Subproject-root output_to_input (single canonical location) ---
+STEP_SHARED_DIR="../../output_to_input/STEP_3-phylogenetic_analysis"
 
 # Iterate over gene families discovered in OUTPUT_pipeline/
 for gene_family_dir in OUTPUT_pipeline/*/; do
     GENE_FAMILY=$(basename "$gene_family_dir")
     [ "$GENE_FAMILY" = "*" ] && continue
 
-    # STEP-level symlinks
+    # Subproject-root symlinks
     mkdir -p "${STEP_SHARED_DIR}/trees/${GENE_FAMILY}"
     find "${STEP_SHARED_DIR}/trees/${GENE_FAMILY}" -type l -delete 2>/dev/null
 
@@ -166,7 +162,7 @@ for gene_family_dir in OUTPUT_pipeline/*/; do
     for mafft_file in OUTPUT_pipeline/${GENE_FAMILY}/3-output/*.mafft; do
         if [ -f "$mafft_file" ]; then
             filename=$(basename "$mafft_file")
-            ln -sf "../../../${WORKFLOW_NAME}/${mafft_file}" \
+            ln -sf "../../STEP_3-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${mafft_file}" \
                 "${STEP_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
         fi
     done
@@ -175,7 +171,7 @@ for gene_family_dir in OUTPUT_pipeline/*/; do
     for trimmed_file in OUTPUT_pipeline/${GENE_FAMILY}/4-output/*.clipkit-smartgap; do
         if [ -f "$trimmed_file" ]; then
             filename=$(basename "$trimmed_file")
-            ln -sf "../../../${WORKFLOW_NAME}/${trimmed_file}" \
+            ln -sf "../../STEP_3-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${trimmed_file}" \
                 "${STEP_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
         fi
     done
@@ -185,31 +181,15 @@ for gene_family_dir in OUTPUT_pipeline/*/; do
                      OUTPUT_pipeline/${GENE_FAMILY}/5-output/*.treefile; do
         if [ -f "$tree_file" ]; then
             filename=$(basename "$tree_file")
-            ln -sf "../../../${WORKFLOW_NAME}/${tree_file}" \
+            ln -sf "../../STEP_3-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${tree_file}" \
                 "${STEP_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
-        fi
-    done
-
-    # Workflow-level archival symlinks
-    mkdir -p "${WORKFLOW_SHARED_DIR}/trees/${GENE_FAMILY}"
-    find "${WORKFLOW_SHARED_DIR}/trees/${GENE_FAMILY}" -type l -delete 2>/dev/null
-
-    for src_file in OUTPUT_pipeline/${GENE_FAMILY}/3-output/*.mafft \
-                    OUTPUT_pipeline/${GENE_FAMILY}/4-output/*.clipkit-smartgap \
-                    OUTPUT_pipeline/${GENE_FAMILY}/5-output/*.fasttree \
-                    OUTPUT_pipeline/${GENE_FAMILY}/5-output/*.treefile; do
-        if [ -f "$src_file" ]; then
-            filename=$(basename "$src_file")
-            ln -sf "../../../../${src_file}" \
-                "${WORKFLOW_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
         fi
     done
 
     echo "  ${GENE_FAMILY}: symlinks created"
 done
 
-echo "  STEP output_to_input/ -> symlinks created"
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_3-phylogenetic_analysis/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -219,8 +199,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/<gene_family>/1-output/ through 7-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/trees/<gene_family>/  (for downstream use)"
-echo "  ai/output_to_input/trees/<gene_family>/  (archival with this run)"
+echo "  ../../output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/"
 echo "========================================================================"
 echo "Completed: $(date)"
 

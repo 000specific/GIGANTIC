@@ -90,9 +90,13 @@ gigantic_project-[project_name]/
         │                                # Alternative to research_notebook/research_user/
         │
         ├── output_to_input/             # OUTPUTS FOR OTHER SUBPROJECTS
-        │   │                            # Contains symlinks to workflow outputs
+        │   │                            # Single canonical location per subproject
+        │   │                            # Contains BLOCK_X/ or STEP_X/ subdirectories
+        │   │                            # RUN-workflow.sh creates symlinks here
         │   │                            # Other subprojects read from here
-        │   └── maps/                    # (phylonames example)
+        │   ├── BLOCK_X/                 # (orthogroups example - one dir per BLOCK)
+        │   ├── STEP_2-standardize/      # (genomesDB example - one dir per STEP)
+        │   └── maps/                    # (phylonames example - flat subproject)
         │
         ├── upload_to_server/            # OUTPUTS FOR GIGANTIC SERVER
         │   ├── upload_manifest.tsv      # Controls what gets shared
@@ -155,20 +159,43 @@ GIGANTIC workflows follow a three-stage data lifecycle:
 
 **Stage 2**: Each script's outputs are copied via `publishDir` to `OUTPUT_pipeline/N-output/` (where N matches the script number: 001 → `1-output/`). This is where users browse results.
 
-**Stage 3**: After the pipeline completes, `RUN-workflow.sh` creates symlinks in two locations:
-- **STEP/BLOCK level** `output_to_input/` → canonical access for downstream subprojects
-- **Workflow level** `ai/output_to_input/` → archival copy preserved with this run
+**Stage 3**: After the pipeline completes, `RUN-workflow.sh` creates symlinks in the subproject's single `output_to_input/` directory:
+- **Subproject root** `output_to_input/BLOCK_X/` or `output_to_input/STEP_X-name/` → downstream subprojects read from here
+- Each BLOCK or STEP gets its own subdirectory under `output_to_input/`
+- The latest workflow run "wins" the slot (overwrites existing symlinks)
 
 **Disk efficiency**: Data files exist only in `OUTPUT_pipeline/`. Symlinks add zero disk usage. The `RUN-clean_and_record_subproject.sh` script removes `work/`, `.nextflow/`, and `.nextflow.log*` after successful runs to reclaim temporary disk space while preserving all outputs and symlinks.
 
 ### output_to_input Pattern
 
+Each subproject has exactly **one** `output_to_input/` directory at its root. Inside are subdirectories for each BLOCK or STEP:
+
 ```
-workflow-*/OUTPUT_pipeline/3-output/map.tsv  # ACTUAL FILE (only copy)
-        ↓ (symlinked by RUN-workflow.sh)
-output_to_input/maps/map.tsv                  # SYMLINK (downstream subprojects read here)
-ai/output_to_input/maps/map.tsv               # SYMLINK (archival with this workflow run)
+# BLOCK-based subproject (e.g., orthogroups):
+subprojects/orthogroups/
+├── BLOCK_orthofinder/workflow-RUN_01-*/OUTPUT_pipeline/3-output/results.tsv  # ACTUAL FILE
+│       ↓ (symlinked by RUN-workflow.sh)
+└── output_to_input/BLOCK_orthofinder/results.tsv                             # SYMLINK
+
+# STEP-based subproject (e.g., genomesDB):
+subprojects/genomesDB/
+├── STEP_2-standardize_and_evaluate/workflow-RUN_01-*/OUTPUT_pipeline/...     # ACTUAL FILE
+│       ↓ (symlinked by RUN-workflow.sh)
+└── output_to_input/STEP_2-standardize_and_evaluate/species67_proteomes/      # SYMLINK
+
+# Flat subproject (e.g., phylonames):
+subprojects/phylonames/
+├── workflow-RUN_01-*/OUTPUT_pipeline/3-output/map.tsv                        # ACTUAL FILE
+│       ↓ (symlinked by RUN-workflow.sh)
+└── output_to_input/maps/map.tsv                                              # SYMLINK
 ```
+
+**Key principles**:
+- One `output_to_input/` per subproject (never inside BLOCK or STEP directories)
+- BLOCK/STEP subdirectories organize outputs by source
+- Latest workflow run overwrites existing symlinks (latest run "wins")
+- No archival copies at the workflow level -- provenance is tracked by which RUN directory the symlinks point to
+- `.gitignore` files in each BLOCK/STEP subdirectory track empty directories in version control
 
 **Why**: Single source of truth, no data duplication, clear provenance, minimal disk footprint.
 
@@ -320,7 +347,7 @@ Subprojects organize their internal workflow directories using two patterns:
 
 **BLOCKs** are standalone: each block can run independently and in parallel. Used when multiple equivalent analyses operate on the same input (e.g., orthogroups: three tools all run on the same proteomes). Each BLOCK contains its own `workflow-COPYME-*/` workflow.
 
-Both STEPs and BLOCKs follow the same internal structure: `output_to_input/`, `workflow-COPYME-*/`, `AI_GUIDE-*.md`, `README.md`.
+Both STEPs and BLOCKs follow the same internal structure: `workflow-COPYME-*/`, `AI_GUIDE-*.md`, `README.md`. Their outputs are shared via the subproject-root `output_to_input/` directory (not within each BLOCK/STEP). See the "output_to_input Pattern" section above.
 
 **Subprojects using STEPs**: genomesDB, trees_gene_families, trees_gene_groups
 **Subprojects using BLOCKs**: orthogroups

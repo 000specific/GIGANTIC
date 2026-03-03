@@ -174,13 +174,15 @@ phylonames/
 ├── user_research/                      # Personal workspace
 ├── upload_to_server/                   # Files to share via GIGANTIC server
 │
+├── output_to_input/                        # Outputs for downstream subprojects
+│   └── BLOCK_generate_phylonames/
+│       └── maps/                           # Species mapping files
+│           └── [project]_map-genus_species_X_phylonames.tsv
+│
 └── BLOCK_generate_phylonames/
     ├── AI_GUIDE-generate_phylonames.md  # BLOCK-level AI guide
     ├── RUN-clean_and_record_subproject.sh   # Cleanup + AI session recording
     ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
-    ├── output_to_input/                    # Outputs for downstream subprojects
-    │   └── maps/                           # Species mapping files
-    │       └── [project]_map-genus_species_X_phylonames.tsv
     │
     └── workflow-COPYME-generate_phylonames/
         ├── README.md                       # Quick start guide
@@ -277,7 +279,7 @@ The pipeline will:
 
 Your mapping file will be at:
 ```
-BLOCK_generate_phylonames/output_to_input/maps/[project_name]_map-genus_species_X_phylonames.tsv
+output_to_input/BLOCK_generate_phylonames/maps/[project_name]_map-genus_species_X_phylonames.tsv
 ```
 
 ---
@@ -313,7 +315,7 @@ Lines starting with `#` are treated as comments and ignored.
 
 ### Project-Specific Mapping
 
-**Location**: `output_to_input/maps/`
+**Location**: `output_to_input/BLOCK_generate_phylonames/maps/`
 
 | File | Description |
 |------|-------------|
@@ -341,7 +343,7 @@ Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_cal
 
 Other GIGANTIC subprojects reference phylonames via:
 ```
-phylonames/BLOCK_generate_phylonames/output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv
+phylonames/output_to_input/BLOCK_generate_phylonames/maps/[project]_map-genus_species_X_phylonames.tsv
 ```
 
 **Dependent subprojects**:

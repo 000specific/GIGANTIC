@@ -50,13 +50,15 @@ phylonames/
 ├── user_research/                   # Personal workspace for this subproject
 ├── upload_to_server/                # Server sharing
 │
+├── output_to_input/                     # Outputs for downstream subprojects
+│   └── BLOCK_generate_phylonames/
+│       └── maps/
+│           └── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK
+│
 └── BLOCK_generate_phylonames/
     ├── AI_GUIDE-generate_phylonames.md  # BLOCK-level guide
     ├── RUN-clean_and_record_subproject.sh  # Cleanup + AI session recording
     ├── RUN-update_upload_to_server.sh      # Update server symlinks
-    ├── output_to_input/                 # Outputs for downstream subprojects
-    │   └── maps/
-    │       └── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK
     │
     └── workflow-COPYME-generate_phylonames/
         ├── RUN-workflow.sh               # bash RUN-workflow.sh
@@ -163,7 +165,7 @@ ls -la OUTPUT_pipeline/1-output/
 wc -l OUTPUT_pipeline/2-output/phylonames
 
 # Check project mapping created
-head output_to_input/maps/*_map-genus_species_X_phylonames.tsv
+head ../../output_to_input/BLOCK_generate_phylonames/maps/*_map-genus_species_X_phylonames.tsv
 ```
 
 ---
@@ -196,7 +198,7 @@ research_notebook/research_ai/subproject-phylonames/logs/
 | `BLOCK_*/workflow-*/phylonames_config.yaml` | Project name, options | **YES** |
 | `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `BLOCK_*/workflow-*/INPUT_user/species_list.txt` | Archived copy | No (auto-copied) |
-| `BLOCK_*/output_to_input/maps/*.tsv` | Output for downstream | No |
+| `output_to_input/BLOCK_*/maps/*.tsv` | Output for downstream | No |
 
 ---
 
@@ -204,7 +206,7 @@ research_notebook/research_ai/subproject-phylonames/logs/
 
 Guide users to:
 1. **genomesDB** - Set up proteome database using phylonames for file naming
-2. **Keep the mapping** - All downstream subprojects reference `output_to_input/maps/`
+2. **Keep the mapping** - All downstream subprojects reference `output_to_input/BLOCK_generate_phylonames/maps/`
 
 ---
 

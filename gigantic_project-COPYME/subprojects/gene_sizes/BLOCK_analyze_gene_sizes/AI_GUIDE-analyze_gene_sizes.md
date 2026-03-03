@@ -36,7 +36,6 @@ PROCESSED, SKIPPED_NO_DATA, SKIPPED_INCOMPLETE).
 BLOCK_analyze_gene_sizes/
 ├── AI_GUIDE-analyze_gene_sizes.md    # THIS FILE
 ├── RUN-clean_and_record_subproject.sh
-├── output_to_input/                  # Canonical downstream output (symlinks)
 └── workflow-COPYME-analyze_gene_sizes/
     ├── README.md
     ├── RUN-workflow.sh
@@ -62,8 +61,8 @@ BLOCK_analyze_gene_sizes/
 
 ## Output to Downstream
 
-This block publishes to `output_to_input/`:
+This block publishes to `output_to_input/BLOCK_analyze_gene_sizes/` at the subproject root:
 - `speciesN_gigantic_gene_metrics/` - Per-species gene metrics with rank columns
 - `speciesN_gigantic_gene_sizes_summary/` - Cross-species summary table and processing status
 
-These are accessed by downstream subprojects via symlinks at the subproject root.
+Downstream subprojects access these via the subproject-root `output_to_input/` directory.

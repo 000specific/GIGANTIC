@@ -30,13 +30,13 @@
 # 3. Copies selected proteomes from STEP_2 with speciesN naming
 # 4. Copies selected BLAST databases from STEP_3 with speciesN naming
 # 5. Copies gene annotations for species that have them
-# 6. Creates output_to_input/speciesN_gigantic_T1_proteomes/
-# 7. Creates output_to_input/speciesN_gigantic_T1_blastp/
-# 8. Creates output_to_input/speciesN_gigantic_gene_annotations/
+# 6. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
+# 7. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/
+# 8. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_gene_annotations/
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output and 2-output/
-# Final species set copied to ../../output_to_input/
+# Final species set copied to ../../output_to_input/STEP_4-create_final_species_set/
 # NOTE: Gene annotations are optional - not all species have GFF/GTF files.
 #
 ################################################################################
@@ -121,12 +121,11 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. ../../output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/     (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/STEP_4-create_final_species_set/
 #
 # STEP_4 creates per-species directories (species*_gigantic_T1_proteomes,
 # species*_gigantic_T1_blastp, species*_gigantic_gene_annotations) which
@@ -136,12 +135,15 @@ fi
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- STEP-level output_to_input (canonical) ---
-STEP_SHARED_DIR="../../output_to_input"
-mkdir -p "${STEP_SHARED_DIR}"
+# Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_4-create_final_species_set"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale species directory symlinks from previous runs
-for old_link in "${STEP_SHARED_DIR}"/species*_gigantic_T1_* "${STEP_SHARED_DIR}"/species*_gigantic_gene_annotations; do
+for old_link in "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_T1_* "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_gene_annotations; do
     if [ -L "$old_link" ]; then
         rm "$old_link"
     fi
@@ -152,30 +154,12 @@ done
 for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_*; do
     if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
         dir_name=$(basename "$species_dir")
-        ln -sf "../STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/OUTPUT_pipeline/2-output/${dir_name}" \
-            "${STEP_SHARED_DIR}/${dir_name}"
+        ln -sf "../../STEP_4-create_final_species_set/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/${dir_name}" \
+            "${SUBPROJECT_SHARED_DIR}/${dir_name}"
     fi
 done
 
-echo "  STEP output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-# Create symlinks for each species directory (proteomes, blastp, gene_annotations)
-for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_*; do
-    if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
-        dir_name=$(basename "$species_dir")
-        ln -sf "../../OUTPUT_pipeline/2-output/${dir_name}" \
-            "${WORKFLOW_SHARED_DIR}/${dir_name}"
-    fi
-done
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_4-create_final_species_set/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -186,8 +170,7 @@ echo "  OUTPUT_pipeline/1-output/  Validated species list, count, and annotation
 echo "  OUTPUT_pipeline/2-output/  Final species set directories"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/     (archival with this run)"
+echo "  ../../output_to_input/STEP_4-create_final_species_set/  (for downstream subprojects)"
 echo ""
 echo "Published directories:"
 echo "  speciesN_gigantic_T1_proteomes/       Proteome files"

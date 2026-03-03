@@ -26,7 +26,7 @@ inputs:
 
   # Path to GIGANTIC species list (all species in the species set)
   # One species name per line (Genus_species format)
-  # From genomesDB STEP_4: output_to_input/speciesN_gigantic_species_list/species_list.txt
+  # From genomesDB: output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_species_list/species_list.txt
   gigantic_species_list: "INPUT_user/gigantic_species_list.txt"
 
   # Path to directory containing GIGANTIC proteome files for ID linkage (optional)
@@ -82,8 +82,8 @@ output:
 # Overlapping CDS intervals are merged before computing metrics.
 #
 # OUTPUT STRUCTURE:
-#   output_to_input/speciesN_gigantic_gene_metrics/       - Per-species metrics
-#   output_to_input/speciesN_gigantic_gene_sizes_summary/  - Cross-species summary
+#   output_to_input/BLOCK_analyze_gene_sizes/speciesN_gigantic_gene_metrics/       - Per-species metrics
+#   output_to_input/BLOCK_analyze_gene_sizes/speciesN_gigantic_gene_sizes_summary/  - Cross-species summary
 #
 # Where N = count of processable species (those with valid gene structure data)
 #

@@ -203,11 +203,12 @@ genomesDB/
 ```
 STEP_1-sources → STEP_2-standardize_and_evaluate → STEP_3-databases → STEP_4-create_final_species_set → Downstream Subprojects
       ↓                      ↓                           ↓                        ↓
- output_to_input        output_to_input          output_to_input         STEP_4/output_to_input
-                                                                         (shared with other subprojects)
+ output_to_input/      output_to_input/           output_to_input/        output_to_input/
+ STEP_1-sources/     STEP_2-standardize_         STEP_3-databases/   STEP_4-create_final_
+                     and_evaluate/                                    species_set/
 ```
 
-Each step passes outputs to the next step via its `output_to_input/` directory. STEP_4's outputs are the final species set that downstream GIGANTIC subprojects reference.
+Each step publishes outputs to the single subproject-root `output_to_input/` directory, under its own STEP subdirectory. STEP_4's outputs are the final species set that downstream GIGANTIC subprojects reference.
 
 ---
 

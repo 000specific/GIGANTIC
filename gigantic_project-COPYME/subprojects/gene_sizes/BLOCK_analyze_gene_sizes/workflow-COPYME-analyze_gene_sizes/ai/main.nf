@@ -240,7 +240,7 @@ workflow.onComplete {
         println "  3-output/: Ranked metrics and genome summaries"
         println "  4-output/: Cross-species summary and downstream directories"
         println ""
-        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
+        println "Symlinks created in output_to_input/BLOCK_analyze_gene_sizes/ (by RUN-workflow.sh)"
         println "  speciesN_gigantic_gene_metrics/         Per-species ranked gene metrics"
         println "  speciesN_gigantic_gene_sizes_summary/   Cross-species summary statistics"
     }

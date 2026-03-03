@@ -185,8 +185,8 @@ def main():
     parser.add_argument(
         '--proteomes-dir',
         type = str,
-        default = '../../STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes',
-        help = 'Path to standardized proteomes from STEP_2 (default: ../../STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes)'
+        default = '../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes',
+        help = 'Path to standardized proteomes from STEP_2 (default: ../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes)'
     )
 
     parser.add_argument(
@@ -271,7 +271,7 @@ def main():
     if not proteomes_directory.exists():
         logger.error( f"CRITICAL ERROR: Proteomes directory not found: {proteomes_directory}" )
         logger.error( "STEP_2 must be run before STEP_3." )
-        logger.error( "Expected location: STEP_2/output_to_input/gigantic_proteomes/" )
+        logger.error( "Expected location: output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes/" )
         sys.exit( 1 )
 
     # ========================================================================

@@ -47,7 +47,7 @@ sbatch RUN-workflow.sbatch
    - Optionally links Source_Gene_IDs to GIGANTIC identifiers via proteome
 3. **Script 003** runs in parallel per species - computes ranks and genome summaries
 4. **Script 004** collects all species, compiles cross-species summary with processing status
-5. **RUN-workflow.sh** creates symlinks in output_to_input/
+5. **RUN-workflow.sh** creates symlinks in output_to_input/BLOCK_analyze_gene_sizes/
 
 ---
 
@@ -78,7 +78,7 @@ cat OUTPUT_pipeline/1-output/1_ai-species_count.txt
 ls OUTPUT_pipeline/2-output/2_ai-gene_metrics-*.tsv | wc -l
 
 # Check downstream symlinks
-ls ../output_to_input/
+ls ../../output_to_input/BLOCK_analyze_gene_sizes/
 
 # View summary for one species
 head OUTPUT_pipeline/3-output/3_ai-genome_summary-Homo_sapiens.tsv

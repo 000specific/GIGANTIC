@@ -10,12 +10,12 @@
 # =============================================================================
 
 inputs:
-  # Species selection manifest from STEP_2's output_to_input/
+  # Species selection manifest from STEP_2 (via subproject output_to_input/)
   # Must have an "Include" column with YES/NO values
-  species_manifest: "../../output_to_input/species_selection_manifest.tsv"
+  species_manifest: "../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv"
 
-  # Cleaned proteomes from STEP_2's output_to_input/
-  proteomes_dir: "../../output_to_input/gigantic_T1_proteomes"
+  # Cleaned proteomes from STEP_2 (via subproject output_to_input/)
+  proteomes_dir: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_T1_proteomes"
 
 # =============================================================================
 # OUTPUT SETTINGS

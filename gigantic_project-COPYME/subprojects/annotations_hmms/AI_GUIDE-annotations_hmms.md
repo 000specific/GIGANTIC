@@ -88,10 +88,12 @@ scan/                                         predict/
 (4 scripts)  (2 scripts) (2 scripts) (2 scripts) (2 scripts)
     │            │           │          │          │
     ▼            ▼           ▼          ▼          ▼
- output_      output_     output_   output_    output_
- to_input/    to_input/   to_input/ to_input/  to_input/
-    │            │           │          │          │
-    └────────────┴───────────┴──────────┴──────────┘
+output_to_input/  (consolidated at subproject root)
+  BLOCK_interproscan/
+  BLOCK_deeploc/
+  BLOCK_signalp/
+  BLOCK_tmbed/
+  BLOCK_metapredict/
                              │
                              ▼
               BLOCK_build_annotation_database/
@@ -99,7 +101,7 @@ scan/                                         predict/
                parse x5, statistics, analyses x8)
                              │
                              ▼
-              annotations_hmms/output_to_input/
+              output_to_input/BLOCK_build_annotation_database/
               → downstream subprojects
 ```
 

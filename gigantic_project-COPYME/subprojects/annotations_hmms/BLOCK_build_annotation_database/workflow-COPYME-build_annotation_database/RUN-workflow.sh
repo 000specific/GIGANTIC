@@ -65,12 +65,14 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. BLOCK_build_annotation_database/output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/                               (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/BLOCK_build_annotation_database/
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
 # ============================================================================
 
 echo ""
@@ -78,24 +80,18 @@ echo "Creating symlinks for downstream subprojects..."
 
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-# --- BLOCK-level output_to_input (canonical, for downstream subprojects) ---
-BLOCK_SHARED_DIR="../output_to_input"
-mkdir -p "${BLOCK_SHARED_DIR}"
-find "${BLOCK_SHARED_DIR}" -type l -delete 2>/dev/null || true
-
-# --- Workflow-level ai/output_to_input (archival, with this workflow run) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null || true
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/BLOCK_build_annotation_database"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
+find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null || true
 
 SYMLINK_COUNT=0
 
 # --- Symlink the annotation_databases directory (all 24 database subdirectories) ---
 if [ -d "OUTPUT_pipeline/annotation_databases" ]; then
-    # BLOCK-level: BLOCK_build_annotation_database/output_to_input/annotation_databases
-    ln -sf "../${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/annotation_databases" "${BLOCK_SHARED_DIR}/annotation_databases"
-    # Workflow archival: ai/output_to_input/annotation_databases
-    ln -sf "../../OUTPUT_pipeline/annotation_databases" "${WORKFLOW_SHARED_DIR}/annotation_databases"
+    # Symlink from subproject output_to_input to real file
+    ln -sf "../../BLOCK_build_annotation_database/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/annotation_databases" \
+        "${SUBPROJECT_SHARED_DIR}/annotation_databases"
     SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
     echo "  Linked annotation_databases/ (24 database subdirectories)"
 else
@@ -110,18 +106,16 @@ for output_dir in OUTPUT_pipeline/8-output OUTPUT_pipeline/9-output OUTPUT_pipel
         for tsv_file in ${output_dir}/*_ai-*.tsv; do
             if [ -f "$tsv_file" ]; then
                 filename="$(basename "$tsv_file")"
-                # BLOCK-level
-                ln -sf "../${WORKFLOW_DIR_NAME}/${tsv_file}" "${BLOCK_SHARED_DIR}/${filename}"
-                # Workflow archival
-                ln -sf "../../${tsv_file}" "${WORKFLOW_SHARED_DIR}/${filename}"
+                # Symlink from subproject output_to_input to real file
+                ln -sf "../../BLOCK_build_annotation_database/${WORKFLOW_DIR_NAME}/${tsv_file}" \
+                    "${SUBPROJECT_SHARED_DIR}/${filename}"
                 SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
             fi
         done
     fi
 done
 
-echo "  Created ${SYMLINK_COUNT} symlinks in ../output_to_input/"
-echo "  Created ${SYMLINK_COUNT} symlinks in ai/output_to_input/"
+echo "  Created ${SYMLINK_COUNT} symlinks in output_to_input/BLOCK_build_annotation_database/"
 
 if [ $SYMLINK_COUNT -eq 0 ]; then
     echo "  WARNING: No output files found in OUTPUT_pipeline/"
@@ -136,8 +130,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/  (archival with this run)"
+echo "  output_to_input/BLOCK_build_annotation_database/  (subproject root)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

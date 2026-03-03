@@ -82,14 +82,20 @@ All tool outputs are parsed into a common 7-column TSV format:
 annotations_hmms/
 ├── README.md                                # This file
 ├── AI_GUIDE-annotations_hmms.md             # AI assistant guide (Level 2)
-├── output_to_input/                         # Final outputs for downstream
 ├── upload_to_server/
 ├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
+├── output_to_input/                         # Consolidated outputs for downstream
+│   ├── BLOCK_interproscan/                  #   InterProScan results (symlinked)
+│   ├── BLOCK_deeploc/                       #   DeepLoc results (symlinked)
+│   ├── BLOCK_signalp/                       #   SignalP results (symlinked)
+│   ├── BLOCK_tmbed/                         #   tmbed results (symlinked)
+│   ├── BLOCK_metapredict/                   #   MetaPredict results (symlinked)
+│   └── BLOCK_build_annotation_database/     #   Integrated database (symlinked)
+│
 ├── BLOCK_interproscan/                      # InterProScan (4 scripts)
 │   ├── AI_GUIDE-interproscan.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_interproscan/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -98,7 +104,6 @@ annotations_hmms/
 │
 ├── BLOCK_deeploc/                           # DeepLoc (2 scripts)
 │   ├── AI_GUIDE-deeploc.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_deeploc/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -107,7 +112,6 @@ annotations_hmms/
 │
 ├── BLOCK_signalp/                           # SignalP (2 scripts)
 │   ├── AI_GUIDE-signalp.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_signalp/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -116,7 +120,6 @@ annotations_hmms/
 │
 ├── BLOCK_tmbed/                             # tmbed (2 scripts)
 │   ├── AI_GUIDE-tmbed.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_tmbed/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -125,7 +128,6 @@ annotations_hmms/
 │
 ├── BLOCK_metapredict/                       # MetaPredict (2 scripts)
 │   ├── AI_GUIDE-metapredict.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_metapredict/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -134,7 +136,6 @@ annotations_hmms/
 │
 └── BLOCK_build_annotation_database/         # Database builder (16 scripts)
     ├── AI_GUIDE-build_annotation_database.md
-    ├── output_to_input/
     └── workflow-COPYME-build_annotation_database/
         ├── ai/ (main.nf, nextflow.config, scripts/)
         ├── RUN-workflow.sh

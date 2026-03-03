@@ -80,12 +80,11 @@ worm	Caenorhabditis_elegans
 
 ### output_to_input
 
-Validated RGS is published to two locations:
+Validated RGS is published to the subproject-root output_to_input:
 
 | Level | Path |
 |-------|------|
-| STEP-level | `output_to_input/rgs_fastas/<gene_group>/rgs-<gene_group>.aa` |
-| Subproject-level | `../output_to_input/step_1/rgs_fastas/<gene_group>/rgs-<gene_group>.aa` |
+| Subproject-root | `output_to_input/STEP_1-rgs_preparation/rgs_fastas/<gene_group>/rgs-<gene_group>.aa` |
 
 ---
 
@@ -95,8 +94,6 @@ Validated RGS is published to two locations:
 STEP_1-rgs_preparation/
 ├── AI_GUIDE-rgs_preparation.md     # THIS FILE
 ├── README.md
-├── output_to_input/
-│   └── rgs_fastas/                 # Validated RGS by gene group
 └── workflow-COPYME-validate_rgs/
     ├── README.md
     ├── RUN-workflow.sh
@@ -124,7 +121,7 @@ STEP_1-rgs_preparation/
 | `workflow-*/rgs_config.yaml` | Gene group name, RGS file path | **YES** |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** (user provides) |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Short name to Genus_species mapping | **YES** (if needed) |
-| `output_to_input/rgs_fastas/` | Validated RGS | No (auto-created) |
+| `../output_to_input/STEP_1-rgs_preparation/rgs_fastas/` | Validated RGS | No (auto-created) |
 
 ---
 

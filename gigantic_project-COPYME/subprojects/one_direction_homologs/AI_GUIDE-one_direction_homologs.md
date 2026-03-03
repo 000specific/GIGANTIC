@@ -42,12 +42,14 @@ one_direction_homologs/
 ├── upload_to_server/                   # Server sharing
 │   └── upload_manifest.tsv
 │
+├── output_to_input/                    # Outputs for downstream subprojects
+│   └── BLOCK_diamond_ncbi_nr/
+│       └── ncbi_nr_top_hits/           # Top hits + statistics for downstream
+│
 └── BLOCK_diamond_ncbi_nr/
     ├── AI_GUIDE-diamond_ncbi_nr.md     # BLOCK-level AI guidance
     ├── RUN-clean_and_record_subproject.sh
     ├── RUN-update_upload_to_server.sh
-    ├── output_to_input/                # Outputs for downstream subprojects
-    │   └── ncbi_nr_top_hits/           # Top hits + statistics for downstream
     │
     └── workflow-COPYME-diamond_ncbi_nr/
         ├── RUN-workflow.sh             # bash RUN-workflow.sh
@@ -136,7 +138,7 @@ cat OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv
 ## Data Flow
 
 ```
-genomesDB/output_to_input/proteomes/
+genomesDB/output_to_input/STEP_4-create_final_species_set/
     │
     ▼
 [001] Validate proteomes
@@ -157,7 +159,7 @@ genomesDB/output_to_input/proteomes/
 [006] Compile master statistics table
     │
     ▼
-output_to_input/ncbi_nr_top_hits/
+output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/
 ```
 
 ---
@@ -169,7 +171,7 @@ output_to_input/ncbi_nr_top_hits/
 | `BLOCK_*/workflow-*/diamond_ncbi_nr_config.yaml` | Project name, database path, options | **YES** |
 | `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `BLOCK_*/workflow-*/INPUT_user/proteome_manifest.tsv` | Species and proteome paths | **YES** (or auto-generated) |
-| `BLOCK_*/output_to_input/ncbi_nr_top_hits/*.tsv` | Top hits + statistics for downstream | No |
+| `output_to_input/BLOCK_*/ncbi_nr_top_hits/*.tsv` | Top hits + statistics for downstream | No |
 | `BLOCK_*/workflow-*/ai/scripts/*` | Pipeline scripts | No |
 
 ---

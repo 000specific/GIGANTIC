@@ -1,4 +1,0 @@
-# Ignore everything in this directory except .gitignore
-# Actual output files are created by the workflow at runtime
-*
-!.gitignore

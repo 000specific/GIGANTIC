@@ -65,12 +65,14 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. BLOCK_tmbed/output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/           (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/BLOCK_tmbed/
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
 # ============================================================================
 
 echo ""
@@ -78,15 +80,10 @@ echo "Creating symlinks for downstream subprojects..."
 
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-# --- BLOCK-level output_to_input (canonical, for downstream subprojects) ---
-BLOCK_SHARED_DIR="../output_to_input"
-mkdir -p "${BLOCK_SHARED_DIR}"
-find "${BLOCK_SHARED_DIR}" -type l -delete 2>/dev/null || true
-
-# --- Workflow-level ai/output_to_input (archival, with this workflow run) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null || true
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/BLOCK_tmbed"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
+find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null || true
 
 # --- Create relative symlinks for per-species tmbed result files ---
 # Real files: OUTPUT_pipeline/2-output/{phyloname}_tmbed_predictions.3line
@@ -96,16 +93,13 @@ SYMLINK_COUNT=0
 for result_file in ${RESULT_DIR}/*_tmbed_predictions.3line; do
     if [ -f "$result_file" ]; then
         filename="$(basename "$result_file")"
-        # BLOCK-level: BLOCK_tmbed/output_to_input/ -> workflow/OUTPUT_pipeline/2-output/
-        ln -sf "../${WORKFLOW_DIR_NAME}/${result_file}" "${BLOCK_SHARED_DIR}/${filename}"
-        # Workflow archival: ai/output_to_input/ -> ../../OUTPUT_pipeline/2-output/
-        ln -sf "../../${result_file}" "${WORKFLOW_SHARED_DIR}/${filename}"
+        # Symlink from subproject output_to_input to real file
+        ln -sf "../../BLOCK_tmbed/${WORKFLOW_DIR_NAME}/${result_file}" "${SUBPROJECT_SHARED_DIR}/${filename}"
         SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
     fi
 done
 
-echo "  Created ${SYMLINK_COUNT} symlinks in ../output_to_input/"
-echo "  Created ${SYMLINK_COUNT} symlinks in ai/output_to_input/"
+echo "  Created ${SYMLINK_COUNT} symlinks in output_to_input/BLOCK_tmbed/"
 
 if [ $SYMLINK_COUNT -eq 0 ]; then
     echo "  WARNING: No tmbed result files found in ${RESULT_DIR}/"
@@ -120,8 +114,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/  (archival with this run)"
+echo "  output_to_input/BLOCK_tmbed/  (subproject root)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

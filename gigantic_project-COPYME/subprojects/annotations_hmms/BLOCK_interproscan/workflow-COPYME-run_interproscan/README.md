@@ -25,4 +25,4 @@ sbatch RUN-workflow.sbatch   # SLURM
 ## Outputs
 
 - Per-species TSV files with domain hits, GO terms, and pathway annotations
-- Results published to `OUTPUT_pipeline/` and `ai/output_to_input/`
+- Results published to `OUTPUT_pipeline/` and symlinked to `output_to_input/BLOCK_interproscan/`

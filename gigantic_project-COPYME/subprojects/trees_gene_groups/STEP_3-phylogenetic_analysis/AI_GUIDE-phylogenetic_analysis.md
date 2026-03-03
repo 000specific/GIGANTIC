@@ -63,7 +63,7 @@ Four methods available, configurable in `phylogenetic_analysis_config.yaml`:
 
 | Input | Source | Description |
 |-------|--------|-------------|
-| AGS FASTA | `../../STEP_2-homolog_discovery/output_to_input/ags_fastas/<gene_group>/` | From STEP_2 |
+| AGS FASTA | `../../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_group>/` | From STEP_2 |
 
 **Note**: The workflow automatically finds the AGS file in STEP_2's output_to_input directory.
 
@@ -93,8 +93,7 @@ Trees and alignments exported to:
 
 | Level | Path |
 |-------|------|
-| STEP-level | `output_to_input/trees/<gene_group>/` |
-| Subproject-level | `../output_to_input/step_3/trees/<gene_group>/` |
+| Subproject-root | `../output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_group>/` |
 
 ---
 
@@ -104,8 +103,6 @@ Trees and alignments exported to:
 STEP_3-phylogenetic_analysis/
 ├── AI_GUIDE-phylogenetic_analysis.md   # THIS FILE
 ├── README.md
-├── output_to_input/
-│   └── trees/                          # Trees by gene group
 └── workflow-COPYME-phylogenetic_analysis/
     ├── README.md
     ├── RUN-workflow.sh
@@ -138,7 +135,7 @@ STEP_3-phylogenetic_analysis/
 |------|---------|-------------|
 | `workflow-*/phylogenetic_analysis_config.yaml` | Gene group, tree methods, alignment settings | **YES** |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
-| `output_to_input/trees/` | Final trees | No (auto-created) |
+| `../output_to_input/STEP_3-phylogenetic_analysis/trees/` | Final trees | No (auto-created) |
 
 ---
 
@@ -171,8 +168,8 @@ STEP_3-phylogenetic_analysis/
 
 ```bash
 # Check AGS from STEP_2
-ls ../../STEP_2-homolog_discovery/output_to_input/ags_fastas/*/
-grep -c ">" ../../STEP_2-homolog_discovery/output_to_input/ags_fastas/*/*.aa
+ls ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/
+grep -c ">" ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/*.aa
 
 # Check alignment
 grep -c ">" OUTPUT_pipeline/3-output/*.mafft

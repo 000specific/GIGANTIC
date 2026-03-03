@@ -32,7 +32,7 @@ sbatch RUN-workflow.sbatch
 Standardized proteomes from STEP_2-standardize_and_evaluate.
 
 **Location**: `workflow-COPYME-build_gigantic_genomesDB/INPUT_user/`
-**From**: `../STEP_2-standardize_and_evaluate/output_to_input/`
+**From**: `../output_to_input/STEP_2-standardize_and_evaluate/`
 
 ---
 

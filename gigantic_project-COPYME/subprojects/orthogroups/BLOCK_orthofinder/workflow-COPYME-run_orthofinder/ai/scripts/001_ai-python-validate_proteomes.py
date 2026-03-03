@@ -21,7 +21,7 @@ Output:
 
 Usage:
     python3 001_ai-python-validate_proteomes.py \\
-        --proteomes-dir ../../genomesDB/STEP_2-standardize_and_evaluate/output_to_input/gigantic_proteomes
+        --proteomes-dir ../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes
 """
 
 import argparse

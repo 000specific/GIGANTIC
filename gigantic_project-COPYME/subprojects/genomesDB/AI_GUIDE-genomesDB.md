@@ -135,7 +135,7 @@ Homo_sapiens-genome-GCF_000001405.40-20240115.aa
 - Create symlinks in output_to_input for STEP_2
 
 **Outputs**:
-- `STEP_1-sources/output_to_input/proteomes/` - Symlinks for STEP_2
+- `output_to_input/STEP_1-sources/proteomes/` - Symlinks for STEP_2
 
 ### STEP_2-standardize_and_evaluate
 
@@ -149,7 +149,7 @@ Homo_sapiens-genome-GCF_000001405.40-20240115.aa
 - Flag quality issues
 
 **Outputs**:
-- `STEP_2-standardize_and_evaluate/output_to_input/standardized_proteomes/` - Clean files for STEP_3
+- `output_to_input/STEP_2-standardize_and_evaluate/standardized_proteomes/` - Clean files for STEP_3
 - Evaluation reports
 
 ### STEP_3-databases
@@ -163,7 +163,7 @@ Homo_sapiens-genome-GCF_000001405.40-20240115.aa
 - Generate proteome indices
 
 **Outputs**:
-- `STEP_3-databases/output_to_input/` - BLAST databases
+- `output_to_input/STEP_3-databases/` - BLAST databases
 
 ### STEP_4-create_final_species_set
 
@@ -177,8 +177,8 @@ Homo_sapiens-genome-GCF_000001405.40-20240115.aa
 - Creates `speciesN_` named directories for downstream subprojects
 
 **Outputs**:
-- `STEP_4-create_final_species_set/output_to_input/speciesN_gigantic_T1_proteomes/` - Final proteomes
-- `STEP_4-create_final_species_set/output_to_input/speciesN_gigantic_T1_blastp/` - Final BLAST databases
+- `output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` - Final proteomes
+- `output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` - Final BLAST databases
 
 ---
 
@@ -200,7 +200,6 @@ genomesDB/
 │   ├── AI_GUIDE-sources.md
 │   ├── RUN-clean_and_record_subproject.sh
 │   ├── user_research/                  # User's source data storage
-│   ├── output_to_input/                # → STEP_2 inputs
 │   └── workflow-COPYME-ingest_source_data/
 │       ├── INPUT_user/
 │       │   └── source_manifest.tsv     # User creates this
@@ -214,7 +213,6 @@ genomesDB/
 │   ├── AI_GUIDE-standardize_and_evaluate.md
 │   ├── RUN-clean_and_record_subproject.sh
 │   ├── user_research/
-│   ├── output_to_input/                # → STEP_3 inputs
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 │       ├── INPUT_user/
 │       ├── OUTPUT_pipeline/
@@ -227,7 +225,6 @@ genomesDB/
 │   ├── AI_GUIDE-databases.md
 │   ├── RUN-clean_and_record_subproject.sh
 │   ├── user_research/
-│   ├── output_to_input/                # → STEP_4 inputs
 │   └── workflow-COPYME-build_gigantic_genomesDB/
 │       ├── INPUT_user/
 │       ├── OUTPUT_pipeline/
@@ -240,7 +237,6 @@ genomesDB/
     ├── AI_GUIDE-create_final_species_set.md
     ├── RUN-clean_and_record_subproject.sh
     ├── user_research/
-    ├── output_to_input/                # Final species set for downstream subprojects
     └── workflow-COPYME-create_final_species_set/
         ├── INPUT_user/
         ├── OUTPUT_pipeline/
@@ -254,13 +250,13 @@ genomesDB/
 ## Data Flow Between Steps
 
 ```
-STEP_1-sources/output_to_input/ → STEP_2-standardize_and_evaluate/INPUT_user/
+output_to_input/STEP_1-sources/ → STEP_2-standardize_and_evaluate/INPUT_user/
                                               ↓
-STEP_2-standardize_and_evaluate/output_to_input/ → STEP_3-databases/INPUT_user/
+output_to_input/STEP_2-standardize_and_evaluate/ → STEP_3-databases/INPUT_user/
                                                             ↓
           STEP_2 + STEP_3 outputs → STEP_4-create_final_species_set
                                               ↓
-                   STEP_4-create_final_species_set/output_to_input/
+                   output_to_input/STEP_4-create_final_species_set/
                                               ↓
                               (Other GIGANTIC subprojects)
 ```
@@ -311,19 +307,19 @@ This consolidates documentation regardless of which step generated it.
 
 ```bash
 # Check phylonames dependency
-ls ../phylonames/BLOCK_generate_phylonames/output_to_input/maps/
+ls ../phylonames/output_to_input/BLOCK_generate_phylonames/maps/
 
 # Check STEP_1 outputs
-ls STEP_1-sources/output_to_input/
+ls output_to_input/STEP_1-sources/
 
 # Check STEP_2 outputs
-ls STEP_2-standardize_and_evaluate/output_to_input/
+ls output_to_input/STEP_2-standardize_and_evaluate/
 
 # Check STEP_3 outputs
-ls STEP_3-databases/output_to_input/
+ls output_to_input/STEP_3-databases/
 
 # Check STEP_4 outputs (final species set)
-ls STEP_4-create_final_species_set/output_to_input/
+ls output_to_input/STEP_4-create_final_species_set/
 ```
 
 ---
@@ -337,7 +333,7 @@ ls STEP_4-create_final_species_set/output_to_input/
 | `STEP_3-databases/workflow-*/INPUT_user/` | (from STEP_2) | No |
 | `STEP_4-create_final_species_set/workflow-*/final_species_set_config.yaml` | Paths to STEP_2/STEP_3 outputs | **YES** |
 | `STEP_4-create_final_species_set/workflow-*/INPUT_user/selected_species.txt` | Species selection (optional) | **YES** (optional) |
-| `STEP_4-create_final_species_set/output_to_input/` | Final species set | No |
+| `output_to_input/STEP_4-create_final_species_set/` | Final species set | No |
 | `upload_to_server/upload_manifest.tsv` | What to share | **YES** |
 
 ---

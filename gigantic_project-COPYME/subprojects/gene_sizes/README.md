@@ -58,12 +58,12 @@ gene_sizes/
 ├── research_notebook/                 # Literature summaries and analysis notes
 │   ├── ai_research/                   # AI-generated paper summaries
 │   └── user_research/                 # User research notes
-├── output_to_input/                   # Symlinks to BLOCK output (downstream use)
+├── output_to_input/                   # Downstream output (contains BLOCK subdirs)
+│   └── BLOCK_analyze_gene_sizes/      # Symlinks to workflow output
 ├── upload_to_server/                  # Curated data for GIGANTIC server
 └── BLOCK_analyze_gene_sizes/
     ├── AI_GUIDE-analyze_gene_sizes.md # BLOCK-level AI guidance
     ├── RUN-clean_and_record_subproject.sh
-    ├── output_to_input/               # Canonical output location
     └── workflow-COPYME-analyze_gene_sizes/
         ├── README.md                  # Quick start guide
         ├── RUN-workflow.sh            # Run locally
@@ -138,7 +138,7 @@ Species without input files are gracefully skipped (SKIPPED_NO_DATA).
 
 ### Outputs Shared Downstream
 
-Via `output_to_input/`:
+Via `output_to_input/BLOCK_analyze_gene_sizes/`:
 - `speciesN_gigantic_gene_metrics/` - Per-species gene structure metrics with ranks
 - `speciesN_gigantic_gene_sizes_summary/` - Cross-species summary statistics
 

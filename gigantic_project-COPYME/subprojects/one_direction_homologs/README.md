@@ -105,12 +105,14 @@ one_direction_homologs/
 ├── upload_to_server/                           # Files for GIGANTIC server
 │   └── upload_manifest.tsv
 │
+├── output_to_input/                            # Outputs for downstream subprojects
+│   └── BLOCK_diamond_ncbi_nr/
+│       └── ncbi_nr_top_hits/                   # Per-species top hits + statistics
+│
 └── BLOCK_diamond_ncbi_nr/
     ├── AI_GUIDE-diamond_ncbi_nr.md             # BLOCK-level AI guidance
     ├── RUN-clean_and_record_subproject.sh      # Cleanup + AI session recording
     ├── RUN-update_upload_to_server.sh          # Update server sharing symlinks
-    ├── output_to_input/                        # Outputs for downstream subprojects
-    │   └── ncbi_nr_top_hits/                   # Per-species top hits + statistics
     │
     └── workflow-COPYME-diamond_ncbi_nr/
         ├── README.md                           # Quick start guide
@@ -150,7 +152,7 @@ one_direction_homologs/
 
 ### Shared Downstream
 
-**Location**: `BLOCK_diamond_ncbi_nr/output_to_input/ncbi_nr_top_hits/`
+**Location**: `output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/`
 
 | File | Description |
 |------|-------------|

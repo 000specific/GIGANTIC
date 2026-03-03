@@ -57,7 +57,7 @@ Same pattern for BLOCK_orthohmm, BLOCK_broccoli, and BLOCK_comparison.
 
 ## Standardized Output
 
-All three tools produce identical files in `output_to_input/`:
+All three tools produce identical files in `output_to_input/BLOCK_*/`:
 
 | File | Contents |
 |------|----------|
@@ -75,14 +75,17 @@ orthogroups/
 ├── README.md                            # This file
 ├── AI_GUIDE-orthogroups.md              # AI assistant guide (Level 2)
 ├── TODO.md
-├── output_to_input/                     # Final outputs for downstream
+├── output_to_input/                     # Single canonical location for downstream outputs
+│   ├── BLOCK_orthofinder/               # OrthoFinder standardized outputs
+│   ├── BLOCK_orthohmm/                  # OrthoHMM standardized outputs
+│   ├── BLOCK_broccoli/                  # Broccoli standardized outputs
+│   └── BLOCK_comparison/               # Comparison standardized outputs
 ├── upload_to_server/
 ├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── BLOCK_orthofinder/                   # OrthoFinder project (6 scripts)
 │   ├── AI_GUIDE-orthofinder.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_orthofinder/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -91,7 +94,6 @@ orthogroups/
 │
 ├── BLOCK_orthohmm/                      # OrthoHMM project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_orthohmm/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -100,7 +102,6 @@ orthogroups/
 │
 ├── BLOCK_broccoli/                      # Broccoli project (6 scripts)
 │   ├── AI_GUIDE-broccoli.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_broccoli/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
@@ -109,7 +110,6 @@ orthogroups/
 │
 └── BLOCK_comparison/                    # Cross-method comparison (2 scripts)
     ├── AI_GUIDE-comparison.md
-    ├── output_to_input/
     └── workflow-COPYME-compare_methods/
         ├── ai/ (main.nf, nextflow.config, scripts/)
         ├── RUN-workflow.sh

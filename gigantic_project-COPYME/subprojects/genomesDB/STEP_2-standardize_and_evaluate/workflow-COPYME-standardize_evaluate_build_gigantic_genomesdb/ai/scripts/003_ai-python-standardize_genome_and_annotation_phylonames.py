@@ -107,7 +107,7 @@ def load_phylonames_mapping( mapping_file_path: Path, logger: logging.Logger ) -
     if not mapping_file_path.exists():
         logger.error( f"CRITICAL ERROR: Phylonames mapping file not found: {mapping_file_path}" )
         logger.error( "The phylonames subproject must be run before STEP_2." )
-        logger.error( "Expected location: phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv" )
+        logger.error( "Expected location: phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv" )
         sys.exit( 1 )
 
     genus_species___phyloname_tuples = {}
@@ -373,9 +373,9 @@ def main():
 Examples:
     # Basic usage with default output location
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
-        --phylonames-mapping ../../../phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv \\
-        --input-genomes ../../STEP_1-sources/output_to_input/genomes \\
-        --input-gene-annotations ../../STEP_1-sources/output_to_input/gene_annotations
+        --phylonames-mapping ../../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv \\
+        --input-genomes ../../output_to_input/STEP_1-sources/genomes \\
+        --input-gene-annotations ../../output_to_input/STEP_1-sources/gene_annotations
 
     # Custom output directory
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\

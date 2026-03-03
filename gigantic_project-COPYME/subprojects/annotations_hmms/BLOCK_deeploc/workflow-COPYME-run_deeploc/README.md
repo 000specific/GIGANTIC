@@ -24,4 +24,4 @@ sbatch RUN-workflow.sbatch   # SLURM
 ## Outputs
 
 - Per-species TSV files with localization predictions and confidence scores
-- Results published to `OUTPUT_pipeline/` and `ai/output_to_input/`
+- Results published to `OUTPUT_pipeline/` and symlinked to `output_to_input/BLOCK_deeploc/`

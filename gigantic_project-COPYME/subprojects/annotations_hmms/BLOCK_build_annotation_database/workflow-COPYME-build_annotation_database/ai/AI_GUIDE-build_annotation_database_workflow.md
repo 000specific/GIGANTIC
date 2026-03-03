@@ -18,7 +18,7 @@ bash RUN-workflow.sh
 
 ## Pipeline Steps
 
-1. **Discover tool outputs** - Scan BLOCK output_to_input directories for available annotation results
+1. **Discover tool outputs** - Scan output_to_input/BLOCK_*/ directories for available annotation results
 2. **Download GO ontology** - Fetch current Gene Ontology OBO file from GO Consortium
 3. **Parse InterProScan** - Standardize InterProScan domain/GO annotations into unified format
 4. **Parse DeepLoc** - Standardize DeepLoc localization predictions into unified format
@@ -33,7 +33,7 @@ bash RUN-workflow.sh
 13. **Localization summary** - Summarize subcellular localization patterns across species
 14. **Disorder-transmembrane overlap** - Analyze overlap between disordered and transmembrane regions
 15. **Generate database files** - Write final annotation database in standardized GIGANTIC format
-16. **Publish to output_to_input** - Copy key outputs for downstream subproject access
+16. **Analyze phylogenetic patterns** - Configurable clade-based annotation comparisons
 
 ## Key Configuration
 
@@ -56,8 +56,8 @@ ls OUTPUT_pipeline/9-output/*.tsv | wc -l
 ls OUTPUT_pipeline/11-output/*.tsv
 ls OUTPUT_pipeline/12-output/*.tsv
 
-# Verify output_to_input was populated
-ls ai/output_to_input/
+# Verify output_to_input was populated (symlinks created by RUN-workflow.sh)
+ls ../../../output_to_input/BLOCK_build_annotation_database/
 ```
 
 ## Common Errors

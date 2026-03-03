@@ -27,7 +27,7 @@
 #   Step 1 -> OUTPUT_pipeline/1-output/  Validate manifest (check files exist)
 #   Step 2 -> OUTPUT_pipeline/2-output/  Ingest data (hard copy files)
 #
-# After pipeline: RUN-workflow.sh creates symlinks for downstream STEP_2
+# After pipeline: RUN-workflow.sh creates symlinks in ../../output_to_input/STEP_1-sources/
 #
 ################################################################################
 
@@ -107,12 +107,11 @@ if [ $NF_EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/2-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. ../output_to_input/  (STEP-level, for downstream STEP_2)
-#   2. ai/output_to_input/  (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/STEP_1-sources/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -121,13 +120,11 @@ fi
 echo ""
 echo "Creating symlinks for downstream workflows..."
 
-WORKFLOW_NAME=$(basename "${SCRIPT_DIR}")
+# Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-# --- STEP-level output_to_input ---
-STEP_SHARED_DIR="../output_to_input"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_1-sources"
 
 # Data types to symlink
 DATA_TYPES=("T1_proteomes" "genomes" "gene_annotations")
@@ -141,13 +138,9 @@ for DATA_TYPE in "${DATA_TYPES[@]}"; do
         continue
     fi
 
-    # STEP-level symlinks
-    mkdir -p "${STEP_SHARED_DIR}/${DATA_TYPE}"
-    find "${STEP_SHARED_DIR}/${DATA_TYPE}" -type l -delete 2>/dev/null
-
-    # Workflow-level archival symlinks
-    mkdir -p "${WORKFLOW_SHARED_DIR}/${DATA_TYPE}"
-    find "${WORKFLOW_SHARED_DIR}/${DATA_TYPE}" -type l -delete 2>/dev/null
+    # Subproject-root symlinks
+    mkdir -p "${SUBPROJECT_SHARED_DIR}/${DATA_TYPE}"
+    find "${SUBPROJECT_SHARED_DIR}/${DATA_TYPE}" -type l -delete 2>/dev/null
 
     LINKED=0
 
@@ -156,13 +149,9 @@ for DATA_TYPE in "${DATA_TYPES[@]}"; do
 
         filename=$(basename "$source_file")
 
-        # STEP-level symlink
-        ln -sf "../../${WORKFLOW_NAME}/${source_file}" \
-            "${STEP_SHARED_DIR}/${DATA_TYPE}/${filename}"
-
-        # Workflow-level archival symlink
-        ln -sf "../../../${source_file}" \
-            "${WORKFLOW_SHARED_DIR}/${DATA_TYPE}/${filename}"
+        # Symlink from subproject output_to_input to real file
+        ln -sf "../../../STEP_1-sources/${WORKFLOW_DIR_NAME}/${source_file}" \
+            "${SUBPROJECT_SHARED_DIR}/${DATA_TYPE}/${filename}"
 
         LINKED=$((LINKED + 1))
     done
@@ -172,8 +161,7 @@ for DATA_TYPE in "${DATA_TYPES[@]}"; do
 done
 
 echo "  Total: ${TOTAL_LINKED} symlinks"
-echo "  STEP output_to_input/ -> symlinks created"
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_1-sources/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -184,10 +172,7 @@ echo "  OUTPUT_pipeline/1-output/  Validation report"
 echo "  OUTPUT_pipeline/2-output/  Ingested data"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/T1_proteomes/   (for downstream STEP_2)"
-echo "  ../output_to_input/genomes/        (for downstream STEP_2)"
-echo "  ../output_to_input/gene_annotations/ (for downstream STEP_2)"
-echo "  ai/output_to_input/                (archival with this run)"
+echo "  ../../output_to_input/STEP_1-sources/  (for downstream STEP_2)"
 echo ""
 echo "Next step: Run STEP_2-standardize_and_evaluate workflow"
 echo "========================================================================"

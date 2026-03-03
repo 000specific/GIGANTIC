@@ -16,7 +16,7 @@ STEP_3 workflow template for phylogenetic analysis with configurable tree-buildi
 ## What This Workflow Does
 
 1. **Prepare Input** (Process 1)
-   - Stages AGS sequences from STEP_2 output_to_input
+   - Stages AGS sequences from subproject output_to_input/STEP_2-homolog_discovery/
 
 2. **Clean Sequences** (Process 2)
    - Removes leading/trailing dashes from sequences
@@ -38,7 +38,7 @@ STEP_3 workflow template for phylogenetic analysis with configurable tree-buildi
    - Computer-vision tree visualization (script 007)
 
 7. **Export** (Process 8)
-   - Copies alignment, trimmed alignment, and tree files to output_to_input
+   - Copies alignment, trimmed alignment, and tree files to subproject output_to_input/STEP_3-phylogenetic_analysis/
 
 ---
 
@@ -87,7 +87,7 @@ sbatch RUN-workflow.sbatch
 
 ## Prerequisites
 
-- **STEP_2-homolog_discovery** complete for this gene family (AGS file in output_to_input/)
+- **STEP_2-homolog_discovery** complete for this gene family (AGS file in `trees_gene_families/output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/`)
 - **Conda environment** `ai_gigantic_trees_gene_families` with `mafft`, `clipkit`, `fasttree`, and optionally `iqtree`, `VeryFastTree`, `phylobayes`
 - **NextFlow** installed and available in PATH
 
@@ -162,7 +162,7 @@ workflow-COPYME-phylogenetic_analysis/
 ## Data Flow
 
 ```
-STEP_2 output_to_input/ags_fastas/<gene_family>/
+trees_gene_families/output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/
        │
        ▼
 Process 1: Stage AGS → 1-output/
@@ -185,7 +185,7 @@ Process 4: ClipKit → 4-output/
      Processes 6-7: Visualizations
               │
               ▼
-     Process 8: output_to_input/
+     Process 8: trees_gene_families/output_to_input/STEP_3-phylogenetic_analysis/
 ```
 
 ---
@@ -194,6 +194,5 @@ Process 4: ClipKit → 4-output/
 
 After this workflow completes, phylogenetic trees are available in:
 ```
-STEP_3-phylogenetic_analysis/output_to_input/trees/<gene_family>/
-trees_gene_families/output_to_input/step_3/trees/<gene_family>/
+trees_gene_families/output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/
 ```

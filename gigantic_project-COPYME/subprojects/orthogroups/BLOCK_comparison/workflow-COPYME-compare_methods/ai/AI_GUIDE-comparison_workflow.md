@@ -9,10 +9,10 @@ module load conda
 conda activate ai_gigantic_orthogroups
 module load nextflow
 
-# Verify at least 2 tools have results
-ls ../../BLOCK_orthofinder/output_to_input/
-ls ../../BLOCK_orthohmm/output_to_input/
-ls ../../BLOCK_broccoli/output_to_input/
+# Verify at least 2 tools have results (all in subproject-root output_to_input/)
+ls ../../output_to_input/BLOCK_orthofinder/
+ls ../../output_to_input/BLOCK_orthohmm/
+ls ../../output_to_input/BLOCK_broccoli/
 
 bash ../RUN-workflow.sh
 # Or: sbatch ../RUN-workflow.sbatch
@@ -20,7 +20,7 @@ bash ../RUN-workflow.sh
 
 ## Pipeline Steps
 
-1. **load_tool_results** - Loads standardized output from tool output_to_input/ directories
+1. **load_tool_results** - Loads standardized output from subproject-root output_to_input/BLOCK_*/ directories
 2. **compare_methods** - Generates comparison statistics, overlap analysis, size distributions
 
 ## Verification Commands

@@ -82,9 +82,9 @@ Source data from STEP_1-sources, accessed via `output_to_input/`:
 
 | Data Type | Count | Location |
 |-----------|-------|----------|
-| T1 proteomes | 71 | `../STEP_1-sources/output_to_input/T1_proteomes/` |
-| Genomes | 64 | `../STEP_1-sources/output_to_input/genomes/` |
-| Gene annotations | 69 | `../STEP_1-sources/output_to_input/gene_annotations/` |
+| T1 proteomes | 71 | `../output_to_input/STEP_1-sources/T1_proteomes/` |
+| Genomes | 64 | `../output_to_input/STEP_1-sources/genomes/` |
+| Gene annotations | 69 | `../output_to_input/STEP_1-sources/gene_annotations/` |
 
 Also requires:
 - **Phylonames mapping**: `../../phylonames/BLOCK_generate_phylonames/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`

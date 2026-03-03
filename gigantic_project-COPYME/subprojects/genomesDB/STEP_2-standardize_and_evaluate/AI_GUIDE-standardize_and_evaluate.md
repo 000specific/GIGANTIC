@@ -47,7 +47,7 @@
 
 ## Inputs from STEP_1
 
-STEP_2 reads from STEP_1's `output_to_input/` directory (relative path: `../STEP_1-sources/output_to_input/`):
+STEP_2 reads from STEP_1's outputs in the subproject-root `output_to_input/` directory (relative path: `../output_to_input/STEP_1-sources/`):
 
 | Data Type | Count | Subdirectory | File Types |
 |-----------|-------|--------------|------------|
@@ -194,7 +194,7 @@ research_notebook/research_ai/subproject-genomesDB/
 | Error | Cause | Solution |
 |-------|-------|----------|
 | No input proteomes | STEP_1 not run | Run STEP_1-sources workflow first |
-| No input genomes | STEP_1 not run or no genomes available | Check `../STEP_1-sources/output_to_input/genomes/` |
+| No input genomes | STEP_1 not run or no genomes available | Check `../output_to_input/STEP_1-sources/genomes/` |
 | Phyloname lookup fails | phylonames not run | Run phylonames subproject first |
 | genus_species not in mapping | Naming inconsistency | Check upstream naming in STEP_1 source data |
 | Invalid FASTA | Corrupted download | Re-run STEP_1 source download |

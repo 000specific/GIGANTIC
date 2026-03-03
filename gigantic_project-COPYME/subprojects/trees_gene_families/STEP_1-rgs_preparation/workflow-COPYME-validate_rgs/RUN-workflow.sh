@@ -22,7 +22,7 @@
 #
 # OUTPUT:
 # Validated RGS file in OUTPUT_pipeline/1-output/
-# Validated RGS symlinked to output_to_input/ (by RUN-workflow.sh)
+# Validated RGS symlinked to ../../output_to_input/STEP_1-rgs_preparation/ (by RUN-workflow.sh)
 #
 ################################################################################
 
@@ -93,12 +93,11 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input (subproject root)
 # ============================================================================
 # Real files live in OUTPUT_pipeline/1-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. ../output_to_input/  (STEP-level, for downstream STEPs)
-#   2. ai/output_to_input/  (archival, with this workflow run)
+# Symlinks are created at the subproject-root output_to_input/:
+#   ../../output_to_input/STEP_1-rgs_preparation/rgs_fastas/<gene_family>/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -109,27 +108,17 @@ echo "Creating symlinks for downstream workflows..."
 
 # Extract gene family name from config
 GENE_FAMILY=$(grep -A1 "^gene_family:" rgs_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
-WORKFLOW_NAME=$(basename "${SCRIPT_DIR}")
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-# --- STEP-level output_to_input ---
-STEP_SHARED_DIR="../output_to_input"
-mkdir -p "${STEP_SHARED_DIR}/rgs_fastas/${GENE_FAMILY}"
-find "${STEP_SHARED_DIR}/rgs_fastas/${GENE_FAMILY}" -type l -delete 2>/dev/null
+# --- Subproject-root output_to_input ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_1-rgs_preparation"
+mkdir -p "${SUBPROJECT_SHARED_DIR}/rgs_fastas/${GENE_FAMILY}"
+find "${SUBPROJECT_SHARED_DIR}/rgs_fastas/${GENE_FAMILY}" -type l -delete 2>/dev/null
 
-ln -sf "../../../${WORKFLOW_NAME}/OUTPUT_pipeline/1-output/1_ai-rgs-${GENE_FAMILY}-validated.aa" \
-    "${STEP_SHARED_DIR}/rgs_fastas/${GENE_FAMILY}/1_ai-rgs-${GENE_FAMILY}-validated.aa"
+ln -sf "../../../STEP_1-rgs_preparation/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/1-output/1_ai-rgs-${GENE_FAMILY}-validated.aa" \
+    "${SUBPROJECT_SHARED_DIR}/rgs_fastas/${GENE_FAMILY}/1_ai-rgs-${GENE_FAMILY}-validated.aa"
 
-echo "  STEP output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-ln -sf "../../OUTPUT_pipeline/1-output/1_ai-rgs-${GENE_FAMILY}-validated.aa" \
-    "${WORKFLOW_SHARED_DIR}/1_ai-rgs-${GENE_FAMILY}-validated.aa"
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_1-rgs_preparation/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -139,8 +128,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/rgs_fastas/${GENE_FAMILY}/  (for downstream STEPs)"
-echo "  ai/output_to_input/                             (archival with this run)"
+echo "  ../../output_to_input/STEP_1-rgs_preparation/rgs_fastas/${GENE_FAMILY}/"
 echo "========================================================================"
 echo "Completed: $(date)"
 

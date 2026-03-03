@@ -23,7 +23,7 @@ STEP_1 is recommended but not required. You can provide RGS files directly to ST
 ## Output
 
 Validated RGS files are copied to:
-- `output_to_input/rgs_fastas/<gene_group>/rgs-<gene_group>.aa`
+- `../output_to_input/STEP_1-rgs_preparation/rgs_fastas/<gene_group>/rgs-<gene_group>.aa`
 
 ## For AI Assistants
 

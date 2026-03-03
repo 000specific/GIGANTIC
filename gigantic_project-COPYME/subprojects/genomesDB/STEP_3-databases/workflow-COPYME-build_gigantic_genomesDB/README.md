@@ -13,7 +13,7 @@ Build per-genome BLAST protein databases from standardized proteomes. Each speci
 
 ## Prerequisites
 
-1. **STEP_2 complete**: Standardized proteomes in `STEP_2/output_to_input/gigantic_proteomes/`
+1. **STEP_2 complete**: Standardized proteomes in `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes/`
 2. **Species manifest edited**: User has reviewed and set `Include=YES/NO` in the species selection manifest
 3. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `ai_gigantic_genomesdb` conda environment)
 
@@ -46,8 +46,8 @@ sbatch RUN-workflow.sbatch
 
 | Input | Source | Description |
 |-------|--------|-------------|
-| Species manifest | `STEP_2/output_to_input/species_selection_manifest.tsv` | User-edited manifest with Include=YES/NO |
-| Proteomes | `STEP_2/output_to_input/gigantic_proteomes/` | Standardized T1 proteomes |
+| Species manifest | `output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv` | User-edited manifest with Include=YES/NO |
+| Proteomes | `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes/` | Standardized T1 proteomes |
 
 ---
 
@@ -59,7 +59,7 @@ sbatch RUN-workflow.sbatch
 | BLAST databases | `OUTPUT_pipeline/2-output/gigantic-T1-blastp/` | Per-genome BLAST databases |
 | makeblastdb commands | `OUTPUT_pipeline/2-output/2_ai-makeblastdb_commands.sh` | Log of all makeblastdb commands |
 
-**Shared with other subprojects via**: `output_to_input/gigantic-T1-blastp/`
+**Shared with other subprojects via**: `output_to_input/STEP_3-databases/gigantic-T1-blastp/`
 
 ---
 

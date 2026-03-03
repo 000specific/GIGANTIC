@@ -7,7 +7,7 @@
 # =============================================================================
 # Runs the cross-method orthogroup comparison Nextflow pipeline.
 # Requires that at least 2 tool projects have completed and populated
-# their output_to_input/ directories.
+# the subproject-root output_to_input/BLOCK_*/ directories.
 #
 # Prerequisites:
 #   - At least 2 of: orthofinder, orthohmm, broccoli must have results
@@ -70,48 +70,36 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. BLOCK_comparison/output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/               (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/BLOCK_comparison/
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
 # ============================================================================
 
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- BLOCK-level output_to_input (canonical) ---
-BLOCK_SHARED_DIR="../output_to_input"
-mkdir -p "${BLOCK_SHARED_DIR}"
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/BLOCK_comparison"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale symlinks from previous runs
-find "${BLOCK_SHARED_DIR}" -type l -delete 2>/dev/null
+find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
 
-ln -sf "../workflow-COPYME-compare_methods/OUTPUT_pipeline/2-output/2_ai-method_comparison_summary.tsv" \
-    "${BLOCK_SHARED_DIR}/method_comparison_summary.tsv"
-ln -sf "../workflow-COPYME-compare_methods/OUTPUT_pipeline/2-output/2_ai-gene_overlap_between_methods.tsv" \
-    "${BLOCK_SHARED_DIR}/gene_overlap_between_methods.tsv"
-ln -sf "../workflow-COPYME-compare_methods/OUTPUT_pipeline/2-output/2_ai-orthogroup_size_comparison.tsv" \
-    "${BLOCK_SHARED_DIR}/orthogroup_size_comparison.tsv"
+ln -sf "../../BLOCK_comparison/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/2_ai-method_comparison_summary.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/method_comparison_summary.tsv"
+ln -sf "../../BLOCK_comparison/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/2_ai-gene_overlap_between_methods.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/gene_overlap_between_methods.tsv"
+ln -sf "../../BLOCK_comparison/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/2_ai-orthogroup_size_comparison.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/orthogroup_size_comparison.tsv"
 
-echo "  BLOCK output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-ln -sf "../../OUTPUT_pipeline/2-output/2_ai-method_comparison_summary.tsv" \
-    "${WORKFLOW_SHARED_DIR}/method_comparison_summary.tsv"
-ln -sf "../../OUTPUT_pipeline/2-output/2_ai-gene_overlap_between_methods.tsv" \
-    "${WORKFLOW_SHARED_DIR}/gene_overlap_between_methods.tsv"
-ln -sf "../../OUTPUT_pipeline/2-output/2_ai-orthogroup_size_comparison.tsv" \
-    "${WORKFLOW_SHARED_DIR}/orthogroup_size_comparison.tsv"
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  Created symlinks in output_to_input/BLOCK_comparison/"
 
 echo ""
 echo "========================================================================"
@@ -121,8 +109,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 2-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/  (archival with this run)"
+echo "  output_to_input/BLOCK_comparison/  (subproject root)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

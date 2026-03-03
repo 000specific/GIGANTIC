@@ -109,7 +109,7 @@ def load_discovery_manifest( manifest_path: Path, logger: logging.Logger ) -> di
 
     with open( manifest_path, 'r' ) as input_manifest:
         # Tool_Name (name of annotation tool)	Tool_Available (yes or no ...)	...
-        # tmbed	yes	/path/to/output_to_input	5	*_tmbed_predictions.3line
+        # tmbed	yes	output_to_input/BLOCK_tmbed	5	*_tmbed_predictions.3line
         for line in input_manifest:
             line = line.strip()
 
@@ -238,7 +238,7 @@ def extract_topology_regions( topology_string: str ) -> list:
 def parse_tmbed_files( tmbed_record: dict, output_directory: Path,
                         logger: logging.Logger ) -> None:
     """
-    Parse all tmbed 3-line prediction files found in the output_to_input directory.
+    Parse all tmbed 3-line prediction files found in the tool output directory.
     Create standardized TSV files per species.
     """
 

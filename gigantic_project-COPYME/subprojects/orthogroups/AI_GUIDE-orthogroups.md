@@ -59,14 +59,17 @@ orthogroups/
 ├── AI_GUIDE-orthogroups.md              # THIS FILE (Level 2)
 ├── README.md
 ├── TODO.md
-├── output_to_input/                     # Final outputs for downstream
+├── output_to_input/                     # Single canonical location for downstream outputs
+│   ├── BLOCK_orthofinder/               # OrthoFinder standardized outputs
+│   ├── BLOCK_orthohmm/                  # OrthoHMM standardized outputs
+│   ├── BLOCK_broccoli/                  # Broccoli standardized outputs
+│   └── BLOCK_comparison/               # Comparison standardized outputs
 ├── upload_to_server/
 ├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── BLOCK_orthofinder/                         # OrthoFinder tool project (6 scripts)
 │   ├── AI_GUIDE-orthofinder.md          # Level 2 per-project guide
-│   ├── output_to_input/                 # Standardized outputs
 │   └── workflow-COPYME-run_orthofinder/
 │       ├── ai/                          # Pipeline (main.nf, scripts/)
 │       ├── INPUT_user/
@@ -76,7 +79,6 @@ orthogroups/
 │
 ├── BLOCK_orthohmm/                            # OrthoHMM tool project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_orthohmm/
 │       ├── ai/
 │       ├── INPUT_user/
@@ -86,7 +88,6 @@ orthogroups/
 │
 ├── BLOCK_broccoli/                            # Broccoli tool project (6 scripts)
 │   ├── AI_GUIDE-broccoli.md
-│   ├── output_to_input/
 │   └── workflow-COPYME-run_broccoli/
 │       ├── ai/
 │       ├── INPUT_user/
@@ -96,7 +97,6 @@ orthogroups/
 │
 └── BLOCK_comparison/                          # Cross-method comparison project (2 scripts)
     ├── AI_GUIDE-comparison.md
-    ├── output_to_input/
     └── workflow-COPYME-compare_methods/
         ├── ai/
         ├── INPUT_user/
@@ -109,7 +109,7 @@ orthogroups/
 
 ## Standardized Output Format
 
-All three tools produce **identical output** in their `output_to_input/` directories:
+All three tools produce **identical output** in the subproject-root `output_to_input/BLOCK_*/` directories:
 
 | File | Contents |
 |------|----------|
@@ -136,8 +136,9 @@ BLOCK_orthofinder/ BLOCK_orthohmm/ BLOCK_broccoli/ │
 (6 scripts)       (6 scripts)     (6 scripts)     │
     │                │               │            │
     ▼                ▼               ▼            │
-  output_          output_         output_        │
-  to_input/        to_input/       to_input/      │
+output_to_input/  output_to_input/ output_to_input/│
+  BLOCK_ortho       BLOCK_ortho      BLOCK_        │
+  finder/           hmm/             broccoli/     │
     │                │               │            │
     └────────────────┼───────────────┘            │
                      ▼                            │
@@ -145,8 +146,10 @@ BLOCK_orthofinder/ BLOCK_orthohmm/ BLOCK_broccoli/ │
          (2 scripts)
               │
               ▼
-    orthogroups/output_to_input/ → downstream subprojects
+    output_to_input/BLOCK_comparison/ → downstream subprojects
 ```
+
+All outputs are consolidated under a single `orthogroups/output_to_input/` directory at the subproject root.
 
 ---
 

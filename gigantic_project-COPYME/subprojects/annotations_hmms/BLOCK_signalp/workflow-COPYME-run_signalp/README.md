@@ -23,4 +23,4 @@ sbatch RUN-workflow.sbatch   # SLURM
 ## Outputs
 
 - Per-species TSV files with signal peptide predictions, cleavage positions, and type classifications (Sec/SPI, Sec/SPII, Tat/SPI)
-- Results published to `OUTPUT_pipeline/` and `ai/output_to_input/`
+- Results published to `OUTPUT_pipeline/` and symlinked to `output_to_input/BLOCK_signalp/`

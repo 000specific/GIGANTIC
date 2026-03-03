@@ -44,7 +44,7 @@ bash RUN-workflow.sh
 ## Output
 
 Final AGS files are copied to:
-- `output_to_input/ags_fastas/<gene_family>/`
+- `../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/`
 
 ## For AI Assistants
 

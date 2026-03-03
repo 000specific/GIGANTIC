@@ -17,7 +17,7 @@ bash RUN-workflow.sh
 
 ## Prerequisites
 
-- STEP_2 must be complete for the same gene family (AGS file in output_to_input)
+- STEP_2 must be complete for the same gene family (AGS file in output_to_input/STEP_2-homolog_discovery)
 
 ## Tree Methods
 
@@ -33,7 +33,7 @@ Enable/disable methods in `phylogenetic_analysis_config.yaml`.
 ## Output
 
 Trees and visualizations are copied to:
-- `output_to_input/trees/<gene_family>/`
+- `../output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/`
 
 ## For AI Assistants
 

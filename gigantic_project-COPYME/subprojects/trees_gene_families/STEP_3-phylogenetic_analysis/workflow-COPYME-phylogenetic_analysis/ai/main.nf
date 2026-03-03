@@ -56,7 +56,7 @@ params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
 params.gene_family = config.gene_family?.name ?: null
 
 // Input: AGS sequences from STEP_2
-params.step2_ags_fastas_dir = config.input?.step2_ags_fastas_dir ?: '../../STEP_2-homolog_discovery/output_to_input/ags_fastas'
+params.step2_ags_fastas_dir = config.input?.step2_ags_fastas_dir ?: '../../output_to_input/STEP_2-homolog_discovery/ags_fastas'
 
 // Project database name (for file naming)
 params.project_database = config.project?.database ?: 'species67_T1-species67'
@@ -113,12 +113,12 @@ process prepare_alignment_input {
     """
     mkdir -p 1-output
 
-    # Find AGS file from STEP_2 output_to_input
+    # Find AGS file from subproject output_to_input/STEP_2-homolog_discovery
     AGS_FILE=\$(find "${step2_dir}/${gene_family}/" -name "*.aa" -type f | head -1)
 
     if [ -z "\${AGS_FILE}" ] || [ ! -f "\${AGS_FILE}" ]; then
         echo "ERROR: AGS file not found in: ${step2_dir}/${gene_family}/"
-        echo "Ensure STEP_2 has completed and output_to_input/ags_fastas/${gene_family}/ contains results."
+        echo "Ensure STEP_2 has completed and output_to_input/STEP_2-homolog_discovery/ags_fastas/${gene_family}/ contains results."
         exit 1
     fi
 

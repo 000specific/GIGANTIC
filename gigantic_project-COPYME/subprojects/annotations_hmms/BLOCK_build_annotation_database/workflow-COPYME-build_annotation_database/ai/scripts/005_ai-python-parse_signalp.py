@@ -89,7 +89,7 @@ def load_discovery_manifest( manifest_path: Path, logger: logging.Logger ) -> di
 
     with open( manifest_path, 'r' ) as input_manifest:
         # Tool_Name (name of annotation tool)	Tool_Available (yes or no ...)	...
-        # signalp	yes	/path/to/output_to_input	5	*_signalp_predictions.tsv
+        # signalp	yes	output_to_input/BLOCK_signalp	5	*_signalp_predictions.tsv
         for line in input_manifest:
             line = line.strip()
 
@@ -168,7 +168,7 @@ def write_standardized_header() -> str:
 def parse_signalp_files( signalp_record: dict, output_directory: Path,
                           logger: logging.Logger ) -> None:
     """
-    Parse all SignalP TSV prediction files found in the output_to_input directory.
+    Parse all SignalP TSV prediction files found in the tool output directory.
     Create standardized TSV files per species.
     """
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.6 | 2026 March 03 | Purpose: Auto-scan sibling BLOCK output_to_input directories for available tool results
+# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Auto-scan consolidated output_to_input/BLOCK_*/ directories for available tool results
 # Human: Eric Edsinger
 
 """
 001_ai-python-discover_tool_outputs.py
 
 Auto-discovers which annotation tool BLOCKs have produced results by scanning
-sibling BLOCK output_to_input/ directories under the annotations_hmms subproject.
-Creates a discovery manifest TSV that downstream scripts use to determine which
-parsers to run.
+the consolidated output_to_input/BLOCK_*/ directories under the annotations_hmms
+subproject root. Creates a discovery manifest TSV that downstream scripts use to
+determine which parsers to run.
 
 The script looks for these tool BLOCKs:
     BLOCK_interproscan  - InterProScan protein domain/function annotations
@@ -17,9 +17,9 @@ The script looks for these tool BLOCKs:
     BLOCK_tmbed         - tmbed transmembrane topology predictions
     BLOCK_metapredict   - MetaPredict intrinsically disordered region predictions
 
-Each tool BLOCK publishes its results to output_to_input/ when its workflow
-completes. This script checks which of those directories contain result files
-matching each tool's expected file pattern.
+Each tool BLOCK publishes its results to output_to_input/BLOCK_name/ at the
+subproject root when its workflow completes. This script checks which of those
+directories contain result files matching each tool's expected file pattern.
 
 Input:
     --annotations-dir: Path to annotations_hmms root directory (parent of BLOCK_* directories)
@@ -143,7 +143,8 @@ def discover_tool_outputs( annotations_directory: Path, output_directory: Path, 
         file_pattern = tool_definition[ 'file_pattern' ]
 
         # Construct path to this tool's output_to_input directory
-        output_to_input_directory = annotations_directory / block_directory_name / 'output_to_input'
+        # Consolidated layout: annotations_hmms/output_to_input/BLOCK_name/
+        output_to_input_directory = annotations_directory / 'output_to_input' / block_directory_name
         relative_output_directory = str( output_to_input_directory.relative_to( annotations_directory ) )
 
         logger.info( f"  Checking {tool_name}..." )
@@ -152,7 +153,7 @@ def discover_tool_outputs( annotations_directory: Path, output_directory: Path, 
 
         # Check if the output_to_input directory exists
         if not output_to_input_directory.exists():
-            logger.info( f"    NOT FOUND: {block_directory_name}/output_to_input/ does not exist" )
+            logger.info( f"    NOT FOUND: output_to_input/{block_directory_name}/ does not exist" )
             tools_missing_count += 1
             discovery_records.append( {
                 'tool_name': tool_name,
@@ -218,7 +219,7 @@ def discover_tool_outputs( annotations_directory: Path, output_directory: Path, 
         logger.error( "Expected at least one of these BLOCK directories with results:" )
         for tool_definition in TOOL_DEFINITIONS:
             block_directory_name = tool_definition[ 'block_directory_name' ]
-            logger.error( f"  {block_directory_name}/output_to_input/" )
+            logger.error( f"  output_to_input/{block_directory_name}/" )
         logger.error( "" )
         logger.error( "Complete at least one annotation tool BLOCK workflow before running" )
         logger.error( "the annotation database builder." )

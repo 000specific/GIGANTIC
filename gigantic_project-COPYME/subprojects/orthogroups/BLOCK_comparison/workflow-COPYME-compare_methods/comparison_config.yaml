@@ -5,7 +5,7 @@
 # Cross-Method Comparison Pipeline Configuration
 # =============================================================================
 
-# Paths to tool output_to_input directories (relative to workflow directory)
-orthofinder_dir: "../../BLOCK_orthofinder/output_to_input"
-orthohmm_dir: "../../BLOCK_orthohmm/output_to_input"
-broccoli_dir: "../../BLOCK_broccoli/output_to_input"
+# Paths to subproject-root output_to_input/BLOCK_*/ directories (relative to workflow directory)
+orthofinder_dir: "../../output_to_input/BLOCK_orthofinder"
+orthohmm_dir: "../../output_to_input/BLOCK_orthohmm"
+broccoli_dir: "../../output_to_input/BLOCK_broccoli"

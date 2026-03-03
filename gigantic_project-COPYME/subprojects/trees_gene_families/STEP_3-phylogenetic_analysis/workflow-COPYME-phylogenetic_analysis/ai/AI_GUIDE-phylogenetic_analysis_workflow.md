@@ -34,7 +34,7 @@ workflow-COPYME-phylogenetic_analysis/
 ├── RUN-workflow.sbatch   # SLURM: sbatch RUN-workflow.sbatch
 ├── phylogenetic_analysis_config.yaml  # User configuration
 │
-├── INPUT_user/                        # (empty - reads from STEP_2 output_to_input)
+├── INPUT_user/                        # (empty - reads from subproject output_to_input/STEP_2-homolog_discovery)
 │
 ├── OUTPUT_pipeline/
 │   ├── 1-output/       # Staged AGS
@@ -69,7 +69,7 @@ workflow-COPYME-phylogenetic_analysis/
 
 | Process | Scripts | Does |
 |---------|---------|------|
-| prepare_alignment_input | 001 | Copies AGS from STEP_2 output_to_input |
+| prepare_alignment_input | 001 | Copies AGS from output_to_input/STEP_2-homolog_discovery |
 | clean_sequences | 002 | Removes leading/trailing dashes from sequences |
 | run_mafft_alignment | 003 | MAFFT multiple sequence alignment |
 | run_clipkit_trimming | 004 | ClipKit smart-gap trimming |
@@ -79,7 +79,7 @@ workflow-COPYME-phylogenetic_analysis/
 | run_phylobayes | 005_d | PhyloBayes Bayesian MCMC (2 chains + convergence) |
 | visualize_trees_human | 006 | Human-friendly tree visualizations (SVG/PDF) |
 | visualize_trees_cv | 007 | Computer-vision-friendly visualizations |
-| *(symlinks by RUN-workflow.sh)* | - | Export trees and alignments to output_to_input |
+| *(symlinks by RUN-workflow.sh)* | - | Export trees and alignments to output_to_input/STEP_3-phylogenetic_analysis |
 
 ### Conditional Tree Building
 
@@ -115,7 +115,7 @@ gene_family:
   name: "innexin_pannexin"
 
 input:
-  step2_ags_fastas_dir: "../../STEP_2-homolog_discovery/output_to_input/ags_fastas"
+  step2_ags_fastas_dir: "../../output_to_input/STEP_2-homolog_discovery/ags_fastas"
 
 project:
   database: "species67_T1-species67"
@@ -193,7 +193,7 @@ cat OUTPUT_pipeline/5_b-output/*.treefile | head -1
 ls OUTPUT_pipeline/6-output/ OUTPUT_pipeline/7-output/
 
 # Check output_to_input export
-ls ../../output_to_input/trees/*/
+ls ../../../output_to_input/STEP_3-phylogenetic_analysis/trees/*/
 ```
 
 ---
@@ -206,7 +206,7 @@ ls ../../output_to_input/trees/*/
 
 **Diagnose**:
 ```bash
-ls ../../STEP_2-homolog_discovery/output_to_input/ags_fastas/*/
+ls ../../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/
 ```
 
 **Fix**: Run STEP_2 first, or update `step2_ags_fastas_dir` in config.
@@ -305,6 +305,6 @@ iqtree2 -s trimmed.clipkit -m MFP -bb 1000 -nt AUTO
 
 1. **Verify**: Check tree files exist and are non-empty
 2. **Review visualizations**: Check SVG/PDF files in `6-output/`
-3. **Check output_to_input**: `ls ../../output_to_input/trees/`
+3. **Check output_to_input**: `ls ../../../output_to_input/STEP_3-phylogenetic_analysis/trees/`
 4. **Compare methods**: If multiple methods ran, compare tree topologies
 5. **Done**: Trees are ready for publication or further analysis

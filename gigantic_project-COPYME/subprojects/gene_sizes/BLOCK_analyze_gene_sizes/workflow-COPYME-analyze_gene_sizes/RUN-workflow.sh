@@ -32,11 +32,11 @@
 # 2. Extracts per-gene metrics: gene length, exonic/intronic length, exon count, protein size
 # 3. Computes genome-wide statistics and relative rank (quantile) per species
 # 4. Compiles cross-species summary tables with processing status
-# 5. Creates output_to_input/ symlinks for downstream subprojects
+# 5. Creates output_to_input/BLOCK_analyze_gene_sizes/ symlinks for downstream subprojects
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output through 4-output/
-# Downstream symlinks in ../../output_to_input/ and ../output_to_input/
+# Downstream symlinks in ../../output_to_input/BLOCK_analyze_gene_sizes/
 #
 ################################################################################
 
@@ -127,9 +127,8 @@ fi
 # Create symlinks for output_to_input directories
 # ============================================================================
 # Real files live in OUTPUT_pipeline/4-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. ../output_to_input/     (BLOCK-level canonical, for downstream subprojects)
-#   2. ai/output_to_input/     (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/BLOCK_analyze_gene_sizes/
 #
 # gene_sizes creates per-species directories (speciesN_gigantic_gene_metrics,
 # speciesN_gigantic_gene_sizes_summary) which are discovered dynamically.
@@ -138,12 +137,12 @@ fi
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- BLOCK-level output_to_input (canonical) ---
-BLOCK_SHARED_DIR="../output_to_input"
-mkdir -p "${BLOCK_SHARED_DIR}"
+# --- Subproject-root output_to_input/BLOCK_analyze_gene_sizes/ ---
+SHARED_DIR="../../output_to_input/BLOCK_analyze_gene_sizes"
+mkdir -p "${SHARED_DIR}"
 
 # Remove any stale symlinks from previous runs
-for old_link in "${BLOCK_SHARED_DIR}"/species*_gigantic_gene_*; do
+for old_link in "${SHARED_DIR}"/species*_gigantic_gene_*; do
     if [ -L "$old_link" ]; then
         rm "$old_link"
     fi
@@ -153,30 +152,12 @@ done
 for species_dir in OUTPUT_pipeline/4-output/species*_gigantic_*; do
     if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
         dir_name=$(basename "$species_dir")
-        ln -sf "../workflow-COPYME-analyze_gene_sizes/OUTPUT_pipeline/4-output/${dir_name}" \
-            "${BLOCK_SHARED_DIR}/${dir_name}"
+        ln -sf "../../BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes/OUTPUT_pipeline/4-output/${dir_name}" \
+            "${SHARED_DIR}/${dir_name}"
     fi
 done
 
-echo "  BLOCK output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-# Create symlinks for each species directory
-for species_dir in OUTPUT_pipeline/4-output/species*_gigantic_*; do
-    if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
-        dir_name=$(basename "$species_dir")
-        ln -sf "../../OUTPUT_pipeline/4-output/${dir_name}" \
-            "${WORKFLOW_SHARED_DIR}/${dir_name}"
-    fi
-done
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/BLOCK_analyze_gene_sizes/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -189,8 +170,7 @@ echo "  OUTPUT_pipeline/3-output/  Ranked metrics and genome summaries"
 echo "  OUTPUT_pipeline/4-output/  Cross-species summary and downstream dirs"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/  (BLOCK-level, for downstream subprojects)"
-echo "  ai/output_to_input/  (archival with this run)"
+echo "  ../../output_to_input/BLOCK_analyze_gene_sizes/  (for downstream subprojects)"
 echo ""
 echo "Published directories:"
 echo "  speciesN_gigantic_gene_metrics/         Per-species ranked gene metrics"

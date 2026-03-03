@@ -54,7 +54,7 @@ def config = load_config()
 params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
 
 // Input: AGS sequences from STEP_2
-params.step2_homolog_sequences_dir = config.input?.step2_homolog_sequences_dir ?: '../../STEP_2-homolog_discovery/output_to_input/homolog_sequences'
+params.step2_homolog_sequences_dir = config.input?.step2_homolog_sequences_dir ?: '../../output_to_input/STEP_2-homolog_discovery/homolog_sequences'
 
 // RGS manifest for gene family names
 params.rgs_manifest = "${projectDir}/../INPUT_user/rgs_manifest.tsv"

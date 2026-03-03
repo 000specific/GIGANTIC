@@ -153,7 +153,7 @@ process qc_analysis_per_species {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
+// NOTE: Symlinks for output_to_input/BLOCK_broccoli/ are created
 // by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
 // real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================

@@ -163,7 +163,7 @@ workflow-COPYME-phylogenetic_analysis/
 ## Data Flow
 
 ```
-STEP_2 output_to_input/homolog_sequences/<gene_family>/
+output_to_input/STEP_2-homolog_discovery/homolog_sequences/<gene_family>/
        │
        ▼
 Process 1: Stage AGS → 1-output/
@@ -195,6 +195,5 @@ Process 4: ClipKit → 4-output/
 
 After this workflow completes, phylogenetic trees are available in:
 ```
-STEP_3-phylogenetic_analysis/output_to_input/trees/<gene_family>/
-trees_gene_families/output_to_input/STEP_3-trees/<gene_family>/
+output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/
 ```

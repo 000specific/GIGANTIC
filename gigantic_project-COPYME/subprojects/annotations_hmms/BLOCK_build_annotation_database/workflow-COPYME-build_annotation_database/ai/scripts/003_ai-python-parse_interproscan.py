@@ -139,7 +139,7 @@ def load_discovery_manifest( manifest_path: Path, logger: logging.Logger ) -> di
 
     with open( manifest_path, 'r' ) as input_manifest:
         # Tool_Name (name of annotation tool)	Tool_Available (yes or no ...)	...
-        # interproscan	yes	/path/to/output_to_input	5	*_interproscan_results.tsv
+        # interproscan	yes	output_to_input/BLOCK_interproscan	5	*_interproscan_results.tsv
         for line in input_manifest:
             line = line.strip()
 
@@ -284,7 +284,7 @@ def write_go_header() -> str:
 def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: dict,
                                output_directory: Path, logger: logging.Logger ) -> None:
     """
-    Parse all InterProScan result files found in the output_to_input directory.
+    Parse all InterProScan result files found in the tool output directory.
     Split annotations by analysis database and create standardized TSV files.
     """
 

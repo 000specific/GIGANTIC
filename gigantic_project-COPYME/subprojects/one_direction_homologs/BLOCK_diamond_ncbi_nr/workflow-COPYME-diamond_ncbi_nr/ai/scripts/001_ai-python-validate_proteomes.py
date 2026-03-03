@@ -99,7 +99,7 @@ def main():
     errors_found = 0
 
     # species_name	proteome_path	phyloname
-    # Homo_sapiens	../../genomesDB/output_to_input/proteomes/...aa	Metazoa_Chordata_..._Homo_sapiens
+    # Homo_sapiens	../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/...aa	Metazoa_Chordata_..._Homo_sapiens
     with open( input_manifest_path, 'r' ) as input_manifest:
 
         header_line = None

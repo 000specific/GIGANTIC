@@ -23,4 +23,4 @@ sbatch RUN-workflow.sbatch   # SLURM
 ## Outputs
 
 - Per-species TSV files with per-residue disorder scores and disordered region boundaries
-- Results published to `OUTPUT_pipeline/` and `ai/output_to_input/`
+- Results published to `OUTPUT_pipeline/` and symlinked to `output_to_input/BLOCK_metapredict/`

@@ -12,7 +12,7 @@ nextflow.enable.dsl = 2
 //   1. Validate proteome manifest and check all files exist
 //   2. Run DeepLoc 2.1 subcellular localization prediction on each species proteome (parallel)
 //
-// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
+// Symlinks for output_to_input/BLOCK_deeploc/ are created by RUN-workflow.sh after pipeline completes
 // =============================================================================
 
 // Script directory
@@ -59,8 +59,8 @@ process run_deeploc {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for output_to_input/ and ai/output_to_input/ are created
-// by RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
+// NOTE: Symlinks for output_to_input/BLOCK_deeploc/ are created by
+// RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
 // real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================
 workflow {

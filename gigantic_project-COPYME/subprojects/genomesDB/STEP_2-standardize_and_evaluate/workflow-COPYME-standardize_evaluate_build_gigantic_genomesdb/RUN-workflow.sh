@@ -32,7 +32,7 @@
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output through 6-output/
-# Species manifest copied to ../../output_to_input/
+# Species manifest copied to ../../output_to_input/STEP_2-standardize_and_evaluate/
 #
 ################################################################################
 
@@ -121,12 +121,11 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. ../../output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/     (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/STEP_2-standardize_and_evaluate/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -135,29 +134,20 @@ fi
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- STEP-level output_to_input (canonical) ---
-STEP_SHARED_DIR="../../output_to_input"
-mkdir -p "${STEP_SHARED_DIR}"
+# Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_2-standardize_and_evaluate"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale symlinks from previous runs
-find "${STEP_SHARED_DIR}" -maxdepth 1 -type l -delete 2>/dev/null
+find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
 
-ln -sf "../STEP_2-standardize_and_evaluate/workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
-    "${STEP_SHARED_DIR}/species_selection_manifest.tsv"
+ln -sf "../../STEP_2-standardize_and_evaluate/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/species_selection_manifest.tsv"
 
-echo "  STEP output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-ln -sf "../../OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
-    "${WORKFLOW_SHARED_DIR}/species_selection_manifest.tsv"
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  output_to_input/STEP_2-standardize_and_evaluate/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -167,8 +157,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 6-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/     (archival with this run)"
+echo "  ../../output_to_input/STEP_2-standardize_and_evaluate/  (for downstream subprojects)"
 echo ""
 echo "Next: Run STEP_4 to create final species set in output_to_input/"
 echo "========================================================================"

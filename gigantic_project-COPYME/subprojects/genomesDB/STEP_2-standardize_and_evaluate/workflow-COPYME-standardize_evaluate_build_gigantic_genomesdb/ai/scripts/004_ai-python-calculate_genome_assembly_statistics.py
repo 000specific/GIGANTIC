@@ -108,7 +108,7 @@ def load_phylonames_mapping_reverse( mapping_file_path: Path, logger: logging.Lo
     if not mapping_file_path.exists():
         logger.error( f"CRITICAL ERROR: Phylonames mapping file not found: {mapping_file_path}" )
         logger.error( "The phylonames subproject must be run before STEP_2." )
-        logger.error( "Expected location: phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv" )
+        logger.error( "Expected location: phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv" )
         sys.exit( 1 )
 
     phylonames___genus_species = {}
@@ -367,7 +367,7 @@ Examples:
     # Basic usage
     python3 004_ai-python-calculate_genome_assembly_statistics.py \\
         --input-genomes ../output_to_input/gigantic_genomes \\
-        --phylonames-mapping ../../../phylonames/BLOCK_generate_phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv
+        --phylonames-mapping ../../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv
 
     # Custom output directory
     python3 004_ai-python-calculate_genome_assembly_statistics.py \\

@@ -38,8 +38,8 @@ ls OUTPUT_pipeline/*/
 # Verify orthogroups were created
 wc -l OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv
 
-# Check output_to_input was populated
-ls ../../output_to_input/
+# Check output_to_input/BLOCK_orthofinder/ was populated
+ls ../../output_to_input/BLOCK_orthofinder/
 ```
 
 ## Common Errors

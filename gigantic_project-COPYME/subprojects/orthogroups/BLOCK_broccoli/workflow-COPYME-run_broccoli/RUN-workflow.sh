@@ -65,52 +65,38 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directories
+# Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in two locations:
-#   1. BLOCK_broccoli/output_to_input/  (canonical, for downstream subprojects)
-#   2. ai/output_to_input/              (archival, with this workflow run)
+# Symlinks are created in ONE location at the subproject root:
+#   ../../output_to_input/BLOCK_broccoli/
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
 # ============================================================================
 
 echo ""
 echo "Creating symlinks for downstream subprojects..."
 
-# --- BLOCK-level output_to_input (canonical) ---
-BLOCK_SHARED_DIR="../output_to_input"
-mkdir -p "${BLOCK_SHARED_DIR}"
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+
+# --- Subproject-root output_to_input (single canonical location) ---
+SUBPROJECT_SHARED_DIR="../../output_to_input/BLOCK_broccoli"
+mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale symlinks from previous runs
-find "${BLOCK_SHARED_DIR}" -type l -delete 2>/dev/null
+find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
 
-ln -sf "../workflow-COPYME-run_broccoli/OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv" \
-    "${BLOCK_SHARED_DIR}/orthogroups_gigantic_ids.tsv"
-ln -sf "../workflow-COPYME-run_broccoli/OUTPUT_pipeline/4-output/4_ai-gene_count_gigantic_ids.tsv" \
-    "${BLOCK_SHARED_DIR}/gene_count_gigantic_ids.tsv"
-ln -sf "../workflow-COPYME-run_broccoli/OUTPUT_pipeline/5-output/5_ai-summary_statistics.tsv" \
-    "${BLOCK_SHARED_DIR}/summary_statistics.tsv"
-ln -sf "../workflow-COPYME-run_broccoli/OUTPUT_pipeline/6-output/6_ai-per_species_summary.tsv" \
-    "${BLOCK_SHARED_DIR}/per_species_summary.tsv"
+ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/orthogroups_gigantic_ids.tsv"
+ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/4_ai-gene_count_gigantic_ids.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/gene_count_gigantic_ids.tsv"
+ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/5_ai-summary_statistics.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/summary_statistics.tsv"
+ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/6-output/6_ai-per_species_summary.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/per_species_summary.tsv"
 
-echo "  BLOCK output_to_input/ -> symlinks created"
-
-# --- Workflow-level ai/output_to_input (archival) ---
-WORKFLOW_SHARED_DIR="ai/output_to_input"
-mkdir -p "${WORKFLOW_SHARED_DIR}"
-
-# Remove any stale symlinks from previous runs
-find "${WORKFLOW_SHARED_DIR}" -type l -delete 2>/dev/null
-
-ln -sf "../../OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv" \
-    "${WORKFLOW_SHARED_DIR}/orthogroups_gigantic_ids.tsv"
-ln -sf "../../OUTPUT_pipeline/4-output/4_ai-gene_count_gigantic_ids.tsv" \
-    "${WORKFLOW_SHARED_DIR}/gene_count_gigantic_ids.tsv"
-ln -sf "../../OUTPUT_pipeline/5-output/5_ai-summary_statistics.tsv" \
-    "${WORKFLOW_SHARED_DIR}/summary_statistics.tsv"
-ln -sf "../../OUTPUT_pipeline/6-output/6_ai-per_species_summary.tsv" \
-    "${WORKFLOW_SHARED_DIR}/per_species_summary.tsv"
-
-echo "  Workflow ai/output_to_input/ -> symlinks created"
+echo "  Created symlinks in output_to_input/BLOCK_broccoli/"
 
 echo ""
 echo "========================================================================"
@@ -120,8 +106,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 6-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../output_to_input/  (for downstream subprojects)"
-echo "  ai/output_to_input/  (archival with this run)"
+echo "  output_to_input/BLOCK_broccoli/  (subproject root)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

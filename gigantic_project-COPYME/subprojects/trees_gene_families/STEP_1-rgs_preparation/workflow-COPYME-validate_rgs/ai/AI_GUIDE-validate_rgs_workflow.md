@@ -72,7 +72,7 @@ workflow-COPYME-validate_rgs/
 |--------|------|---------|
 | 001 | Validates RGS filename, headers, sequences, duplicates | `1-output/1_ai-rgs-<family>-validated.aa`, validation report, log |
 
-Then a second NextFlow process copies the validated RGS to output_to_input.
+Then RUN-workflow.sh creates symlinks to the subproject-root output_to_input/STEP_1-rgs_preparation/.
 
 ---
 
@@ -138,7 +138,7 @@ cat OUTPUT_pipeline/1-output/1_ai-rgs-*-validation_report.txt
 grep -c ">" OUTPUT_pipeline/1-output/1_ai-rgs-*-validated.aa
 
 # Check output_to_input
-ls ../../output_to_input/rgs_fastas/*/
+ls ../../../output_to_input/STEP_1-rgs_preparation/rgs_fastas/*/
 
 # Check log
 cat OUTPUT_pipeline/1-output/1_ai-log-validate_rgs-*.log
@@ -185,5 +185,5 @@ bash RUN-workflow.sh
 ## After Successful Run
 
 1. **Verify**: Check validation report shows all sequences passed
-2. **Check output_to_input**: `ls ../../output_to_input/rgs_fastas/`
+2. **Check output_to_input**: `ls ../../../output_to_input/STEP_1-rgs_preparation/rgs_fastas/`
 3. **Next step**: Proceed to STEP_2 homolog discovery

@@ -8,11 +8,11 @@ echo "Updating upload_to_server for OrthoFinder..."
 
 mkdir -p upload_to_server
 
-if [ -d "output_to_input" ]; then
-    cp -r output_to_input/* upload_to_server/ 2>/dev/null || true
-    echo "  Copied output_to_input contents to upload_to_server/"
+if [ -d "../output_to_input/BLOCK_orthofinder" ]; then
+    cp -r ../output_to_input/BLOCK_orthofinder/* upload_to_server/ 2>/dev/null || true
+    echo "  Copied output_to_input/BLOCK_orthofinder/ contents to upload_to_server/"
 else
-    echo "  No output_to_input/ directory found. Run the pipeline first."
+    echo "  No output_to_input/BLOCK_orthofinder/ directory found. Run the pipeline first."
 fi
 
 echo "Done."

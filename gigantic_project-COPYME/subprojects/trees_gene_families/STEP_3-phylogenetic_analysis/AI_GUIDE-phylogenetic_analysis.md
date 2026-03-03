@@ -35,7 +35,7 @@
 4. Alignment trimming (ClipKit)
 5. Tree building (one or more methods)
 6. Tree visualization (human-friendly and computer-vision)
-7. Export to output_to_input
+7. Export to subproject-root output_to_input/STEP_3-phylogenetic_analysis/
 
 ---
 
@@ -63,9 +63,9 @@ Four methods available, configurable in `phylogenetic_analysis_config.yaml`:
 
 | Input | Source | Description |
 |-------|--------|-------------|
-| AGS FASTA | `../../STEP_2-homolog_discovery/output_to_input/ags_fastas/<gene_family>/` | From STEP_2 |
+| AGS FASTA | `../../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/` | From STEP_2 |
 
-**Note**: The workflow automatically finds the AGS file in STEP_2's output_to_input directory.
+**Note**: The workflow automatically finds the AGS file in the subproject-root output_to_input/STEP_2-homolog_discovery/ directory.
 
 ---
 
@@ -89,12 +89,11 @@ OUTPUT_pipeline/
 
 ### output_to_input
 
-Trees and alignments exported to:
+Trees and alignments exported to the subproject-root output_to_input/:
 
 | Level | Path |
 |-------|------|
-| STEP-level | `output_to_input/trees/<gene_family>/` |
-| Subproject-level | `../output_to_input/step_3/trees/<gene_family>/` |
+| Subproject-root | `../output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/` |
 
 ---
 
@@ -104,9 +103,8 @@ Trees and alignments exported to:
 STEP_3-phylogenetic_analysis/
 ├── AI_GUIDE-phylogenetic_analysis.md   # THIS FILE
 ├── README.md
-├── output_to_input/
-│   └── trees/                          # Trees by gene family
 └── workflow-COPYME-phylogenetic_analysis/
+# Note: output goes to ../output_to_input/STEP_3-phylogenetic_analysis/trees/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
@@ -138,7 +136,7 @@ STEP_3-phylogenetic_analysis/
 |------|---------|-------------|
 | `workflow-*/phylogenetic_analysis_config.yaml` | Gene family, tree methods, alignment settings | **YES** |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
-| `output_to_input/trees/` | Final trees | No (auto-created) |
+| `../output_to_input/STEP_3-phylogenetic_analysis/trees/` | Final trees | No (auto-created) |
 
 ---
 
@@ -171,8 +169,8 @@ STEP_3-phylogenetic_analysis/
 
 ```bash
 # Check AGS from STEP_2
-ls ../../STEP_2-homolog_discovery/output_to_input/ags_fastas/*/
-grep -c ">" ../../STEP_2-homolog_discovery/output_to_input/ags_fastas/*/*.aa
+ls ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/
+grep -c ">" ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/*.aa
 
 # Check alignment
 grep -c ">" OUTPUT_pipeline/3-output/*.mafft
