@@ -33,12 +33,14 @@ Each subproject follows a standard layout:
 ```
 subproject/
 ├── user_research/               # Personal workspace
-├── workflow-COPYME/     # NextFlow template
-│   ├── ai_scripts/              # Pipeline scripts
-│   ├── INPUT_user/              # User inputs
-│   ├── OUTPUT_pipeline/         # Workflow outputs
-│   └── OUTPUT_to_input/         # Archived outputs
-├── output_to_input/             # Shared downstream
+├── BLOCK_X/ or STEP_X-name/     # One or more workflow containers
+│   └── workflow-COPYME-*/       # NextFlow template
+│       ├── ai/                  # Internal (scripts, NextFlow pipeline)
+│       │   └── scripts/         # Pipeline scripts
+│       ├── INPUT_user/          # User inputs
+│       └── OUTPUT_pipeline/     # Workflow outputs (N-output/ per script)
+├── output_to_input/             # Single location for downstream sharing
+│   └── BLOCK_X/ or STEP_X/     # Subdirectories per BLOCK/STEP
 └── upload_to_server/            # External access
 
 # AI documentation stored centrally in:

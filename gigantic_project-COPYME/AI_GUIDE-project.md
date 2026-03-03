@@ -143,6 +143,23 @@ workflow-*/INPUT_user/species_list.txt  # Archived copy for this run
 
 **Why**: One place to edit, but each workflow run has its own archived copy.
 
+### Core Design Principle: Scripts Own the Data, NextFlow Manages Execution
+
+**GIGANTIC is a scientific research platform, not a software application.** This fundamental distinction drives a non-negotiable design principle:
+
+**Every script reads its inputs from `OUTPUT_pipeline/N-output/` and writes its outputs to `OUTPUT_pipeline/N-output/`.** NextFlow orchestrates the execution ORDER of scripts but does NOT silently transfer data between them through internal channels. All intermediate results must be recorded in `OUTPUT_pipeline/N-output/` where they are:
+
+- **Inspectable**: A researcher can examine any step's output directly
+- **Verifiable**: Results can be validated independently at each stage
+- **Reproducible**: Another researcher (or your future self) can see exactly what happened
+- **Debuggable**: When something goes wrong, you can trace the data step by step
+
+**NextFlow's role in GIGANTIC**: NextFlow is an execution manager, not a data broker. It determines WHEN scripts run (dependency ordering, parallelization, retry logic). It does NOT determine WHERE data lives. Scripts handle their own I/O through the transparent `OUTPUT_pipeline/N-output/` directory structure.
+
+**Why this matters**: In scientific computing, "trust me, the intermediate data is somewhere in a hashed work directory" is not acceptable. Every intermediate result is part of the scientific record. Completing a pipeline with invisible intermediate data is worse than failing - it produces results that cannot be independently verified. This principle applies even when transparent data handling costs additional disk space.
+
+**Contrast with application development**: Software applications optimize for efficiency and can use opaque internal data channels because the end product (a working app) is what matters. In research, the process IS the product - understanding how results were derived is as important as the results themselves.
+
 ### Pipeline Output Lifecycle: work/ → OUTPUT_pipeline/ → output_to_input/
 
 GIGANTIC workflows follow a three-stage data lifecycle:
@@ -157,7 +174,7 @@ GIGANTIC workflows follow a three-stage data lifecycle:
 
 **Stage 1**: Nextflow executes scripts in `work/` using hashed subdirectory names. Not human-navigable.
 
-**Stage 2**: Each script's outputs are copied via `publishDir` to `OUTPUT_pipeline/N-output/` (where N matches the script number: 001 → `1-output/`). This is where users browse results.
+**Stage 2**: Each script's outputs are copied via `publishDir` to `OUTPUT_pipeline/N-output/` (where N matches the script number: 001 → `1-output/`). This is where users browse results. **This is the authoritative location for all intermediate and final results.**
 
 **Stage 3**: After the pipeline completes, `RUN-workflow.sh` creates symlinks in the subproject's single `output_to_input/` directory:
 - **Subproject root** `output_to_input/BLOCK_X/` or `output_to_input/STEP_X-name/` → downstream subprojects read from here
@@ -350,7 +367,7 @@ Subprojects organize their internal workflow directories using two patterns:
 Both STEPs and BLOCKs follow the same internal structure: `workflow-COPYME-*/`, `AI_GUIDE-*.md`, `README.md`. Their outputs are shared via the subproject-root `output_to_input/` directory (not within each BLOCK/STEP). See the "output_to_input Pattern" section above.
 
 **Subprojects using STEPs**: genomesDB, trees_gene_families, trees_gene_groups
-**Subprojects using BLOCKs**: orthogroups
+**Subprojects using BLOCKs**: orthogroups, trees_species, annotations_hmms, gene_sizes
 
 ### Session Provenance Recording (AI-Native Feature)
 
@@ -438,7 +455,7 @@ genomesDB ──► hot_spots              # Evolutionary hotspot analysis
 | orthogroups | genomesDB | Ortholog group identification (uses BLOCKs: orthofinder, orthohmm, broccoli, comparison) | Functional |
 | trees_gene_families | genomesDB | Gene family homolog discovery and phylogenetics | Functional |
 | trees_gene_groups | genomesDB | Orthogroup-based phylogenetics | Structural |
-| trees_species | phylonames | All possible species tree topologies | Planned |
+| trees_species | phylonames | Species tree topology permutations and phylogenetic features (uses BLOCKs: permutations_and_features, de_novo_species_tree) | Functional |
 | annotations_hmms | genomesDB | Functional protein annotation | Planned |
 | orthogroups_X_ocl | orthogroups + trees_species | Origin-Conservation-Loss analysis | Planned |
 | annotations_X_ocl | annotations_hmms + orthogroups_X_ocl | Annotation-OCL integration | Planned |

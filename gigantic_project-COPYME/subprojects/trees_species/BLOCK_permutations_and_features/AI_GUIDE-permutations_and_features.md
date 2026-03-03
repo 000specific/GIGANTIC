@@ -1,0 +1,107 @@
+# AI Guide: BLOCK_permutations_and_features
+
+**AI**: Claude Code | Opus 4.6 | 2026 March 04
+**Human**: Eric Edsinger
+
+**For AI Assistants**: Read `../AI_GUIDE-trees_species.md` first for subproject concepts.
+This guide covers the permutations_and_features block specifically.
+
+---
+
+## Quick Reference
+
+| User needs... | Go to... |
+|---------------|----------|
+| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
+| trees_species concepts | `../AI_GUIDE-trees_species.md` |
+| BLOCK overview | This file |
+| Running the workflow | `workflow-COPYME-permutations_and_features/ai/AI_GUIDE-permutations_and_features_workflow.md` |
+
+---
+
+## What This Block Does
+
+Takes a user-provided annotated species tree (Newick format with CXXX_Name labels) and
+generates all possible topology permutations for user-specified unresolved clades.
+For each topology, extracts comprehensive phylogenetic features: paths, blocks,
+parent-child relationships, clade-species mappings, and tree visualizations.
+
+Key capabilities:
+- **Topology permutations**: (2N-3)!! unrooted topologies for N unresolved clades
+  (e.g., 5 clades = 105 topologies, 0 clades = single tree mode)
+- **Clade identifier system**: Persistent CXXX identifiers across all structures
+- **Phylogenetic blocks**: Parent::Child branch identifiers with synthetic C000_Pre_Basal root
+- **Comprehensive integration**: 24-column master table with all clade data
+- **Species-set agnostic**: Works with any species set (configured via species_set_name)
+
+---
+
+## Directory Structure
+
+```
+BLOCK_permutations_and_features/
+├── AI_GUIDE-permutations_and_features.md    # THIS FILE
+└── workflow-COPYME-permutations_and_features/
+    ├── README.md
+    ├── RUN-workflow.sh
+    ├── RUN-workflow.sbatch
+    ├── permutations_and_features_config.yaml
+    ├── INPUT_user/                          # species_tree.newick (+ optional clade_names.tsv)
+    ├── OUTPUT_pipeline/
+    └── ai/
+        ├── main.nf
+        ├── nextflow.config
+        ├── AI_GUIDE-permutations_and_features_workflow.md
+        └── scripts/                         # 9 sequential Python scripts
+```
+
+---
+
+## Pipeline Summary
+
+| Script | Purpose | Key Input | Key Output |
+|--------|---------|-----------|------------|
+| 001 | Extract tree components | species_tree.newick | Clade registry, paths, metadata |
+| 002 | Generate topology permutations | Metadata (unresolved clades) | Permutation Newick strings |
+| 003 | Assign clade identifiers | Topology permutations | Annotated skeletons with CXXX IDs |
+| 004 | Build complete trees | Skeletons + original tree | Complete species trees, clade registry |
+| 005 | Extract parent-child relationships | Complete trees | Parent-sibling (9-col) + parent-child (4-col) |
+| 006 | Generate phylogenetic blocks | Parent-sibling tables | Phylogenetic blocks (Parent::Child) |
+| 007 | Integrate all clade data | Registry, trees, blocks | 24-column master clade table |
+| 008 | Visualize species trees | Complete Newick trees | SVG + PDF per structure |
+| 009 | Generate clade-species mappings | Integrated data, blocks | Clade-to-descendant-species table |
+
+---
+
+## Key Concepts
+
+### Clade Identifiers
+- Format: CXXX (e.g., C001, C068, C079)
+- Species retain their original IDs across all structures
+- Internal nodes in structure_001 retain original IDs
+- Structures 002+ get new IDs for internal nodes (starting after max existing)
+- The variable root label identifies where permutations happen
+
+### Phylogenetic Blocks
+- Format: `Parent_ID_Name::Child_ID_Name` (e.g., `C068_Basal::C069_Bilateria`)
+- Synthetic `C000_Pre_Basal` parent for root nodes
+- Each internal node produces exactly 2 blocks (binary tree)
+
+### Single Tree Mode
+When 0 unresolved clades are specified, the pipeline skips permutation and outputs the
+original tree as structure_001 with all features extracted.
+
+---
+
+## Output to Downstream
+
+This block publishes to `output_to_input/BLOCK_permutations_and_features/` at the subproject root:
+- `Species_Tree_Structures/` - Complete Newick trees per structure
+- `Species_Phylogenetic_Paths/` - Root-to-leaf paths per species per structure
+- `Species_Parent_Sibling_Sets/` - Parent-sibling tables (9-column)
+- `Species_Parent_Child_Relationships/` - Parent-child tables (4-column)
+- `Species_Phylogenetic_Blocks/` - Phylogenetic block identifiers
+- `Species_Clade_Species_Mappings/` - Clade-to-descendant-species mappings
+
+Downstream subprojects (orthogroups_X_ocl, annotations_X_ocl, origins_conservation_loss)
+access these via the subproject-root `output_to_input/` directory.

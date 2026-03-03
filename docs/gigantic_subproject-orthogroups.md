@@ -270,20 +270,20 @@ sbatch RUN-workflow.sbatch      # SLURM
 All three tools read from the same source:
 
 ```
-genomesDB/STEP_4/output_to_input/speciesN_gigantic_T1_proteomes/
+genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
 ```
 
 Path configured in each tool's config YAML.
 
 ### Output
 
-Each tool's standardized output is accessible at:
+Each tool's standardized output is accessible at the subproject-root `output_to_input/`:
 
 ```
-orthogroups/BLOCK_orthofinder/output_to_input/
-orthogroups/BLOCK_orthohmm/output_to_input/
-orthogroups/BLOCK_broccoli/output_to_input/
-orthogroups/BLOCK_comparison/output_to_input/
+orthogroups/output_to_input/BLOCK_orthofinder/
+orthogroups/output_to_input/BLOCK_orthohmm/
+orthogroups/output_to_input/BLOCK_broccoli/
+orthogroups/output_to_input/BLOCK_comparison/
 ```
 
 ### Downstream Consumers
@@ -301,16 +301,16 @@ orthogroups/BLOCK_comparison/output_to_input/
 
 ```bash
 # Check OrthoFinder completed
-ls BLOCK_orthofinder/output_to_input/orthogroups_gigantic_ids.tsv
+ls output_to_input/BLOCK_orthofinder/orthogroups_gigantic_ids.tsv
 
 # Check orthogroup counts across tools
-wc -l BLOCK_*/output_to_input/orthogroups_gigantic_ids.tsv
+wc -l output_to_input/BLOCK_*/orthogroups_gigantic_ids.tsv
 
 # Quick comparison: total orthogroups per tool
-head -1 BLOCK_*/output_to_input/summary_statistics.tsv
+head -1 output_to_input/BLOCK_*/summary_statistics.tsv
 
 # Check per-species coverage
-head BLOCK_orthofinder/output_to_input/per_species_summary.tsv
+head output_to_input/BLOCK_orthofinder/per_species_summary.tsv
 ```
 
 ---

@@ -199,13 +199,28 @@ Each workflow has a clear data lifecycle that balances human readability with di
                      # Downstream subprojects read from here
 ```
 
+#### Design Principle: Scripts Own the Data, Nextflow Manages Execution
+
+**GIGANTIC is a scientific research platform, not a software application.** This distinction drives a non-negotiable design principle:
+
+Every script reads its inputs from `OUTPUT_pipeline/N-output/` and writes its outputs to `OUTPUT_pipeline/N-output/`. Nextflow orchestrates the execution ORDER of scripts but does NOT silently transfer data between them through internal channels. All intermediate results are recorded in `OUTPUT_pipeline/N-output/` where they are:
+
+- **Inspectable**: A researcher can examine any step's output directly
+- **Verifiable**: Results can be validated independently at each stage
+- **Reproducible**: Another researcher (or your future self) can see exactly what happened
+- **Debuggable**: When something goes wrong, you can trace the data step by step
+
+Nextflow determines WHEN scripts run (dependency ordering, parallelization, retry logic). Scripts handle WHERE data lives through the transparent `OUTPUT_pipeline/N-output/` directory structure. The `work/` directory is just an execution sandbox, not a data store.
+
+This principle applies even when transparent data handling costs additional disk space. In research, the process IS the product - understanding how results were derived is as important as the results themselves. "Trust me, the intermediate data is somewhere in a hashed work directory" is not acceptable for science.
+
+#### How the Three Stages Work
+
 **Step 1 - Nextflow execution**: Scripts run inside Nextflow's `work/` directory, which uses cryptic hashed subdirectory names for caching and parallelization. These are not meant for human navigation.
 
-**Step 2 - Human-readable output**: Each Nextflow process uses `publishDir` to copy its final outputs into `OUTPUT_pipeline/N-output/`, where N matches the script number (001 → `1-output/`, 002 → `2-output/`, etc.). You can browse your results by script.
+**Step 2 - Human-readable output**: Each Nextflow process uses `publishDir` to copy its final outputs into `OUTPUT_pipeline/N-output/`, where N matches the script number (001 → `1-output/`, 002 → `2-output/`, etc.). This is the authoritative location for all intermediate and final results. You can browse your results by script.
 
-**Step 3 - Downstream sharing**: After the pipeline completes successfully, `RUN-workflow.sh` creates symlinks in two locations:
-- **STEP/BLOCK level** `output_to_input/` - canonical location for downstream subprojects
-- **Workflow level** `ai/output_to_input/` - archival copy preserved with this specific run
+**Step 3 - Downstream sharing**: After the pipeline completes successfully, `RUN-workflow.sh` creates symlinks in the subproject's single `output_to_input/` directory, organized by BLOCK or STEP subdirectories. Downstream subprojects read from here.
 
 **Why symlinks?** Data files exist in exactly one place (`OUTPUT_pipeline/`). Everything else points to them. This means inter-subproject data sharing adds zero additional disk usage - important when working with dozens of species.
 
@@ -229,7 +244,7 @@ genomesDB/output_to_input/
 orthogroups/BLOCK_orthofinder/workflow-COPYME-.../INPUT_user/
 ```
 
-Each subproject (and each STEP/BLOCK) publishes its outputs as symlinks in `output_to_input/`. Downstream subprojects reference these directories as input. This creates an explicit, traceable dependency chain with no data duplication.
+Each subproject publishes its outputs as symlinks in a single `output_to_input/` directory at the subproject root, organized by BLOCK or STEP subdirectories. Downstream subprojects reference these directories as input. This creates an explicit, traceable dependency chain with no data duplication.
 
 ### Server Sharing: `upload_to_server/`
 

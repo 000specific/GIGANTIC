@@ -87,7 +87,7 @@ Missing data types are marked as `NA`.
 | 1 | `001_ai-python-validate_source_manifest.py` | Validates all listed files exist and are readable |
 | 2 | `002_ai-python-ingest_source_data.py` | Hard-copies files into `T1_proteomes/`, `genomes/`, `gene_annotations/` |
 
-**Post-pipeline**: `RUN-workflow.sh` creates relative symlinks in `../output_to_input/` making ingested files accessible to STEP_2. Files are hard-copied (not symlinked) to ensure the archive persists even if source locations change.
+**Post-pipeline**: `RUN-workflow.sh` creates relative symlinks in the subproject-root `output_to_input/STEP_1-sources/` making ingested files accessible to STEP_2. Files are hard-copied (not symlinked) to ensure the archive persists even if source locations change.
 
 ### Running
 
@@ -334,28 +334,27 @@ cat OUTPUT_pipeline/2-output/2_ai-copy_manifest.tsv
 Each step shares outputs via symlinks in `output_to_input/` directories. Files always live as real copies in `OUTPUT_pipeline/`; the `output_to_input/` directories contain only symlinks.
 
 ```
-STEP_1/output_to_input/
-├── T1_proteomes/           → Hard-copied source proteomes
-├── genomes/                → Hard-copied source genomes
-└── gene_annotations/       → Hard-copied source annotations
-
-STEP_2/output_to_input/
-└── species_selection_manifest.tsv    → Real file (editable by user)
-
-STEP_3/output_to_input/
-└── gigantic-T1-blastp/     → Per-species BLAST databases
-
-STEP_4/output_to_input/
-├── speciesN_gigantic_T1_proteomes/        → Final curated proteomes
-├── speciesN_gigantic_T1_blastp/           → Final BLAST databases
-└── speciesN_gigantic_gene_annotations/    → Final gene annotations
+output_to_input/
+├── STEP_1-sources/
+│   ├── T1_proteomes/           → Hard-copied source proteomes
+│   ├── genomes/                → Hard-copied source genomes
+│   └── gene_annotations/       → Hard-copied source annotations
+│
+├── STEP_2-standardize_and_evaluate/
+│   └── species_selection_manifest.tsv    → Real file (editable by user)
+│
+├── STEP_3-databases/
+│   └── gigantic-T1-blastp/     → Per-species BLAST databases
+│
+└── STEP_4-create_final_species_set/
+    ├── speciesN_gigantic_T1_proteomes/        → Final curated proteomes
+    ├── speciesN_gigantic_T1_blastp/           → Final BLAST databases
+    └── speciesN_gigantic_gene_annotations/    → Final gene annotations
 ```
 
-### Dual output_to_input Locations
+### output_to_input Location
 
-Every workflow creates symlinks in both:
-- `../output_to_input/` (STEP-level, consumed by downstream steps)
-- `ai/output_to_input/` (archival copy within the specific workflow run)
+Every workflow creates symlinks in the single subproject-root `output_to_input/` directory, organized by STEP subdirectories (e.g., `output_to_input/STEP_2-standardize_and_evaluate/`). Downstream steps and other subprojects read from this canonical location.
 
 ### Configuration Between Steps
 
@@ -449,10 +448,10 @@ genomesDB outputs are consumed by every downstream GIGANTIC subproject:
 |----------|--------|
 | Where do I list my source files? | `STEP_1/workflow-COPYME-*/INPUT_user/source_manifest.tsv` |
 | Where do I set BUSCO lineages? | `STEP_2/workflow-COPYME-*/INPUT_user/busco_lineages.txt` |
-| Where do I edit species inclusion? | `STEP_2/output_to_input/species_selection_manifest.tsv` |
-| Where are the final proteomes? | `STEP_4/output_to_input/speciesN_gigantic_T1_proteomes/` |
-| Where are the BLAST databases? | `STEP_4/output_to_input/speciesN_gigantic_T1_blastp/` |
-| Where are gene annotations? | `STEP_4/output_to_input/speciesN_gigantic_gene_annotations/` |
+| Where do I edit species inclusion? | `output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv` |
+| Where are the final proteomes? | `output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` |
+| Where are the BLAST databases? | `output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` |
+| Where are gene annotations? | `output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_gene_annotations/` |
 | What conda environment? | `ai_gigantic_genomesdb` |
 | What runs first? | `phylonames` subproject must complete before genomesDB |
 
