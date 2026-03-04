@@ -69,6 +69,17 @@ Script 002 downloads GO from `http://purl.obolibrary.org/obo/go/go-basic.obo`:
 - Parses OBO format to create fast-lookup TSV (GO ID, name, namespace, is_obsolete)
 - Used by script 003 to validate GO terms from InterProScan
 
+## Unannotated Protein Identification
+
+Parsers 003-007 can optionally identify proteins with zero annotations from each database and add unannotated entries to the output. This is required for downstream `annotations_X_ocl` analysis (which needs `zero` subtype annogroups).
+
+**How it works**: Each parser compares the set of annotated proteins against the complete set of proteins from the proteome FASTA files. Proteins with no annotations get entries with the format:
+- Domain_Start: `0`, Domain_Stop: `0`
+- Annotation_Identifier: `unannotated_{database}-N` (global counter across all species)
+- Annotation_Details: `no annotation`
+
+**Configuration**: Set `proteomes_dir` in `nextflow.config` to enable. Set to empty string to disable.
+
 ## Configuration
 
 Edit `workflow-COPYME-build_annotation_database/annotation_database_config.yaml`:
@@ -76,3 +87,7 @@ Edit `workflow-COPYME-build_annotation_database/annotation_database_config.yaml`
 - `go_ontology_cache_days`: Days before re-downloading (default: 30)
 - `clade_comparison`: Groups for phylogenetic pattern analysis
 - `species_set_name`: Name of species set being analyzed
+- `proteomes_dir`: Path to proteome FASTA directory for unannotated protein identification
+
+Edit `workflow-COPYME-build_annotation_database/ai/nextflow.config`:
+- `proteomes_dir`: Path to proteome FASTA directory (relative to workflow directory). Set to empty string to skip unannotated protein identification.

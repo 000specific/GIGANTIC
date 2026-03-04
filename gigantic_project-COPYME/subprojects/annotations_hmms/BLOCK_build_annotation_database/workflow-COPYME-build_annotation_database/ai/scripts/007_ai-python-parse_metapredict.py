@@ -38,7 +38,13 @@ Output:
 Usage:
     python3 007_ai-python-parse_metapredict.py \\
         --discovery-manifest 1_ai-tool_discovery_manifest.tsv \\
+        --proteomes-dir /path/to/proteomes \\
         --output-dir .
+
+If --proteomes-dir is provided, the script also identifies proteins in each
+species proteome that have NO metapredict IDR predictions and adds unannotated
+entries with identifiers like unannotated_metapredict-1, unannotated_metapredict-2,
+etc. The counter is global across all species.
 """
 
 import argparse
@@ -165,6 +171,71 @@ def write_standardized_header() -> str:
     return header
 
 
+def load_proteome_protein_identifiers( proteomes_directory: Path, logger: logging.Logger ) -> dict:
+    """
+    Load protein identifiers from FASTA proteome files.
+
+    Reads all .aa files in the proteomes directory, extracting protein IDs
+    from FASTA headers. Returns a dictionary mapping phylonames to sets of
+    protein identifiers.
+
+    Proteome files follow GIGANTIC naming: {phyloname}___taxid-assembly-date-type.aa
+    FASTA headers: >protein_id description...
+
+    Returns:
+        phylonames___protein_identifiers: dict mapping phyloname -> set of protein IDs
+    """
+
+    logger.info( f"Loading proteome protein identifiers from: {proteomes_directory}" )
+
+    if not proteomes_directory.exists():
+        logger.error( "CRITICAL ERROR: Proteomes directory does not exist!" )
+        logger.error( f"Expected path: {proteomes_directory}" )
+        logger.error( "Verify proteomes_dir path in the configuration file." )
+        logger.error( "Expected: genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/" )
+        sys.exit( 1 )
+
+    proteome_files = sorted( proteomes_directory.glob( '*.aa' ) )
+
+    if len( proteome_files ) == 0:
+        logger.error( "CRITICAL ERROR: No proteome files (*.aa) found!" )
+        logger.error( f"Directory: {proteomes_directory}" )
+        logger.error( "The proteomes directory should contain .aa FASTA files." )
+        sys.exit( 1 )
+
+    phylonames___protein_identifiers = {}
+
+    for proteome_file in proteome_files:
+        # Extract phyloname from filename: {phyloname}___taxid-assembly.aa
+        filename_without_extension = proteome_file.stem
+        parts_filename = filename_without_extension.split( '___' )
+        phyloname = parts_filename[ 0 ]
+
+        # Read FASTA headers to get protein IDs
+        protein_identifiers = set()
+
+        with open( proteome_file, 'r' ) as input_proteome:
+            # >XP_027047018.1 description text
+            # MSTLKQVFYILCLFSGHWAEQPADMQ...
+            for line in input_proteome:
+                if line.startswith( '>' ):
+                    # Protein ID is the first word after >
+                    header = line[ 1: ].strip()
+                    protein_identifier = header.split()[ 0 ] if header else ''
+                    if protein_identifier:
+                        protein_identifiers.add( protein_identifier )
+
+        phylonames___protein_identifiers[ phyloname ] = protein_identifiers
+        logger.debug( f"  {phyloname}: {len( protein_identifiers )} proteins" )
+
+    logger.info( f"  Loaded proteomes for {len( phylonames___protein_identifiers )} species" )
+
+    total_proteins = sum( len( identifiers ) for identifiers in phylonames___protein_identifiers.values() )
+    logger.info( f"  Total protein identifiers: {total_proteins:,d}" )
+
+    return phylonames___protein_identifiers
+
+
 def parse_idr_boundaries( boundaries_string: str, protein_identifier: str,
                            logger: logging.Logger ) -> list:
     """
@@ -217,11 +288,12 @@ def parse_idr_boundaries( boundaries_string: str, protein_identifier: str,
     return regions
 
 
-def parse_metapredict_files( metapredict_record: dict, output_directory: Path,
+def parse_metapredict_files( metapredict_record: dict, proteomes_directory: Path, output_directory: Path,
                               logger: logging.Logger ) -> None:
     """
     Parse all MetaPredict IDR TSV files found in the tool output directory.
-    Create standardized TSV files per species.
+    Create standardized TSV files per species. If proteomes_directory is provided,
+    also adds unannotated protein entries with identifiers like unannotated_metapredict-N.
     """
 
     metapredict_output_directory = Path( metapredict_record[ 'output_directory' ] )
@@ -258,6 +330,18 @@ def parse_metapredict_files( metapredict_record: dict, output_directory: Path,
     total_proteins_with_idrs = 0
     total_proteins_without_idrs = 0
     species_count = 0
+
+    # =========================================================================
+    # Load proteome protein identifiers (if proteomes directory provided)
+    # =========================================================================
+
+    phylonames___protein_identifiers = None
+    if proteomes_directory is not None:
+        phylonames___protein_identifiers = load_proteome_protein_identifiers( proteomes_directory, logger )
+
+    # Track unannotated counts (global across all species)
+    unannotated_counter = 0
+    total_unannotated_entries_written = 0
 
     # =========================================================================
     # Process each species result file
@@ -367,6 +451,45 @@ def parse_metapredict_files( metapredict_record: dict, output_directory: Path,
                     annotation_rows.append( annotation_row )
 
         # =====================================================================
+        # Add unannotated protein entries (if proteomes were loaded)
+        # =====================================================================
+
+        if phylonames___protein_identifiers is not None and phyloname in phylonames___protein_identifiers:
+            all_protein_identifiers = phylonames___protein_identifiers[ phyloname ]
+
+            # Get protein IDs that have metapredict annotations
+            annotated_protein_identifiers = set()
+            for annotation_row in annotation_rows:
+                annotated_protein_identifiers.add( annotation_row[ 1 ] )
+
+            # Compute unannotated proteins
+            unannotated_protein_identifiers = all_protein_identifiers - annotated_protein_identifiers
+
+            if len( unannotated_protein_identifiers ) > 0:
+                for protein_identifier in sorted( unannotated_protein_identifiers ):
+                    unannotated_counter += 1
+                    unannotated_identifier = f"unannotated_metapredict-{unannotated_counter}"
+
+                    unannotated_row = (
+                        phyloname,
+                        protein_identifier,
+                        '0',
+                        '0',
+                        'metapredict',
+                        unannotated_identifier,
+                        'no annotation',
+                    )
+
+                    annotation_rows.append( unannotated_row )
+
+                total_unannotated_entries_written += len( unannotated_protein_identifiers )
+                logger.debug( f"    Unannotated entries added: {len( unannotated_protein_identifiers )}" )
+
+        elif phylonames___protein_identifiers is not None and phyloname not in phylonames___protein_identifiers:
+            logger.warning( f"    WARNING: No proteome found for phyloname: {phyloname}" )
+            logger.warning( "    Unannotated entries will NOT be added for this species." )
+
+        # =====================================================================
         # Write standardized output file for this species
         # =====================================================================
 
@@ -438,6 +561,7 @@ def parse_metapredict_files( metapredict_record: dict, output_directory: Path,
     logger.info( f"  Proteins without IDRs: {total_proteins_without_idrs}" )
     logger.info( f"  Total IDR regions extracted: {total_idr_regions_found}" )
     logger.info( f"  Total annotations written: {total_annotations_written}" )
+    logger.info( f"  Unannotated protein entries added: {total_unannotated_entries_written:,d}" )
     logger.info( f"  Output directory: {database_output_directory}" )
 
     # Calculate disorder rate
@@ -483,12 +607,21 @@ def main():
         help = 'Output directory for database files (default: current directory)'
     )
 
+    parser.add_argument(
+        '--proteomes-dir',
+        type = str,
+        required = False,
+        default = None,
+        help = 'Path to proteomes directory containing .aa FASTA files (optional - if provided, unannotated protein entries are added)'
+    )
+
     arguments = parser.parse_args()
 
     # Convert to Path objects
     discovery_manifest_path = Path( arguments.discovery_manifest )
     annotations_directory = Path( arguments.annotations_dir ).resolve()
     output_directory = Path( arguments.output_dir )
+    proteomes_directory = Path( arguments.proteomes_dir ).resolve() if arguments.proteomes_dir else None
 
     # Create output directory
     output_directory.mkdir( parents = True, exist_ok = True )
@@ -513,7 +646,7 @@ def main():
     # Parse MetaPredict files
     # =========================================================================
 
-    parse_metapredict_files( metapredict_record, output_directory, logger )
+    parse_metapredict_files( metapredict_record, proteomes_directory, output_directory, logger )
 
 
 if __name__ == '__main__':

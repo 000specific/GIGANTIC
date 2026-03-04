@@ -8,13 +8,15 @@ Builds a standardized, integrated annotation database from all completed tool BL
 - Tool outputs available in `output_to_input/BLOCK_*/` directories (at subproject root)
 - `ai_annotation_database` conda environment created
 - GO term OBO file will be downloaded automatically during pipeline
+- (Optional) Proteome FASTA files from genomesDB for unannotated protein identification
 
 ## Usage
 
 ```bash
-vi build_annotation_database_config.yaml
-bash RUN-workflow.sh         # Local
-sbatch RUN-workflow.sbatch   # SLURM
+vi annotation_database_config.yaml   # Set species set name, proteomes path
+vi ai/nextflow.config                # Set species_set_name, proteomes_dir
+bash RUN-workflow.sh                 # Local
+sbatch RUN-workflow.sbatch           # SLURM
 ```
 
 ## Pipeline

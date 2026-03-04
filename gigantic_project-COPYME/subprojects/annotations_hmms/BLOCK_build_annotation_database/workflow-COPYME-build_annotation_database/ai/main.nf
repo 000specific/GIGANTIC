@@ -107,11 +107,13 @@ process parse_interproscan {
         discovery_manifest.text.contains("interproscan\tyes")
 
     script:
+    def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
     """
     python3 ${scripts_dir}/003_ai-python-parse_interproscan.py \
         --discovery-manifest ${discovery_manifest} \
         --go-lookup ${go_lookup} \
         --annotations-dir ${projectDir}/../../../ \
+        ${proteomes_arg} \
         --output-dir .
     """
 }
@@ -131,10 +133,12 @@ process parse_deeploc {
         discovery_manifest.text.contains("deeploc\tyes")
 
     script:
+    def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
     """
     python3 ${scripts_dir}/004_ai-python-parse_deeploc.py \
         --discovery-manifest ${discovery_manifest} \
         --annotations-dir ${projectDir}/../../../ \
+        ${proteomes_arg} \
         --output-dir .
     """
 }
@@ -154,10 +158,12 @@ process parse_signalp {
         discovery_manifest.text.contains("signalp\tyes")
 
     script:
+    def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
     """
     python3 ${scripts_dir}/005_ai-python-parse_signalp.py \
         --discovery-manifest ${discovery_manifest} \
         --annotations-dir ${projectDir}/../../../ \
+        ${proteomes_arg} \
         --output-dir .
     """
 }
@@ -177,10 +183,12 @@ process parse_tmbed {
         discovery_manifest.text.contains("tmbed\tyes")
 
     script:
+    def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
     """
     python3 ${scripts_dir}/006_ai-python-parse_tmbed.py \
         --discovery-manifest ${discovery_manifest} \
         --annotations-dir ${projectDir}/../../../ \
+        ${proteomes_arg} \
         --output-dir .
     """
 }
@@ -200,10 +208,12 @@ process parse_metapredict {
         discovery_manifest.text.contains("metapredict\tyes")
 
     script:
+    def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
     """
     python3 ${scripts_dir}/007_ai-python-parse_metapredict.py \
         --discovery-manifest ${discovery_manifest} \
         --annotations-dir ${projectDir}/../../../ \
+        ${proteomes_arg} \
         --output-dir .
     """
 }

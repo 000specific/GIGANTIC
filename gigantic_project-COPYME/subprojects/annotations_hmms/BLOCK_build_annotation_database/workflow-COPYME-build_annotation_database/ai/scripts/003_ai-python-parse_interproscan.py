@@ -60,7 +60,13 @@ Usage:
     python3 003_ai-python-parse_interproscan.py \\
         --discovery-manifest 1_ai-tool_discovery_manifest.tsv \\
         --go-lookup 2_ai-go_term_lookup.tsv \\
+        --proteomes-dir /path/to/proteomes \\
         --output-dir .
+
+If --proteomes-dir is provided, the script also identifies proteins in each
+species proteome that have NO annotations from each database and adds
+unannotated entries with identifiers like unannotated_pfam-1, unannotated_pfam-2,
+etc. The counter is global across all species per database.
 """
 
 import argparse
@@ -281,11 +287,79 @@ def write_go_header() -> str:
     return header
 
 
+def load_proteome_protein_identifiers( proteomes_directory: Path, logger: logging.Logger ) -> dict:
+    """
+    Load protein identifiers from FASTA proteome files.
+
+    Reads all .aa files in the proteomes directory, extracting protein IDs
+    from FASTA headers. Returns a dictionary mapping phylonames to sets of
+    protein identifiers.
+
+    Proteome files follow GIGANTIC naming: {phyloname}___taxid-assembly-date-type.aa
+    FASTA headers: >protein_id description...
+
+    Returns:
+        phylonames___protein_identifiers: dict mapping phyloname -> set of protein IDs
+    """
+
+    logger.info( f"Loading proteome protein identifiers from: {proteomes_directory}" )
+
+    if not proteomes_directory.exists():
+        logger.error( "CRITICAL ERROR: Proteomes directory does not exist!" )
+        logger.error( f"Expected path: {proteomes_directory}" )
+        logger.error( "Verify proteomes_dir path in the configuration file." )
+        logger.error( "Expected: genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/" )
+        sys.exit( 1 )
+
+    proteome_files = sorted( proteomes_directory.glob( '*.aa' ) )
+
+    if len( proteome_files ) == 0:
+        logger.error( "CRITICAL ERROR: No proteome files (*.aa) found!" )
+        logger.error( f"Directory: {proteomes_directory}" )
+        logger.error( "The proteomes directory should contain .aa FASTA files." )
+        sys.exit( 1 )
+
+    phylonames___protein_identifiers = {}
+
+    for proteome_file in proteome_files:
+        # Extract phyloname from filename: {phyloname}___taxid-assembly.aa
+        filename_without_extension = proteome_file.stem
+        parts_filename = filename_without_extension.split( '___' )
+        phyloname = parts_filename[ 0 ]
+
+        # Read FASTA headers to get protein IDs
+        protein_identifiers = set()
+
+        with open( proteome_file, 'r' ) as input_proteome:
+            # >XP_027047018.1 description text
+            # MSTLKQVFYILCLFSGHWAEQPADMQ...
+            for line in input_proteome:
+                if line.startswith( '>' ):
+                    # Protein ID is the first word after >
+                    header = line[ 1: ].strip()
+                    protein_identifier = header.split()[ 0 ] if header else ''
+                    if protein_identifier:
+                        protein_identifiers.add( protein_identifier )
+
+        phylonames___protein_identifiers[ phyloname ] = protein_identifiers
+        logger.debug( f"  {phyloname}: {len( protein_identifiers )} proteins" )
+
+    logger.info( f"  Loaded proteomes for {len( phylonames___protein_identifiers )} species" )
+
+    total_proteins = sum( len( identifiers ) for identifiers in phylonames___protein_identifiers.values() )
+    logger.info( f"  Total protein identifiers: {total_proteins:,d}" )
+
+    return phylonames___protein_identifiers
+
+
 def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: dict,
-                               output_directory: Path, logger: logging.Logger ) -> None:
+                               proteomes_directory: Path, output_directory: Path,
+                               logger: logging.Logger ) -> None:
     """
     Parse all InterProScan result files found in the tool output directory.
     Split annotations by analysis database and create standardized TSV files.
+    If proteomes_directory is provided, also adds unannotated protein entries
+    for each database with identifiers like unannotated_{database}-N.
     """
 
     interproscan_output_directory = Path( interproscan_record[ 'output_directory' ] )
@@ -334,6 +408,18 @@ def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: di
     gigantic_database_names___total_counts = {}
     # Track unknown analysis_db names encountered
     unknown_analysis_databases = set()
+
+    # =========================================================================
+    # Load proteome protein identifiers (if proteomes directory provided)
+    # =========================================================================
+
+    phylonames___protein_identifiers = None
+    if proteomes_directory is not None:
+        phylonames___protein_identifiers = load_proteome_protein_identifiers( proteomes_directory, logger )
+
+    # Track unannotated counts per database (global across all species)
+    gigantic_database_names___unannotated_counters = {}
+    total_unannotated_entries_written = 0
 
     # =========================================================================
     # Process each species result file
@@ -496,6 +582,120 @@ def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: di
                         species_go_term_count += 1
 
         # =====================================================================
+        # Add unannotated protein entries (if proteomes were loaded)
+        # =====================================================================
+
+        if phylonames___protein_identifiers is not None and phyloname in phylonames___protein_identifiers:
+            all_protein_identifiers = phylonames___protein_identifiers[ phyloname ]
+
+            # --- Component databases ---
+            component_database_names = list( ANALYSIS_DATABASE_NAMES___GIGANTIC_DATABASE_NAMES.values() )
+
+            for gigantic_database_name in component_database_names:
+                # Get protein IDs that have annotations for this database
+                annotated_protein_identifiers = set()
+                if gigantic_database_name in gigantic_database_names___annotation_rows:
+                    for annotation_row in gigantic_database_names___annotation_rows[ gigantic_database_name ]:
+                        annotated_protein_identifiers.add( annotation_row[ 1 ] )
+
+                # Compute unannotated proteins
+                unannotated_protein_identifiers = all_protein_identifiers - annotated_protein_identifiers
+
+                if len( unannotated_protein_identifiers ) > 0:
+                    # Initialize counter for this database if needed
+                    if gigantic_database_name not in gigantic_database_names___unannotated_counters:
+                        gigantic_database_names___unannotated_counters[ gigantic_database_name ] = 0
+
+                    # Initialize annotation rows list if needed
+                    if gigantic_database_name not in gigantic_database_names___annotation_rows:
+                        gigantic_database_names___annotation_rows[ gigantic_database_name ] = []
+
+                    for protein_identifier in sorted( unannotated_protein_identifiers ):
+                        gigantic_database_names___unannotated_counters[ gigantic_database_name ] += 1
+                        unannotated_counter = gigantic_database_names___unannotated_counters[ gigantic_database_name ]
+                        unannotated_identifier = f"unannotated_{gigantic_database_name}-{unannotated_counter}"
+
+                        unannotated_row = (
+                            phyloname,
+                            protein_identifier,
+                            '0',
+                            '0',
+                            gigantic_database_name,
+                            unannotated_identifier,
+                            'no annotation',
+                        )
+
+                        gigantic_database_names___annotation_rows[ gigantic_database_name ].append( unannotated_row )
+
+                    total_unannotated_entries_written += len( unannotated_protein_identifiers )
+
+            # --- InterProScan database ---
+            interproscan_annotated_protein_identifiers = set()
+            for annotation_row in interproscan_annotation_rows:
+                interproscan_annotated_protein_identifiers.add( annotation_row[ 1 ] )
+
+            interproscan_unannotated_protein_identifiers = all_protein_identifiers - interproscan_annotated_protein_identifiers
+
+            if len( interproscan_unannotated_protein_identifiers ) > 0:
+                if 'interproscan' not in gigantic_database_names___unannotated_counters:
+                    gigantic_database_names___unannotated_counters[ 'interproscan' ] = 0
+
+                for protein_identifier in sorted( interproscan_unannotated_protein_identifiers ):
+                    gigantic_database_names___unannotated_counters[ 'interproscan' ] += 1
+                    unannotated_counter = gigantic_database_names___unannotated_counters[ 'interproscan' ]
+                    unannotated_identifier = f"unannotated_interproscan-{unannotated_counter}"
+
+                    unannotated_row = (
+                        phyloname,
+                        protein_identifier,
+                        '0',
+                        '0',
+                        'interproscan',
+                        unannotated_identifier,
+                        'no annotation',
+                    )
+
+                    interproscan_annotation_rows.append( unannotated_row )
+
+                total_unannotated_entries_written += len( interproscan_unannotated_protein_identifiers )
+
+            # --- GO database ---
+            go_annotated_protein_identifiers = set()
+            for annotation_row in go_annotation_rows:
+                go_annotated_protein_identifiers.add( annotation_row[ 1 ] )
+
+            go_unannotated_protein_identifiers = all_protein_identifiers - go_annotated_protein_identifiers
+
+            if len( go_unannotated_protein_identifiers ) > 0:
+                if 'go' not in gigantic_database_names___unannotated_counters:
+                    gigantic_database_names___unannotated_counters[ 'go' ] = 0
+
+                for protein_identifier in sorted( go_unannotated_protein_identifiers ):
+                    gigantic_database_names___unannotated_counters[ 'go' ] += 1
+                    unannotated_counter = gigantic_database_names___unannotated_counters[ 'go' ]
+                    unannotated_identifier = f"unannotated_go-{unannotated_counter}"
+
+                    unannotated_row = (
+                        phyloname,
+                        protein_identifier,
+                        '0',
+                        '0',
+                        'go',
+                        unannotated_identifier,
+                        'no annotation',
+                    )
+
+                    go_annotation_rows.append( unannotated_row )
+
+                total_unannotated_entries_written += len( go_unannotated_protein_identifiers )
+
+            logger.debug( f"    Unannotated entries added for {phyloname}" )
+
+        elif phylonames___protein_identifiers is not None and phyloname not in phylonames___protein_identifiers:
+            logger.warning( f"    WARNING: No proteome found for phyloname: {phyloname}" )
+            logger.warning( "    Unannotated entries will NOT be added for this species." )
+
+        # =====================================================================
         # Write per-database files for this species
         # =====================================================================
 
@@ -616,7 +816,15 @@ def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: di
     logger.info( f"  GO annotations written: {total_go_annotations_written}" )
     logger.info( f"  Obsolete GO terms encountered: {total_obsolete_go_terms_found}" )
     logger.info( f"  Unknown GO terms encountered: {total_unknown_go_terms_found}" )
+    logger.info( f"  Unannotated protein entries added: {total_unannotated_entries_written:,d}" )
     logger.info( f"  Output directory: {output_directory}" )
+
+    if gigantic_database_names___unannotated_counters:
+        logger.info( "" )
+        logger.info( "Unannotated entries per database:" )
+        for gigantic_database_name in sorted( gigantic_database_names___unannotated_counters.keys() ):
+            count = gigantic_database_names___unannotated_counters[ gigantic_database_name ]
+            logger.info( f"  {gigantic_database_name:<20s} {count:>10,d}" )
 
     if unknown_analysis_databases:
         logger.info( "" )
@@ -674,6 +882,14 @@ def main():
         help = 'Output directory for database files (default: current directory)'
     )
 
+    parser.add_argument(
+        '--proteomes-dir',
+        type = str,
+        required = False,
+        default = None,
+        help = 'Path to proteomes directory containing .aa FASTA files (optional - if provided, unannotated protein entries are added to each database)'
+    )
+
     arguments = parser.parse_args()
 
     # Convert to Path objects
@@ -681,6 +897,7 @@ def main():
     go_lookup_path = Path( arguments.go_lookup )
     annotations_directory = Path( arguments.annotations_dir ).resolve()
     output_directory = Path( arguments.output_dir )
+    proteomes_directory = Path( arguments.proteomes_dir ).resolve() if arguments.proteomes_dir else None
 
     # Create output directory
     output_directory.mkdir( parents = True, exist_ok = True )
@@ -707,7 +924,7 @@ def main():
     # Parse InterProScan files
     # =========================================================================
 
-    parse_interproscan_files( interproscan_record, go_ids___go_records, output_directory, logger )
+    parse_interproscan_files( interproscan_record, go_ids___go_records, proteomes_directory, output_directory, logger )
 
 
 if __name__ == '__main__':

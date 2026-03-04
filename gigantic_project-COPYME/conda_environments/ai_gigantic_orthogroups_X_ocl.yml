@@ -1,8 +1,9 @@
-# GIGANTIC Orthogroups X Ocl Environment
-# ====================================
+# GIGANTIC Orthogroups X OCL Environment
+# =======================================
 #
-# Placeholder environment for the orthogroups_X_ocl subproject.
-# Specific tool dependencies will be added as this subproject is developed.
+# Environment for the orthogroups_X_ocl subproject.
+# Runs Origin-Conservation-Loss (OCL) analysis of orthogroups
+# across species tree topologies.
 #
 # INSTALLATION:
 #   From project root:
@@ -27,4 +28,5 @@ dependencies:
   - python>=3.11
   - nextflow>=23.0
 
-  # Tool-specific dependencies will be added as the subproject is developed
+  # Configuration parsing
+  - pyyaml

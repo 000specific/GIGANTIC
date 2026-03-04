@@ -14,7 +14,15 @@ go_ontology_url: "http://purl.obolibrary.org/obo/go/go-basic.obo"
 go_ontology_cache_days: 30
 
 # Species set name (matches genomesDB species set)
-species_set_name: "species67"
+# Replace SET_NAME_HERE with your species set name (e.g., "species71", "species67")
+species_set_name: "SET_NAME_HERE"
+
+# Proteomes directory (FASTA files for GIGANTIC species)
+# Used by parser scripts 003-007 to identify unannotated proteins per database.
+# Default follows GIGANTIC convention: genomesDB output_to_input.
+# Replace SET_NAME_HERE with your species set name (e.g., "species71")
+# Set to empty string "" to skip unannotated protein identification.
+proteomes_dir: "../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/SET_NAME_HERE_gigantic_T1_proteomes"
 
 # Clade comparison groups for annotation enrichment analysis
 # Define phylogenetic groups to compare annotation frequencies across clades

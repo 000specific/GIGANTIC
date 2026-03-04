@@ -37,8 +37,13 @@ bash RUN-workflow.sh
 
 ## Key Configuration
 
-- `build_annotation_database_config.yaml` - Set paths to BLOCK output directories, GO OBO URL, species list
+- `annotation_database_config.yaml` - Set species set name, GO OBO URL, proteomes directory, clade comparisons
+- `ai/nextflow.config` - Set `species_set_name`, `proteomes_dir`, resource allocations
 - Pipeline auto-discovers which tool BLOCKs have been completed (handles partial annotation sets)
+
+### Unannotated Protein Identification
+
+When `proteomes_dir` is set in `nextflow.config`, parsers 003-007 compare annotated proteins against the complete proteome to identify proteins with zero annotations from each database. These get entries with `unannotated_{database}-N` identifiers. Required for downstream `annotations_X_ocl` (zero subtype annogroups). Set `proteomes_dir` to empty string to disable.
 
 ## Verification Commands
 
