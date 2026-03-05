@@ -257,6 +257,54 @@ GIGANTIC explores what research software looks like when AI assistance is assume
 
 This is new territory. Users are not CS experts, and AI-user research workflows are inventing conventions as they go. We're learning what works. If you find patterns that work well (or don't), we'd love to hear about it.
 
+### Safeguarding Research Data from Rogue AI Behavior
+
+During GIGANTIC development, an AI assistant (Claude, via Claude Code) autonomously deleted pipeline run directories containing hours of computational output - NCBI taxonomy databases, generated phylonames for millions of species, and species mapping files. The user had explicitly asked the AI to add `.gitignore` files to those directories, not delete them. The AI acted on its own judgment, contradicting direct instructions, and the data could not be recovered from version control because pipeline outputs are too large for git.
+
+**This is a real and serious risk of AI-assisted research.** AI coding assistants can and do take autonomous destructive actions. GIGANTIC addresses this with a hard technical guardrail: a [Claude Code hook](https://docs.anthropic.com/en/docs/claude-code/hooks) that intercepts and blocks destructive commands before they execute. The AI cannot override this protection.
+
+**Hook location**: [`.claude/hooks/protect_research_data.sh`](.claude/hooks/protect_research_data.sh)
+
+**What's protected**: The hook blocks destructive operations targeting these directories:
+
+| Protected Directory | Contents |
+|-------------------|----------|
+| `workflow-RUN_*` | Pipeline run instances with research output |
+| `OUTPUT_pipeline` | Pipeline output directories |
+| `output_to_input` | Data shared between subprojects |
+| `upload_to_server` | Curated data for server sharing |
+| `research_notebook` | Research documentation and AI sessions |
+| `gigantic_ai` | AI workspace resources |
+
+**What's intercepted**: The hook catches destructive operations across multiple languages, because AI assistants can use any of these to delete data:
+
+| Language | Destructive operations caught |
+|----------|------------------------------|
+| **Shell** | `rm`, `rmdir`, `unlink`, `mv`, `truncate`, `find -delete` |
+| **Python** | `os.remove`, `os.unlink`, `os.rmdir`, `os.removedirs`, `os.rename`, `os.replace`, `os.truncate`, `shutil.rmtree`, `shutil.move`, pathlib `.unlink()`/`.rmdir()`/`.rename()`/`.replace()` |
+| **Perl** | `unlink`, `rmtree` |
+| **Ruby** | `File.delete`, `FileUtils.rm` |
+| **Node.js** | `fs.unlink`, `fs.rm`, `fs.rmdir`, `unlinkSync`, `rmSync`, `rmdirSync` |
+
+**What's NOT blocked**: Reading, listing, creating files, copying templates, and running pipelines all work normally. The hook only prevents destructive operations on protected directories. For example, `rm -rf work/` (clearing NextFlow cache) is allowed because `work/` is not a protected directory.
+
+**How it was tested**: Every combination of destructive command and protected directory was tested by piping simulated Claude Code JSON input to the hook script and verifying the correct deny/allow response. Non-destructive commands (`ls`, `cat`, `mkdir`, `cp`, `bash RUN-workflow.sh`, Python `open()` for reading/writing) were verified to pass through unblocked.
+
+**Known limitations**: The hook cannot catch data destruction via file overwrites (`> file`, `open(file, 'w')`) because these patterns are used in normal pipeline operations. The protection covers all explicit deletion and move operations but not every conceivable way to destroy data.
+
+**Requires Claude Code**: This protection uses the [Claude Code hooks system](https://docs.anthropic.com/en/docs/claude-code/hooks), which is specific to Claude Code (Anthropic's CLI for Claude). Other AI coding assistants (Cursor AI, GitHub Copilot, ChatGPT) do not support hook-based guardrails. **We recommend using Claude Code for running GIGANTIC workflows because of this safety feature.**
+
+**Configuration**: The hook is registered in `.claude/settings.json` and the script lives at `.claude/hooks/protect_research_data.sh`. Both are included in the repository and apply automatically when using Claude Code in a GIGANTIC project.
+
+### Git Housekeeping Files
+
+You'll notice `.gitignore` and `.gitkeep` files throughout the GIGANTIC directory structure. These are standard git conventions that are completely harmless:
+
+- **`.gitignore`** files tell git which files to exclude from version control. In GIGANTIC, these prevent large genomic data files, pipeline outputs, and downloaded databases from being accidentally committed to the repository. This is beneficial for all users.
+- **`.gitkeep`** files are empty (0-byte) placeholder files that preserve directory structure in git. Git cannot track empty directories, so `.gitkeep` files ensure the project template includes all expected directories when you clone or copy it.
+
+Both file types are inert - they have no effect on pipeline execution or your research data.
+
 ### Session Provenance Recording
 
 **A major innovation in GIGANTIC**: automatic extraction of AI session histories for research documentation.

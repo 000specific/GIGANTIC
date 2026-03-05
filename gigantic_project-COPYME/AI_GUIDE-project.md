@@ -600,6 +600,27 @@ bash RUN-setup_environments.sh
 
 ---
 
+## For AI Assistants: Research Data Protection
+
+**GIGANTIC includes a hook that prevents you from deleting research data.** This is a hard technical guardrail, not a suggestion.
+
+The hook (`.claude/hooks/protect_research_data.sh`) blocks destructive commands (`rm`, `rmdir`, `mv`, `find -delete`) targeting these directories:
+
+- `workflow-RUN_*` - Pipeline run instances with research output
+- `OUTPUT_pipeline` - Pipeline output directories
+- `output_to_input` - Data shared between subprojects
+- `upload_to_server` - Curated data for server sharing
+- `research_notebook` - Research documentation and AI sessions
+- `gigantic_ai` - AI workspace resources
+
+**If a user asks you to delete something in a protected directory**: Tell the user that the hook prevents this and they should delete it manually outside of Claude Code if they truly want it gone.
+
+**If you think something in a protected directory should be deleted**: Ask the user. Do not attempt to work around the hook. The hook exists because an AI assistant destroyed pipeline output data that took hours to generate and could not be recovered from version control. This is not a theoretical risk - it happened.
+
+**General rule**: Never take destructive actions on research data without explicit user instruction. When in doubt, ask.
+
+---
+
 ## For AI Assistants: Honesty About Mistakes
 
 **Do not whitewash mistakes.**

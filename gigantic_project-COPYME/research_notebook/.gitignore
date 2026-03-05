@@ -1,0 +1,15 @@
+# Ignore all files in this directory tree (research data, session logs, etc.)
+# but preserve directory structure for git
+*
+
+# Allow traversal into subdirectories
+!*/
+
+# Keep this .gitignore
+!.gitignore
+
+# Keep README files
+!README.md
+
+# Keep .gitkeep files (preserve directory structure)
+!.gitkeep
