@@ -4,7 +4,7 @@
  * AI: Claude Code | Opus 4.5 | 2026 February 13
  * Human: Eric Edsinger
  *
- * Purpose: Ingest user-provided source data (proteomes, genomes, GFFs)
+ * Purpose: Ingest user-provided source data (proteomes, genomes, genome annotations)
  *          into GIGANTIC structure for downstream processing by STEP_2.
  *
  * Architecture: 2 scripts, 2 output directories, 1:1 match.
@@ -67,7 +67,7 @@ process validate_source_manifest {
  * Calls: scripts/002_ai-python-ingest_source_data.py
  *
  * Hard-copies all source files into OUTPUT_pipeline/2-output/
- * organized by data type (T1_proteomes, genomes, gene_annotations).
+ * organized by data type (T1_proteomes, genomes, genome_annotations).
  */
 process ingest_source_data {
     label 'local'
@@ -120,7 +120,7 @@ workflow.onComplete {
     if (workflow.success) {
         println "Output:"
         println "  1-output/  Validation report"
-        println "  2-output/  Ingested data (T1_proteomes, genomes, gene_annotations)"
+        println "  2-output/  Ingested data (T1_proteomes, genomes, genome_annotations)"
         println ""
         println "Symlinks for STEP_2 will be created by RUN-workflow.sh"
     }

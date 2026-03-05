@@ -20,7 +20,7 @@ Unlike other GIGANTIC subprojects, **STEP_1 does NOT automatically download data
 Users:
 1. Obtain proteomes from their own sources (NCBI downloads, lab data, collaborator files, etc.)
 2. Store them anywhere accessible (e.g., `user_research/`)
-3. Create a manifest listing paths to their genome, GTF, and proteome files
+3. Create a manifest listing paths to their genome, genome annotation, and proteome files
 4. Run the ingestion workflow to bring them into GIGANTIC
 
 This design gives users complete control over what enters the GIGANTIC pipeline.
@@ -34,14 +34,14 @@ This design gives users complete control over what enters the GIGANTIC pipeline.
 The manifest is a **four-column TSV**:
 
 ```
-genus_species	genome_path	gtf_path	proteome_path
+genus_species	genome_path	genome_annotation_path	proteome_path
 ```
 
 **Example** (using relative paths to project-level INPUT_user):
 ```tsv
-genus_species	genome_path	gtf_path	proteome_path
-Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
-Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
+genus_species	genome_path	genome_annotation_path	proteome_path
+Homo_sapiens	../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
 ```
 
 **Project-level INPUT_user structure**:
@@ -166,6 +166,6 @@ STEP_1-sources/
     ├── RUN-workflow.sbatch
     ├── ingest_sources_config.yaml
     ├── INPUT_user/
-    │   └── source_manifest.tsv  # 4-column manifest (genus_species, genome, gtf, proteome)
+    │   └── source_manifest.tsv  # 4-column manifest (genus_species, genome, genome_annotation, proteome)
     └── ai/
 ```

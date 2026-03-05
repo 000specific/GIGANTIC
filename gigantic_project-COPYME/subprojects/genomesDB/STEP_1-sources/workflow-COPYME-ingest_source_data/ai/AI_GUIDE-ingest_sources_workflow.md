@@ -21,7 +21,7 @@
 
 Unlike other GIGANTIC subprojects that download or generate data automatically, **STEP_1-sources is completely user-driven**:
 
-- Users provide data (proteomes, genomes, GFFs) from **outside GIGANTIC** (their own downloads, lab data, etc.)
+- Users provide data (proteomes, genomes, genome annotations) from **outside GIGANTIC** (their own downloads, lab data, etc.)
 - The workflow **ingests** (validates, hard copies, symlinks) user data into GIGANTIC structure
 - No automatic downloads - users control what enters the pipeline
 
@@ -89,7 +89,7 @@ workflow-COPYME-ingest_source_data/
 │   ├── 2-output/                   # Script 002 output: ingested data
 │   │   ├── T1_proteomes/
 │   │   ├── genomes/
-│   │   ├── gene_annotations/
+│   │   ├── genome_annotations/
 │   │   └── 2_ai-ingestion_log.tsv
 │   └── 3-output/                   # Script 003 output: symlink manifest
 │       └── 3_ai-symlink_manifest.tsv
@@ -109,7 +109,7 @@ workflow-COPYME-ingest_source_data/
 | Script | Does | Creates |
 |--------|------|---------|
 | 001 | Reads manifest, validates all file paths exist, writes report | `1-output/1_ai-source_validation_report.tsv`, `1_ai-validation_summary.txt` |
-| 002 | Hard-copies all source data into organized subdirectories | `2-output/T1_proteomes/`, `genomes/`, `gene_annotations/`, `2_ai-ingestion_log.tsv` |
+| 002 | Hard-copies all source data into organized subdirectories | `2-output/T1_proteomes/`, `genomes/`, `genome_annotations/`, `2_ai-ingestion_log.tsv` |
 | 003 | Creates symlinks in `output_to_input/` pointing to `2-output/` copies | `3-output/3_ai-symlink_manifest.tsv` + actual symlinks |
 
 **Why this matters**: No invisible work. Every step produces visible output. A human can trace exactly what happened at each stage.
@@ -121,10 +121,10 @@ workflow-COPYME-ingest_source_data/
 ### Step 1: Prepare Source Data
 
 Users must have data files in the project-level `INPUT_user/genomic_resources/` subdirectories or somewhere else accessible:
-- `../../../../../../INPUT_user/genomic_resources/genomes/` - Project-level genome files (.fasta)
-- `../../../../../../INPUT_user/genomic_resources/proteomes/` - Project-level proteome files (.aa)
-- `../../../../../../INPUT_user/genomic_resources/annotations/` - Project-level annotation files (.gff3/.gtf)
-- `../../../../../../INPUT_user/genomic_resources/maps/` - Identifier mapping files (.tsv)
+- `../../../../INPUT_user/genomic_resources/genomes/` - Project-level genome files (.fasta)
+- `../../../../INPUT_user/genomic_resources/proteomes/` - Project-level proteome files (.aa)
+- `../../../../INPUT_user/genomic_resources/annotations/` - Project-level annotation files (.gff3/.gtf)
+- `../../../../INPUT_user/genomic_resources/maps/` - Identifier mapping files (.tsv)
 - `../user_research/` - Personal research data (alternative)
 - Any accessible path on the system
 
@@ -154,9 +154,9 @@ Example: `>Homo_sapiens-ENSG00000139618-ENST00000380152-ENSP00000369497`
 Create `INPUT_user/source_manifest.tsv` with **4 columns**:
 
 ```tsv
-genus_species	genome_path	gff_path	proteome_path
-Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
-Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
+genus_species	genome_path	genome_annotation_path	proteome_path
+Homo_sapiens	../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
 ```
 
 **Project-level INPUT_user structure** (where source data lives):
@@ -173,7 +173,7 @@ INPUT_user/
 
 **Format requirements**:
 - Tab-separated (TSV)
-- Header row: `genus_species`, `genome_path`, `gff_path`, `proteome_path`
+- Header row: `genus_species`, `genome_path`, `genome_annotation_path`, `proteome_path`
 - One species per line
 - Paths can be absolute or relative to workflow directory
 - Relative paths to project-level `INPUT_user/genomic_resources/` subdirectories are recommended
@@ -242,7 +242,7 @@ cat OUTPUT_pipeline/1-output/1_ai-validation_summary.txt
 # Did data copy?
 ls OUTPUT_pipeline/2-output/T1_proteomes/ | wc -l
 ls OUTPUT_pipeline/2-output/genomes/ | wc -l
-ls OUTPUT_pipeline/2-output/gene_annotations/ | wc -l
+ls OUTPUT_pipeline/2-output/genome_annotations/ | wc -l
 
 # Check ingestion log
 head OUTPUT_pipeline/2-output/2_ai-ingestion_log.tsv
@@ -250,7 +250,7 @@ head OUTPUT_pipeline/2-output/2_ai-ingestion_log.tsv
 # Are symlinks in place?
 ls ../../output_to_input/T1_proteomes/ | wc -l
 ls ../../output_to_input/genomes/ | wc -l
-ls ../../output_to_input/gene_annotations/ | wc -l
+ls ../../output_to_input/genome_annotations/ | wc -l
 
 # Verify symlinks resolve
 head ../../output_to_input/T1_proteomes/*.aa | head -5

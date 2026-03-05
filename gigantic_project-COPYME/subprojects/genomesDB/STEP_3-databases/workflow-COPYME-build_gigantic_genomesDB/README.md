@@ -13,7 +13,7 @@ Build per-genome BLAST protein databases from standardized proteomes. Each speci
 
 ## Prerequisites
 
-1. **STEP_2 complete**: Standardized proteomes in `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes/`
+1. **STEP_2 complete**: Standardized proteomes in `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`
 2. **Species manifest edited**: User has reviewed and set `Include=YES/NO` in the species selection manifest
 3. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `ai_gigantic_genomesdb` conda environment)
 
@@ -47,7 +47,7 @@ sbatch RUN-workflow.sbatch
 | Input | Source | Description |
 |-------|--------|-------------|
 | Species manifest | `output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv` | User-edited manifest with Include=YES/NO |
-| Proteomes | `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes/` | Standardized T1 proteomes |
+| Proteomes | `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` | Standardized T1 proteomes |
 
 ---
 
@@ -88,7 +88,7 @@ workflow-COPYME-build_gigantic_genomesDB/
 ├── RUN-workflow.sh              # Local execution script
 ├── RUN-workflow.sbatch          # SLURM submission script
 ├── README.md                    # This file
-├── INPUT_user/                  # User inputs (if any)
+├── databases_config.yaml        # Workflow configuration
 ├── OUTPUT_pipeline/
 │   ├── 1-output/                # Script 001 outputs
 │   │   └── 1_ai-filtered_species_manifest.tsv
@@ -96,6 +96,9 @@ workflow-COPYME-build_gigantic_genomesDB/
 │       ├── gigantic-T1-blastp/  # Per-genome BLAST databases
 │       └── 2_ai-makeblastdb_commands.sh
 └── ai/
+    ├── AI_GUIDE-databases_workflow.md
+    ├── main.nf
+    ├── nextflow.config
     └── scripts/
         ├── 001_ai-python-filter_species_manifest.py
         └── 002_ai-python-build_per_genome_blastdbs.py

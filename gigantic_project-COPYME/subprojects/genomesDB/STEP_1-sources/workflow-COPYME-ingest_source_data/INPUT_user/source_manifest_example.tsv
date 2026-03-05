@@ -10,7 +10,7 @@
 #
 #   genus_species    - Species identifier (Genus_species format)
 #   genome_path      - Path to genome FASTA file (or NA if not available)
-#   gff_path         - Path to GFF3/GTF annotation file (or NA if not available)
+#   genome_annotation_path         - Path to GFF3/GTF annotation file (or NA if not available)
 #   proteome_path    - Path to proteome amino acid file (or NA if not available)
 #
 # ============================================================================
@@ -55,14 +55,14 @@
 # ============================================================================
 # HEADER ROW (required, must be exactly these 4 column names)
 # ============================================================================
-genus_species	genome_path	gff_path	proteome_path
+genus_species	genome_path	genome_annotation_path	proteome_path
 # ============================================================================
 # EXAMPLE DATA (uncomment and edit with your data)
 # ============================================================================
 #
 # All three data types available (using relative paths to project-level INPUT_user):
-# Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+# Homo_sapiens	../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 #
 # Missing genome (proteome and annotation only):
-# Amphiscolops_sp	NA	../../../../../../INPUT_user/genomic_resources/annotations/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.aa
+# Amphiscolops_sp	NA	../../../../INPUT_user/genomic_resources/annotations/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.aa
 #

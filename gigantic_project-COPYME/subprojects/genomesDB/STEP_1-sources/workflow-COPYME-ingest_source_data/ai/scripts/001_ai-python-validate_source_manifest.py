@@ -12,7 +12,7 @@ summary so the user can see exactly what data is available before ingestion.
 
 Input:
     - Source manifest TSV from INPUT_user/source_manifest.tsv
-      (4 columns: genus_species, genome_path, gff_path, proteome_path)
+      (4 columns: genus_species, genome_path, genome_annotation_path, proteome_path)
 
 Output (to OUTPUT_pipeline/1-output/):
     - 1_ai-source_validation_report.tsv
@@ -56,10 +56,10 @@ def parse_manifest( manifest_path: Path, workflow_dir: Path ) -> list:
     """
     Parse the 4-column source manifest TSV file.
 
-    # genus_species	genome_path	gff_path	proteome_path
+    # genus_species	genome_path	genome_annotation_path	proteome_path
     # Abeoforma_whisleri	../user_research/.../file.fasta	NA	../user_research/.../file.aa
 
-    Returns list of dicts with keys: genus_species, genome_path, gff_path, proteome_path.
+    Returns list of dicts with keys: genus_species, genome_path, genome_annotation_path, proteome_path.
     Each path is resolved to absolute. 'NA' or empty paths become None.
     """
     entries = []
@@ -88,13 +88,13 @@ def parse_manifest( manifest_path: Path, workflow_dir: Path ) -> list:
 
             genus_species = parts[ 0 ].strip()
             genome_path = resolve_path( parts[ 1 ].strip(), workflow_dir )
-            gff_path = resolve_path( parts[ 2 ].strip(), workflow_dir )
+            genome_annotation_path = resolve_path( parts[ 2 ].strip(), workflow_dir )
             proteome_path = resolve_path( parts[ 3 ].strip(), workflow_dir )
 
             entries.append( {
                 'genus_species': genus_species,
                 'genome_path': genome_path,
-                'gff_path': gff_path,
+                'genome_annotation_path': genome_annotation_path,
                 'proteome_path': proteome_path,
             } )
 
@@ -113,7 +113,7 @@ def validate_entries( entries: list ) -> list:
     data_types___path_keys = {
         'T1_proteome': 'proteome_path',
         'genome': 'genome_path',
-        'gene_annotation': 'gff_path',
+        'genome_annotation': 'genome_annotation_path',
     }
 
     for entry in entries:
@@ -161,7 +161,7 @@ def write_validation_report( validation_records: list, output_dir: Path ):
     with open( report_path, 'w' ) as output_report:
         output = (
             'Genus_Species (species identifier)\t'
-            'Data_Type (type of data: T1_proteome, genome, or gene_annotation)\t'
+            'Data_Type (type of data: T1_proteome, genome, or genome_annotation)\t'
             'Path (resolved absolute path to source file)\t'
             'File_Exists (yes, no, or not_applicable if path is NA)\t'
             'File_Size_Bytes (file size in bytes or NA)\n'
@@ -198,11 +198,11 @@ def write_validation_summary( validation_records: list, entries: list, output_di
     genome_na = sum( 1 for record in validation_records if record[ 'data_type' ] == 'genome' and record[ 'file_exists' ] == 'not_applicable' )
     genome_missing = sum( 1 for record in validation_records if record[ 'data_type' ] == 'genome' and record[ 'file_exists' ] == 'no' )
 
-    gff_found = sum( 1 for record in validation_records if record[ 'data_type' ] == 'gene_annotation' and record[ 'file_exists' ] == 'yes' )
-    gff_na = sum( 1 for record in validation_records if record[ 'data_type' ] == 'gene_annotation' and record[ 'file_exists' ] == 'not_applicable' )
-    gff_missing = sum( 1 for record in validation_records if record[ 'data_type' ] == 'gene_annotation' and record[ 'file_exists' ] == 'no' )
+    genome_annotation_found = sum( 1 for record in validation_records if record[ 'data_type' ] == 'genome_annotation' and record[ 'file_exists' ] == 'yes' )
+    genome_annotation_na = sum( 1 for record in validation_records if record[ 'data_type' ] == 'genome_annotation' and record[ 'file_exists' ] == 'not_applicable' )
+    genome_annotation_missing = sum( 1 for record in validation_records if record[ 'data_type' ] == 'genome_annotation' and record[ 'file_exists' ] == 'no' )
 
-    total_missing = proteome_missing + genome_missing + gff_missing
+    total_missing = proteome_missing + genome_missing + genome_annotation_missing
 
     with open( summary_path, 'w' ) as output_summary:
         output = "GIGANTIC Source Data Validation Summary\n"
@@ -216,7 +216,7 @@ def write_validation_summary( validation_records: list, entries: list, output_di
         output += "Data availability:\n"
         output += f"  T1 proteomes:     {proteome_found} found, {proteome_na} not listed, {proteome_missing} MISSING\n"
         output += f"  Genomes:          {genome_found} found, {genome_na} not listed, {genome_missing} MISSING\n"
-        output += f"  Gene annotations: {gff_found} found, {gff_na} not listed, {gff_missing} MISSING\n\n"
+        output += f"  Genome annotations: {genome_annotation_found} found, {genome_annotation_na} not listed, {genome_annotation_missing} MISSING\n\n"
 
         if total_missing > 0:
             output += f"WARNING: {total_missing} listed files could not be found!\n"

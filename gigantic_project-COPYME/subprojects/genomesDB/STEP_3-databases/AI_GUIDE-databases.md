@@ -67,7 +67,7 @@ research_notebook/research_ai/subproject-genomesDB/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/INPUT_user/` | Input from STEP_2 | No |
+| `workflow-*/databases_config.yaml` | Workflow configuration | Optional |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `output_to_input/` | BLAST databases | No |
 | `../output_to_input/` | Shared with other subprojects | No |

@@ -43,8 +43,8 @@ Replaces invalid amino acid characters ('.' used for stop codons in some proteom
 
 Creates phyloname-named symlinks to original genome and annotation files:
 - Preserves source data while providing consistent naming
-- **Input**: Genomes and gene annotations from STEP_1 + phylonames mapping
-- **Output**: `OUTPUT_pipeline/3-output/gigantic_genomes/`, `OUTPUT_pipeline/3-output/gigantic_gene_annotations/`
+- **Input**: Genomes and genome annotations from STEP_1 + phylonames mapping
+- **Output**: `OUTPUT_pipeline/3-output/gigantic_genomes/`, `OUTPUT_pipeline/3-output/gigantic_genome_annotations/`
 
 ### 4. Assembly Quality Statistics
 
@@ -84,7 +84,7 @@ Source data from STEP_1-sources, accessed via `output_to_input/`:
 |-----------|-------|----------|
 | T1 proteomes | 71 | `../output_to_input/STEP_1-sources/T1_proteomes/` |
 | Genomes | 64 | `../output_to_input/STEP_1-sources/genomes/` |
-| Gene annotations | 69 | `../output_to_input/STEP_1-sources/gene_annotations/` |
+| Genome annotations | 69 | `../output_to_input/STEP_1-sources/genome_annotations/` |
 
 Also requires:
 - **Phylonames mapping**: `../../phylonames/STEP_1-generate_and_evaluate/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
@@ -101,7 +101,7 @@ All outputs in `workflow-*/OUTPUT_pipeline/`:
 | Standardization manifest | 001 | `1-output/1_ai-standardization_manifest.tsv` |
 | Cleaned proteomes | 002 | `2-output/gigantic_proteomes_cleaned/` |
 | Genome symlinks | 003 | `3-output/gigantic_genomes/` |
-| Annotation symlinks | 003 | `3-output/gigantic_gene_annotations/` |
+| Annotation symlinks | 003 | `3-output/gigantic_genome_annotations/` |
 | Assembly statistics | 004 | `4-output/4_ai-genome_assembly_statistics.tsv` |
 | BUSCO summary | 005 | `5-output/5_ai-busco_summary.tsv` |
 | Quality summary | 006 | `6-output/6_ai-quality_summary.tsv` |

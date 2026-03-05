@@ -48,22 +48,36 @@ module load conda 2>/dev/null || true
 if conda activate ai_gigantic_genomesdb 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_genomesdb"
 else
-    # Check if nextflow and makeblastdb are available
+    # Check if required tools are available in PATH
+    MISSING_TOOLS=""
     if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_genomesdb' not found!"
+        MISSING_TOOLS="${MISSING_TOOLS} nextflow"
+    fi
+    if ! command -v makeblastdb &> /dev/null; then
+        # Also try loading blast module before giving up
+        module load blast 2>/dev/null || true
+        if ! command -v makeblastdb &> /dev/null; then
+            MISSING_TOOLS="${MISSING_TOOLS} makeblastdb"
+        fi
+    fi
+    if ! command -v python3 &> /dev/null; then
+        MISSING_TOOLS="${MISSING_TOOLS} python3"
+    fi
+
+    if [ -n "${MISSING_TOOLS}" ]; then
+        echo "ERROR: Environment 'ai_gigantic_genomesdb' not found and required tools missing:${MISSING_TOOLS}"
         echo ""
-        echo "Please ensure the environment is set up with:"
-        echo "  - nextflow"
-        echo "  - makeblastdb (BLAST+)"
-        echo "  - python3"
+        echo "Please run the environment setup script first:"
+        echo ""
+        echo "  cd ../../../../  # Go to project root"
+        echo "  bash RUN-setup_environments.sh"
+        echo ""
+        echo "Or create this environment manually:"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_genomesdb.yml"
         echo ""
         exit 1
     fi
-
-    # Also try loading blast module
-    module load blast 2>/dev/null || true
-
-    echo "Using NextFlow from PATH"
+    echo "Using tools from PATH (environment not activated)"
 fi
 
 echo ""
@@ -97,7 +111,8 @@ if [ ! -f "${MANIFEST_PATH}" ]; then
 fi
 
 TOTAL_SPECIES=$(tail -n +2 "${MANIFEST_PATH}" | grep -v "^#" | wc -l)
-INCLUDE_YES=$(tail -n +2 "${MANIFEST_PATH}" | grep -v "^#" | grep -i "YES" | wc -l || echo 0)
+# Use awk to count Include=YES in the correct column (not grep which matches anywhere in the line)
+INCLUDE_YES=$(awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if($i ~ /Include/) col=i} NR>1 && $col ~ /^[Yy][Ee][Ss]$/{c++} END{print c+0}' "${MANIFEST_PATH}")
 
 echo "  [OK] Species selection manifest found"
 echo "       Total species: ${TOTAL_SPECIES}"
@@ -110,12 +125,21 @@ if [ "${INCLUDE_YES}" -eq 0 ]; then
     exit 1
 fi
 
-# Check makeblastdb
-if ! command -v makeblastdb &> /dev/null; then
-    echo "WARNING: makeblastdb not found in PATH"
-    echo "Process 002 will fail unless BLAST+ is available."
+# Check for cleaned proteomes directory
+PROTEOMES_DIR="../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
+
+if [ ! -d "${PROTEOMES_DIR}" ]; then
+    echo "ERROR: Cleaned proteomes directory not found!"
     echo ""
+    echo "Expected location:"
+    echo "  ${PROTEOMES_DIR}"
+    echo ""
+    echo "Please ensure STEP_2 is complete and its RUN-workflow.sh created the output_to_input symlinks."
+    exit 1
 fi
+
+PROTEOME_COUNT=$(ls "${PROTEOMES_DIR}"/*.aa 2>/dev/null | wc -l)
+echo "  [OK] Cleaned proteomes directory found (${PROTEOME_COUNT} proteome files)"
 
 echo ""
 

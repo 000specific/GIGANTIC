@@ -120,7 +120,7 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 | Standardization manifest | `1-output/1_ai-standardization_manifest.tsv` | Maps original to standardized names |
 | Cleaned proteomes | `2-output/gigantic_proteomes_cleaned/` | Ready for BLAST/BUSCO |
 | Genome symlinks | `3-output/gigantic_genomes/` | Phyloname-named links |
-| Annotation symlinks | `3-output/gigantic_gene_annotations/` | Phyloname-named links |
+| Annotation symlinks | `3-output/gigantic_genome_annotations/` | Phyloname-named links |
 | Assembly statistics | `4-output/4_ai-genome_assembly_statistics.tsv` | N50, scaffold counts, etc. |
 | BUSCO summary | `5-output/5_ai-busco_summary.tsv` | Proteome completeness scores |
 | Quality summary | `6-output/6_ai-quality_summary.tsv` | Combined quality metrics |

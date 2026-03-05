@@ -17,8 +17,8 @@ nextflow.enable.dsl = 2
 // PARAMETERS (from config.yaml via nextflow.config)
 // ============================================================================
 
-params.species_manifest = "../../output_to_input/species_selection_manifest.tsv"
-params.proteomes_dir = "../../output_to_input/gigantic_proteomes"
+params.species_manifest = "../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv"
+params.proteomes_dir = "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
 params.output_dir = "OUTPUT_pipeline"
 params.database_name = "gigantic-T1-blastp"
 params.parallel_jobs = 4
@@ -78,7 +78,6 @@ process build_blast_databases {
         --filtered-manifest ${filtered_manifest} \\
         --proteomes-dir ${projectDir}/../${params.proteomes_dir} \\
         --output-dir 2-output \\
-        --output-to-input-dir 2-output \\
         --database-name ${params.database_name} \\
         --parallel ${params.parallel_jobs}
     """

@@ -26,18 +26,18 @@
 #
 # WHAT THIS DOES:
 # 1. Validates species selection against STEP_2 and STEP_3 outputs
-# 2. Scans for available gene annotations (GFF/GTF) from STEP_2
+# 2. Scans for available genome annotations (GFF/GTF) from STEP_2
 # 3. Copies selected proteomes from STEP_2 with speciesN naming
 # 4. Copies selected BLAST databases from STEP_3 with speciesN naming
-# 5. Copies gene annotations for species that have them
+# 5. Copies genome annotations for species that have them
 # 6. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
 # 7. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/
-# 8. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_gene_annotations/
+# 8. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output and 2-output/
 # Final species set copied to ../../output_to_input/STEP_4-create_final_species_set/
-# NOTE: Gene annotations are optional - not all species have GFF/GTF files.
+# NOTE: Genome annotations are optional - not all species have GFF/GTF files.
 #
 ################################################################################
 
@@ -63,18 +63,29 @@ module load conda 2>/dev/null || true
 if conda activate ai_gigantic_genomesdb 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_genomesdb"
 else
-    # Check if nextflow is already available in PATH
+    # Check if required tools are available in PATH
+    MISSING_TOOLS=""
     if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_genomesdb' not found!"
+        MISSING_TOOLS="${MISSING_TOOLS} nextflow"
+    fi
+    if ! command -v python3 &> /dev/null; then
+        MISSING_TOOLS="${MISSING_TOOLS} python3"
+    fi
+
+    if [ -n "${MISSING_TOOLS}" ]; then
+        echo "ERROR: Environment 'ai_gigantic_genomesdb' not found and required tools missing:${MISSING_TOOLS}"
         echo ""
         echo "Please run the environment setup script first:"
         echo ""
-        echo "  cd ../../../  # Go to project root"
+        echo "  cd ../../../../  # Go to project root"
         echo "  bash RUN-setup_environments.sh"
+        echo ""
+        echo "Or create this environment manually:"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_genomesdb.yml"
         echo ""
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    echo "Using tools from PATH (environment not activated)"
 fi
 echo ""
 
@@ -96,6 +107,40 @@ echo "  [OK] Configuration file found"
 # Check if selected_species.txt exists - if not, create default from STEP_2
 if [ ! -f "INPUT_user/selected_species.txt" ]; then
     echo "  [INFO] No selected_species.txt found - will use all species from STEP_2"
+fi
+
+# Check STEP_2 proteomes directory exists (via output_to_input)
+PROTEOMES_DIR="../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
+if [ ! -d "${PROTEOMES_DIR}" ] && [ ! -L "${PROTEOMES_DIR}" ]; then
+    echo "ERROR: STEP_2 cleaned proteomes not found!"
+    echo ""
+    echo "Expected location:"
+    echo "  ${PROTEOMES_DIR}"
+    echo ""
+    echo "Please ensure STEP_2 is complete and its RUN-workflow.sh created the output_to_input symlinks."
+    exit 1
+fi
+echo "  [OK] STEP_2 proteomes found"
+
+# Check STEP_3 BLAST databases directory exists (via output_to_input)
+BLASTP_DIR="../../output_to_input/STEP_3-databases/gigantic-T1-blastp"
+if [ ! -d "${BLASTP_DIR}" ] && [ ! -L "${BLASTP_DIR}" ]; then
+    echo "ERROR: STEP_3 BLAST databases not found!"
+    echo ""
+    echo "Expected location:"
+    echo "  ${BLASTP_DIR}"
+    echo ""
+    echo "Please ensure STEP_3 is complete and its RUN-workflow.sh created the output_to_input symlinks."
+    exit 1
+fi
+echo "  [OK] STEP_3 BLAST databases found"
+
+# Check STEP_2 genome annotations (optional)
+ANNOTATIONS_DIR="../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
+if [ -d "${ANNOTATIONS_DIR}" ] || [ -L "${ANNOTATIONS_DIR}" ]; then
+    echo "  [OK] STEP_2 genome annotations found"
+else
+    echo "  [INFO] No genome annotations found (optional - not all projects have GFF/GTF files)"
 fi
 
 echo ""
@@ -128,7 +173,7 @@ fi
 #   ../../output_to_input/STEP_4-create_final_species_set/
 #
 # STEP_4 creates per-species directories (species*_gigantic_T1_proteomes,
-# species*_gigantic_T1_blastp, species*_gigantic_gene_annotations) which
+# species*_gigantic_T1_blastp, species*_gigantic_genome_annotations) which
 # are discovered dynamically.
 # ============================================================================
 
@@ -143,14 +188,14 @@ SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_4-create_final_species_set"
 mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale species directory symlinks from previous runs
-for old_link in "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_T1_* "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_gene_annotations; do
+for old_link in "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_T1_* "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_genome_annotations; do
     if [ -L "$old_link" ]; then
         rm "$old_link"
     fi
 done
 
 # Create symlinks for each species directory in 2-output/
-# This catches T1_proteomes, T1_blastp, and gene_annotations
+# This catches T1_proteomes, T1_blastp, and genome_annotations
 for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_*; do
     if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
         dir_name=$(basename "$species_dir")
@@ -175,7 +220,7 @@ echo ""
 echo "Published directories:"
 echo "  speciesN_gigantic_T1_proteomes/       Proteome files"
 echo "  speciesN_gigantic_T1_blastp/          BLAST databases"
-echo "  speciesN_gigantic_gene_annotations/   GFF/GTF files (subset with annotations)"
+echo "  speciesN_gigantic_genome_annotations/   GFF/GTF files (subset with annotations)"
 echo "========================================================================"
 echo "Completed: $(date)"
 

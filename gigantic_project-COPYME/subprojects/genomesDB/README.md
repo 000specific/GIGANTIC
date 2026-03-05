@@ -25,9 +25,9 @@ genus_species	path/to/genome	path/to/gtf	path/to/proteome
 
 **Example** (using relative paths to project-level INPUT_user):
 ```tsv
-genus_species	genome_path	gtf_path	proteome_path
-Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
-Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
+genus_species	genome_path	genome_annotation_path	proteome_path
+Homo_sapiens	../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
 ```
 
 **Project-level INPUT_user structure**:
@@ -59,7 +59,7 @@ genus_species-genome_source_identifier-downloaded_date.extension
 **Examples**:
 ```
 Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta    # Genome sequence
-Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3    # Gene annotation
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3    # Genome annotation
 Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa      # Proteome (amino acids)
 ```
 
@@ -150,7 +150,6 @@ genomesDB/
 ├── AI_GUIDE-genomesDB.md               # AI assistant guidance (subproject level)
 ├── RUN-clean_and_record_subproject.sh  # Cleanup script for entire subproject
 ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
-├── user_research/                      # Personal workspace for entire subproject
 ├── output_to_input/                    # Final outputs for downstream subprojects
 ├── upload_to_server/                   # Files to share via GIGANTIC server
 │
@@ -158,7 +157,6 @@ genomesDB/
 │   ├── README.md                       # Step-specific documentation
 │   ├── AI_GUIDE-sources.md             # AI guidance for this step
 │   ├── RUN-clean_and_record_subproject.sh  # Step-level cleanup
-│   ├── user_research/                  # Step-specific workspace (user's source data)
 │   ├── output_to_input/                # Outputs passed to STEP_2
 │   └── workflow-COPYME-ingest_source_data/
 │       ├── INPUT_user/                 # Source manifest goes here
@@ -171,7 +169,6 @@ genomesDB/
 │   ├── README.md
 │   ├── AI_GUIDE-standardize_and_evaluate.md
 │   ├── RUN-clean_and_record_subproject.sh
-│   ├── user_research/
 │   ├── output_to_input/                # Outputs passed to STEP_3
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 │       ├── INPUT_user/
@@ -184,7 +181,6 @@ genomesDB/
 │   ├── README.md
 │   ├── AI_GUIDE-databases.md
 │   ├── RUN-clean_and_record_subproject.sh
-│   ├── user_research/
 │   ├── output_to_input/                # Step outputs (also copied to subproject root)
 │   └── workflow-COPYME-build_gigantic_genomesDB/
 │       ├── INPUT_user/
@@ -197,7 +193,6 @@ genomesDB/
     ├── README.md
     ├── AI_GUIDE-create_final_species_set.md
     ├── RUN-clean_and_record_subproject.sh
-    ├── user_research/
     ├── output_to_input/                # Final species set for downstream subprojects
     └── workflow-COPYME-create_final_species_set/
         ├── INPUT_user/

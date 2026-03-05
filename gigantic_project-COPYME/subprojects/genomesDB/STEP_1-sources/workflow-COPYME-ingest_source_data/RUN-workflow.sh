@@ -7,7 +7,7 @@
 ################################################################################
 #
 # PURPOSE:
-# Ingest user-provided source data files (proteomes, genomes, GFFs)
+# Ingest user-provided source data files (proteomes, genomes, genome annotations)
 # into GIGANTIC structure.
 #
 # USAGE:
@@ -25,11 +25,10 @@
 # Use the SLURM version instead:
 #   sbatch RUN-workflow.sbatch
 #
-# WHAT THE WORKFLOW DOES (2 steps, each with visible output):
+# WHAT THE WORKFLOW DOES (3 steps, each with visible output):
 #   Step 1 -> OUTPUT_pipeline/1-output/  Validate manifest (check files exist)
 #   Step 2 -> OUTPUT_pipeline/2-output/  Ingest data (hard copy files)
-#
-# After pipeline: RUN-workflow.sh creates symlinks in ../../output_to_input/STEP_1-sources/
+#   Step 3 -> OUTPUT_pipeline/3-output/  Create symlinks in output_to_input/ for STEP_2
 #
 ################################################################################
 
@@ -45,7 +44,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # Path to project-level INPUT_user (relative to this workflow)
-INPUT_USER_PROJECT="../../../../../../INPUT_user"
+INPUT_USER_PROJECT="../../../../INPUT_user"
 
 # ============================================================================
 # Resolve species list: workflow INPUT_user/ overrides project-level default
@@ -76,11 +75,11 @@ fi
 # ============================================================================
 # The environment is created automatically on first run from the yml spec
 # in conda_environments/. You can also pre-create all environments at once:
-#   cd ../../../../../../ && bash RUN-setup_environments.sh
+#   cd ../../../../ && bash RUN-setup_environments.sh
 # ============================================================================
 
 ENV_NAME="ai_gigantic_genomesdb"
-ENV_YML="../../../../../../conda_environments/${ENV_NAME}.yml"
+ENV_YML="../../../../conda_environments/${ENV_NAME}.yml"
 
 module load conda 2>/dev/null || true
 
@@ -150,7 +149,7 @@ if [ "$SPECIES_COUNT" -eq 0 ]; then
 fi
 
 # ============================================================================
-# Run NextFlow pipeline (all 3 steps)
+# Run NextFlow pipeline (steps 1-2: validate and ingest)
 # ============================================================================
 echo "Running NextFlow pipeline..."
 echo ""
@@ -172,58 +171,17 @@ fi
 # Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/2-output/ (created by NextFlow above).
-# Symlinks are created in ONE location at the subproject root:
-#   ../../output_to_input/STEP_1-sources/
-#
-# Symlink targets are RELATIVE paths from the symlink location to
-# the real files in OUTPUT_pipeline/.
+# Script 003 creates symlinks in ../../output_to_input/STEP_1-sources/
+# using realpath --relative-to for correct relative symlink targets.
 # ============================================================================
 
 echo ""
 echo "Creating symlinks for downstream workflows..."
 
-# Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
-WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-
-# --- Subproject-root output_to_input (single canonical location) ---
-SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_1-sources"
-
-# Data types to symlink
-DATA_TYPES=("T1_proteomes" "genomes" "gene_annotations")
-
-TOTAL_LINKED=0
-
-for DATA_TYPE in "${DATA_TYPES[@]}"; do
-    SOURCE_SUBDIR="OUTPUT_pipeline/2-output/${DATA_TYPE}"
-
-    if [ ! -d "${SOURCE_SUBDIR}" ]; then
-        continue
-    fi
-
-    # Subproject-root symlinks
-    mkdir -p "${SUBPROJECT_SHARED_DIR}/${DATA_TYPE}"
-    find "${SUBPROJECT_SHARED_DIR}/${DATA_TYPE}" -type l -delete 2>/dev/null
-
-    LINKED=0
-
-    for source_file in "${SOURCE_SUBDIR}"/*; do
-        [ -e "$source_file" ] || continue
-
-        filename=$(basename "$source_file")
-
-        # Symlink from subproject output_to_input to real file
-        ln -sf "../../../STEP_1-sources/${WORKFLOW_DIR_NAME}/${source_file}" \
-            "${SUBPROJECT_SHARED_DIR}/${DATA_TYPE}/${filename}"
-
-        LINKED=$((LINKED + 1))
-    done
-
-    TOTAL_LINKED=$((TOTAL_LINKED + LINKED))
-    echo "  ${DATA_TYPE}: ${LINKED} symlinks created"
-done
-
-echo "  Total: ${TOTAL_LINKED} symlinks"
-echo "  output_to_input/STEP_1-sources/ -> symlinks created"
+bash ai/scripts/003_ai-bash-create_output_symlinks.sh \
+    OUTPUT_pipeline/2-output \
+    ../../output_to_input/STEP_1-sources \
+    OUTPUT_pipeline/3-output
 
 echo ""
 echo "========================================================================"

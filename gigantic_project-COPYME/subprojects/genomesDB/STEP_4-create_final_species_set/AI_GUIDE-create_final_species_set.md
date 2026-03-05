@@ -82,7 +82,7 @@ STEP_3 (BLAST databases)   ──┘                                   ├──
 
 STEP_4 outputs use a `speciesN_` prefix where N is the count of selected species:
 
-- `species69_gigantic_T1_proteomes/` - 69 species were selected
+- `species71_gigantic_T1_proteomes/` - 71 species were selected
 - `species71_gigantic_T1_blastp/` - 71 species were selected
 
 This convention makes it immediately clear how many species are in the final set, and downstream subprojects can reference the correct directory.

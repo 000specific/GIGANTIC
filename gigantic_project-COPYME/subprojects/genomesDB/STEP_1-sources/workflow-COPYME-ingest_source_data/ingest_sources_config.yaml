@@ -79,7 +79,7 @@ slurm:
 #
 # Your source_manifest.tsv should be a tab-separated file with 4 columns:
 #
-#   genus_species    genome_path    gff_path    proteome_path
+#   genus_species    genome_path    genome_annotation_path    proteome_path
 #   Homo_sapiens     /path/to/genome.fasta    /path/to/annotations.gff3    /path/to/proteome.aa
 #
 # Use "NA" for data types not available for a species.

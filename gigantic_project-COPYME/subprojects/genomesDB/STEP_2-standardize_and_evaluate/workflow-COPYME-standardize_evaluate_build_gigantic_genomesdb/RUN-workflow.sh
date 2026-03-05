@@ -58,21 +58,32 @@ module load conda 2>/dev/null || true
 if conda activate ai_gigantic_genomesdb 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_genomesdb"
 else
-    # Check if nextflow is already available in PATH
+    # Check if required tools are available in PATH
+    MISSING_TOOLS=""
     if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_genomesdb' not found!"
+        MISSING_TOOLS="${MISSING_TOOLS} nextflow"
+    fi
+    if ! command -v gfastats &> /dev/null; then
+        MISSING_TOOLS="${MISSING_TOOLS} gfastats"
+    fi
+    if ! command -v busco &> /dev/null; then
+        MISSING_TOOLS="${MISSING_TOOLS} busco"
+    fi
+
+    if [ -n "${MISSING_TOOLS}" ]; then
+        echo "ERROR: Environment 'ai_gigantic_genomesdb' not found and required tools missing:${MISSING_TOOLS}"
         echo ""
         echo "Please run the environment setup script first:"
         echo ""
-        echo "  cd ../../../  # Go to project root"
+        echo "  cd ../../../../  # Go to project root"
         echo "  bash RUN-setup_environments.sh"
         echo ""
         echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../conda_environments/ai_gigantic_genomesdb.yml"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_genomesdb.yml"
         echo ""
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    echo "Using tools from PATH (environment not activated)"
 fi
 echo ""
 
@@ -91,11 +102,26 @@ if [ ! -f "standardize_evaluate_config.yaml" ]; then
 fi
 echo "  [OK] Configuration file found"
 
-# Check BUSCO lineages manifest exists
-if [ ! -f "INPUT_user/busco_lineages.txt" ]; then
-    echo "WARNING: BUSCO lineage manifest not found"
-    echo "Expected: INPUT_user/busco_lineages.txt"
-    echo "BUSCO evaluation will be skipped."
+# Check BUSCO configuration
+# Read busco.enabled from config (defaults to true if not found)
+BUSCO_ENABLED=$(grep -A1 "^busco:" standardize_evaluate_config.yaml | grep "enabled:" | awk '{print $2}' | tr -d '[:space:]')
+if [ -z "${BUSCO_ENABLED}" ]; then
+    BUSCO_ENABLED="true"
+fi
+
+if [ "${BUSCO_ENABLED}" = "true" ]; then
+    if [ ! -f "INPUT_user/busco_lineages.txt" ]; then
+        echo "ERROR: BUSCO is enabled but lineage manifest not found!"
+        echo "Expected: INPUT_user/busco_lineages.txt"
+        echo ""
+        echo "Either:"
+        echo "  1. Create INPUT_user/busco_lineages.txt with BUSCO lineage assignments"
+        echo "  2. Set busco.enabled: false in standardize_evaluate_config.yaml to skip BUSCO"
+        exit 1
+    fi
+    echo "  [OK] BUSCO lineage manifest found"
+else
+    echo "  [INFO] BUSCO evaluation disabled in config (busco.enabled: false)"
 fi
 
 echo ""
@@ -121,18 +147,15 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directory
+# Copy species manifest to output_to_input directory
 # ============================================================================
-# Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created in ONE location at the subproject root:
-#   ../../output_to_input/STEP_2-standardize_and_evaluate/
-#
-# Symlink targets are RELATIVE paths from the symlink location to
-# the real files in OUTPUT_pipeline/.
+# The species selection manifest is COPIED (not symlinked) to output_to_input/
+# because users need to edit this file directly to select species for STEP_4.
+# A real file is easier to edit than a symlink.
 # ============================================================================
 
 echo ""
-echo "Creating symlinks for downstream subprojects..."
+echo "Publishing outputs to output_to_input/..."
 
 # Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
@@ -141,13 +164,31 @@ WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_2-standardize_and_evaluate"
 mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
-# Remove any stale symlinks from previous runs
-find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
+# Remove any stale files/symlinks from previous runs
+rm -f "${SUBPROJECT_SHARED_DIR}/species_selection_manifest.tsv"
+rm -f "${SUBPROJECT_SHARED_DIR}/gigantic_proteomes_cleaned"
+rm -f "${SUBPROJECT_SHARED_DIR}/gigantic_genome_annotations"
+rm -f "${SUBPROJECT_SHARED_DIR}/gigantic_genomes"
 
-ln -sf "../../STEP_2-standardize_and_evaluate/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
+# Copy manifest (real file, not symlink - users edit this directly)
+cp "OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
     "${SUBPROJECT_SHARED_DIR}/species_selection_manifest.tsv"
+echo "  species_selection_manifest.tsv -> copied"
 
-echo "  output_to_input/STEP_2-standardize_and_evaluate/ -> symlinks created"
+# Symlink cleaned proteomes for STEP_3 and STEP_4 access
+ln -sf "../../STEP_2-standardize_and_evaluate/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned" \
+    "${SUBPROJECT_SHARED_DIR}/gigantic_proteomes_cleaned"
+echo "  gigantic_proteomes_cleaned -> symlinked"
+
+# Symlink genome annotations for STEP_4 access
+ln -sf "../../STEP_2-standardize_and_evaluate/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/3-output/gigantic_genome_annotations" \
+    "${SUBPROJECT_SHARED_DIR}/gigantic_genome_annotations"
+echo "  gigantic_genome_annotations -> symlinked"
+
+# Symlink genomes for STEP_4 access
+ln -sf "../../STEP_2-standardize_and_evaluate/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/3-output/gigantic_genomes" \
+    "${SUBPROJECT_SHARED_DIR}/gigantic_genomes"
+echo "  gigantic_genomes -> symlinked"
 
 echo ""
 echo "========================================================================"
@@ -156,10 +197,10 @@ echo ""
 echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 6-output/"
 echo ""
-echo "Downstream symlinks:"
-echo "  ../../output_to_input/STEP_2-standardize_and_evaluate/  (for downstream subprojects)"
+echo "Species manifest (edit this to select species for STEP_4):"
+echo "  ../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv"
 echo ""
-echo "Next: Run STEP_4 to create final species set in output_to_input/"
+echo "Next: Review quality summary, edit species manifest, then run STEP_4"
 echo "========================================================================"
 echo "Completed: $(date)"
 

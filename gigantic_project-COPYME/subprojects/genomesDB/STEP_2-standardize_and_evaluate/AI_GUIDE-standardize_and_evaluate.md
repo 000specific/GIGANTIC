@@ -38,7 +38,7 @@
 |---|----------|-------|--------|--------|
 | 1 | Proteome phyloname standardization | T1 proteomes + phylonames mapping | `001_ai-python-standardize_proteome_phylonames.py` | Complete |
 | 2 | Proteome cleaning (invalid residues) | Standardized proteomes | `002_ai-python-clean_proteome_invalid_residues.py` | Complete |
-| 3 | Genome/annotation phyloname standardization | Genomes + gene annotations + phylonames | `003_ai-python-standardize_genome_and_annotation_phylonames.py` | Complete |
+| 3 | Genome/annotation phyloname standardization | Genomes + genome annotations + phylonames | `003_ai-python-standardize_genome_and_annotation_phylonames.py` | Complete |
 | 4 | Assembly quality statistics (gfastats) | Phyloname-named genomes | `004_ai-python-calculate_genome_assembly_statistics.py` | Complete |
 | 5 | BUSCO proteome evaluation | Cleaned proteomes + lineage assignments | `005_ai-python-run_busco_proteome_evaluation.py` | Complete |
 | 6 | Quality summary and species manifest | All quality data | `006_ai-python-summarize_quality_and_generate_species_manifest.py` | Complete |
@@ -53,7 +53,7 @@ STEP_2 reads from STEP_1's outputs in the subproject-root `output_to_input/` dir
 |-----------|-------|--------------|------------|
 | T1 proteomes | 71 | `T1_proteomes/` | `.aa` files |
 | Genomes | 64 | `genomes/` | `.fasta` files |
-| Gene annotations | 69 | `gene_annotations/` | `.gff3` and `.gtf` files |
+| Genome annotations | 69 | `genome_annotations/` | `.gff3` and `.gtf` files |
 
 **Phylonames mapping** (from phylonames subproject):
 - `../../phylonames/STEP_1-generate_and_evaluate/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
@@ -149,7 +149,7 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 │   │   └── gigantic_proteomes_cleaned/
 │   ├── 3-output/                          # Genome/annotation symlinks
 │   │   ├── gigantic_genomes/
-│   │   └── gigantic_gene_annotations/
+│   │   └── gigantic_genome_annotations/
 │   ├── 4-output/                          # Assembly statistics
 │   │   └── 4_ai-genome_assembly_statistics.tsv
 │   ├── 5-output/                          # BUSCO reports
@@ -210,6 +210,6 @@ Not all 71 species have all three data types:
 |-----------|---------------|-------|
 | T1 proteomes | 71 | All species |
 | Genomes | 64 | 7 species without genomes |
-| Gene annotations | 69 | 2 species without GFF/GTF |
+| Genome annotations | 69 | 2 species without GFF/GTF |
 
 Scripts must handle cases where a species has proteomes but not genomes or annotations.

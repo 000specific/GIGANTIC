@@ -146,6 +146,12 @@ def filter_manifest(
                 excluded_species += 1
                 logger.debug( f"EXCLUDED: {parts[ 0 ]} (Include={include_value})" )
 
+    if included_species == 0:
+        logger.error( "CRITICAL ERROR: No species have Include=YES in the manifest!" )
+        logger.error( f"Manifest: {input_manifest_path}" )
+        logger.error( "Edit the species selection manifest and set Include=YES for species to include." )
+        sys.exit( 1 )
+
     # Write filtered manifest
     logger.info( f"Writing filtered manifest to: {output_manifest_path}" )
 

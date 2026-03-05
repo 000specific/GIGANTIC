@@ -10,13 +10,13 @@ Each species gets its own BLAST database (not a single concatenated database).
 
 Inputs:
     - Filtered species manifest from Script 001
-    - Standardized proteomes from STEP_2's output_to_input/gigantic_proteomes/
+    - Cleaned proteomes from STEP_2's output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/
 
 Outputs:
     - Per-genome BLAST databases in OUTPUT_pipeline/2-output/blastdb/
     - FASTA files copied alongside BLAST databases
     - makeblastdb command log
-    - Also copies to output_to_input/blastdb/ for downstream subproject access
+    # NOTE: RUN-workflow.sh creates symlinks in output_to_input/ after pipeline completes
 
 Usage:
     python3 002_ai-python-build_per_genome_blastdbs.py \\
@@ -185,8 +185,8 @@ def main():
     parser.add_argument(
         '--proteomes-dir',
         type = str,
-        default = '../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes',
-        help = 'Path to standardized proteomes from STEP_2 (default: ../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes)'
+        default = '../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned',
+        help = 'Path to cleaned proteomes from STEP_2 (default: ../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned)'
     )
 
     parser.add_argument(
@@ -194,13 +194,6 @@ def main():
         type = str,
         default = 'OUTPUT_pipeline/2-output',
         help = 'Base output directory (default: OUTPUT_pipeline/2-output)'
-    )
-
-    parser.add_argument(
-        '--output-to-input-dir',
-        type = str,
-        default = '../../output_to_input',
-        help = 'output_to_input directory for downstream access (default: ../../output_to_input)'
     )
 
     parser.add_argument(
@@ -226,18 +219,15 @@ def main():
     filtered_manifest_path = Path( arguments.filtered_manifest )
     proteomes_directory = Path( arguments.proteomes_dir )
     output_base_directory = Path( arguments.output_dir )
-    output_to_input_directory = Path( arguments.output_to_input_dir )
     database_name = arguments.database_name
 
     # Use database name (e.g., gigantic-T1-blastp) for directory name
     blastdb_directory = output_base_directory / database_name
-    output_to_input_blastdb = output_to_input_directory / database_name
     output_commands_path = output_base_directory / '2_ai-makeblastdb_commands.sh'
     output_log_path = output_base_directory / '2_ai-log-build_per_genome_blastdbs.log'
 
     # Create output directories
     blastdb_directory.mkdir( parents = True, exist_ok = True )
-    output_to_input_blastdb.mkdir( parents = True, exist_ok = True )
     output_base_directory.mkdir( parents = True, exist_ok = True )
 
     # ========================================================================
@@ -255,7 +245,6 @@ def main():
     logger.info( f"Proteomes directory: {proteomes_directory}" )
     logger.info( f"Database name: {database_name}" )
     logger.info( f"BLAST database directory: {blastdb_directory}" )
-    logger.info( f"output_to_input: {output_to_input_blastdb}" )
     logger.info( f"Parallel jobs: {arguments.parallel}" )
     logger.info( "" )
 
@@ -271,7 +260,7 @@ def main():
     if not proteomes_directory.exists():
         logger.error( f"CRITICAL ERROR: Proteomes directory not found: {proteomes_directory}" )
         logger.error( "STEP_2 must be run before STEP_3." )
-        logger.error( "Expected location: output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes/" )
+        logger.error( "Expected location: output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/" )
         sys.exit( 1 )
 
     # ========================================================================
@@ -306,6 +295,12 @@ def main():
             if len( parts ) > phyloname_column_index:
                 phyloname = parts[ phyloname_column_index ]
                 phylonames_to_include.append( phyloname )
+
+    if len( phylonames_to_include ) == 0:
+        logger.error( "CRITICAL ERROR: No species found in filtered manifest!" )
+        logger.error( f"Manifest: {filtered_manifest_path}" )
+        logger.error( "Ensure Script 001 produced a manifest with species entries." )
+        sys.exit( 1 )
 
     logger.info( f"Found {len( phylonames_to_include )} species to build BLAST databases" )
     logger.info( "" )
@@ -385,19 +380,6 @@ def main():
             output_commands.write( output )
 
     # ========================================================================
-    # COPY TO OUTPUT_TO_INPUT
-    # ========================================================================
-
-    logger.info( f"Copying BLAST databases to output_to_input: {output_to_input_blastdb}" )
-
-    for item in blastdb_directory.iterdir():
-        dest_path = output_to_input_blastdb / item.name
-        if item.is_file():
-            shutil.copy2( item, dest_path )
-
-    logger.info( f"Copied {sum( 1 for _ in blastdb_directory.iterdir() )} files to output_to_input" )
-
-    # ========================================================================
     # SUMMARY
     # ========================================================================
 
@@ -409,7 +391,6 @@ def main():
     logger.info( f"Successful builds: {successful_count}" )
     logger.info( f"Failed builds: {failed_count}" )
     logger.info( f"BLAST database directory: {blastdb_directory}" )
-    logger.info( f"output_to_input: {output_to_input_blastdb}" )
     logger.info( f"Commands log: {output_commands_path}" )
     logger.info( "" )
     logger.info( f"End time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )

@@ -60,12 +60,12 @@ mkdir -p "${MANIFEST_OUTPUT_DIR}"
 # Create symlinks
 # ============================================================================
 
-DATA_TYPES=("T1_proteomes" "genomes" "gene_annotations")
+DATA_TYPES=("T1_proteomes" "genomes" "genome_annotations")
 
 declare -A EXTENSIONS
 EXTENSIONS[T1_proteomes]="*.aa"
 EXTENSIONS[genomes]="*.fasta"
-EXTENSIONS[gene_annotations]="*.gff3 *.gtf"
+EXTENSIONS[genome_annotations]="*.gff3 *.gtf"
 
 TOTAL_LINKED=0
 

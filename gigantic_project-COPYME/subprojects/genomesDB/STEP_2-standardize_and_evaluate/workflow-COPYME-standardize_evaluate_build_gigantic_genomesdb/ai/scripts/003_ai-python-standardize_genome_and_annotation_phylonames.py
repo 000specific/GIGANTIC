@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.5 | 2026 February 13 18:00 | Purpose: Standardize genome and gene annotation filenames with phylonames via symlinks
+# AI: Claude Code | Opus 4.5 | 2026 February 13 18:00 | Purpose: Standardize genome and genome annotation filenames with phylonames via symlinks
 # Human: Eric Edsinger
 
 """
 003_ai-python-standardize_genome_and_annotation_phylonames.py
 
-Standardize genome and gene annotation files by creating phyloname-based symlinks:
+Standardize genome and genome annotation files by creating phyloname-based symlinks:
     - Genomes:          Genus_species-genome_source_id-downloaded_date.fasta  ->  phyloname-genome.fasta
-    - Gene annotations: Genus_species-genome_source_id-downloaded_date.gff3   ->  phyloname-genome.gff3
+    - Genome annotations: Genus_species-genome_source_id-downloaded_date.gff3   ->  phyloname-genome.gff3
                         Genus_species-genome_source_id-downloaded_date.gtf    ->  phyloname-genome.gtf
 
 Unlike script 001 (proteomes), the file contents are NOT modified -- only the
@@ -19,13 +19,13 @@ Inputs:
       (columns: genus_species, phyloname, phyloname_taxonid, source, original_ncbi_phyloname)
     - Directory of source genome .fasta files from STEP_1
       (named: Genus_species-genome_source_id-downloaded_date.fasta)
-    - Directory of source gene annotation .gff3/.gtf files from STEP_1
+    - Directory of source genome annotation .gff3/.gtf files from STEP_1
       (named: Genus_species-genome_source_id-downloaded_date.gff3 or .gtf)
 
 Outputs:
     - Symlinked genome files in OUTPUT_pipeline/3-output/gigantic_genomes/
       (named: phyloname-genome.fasta)
-    - Symlinked gene annotation files in OUTPUT_pipeline/3-output/gigantic_gene_annotations/
+    - Symlinked genome annotation files in OUTPUT_pipeline/3-output/gigantic_genome_annotations/
       (named: phyloname-genome.gff3 or phyloname-genome.gtf)
     - Transformation manifest TSV: OUTPUT_pipeline/3-output/3_ai-standardization_manifest.tsv
     - Detailed log: OUTPUT_pipeline/3-output/3_ai-log-standardize_genome_and_annotation_phylonames.log
@@ -107,7 +107,7 @@ def load_phylonames_mapping( mapping_file_path: Path, logger: logging.Logger ) -
     if not mapping_file_path.exists():
         logger.error( f"CRITICAL ERROR: Phylonames mapping file not found: {mapping_file_path}" )
         logger.error( "The phylonames subproject must be run before STEP_2." )
-        logger.error( "Expected location: phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv" )
+        logger.error( "Expected location: phylonames/output_to_input/maps/{project_name}_map-genus_species_X_phylonames.tsv" )
         sys.exit( 1 )
 
     genus_species___phyloname_tuples = {}
@@ -311,7 +311,7 @@ def write_manifest(
         output_manifest.write( output )
 
         output = (
-            'Data_Type (genome or gene_annotation)\t'
+            'Data_Type (genome or genome_annotation)\t'
             'Genus_Species (original genus species name from source file)\t'
             'Phyloname (GIGANTIC phyloname used in standardized filename)\t'
             'Phyloname_Taxonid (GIGANTIC phyloname with NCBI taxon ID)\t'
@@ -361,7 +361,7 @@ def write_manifest(
 
 def main():
     """
-    Main function: orchestrate genome and gene annotation filename standardization.
+    Main function: orchestrate genome and genome annotation filename standardization.
     """
 
     # ========================================================================
@@ -369,21 +369,21 @@ def main():
     # ========================================================================
 
     parser = argparse.ArgumentParser(
-        description = 'Standardize genome and gene annotation filenames with GIGANTIC phylonames via symlinks.',
+        description = 'Standardize genome and genome annotation filenames with GIGANTIC phylonames via symlinks.',
         formatter_class = argparse.RawDescriptionHelpFormatter,
         epilog = """
 Examples:
     # Basic usage with default output location
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
-        --phylonames-mapping ../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv \\
+        --phylonames-mapping ../../../phylonames/output_to_input/maps/my_project_map-genus_species_X_phylonames.tsv \\
         --input-genomes ../../output_to_input/STEP_1-sources/genomes \\
-        --input-gene-annotations ../../output_to_input/STEP_1-sources/gene_annotations
+        --input-gene-annotations ../../output_to_input/STEP_1-sources/genome_annotations
 
     # Custom output directory
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping /path/to/mapping.tsv \\
         --input-genomes /path/to/genomes \\
-        --input-gene-annotations /path/to/gene_annotations \\
+        --input-gene-annotations /path/to/genome_annotations \\
         --output-dir /path/to/output
         """
     )
@@ -406,7 +406,7 @@ Examples:
         '--input-gene-annotations',
         type = str,
         required = True,
-        help = 'Path to directory containing source gene annotation .gff3/.gtf files from STEP_1'
+        help = 'Path to directory containing source genome annotation .gff3/.gtf files from STEP_1'
     )
 
     parser.add_argument(
@@ -424,17 +424,17 @@ Examples:
 
     input_phylonames_mapping_path = Path( arguments.phylonames_mapping ).resolve()
     input_genomes_directory = Path( arguments.input_genomes ).resolve()
-    input_gene_annotations_directory = Path( arguments.input_gene_annotations ).resolve()
+    input_genome_annotations_directory = Path( arguments.input_genome_annotations ).resolve()
     output_base_directory = Path( arguments.output_dir )
 
     output_genomes_directory = output_base_directory / 'gigantic_genomes'
-    output_gene_annotations_directory = output_base_directory / 'gigantic_gene_annotations'
+    output_genome_annotations_directory = output_base_directory / 'gigantic_genome_annotations'
     output_manifest_path = output_base_directory / '3_ai-standardization_manifest.tsv'
     output_log_path = output_base_directory / '3_ai-log-standardize_genome_and_annotation_phylonames.log'
 
     # Create output directories
     output_genomes_directory.mkdir( parents = True, exist_ok = True )
-    output_gene_annotations_directory.mkdir( parents = True, exist_ok = True )
+    output_genome_annotations_directory.mkdir( parents = True, exist_ok = True )
     output_base_directory.mkdir( parents = True, exist_ok = True )
 
     # ========================================================================
@@ -450,9 +450,9 @@ Examples:
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"Phylonames mapping: {input_phylonames_mapping_path}" )
     logger.info( f"Input genomes directory: {input_genomes_directory}" )
-    logger.info( f"Input gene annotations directory: {input_gene_annotations_directory}" )
+    logger.info( f"Input genome annotations directory: {input_genome_annotations_directory}" )
     logger.info( f"Output genomes directory: {output_genomes_directory}" )
-    logger.info( f"Output gene annotations directory: {output_gene_annotations_directory}" )
+    logger.info( f"Output genome annotations directory: {output_genome_annotations_directory}" )
     logger.info( f"Manifest output: {output_manifest_path}" )
     logger.info( f"Log output: {output_log_path}" )
     logger.info( "" )
@@ -466,14 +466,14 @@ Examples:
         logger.error( "STEP_1-sources must be run before STEP_2." )
         sys.exit( 1 )
 
-    if not input_gene_annotations_directory.exists():
-        logger.error( f"CRITICAL ERROR: Input gene annotations directory not found: {input_gene_annotations_directory}" )
+    if not input_genome_annotations_directory.exists():
+        logger.error( f"CRITICAL ERROR: Input genome annotations directory not found: {input_genome_annotations_directory}" )
         logger.error( "STEP_1-sources must be run before STEP_2." )
         sys.exit( 1 )
 
     genome_files = sorted( input_genomes_directory.glob( '*.fasta' ) )
-    annotation_files_gff3 = sorted( input_gene_annotations_directory.glob( '*.gff3' ) )
-    annotation_files_gtf = sorted( input_gene_annotations_directory.glob( '*.gtf' ) )
+    annotation_files_gff3 = sorted( input_genome_annotations_directory.glob( '*.gff3' ) )
+    annotation_files_gtf = sorted( input_genome_annotations_directory.glob( '*.gtf' ) )
     annotation_files = sorted( annotation_files_gff3 + annotation_files_gtf, key = lambda path: path.name )
 
     if not genome_files:
@@ -482,12 +482,12 @@ Examples:
         sys.exit( 1 )
 
     if not annotation_files:
-        logger.error( f"CRITICAL ERROR: No .gff3 or .gtf files found in: {input_gene_annotations_directory}" )
-        logger.error( "Expected gene annotation files with .gff3 or .gtf extension." )
+        logger.error( f"CRITICAL ERROR: No .gff3 or .gtf files found in: {input_genome_annotations_directory}" )
+        logger.error( "Expected genome annotation files with .gff3 or .gtf extension." )
         sys.exit( 1 )
 
     logger.info( f"Found {len( genome_files )} genome files to process" )
-    logger.info( f"Found {len( annotation_files )} gene annotation files to process ({len( annotation_files_gff3 )} .gff3, {len( annotation_files_gtf )} .gtf)" )
+    logger.info( f"Found {len( annotation_files )} genome annotation files to process ({len( annotation_files_gff3 )} .gff3, {len( annotation_files_gtf )} .gtf)" )
     logger.info( "" )
 
     # ========================================================================
@@ -587,7 +587,7 @@ Examples:
 
         # Build output filename: phyloname-genome.gff3 (or .gtf)
         output_filename = phyloname + '-genome' + source_extension
-        output_file_path = output_gene_annotations_directory / output_filename
+        output_file_path = output_genome_annotations_directory / output_filename
 
         logger.info( f"Processing annotation: {genus_species}" )
         logger.info( f"  Source file: {filename}" )
@@ -603,7 +603,7 @@ Examples:
 
         # Add manifest entry
         annotation_manifest_entries.append( {
-            'data_type': 'gene_annotation',
+            'data_type': 'genome_annotation',
             'genus_species': genus_species,
             'phyloname': phyloname,
             'phyloname_taxonid': phyloname_taxonid,
@@ -613,7 +613,7 @@ Examples:
         } )
 
     logger.info( "" )
-    logger.info( f"Gene annotations processed: {len( annotations_processed )}" )
+    logger.info( f"Genome annotations processed: {len( annotations_processed )}" )
     logger.info( "" )
 
     # ========================================================================
@@ -636,11 +636,11 @@ Examples:
     logger.info( "SUMMARY" )
     logger.info( "=" * 80 )
     logger.info( f"Genomes processed: {len( genomes_processed )}" )
-    logger.info( f"Gene annotations processed: {len( annotations_processed )}" )
+    logger.info( f"Genome annotations processed: {len( annotations_processed )}" )
     logger.info( f"  GFF3 files: {len( [ entry for entry in annotation_manifest_entries if entry[ 'source_extension' ] == '.gff3' ] )}" )
     logger.info( f"  GTF files: {len( [ entry for entry in annotation_manifest_entries if entry[ 'source_extension' ] == '.gtf' ] )}" )
     logger.info( f"Output genomes directory: {output_genomes_directory}" )
-    logger.info( f"Output gene annotations directory: {output_gene_annotations_directory}" )
+    logger.info( f"Output genome annotations directory: {output_genome_annotations_directory}" )
     logger.info( f"Manifest: {output_manifest_path}" )
     logger.info( f"Log: {output_log_path}" )
     logger.info( "" )
@@ -662,7 +662,7 @@ Examples:
         logger.info( "" )
 
     if species_without_annotation:
-        logger.info( f"Species in phylonames mapping WITHOUT gene annotation file ({len( species_without_annotation )}):" )
+        logger.info( f"Species in phylonames mapping WITHOUT genome annotation file ({len( species_without_annotation )}):" )
         for species in sorted( species_without_annotation ):
             logger.info( f"  - {species}" )
         logger.info( "" )
@@ -673,9 +673,9 @@ Examples:
     logger.info( "=" * 80 )
 
     print( "" )
-    print( f"Done! Processed {len( genomes_processed )} genomes and {len( annotations_processed )} gene annotations." )
+    print( f"Done! Processed {len( genomes_processed )} genomes and {len( annotations_processed )} genome annotations." )
     print( f"Output genomes: {output_genomes_directory}" )
-    print( f"Output annotations: {output_gene_annotations_directory}" )
+    print( f"Output annotations: {output_genome_annotations_directory}" )
     print( f"Manifest: {output_manifest_path}" )
     print( f"Log: {output_log_path}" )
 

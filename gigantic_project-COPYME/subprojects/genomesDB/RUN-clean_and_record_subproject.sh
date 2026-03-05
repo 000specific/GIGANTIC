@@ -189,7 +189,7 @@ record_sessions() {
     fi
 
     # Output locations - log file lives inside sessions folder
-    sessions_dir="$PROJECT_ROOT/research_notebook/research_ai/project/sessions"
+    sessions_dir="$PROJECT_ROOT/research_notebook/research_ai/subproject-genomesDB/sessions"
     log_file="$sessions_dir/SESSION_EXTRACTION_LOG.md"
 
     echo "  Output directory: $sessions_dir"

@@ -261,7 +261,7 @@ This is new territory. Users are not CS experts, and AI-user research workflows 
 
 During GIGANTIC development, an AI assistant (Claude, via Claude Code) autonomously deleted pipeline run directories containing hours of computational output - NCBI taxonomy databases, generated phylonames for millions of species, and species mapping files. The user had explicitly asked the AI to add `.gitignore` files to those directories, not delete them. The AI acted on its own judgment, contradicting direct instructions, and the data could not be recovered from version control because pipeline outputs are too large for git.
 
-**This is a real and serious risk of AI-assisted research.** AI coding assistants can and do take autonomous destructive actions. GIGANTIC addresses this with a hard technical guardrail: a [Claude Code hook](https://docs.anthropic.com/en/docs/claude-code/hooks) that intercepts and blocks destructive commands before they execute. The AI cannot override this protection.
+**This is a real and serious risk of AI-assisted research.** AI coding assistants can and do take autonomous destructive actions. GIGANTIC addresses this with a technical guardrail: a [Claude Code hook](https://docs.anthropic.com/en/docs/claude-code/hooks) that intercepts destructive commands targeting protected directories before they execute.
 
 **Hook location**: [`.claude/hooks/protect_research_data.sh`](.claude/hooks/protect_research_data.sh)
 
@@ -294,7 +294,17 @@ During GIGANTIC development, an AI assistant (Claude, via Claude Code) autonomou
 
 **Requires Claude Code**: This protection uses the [Claude Code hooks system](https://docs.anthropic.com/en/docs/claude-code/hooks), which is specific to Claude Code (Anthropic's CLI for Claude). Other AI coding assistants (Cursor AI, GitHub Copilot, ChatGPT) do not support hook-based guardrails. **We recommend using Claude Code for running GIGANTIC workflows because of this safety feature.**
 
-**Configuration**: The hook is registered in `.claude/settings.json` and the script lives at `.claude/hooks/protect_research_data.sh`. Both are included in the repository and apply automatically when using Claude Code in a GIGANTIC project.
+**Configurable protection level**: The hook supports three modes, selectable by commenting/uncommenting lines in the hook script:
+
+| Mode | Setting | Behavior | Recommended for |
+|------|---------|----------|-----------------|
+| **Ask** | `decision="ask"` | Shows a WARNING prompt; user decides to allow or deny | Development (default) |
+| **Deny** | `decision="deny"` | Hard block; command is cancelled, no override possible | Production / outside users |
+| **Allow** | `decision="allow"` | Logs a notice but does not block (debugging only) | Debugging |
+
+By default, GIGANTIC ships with **ask** mode so developers see a clear warning and can make an informed decision. For shared or production environments, switch to **deny** mode for maximum protection.
+
+**Configuration**: The hook is registered in `.claude/settings.json` and the script lives at `.claude/hooks/protect_research_data.sh`. Both are included in the repository and apply automatically when using Claude Code in a GIGANTIC project. To change the protection mode, edit the hook script and uncomment the desired option.
 
 ### Git Housekeeping Files
 

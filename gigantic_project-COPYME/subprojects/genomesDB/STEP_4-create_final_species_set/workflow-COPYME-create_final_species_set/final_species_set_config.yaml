@@ -18,15 +18,15 @@
 # ============================================================================
 
 inputs:
-  # Path to cleaned proteomes from STEP_2 (all species)
-  step2_proteomes: "../STEP_2-standardize_and_evaluate/workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned"
+  # Path to cleaned proteomes from STEP_2 (via output_to_input)
+  step2_proteomes: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
 
-  # Path to BLAST databases from STEP_3 (all species)
-  step3_blastp: "../STEP_3-databases/workflow-RUN_01-build_gigantic_blastp_databases/OUTPUT_pipeline/1-output/gigantic_blastp"
+  # Path to BLAST databases from STEP_3 (via output_to_input)
+  step3_blastp: "../../output_to_input/STEP_3-databases/gigantic-T1-blastp"
 
-  # Path to phyloname-named gene annotations from STEP_2 (optional - not all species have GFFs)
+  # Path to phyloname-named genome annotations from STEP_2 (optional - not all species have GFFs)
   # These are symlinks to original GFF/GTF files with phyloname-based filenames
-  step2_gene_annotations: "../STEP_2-standardize_and_evaluate/workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb/OUTPUT_pipeline/3-output/gigantic_gene_annotations"
+  step2_genome_annotations: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
 
   # Path to species selection file (defaults to all species if not specified)
   # User can edit this file to remove species they don't want
@@ -52,15 +52,15 @@ output:
 # 1. User reviews STEP_2 quality metrics and decides which species to keep
 # 2. User edits INPUT_user/selected_species.txt (or uses all species by default)
 # 3. Script 001 validates the species selection against STEP_2 and STEP_3
-# 4. Script 002 copies selected proteomes, blastp databases, and gene annotations
+# 4. Script 002 copies selected proteomes, blastp databases, and genome annotations
 # 5. Outputs go to ../../output_to_input/STEP_4-create_final_species_set/ with speciesN_ naming convention
 #
 # OUTPUT STRUCTURE:
 #   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/       - Selected proteomes
 #   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/          - Selected BLAST databases
-#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_gene_annotations/   - Selected GFF/GTF files (subset - only species with annotations)
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/   - Selected GFF/GTF files (subset - only species with annotations)
 #
-# Where N = count of selected species (e.g., species69, species71)
-# NOTE: Gene annotations are optional - not all species have GFF/GTF files.
-# The gene_annotations directory will contain only species that have annotations.
+# Where N = count of selected species (e.g., species71)
+# NOTE: Genome annotations are optional - not all species have GFF/GTF files.
+# The genome_annotations directory will contain only species that have annotations.
 #

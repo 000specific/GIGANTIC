@@ -22,10 +22,10 @@ nextflow.enable.dsl = 2
 // PARAMETERS (from config.yaml via nextflow.config)
 // ============================================================================
 
-params.phylonames_mapping = "../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv"
+params.phylonames_mapping = "../../../phylonames/output_to_input/maps/my_project_map-genus_species_X_phylonames.tsv"
 params.input_proteomes = "../../output_to_input/STEP_1-sources/T1_proteomes"
 params.input_genomes = "../../output_to_input/STEP_1-sources/genomes"
-params.input_gene_annotations = "../../output_to_input/STEP_1-sources/gene_annotations"
+params.input_genome_annotations = "../../output_to_input/STEP_1-sources/genome_annotations"
 params.busco_lineages = "INPUT_user/busco_lineages.txt"
 params.output_dir = "OUTPUT_pipeline"
 params.busco_parallel = 4
@@ -102,16 +102,16 @@ process standardize_genome_annotation_phylonames {
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     output:
-        path "3-output/gigantic_genomes", emit: genomes, optional: true
-        path "3-output/gigantic_gene_annotations", emit: annotations, optional: true
+        path "3-output/gigantic_genomes", emit: genomes
+        path "3-output/gigantic_genome_annotations", emit: annotations
         path "3-output/3_ai-standardization_manifest.tsv", emit: manifest
         path "3-output/3_ai-log-standardize_genome_and_annotation_phylonames.log", emit: log
 
     script:
     def genomes_arg = file("${projectDir}/../${params.input_genomes}").exists() ? "--input-genomes ${projectDir}/../${params.input_genomes}" : ""
-    def annotations_arg = file("${projectDir}/../${params.input_gene_annotations}").exists() ? "--input-gene-annotations ${projectDir}/../${params.input_gene_annotations}" : ""
+    def annotations_arg = file("${projectDir}/../${params.input_genome_annotations}").exists() ? "--input-genome-annotations ${projectDir}/../${params.input_genome_annotations}" : ""
     """
-    mkdir -p 3-output
+    mkdir -p 3-output/gigantic_genomes 3-output/gigantic_genome_annotations
 
     python3 ${projectDir}/scripts/003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping ${projectDir}/../${params.phylonames_mapping} \\
@@ -187,8 +187,9 @@ process summarize_quality {
 
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
-    // NOTE: output_to_input is populated by STEP_4, not STEP_2
-    // STEP_2 only produces OUTPUT_pipeline/ results for user evaluation
+    // NOTE: The species manifest is copied to output_to_input/ by RUN-workflow.sh
+    // after NextFlow completes (not by NextFlow itself - per GIGANTIC convention).
+    // Users edit the copy in output_to_input/ to select species for STEP_4.
 
     input:
         path assembly_stats
@@ -208,8 +209,7 @@ process summarize_quality {
         --assembly-stats ${assembly_stats} \\
         --busco-summary ${busco_summary} \\
         --proteome-manifest ${proteome_manifest} \\
-        --output-dir 6-output \\
-        --output-to-input-dir 6-output
+        --output-dir 6-output
     """
 }
 

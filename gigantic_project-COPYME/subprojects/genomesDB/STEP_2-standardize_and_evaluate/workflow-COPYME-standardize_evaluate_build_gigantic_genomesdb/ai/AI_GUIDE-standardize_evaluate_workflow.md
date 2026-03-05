@@ -39,7 +39,7 @@ This workflow applies GIGANTIC phyloname conventions to data from STEP_1 and cal
 |--------|---------|-----------------|
 | 001 | Standardize proteome filenames and FASTA headers | Phylonames mapping, T1 proteomes from STEP_1 |
 | 002 | Clean proteome invalid residues ('.' to 'X') | Standardized proteomes from script 001 |
-| 003 | Create phyloname symlinks for genomes/annotations | Phylonames mapping, genomes, gene annotations from STEP_1 |
+| 003 | Create phyloname symlinks for genomes/annotations | Phylonames mapping, genomes, genome annotations from STEP_1 |
 | 004 | Calculate genome assembly statistics (gfastats) | Phyloname-named genomes from script 003 |
 | 005 | Run BUSCO proteome evaluation | Cleaned proteomes from script 002, lineage assignments |
 | 006 | Summarize quality and generate species manifest | All quality data from scripts 001-005 |
@@ -54,7 +54,7 @@ This workflow applies GIGANTIC phyloname conventions to data from STEP_1 and cal
    - Check: `../../output_to_input/STEP_1-sources/T1_proteomes/` has proteome files
 
 2. **phylonames subproject** must be complete
-   - Check: `../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv` exists
+   - Check: `../../phylonames/output_to_input/maps/{project_name}_map-genus_species_X_phylonames.tsv` exists
 
 3. **Conda environment** (for script 003):
    - Environment: `ai_gigantic_genomesdb`
@@ -88,7 +88,7 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 | Phylonames mapping | `../../phylonames/output_to_input/maps/` |
 | T1 proteomes | `../../output_to_input/STEP_1-sources/T1_proteomes/` |
 | Genomes | `../../output_to_input/STEP_1-sources/genomes/` |
-| Gene annotations | `../../output_to_input/STEP_1-sources/gene_annotations/` |
+| Genome annotations | `../../output_to_input/STEP_1-sources/genome_annotations/` |
 
 ---
 
@@ -100,7 +100,7 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 | `OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv` | Proteome transformation log |
 | `OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned/` | Cleaned proteomes (ready for BLAST/BUSCO) |
 | `OUTPUT_pipeline/3-output/gigantic_genomes/` | Phyloname symlinks to genomes |
-| `OUTPUT_pipeline/3-output/gigantic_gene_annotations/` | Phyloname symlinks to annotations |
+| `OUTPUT_pipeline/3-output/gigantic_genome_annotations/` | Phyloname symlinks to annotations |
 | `OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv` | Assembly quality metrics |
 | `OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv` | Proteome completeness scores |
 | `OUTPUT_pipeline/6-output/6_ai-quality_summary.tsv` | Combined quality metrics |
@@ -150,10 +150,10 @@ output_to_input/STEP_1-sources/
 │                                                      │
 │                                            Script 004 ──► 4-output/assembly_stats
 │
-└── gene_annotations/     ──► Script 003 ──► 3-output/gigantic_gene_annotations/
+└── genome_annotations/     ──► Script 003 ──► 3-output/gigantic_genome_annotations/
 
 phylonames/output_to_input/maps/
-└── species71_map*.tsv    ──► Scripts 001, 003 (need phylonames)
+└── {project_name}_map*.tsv  ──► Scripts 001, 003 (need phylonames)
 
 All quality data ──► Script 006 ──► 6-output/quality_summary + species_manifest
 ```

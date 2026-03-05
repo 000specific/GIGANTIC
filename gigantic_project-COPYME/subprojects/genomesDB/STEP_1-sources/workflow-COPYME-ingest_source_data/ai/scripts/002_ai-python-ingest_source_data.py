@@ -8,17 +8,17 @@ STEP 2 of 3 in the source data ingestion workflow.
 
 Reads the source manifest and hard-copies all listed files into organized
 subdirectories within OUTPUT_pipeline/2-output/. Files are organized by
-data type (T1_proteomes, genomes, gene_annotations) and original filenames
+data type (T1_proteomes, genomes, genome_annotations) and original filenames
 are preserved.
 
 Input:
     - Source manifest TSV from INPUT_user/source_manifest.tsv
-      (4 columns: genus_species, genome_path, gff_path, proteome_path)
+      (4 columns: genus_species, genome_path, genome_annotation_path, proteome_path)
 
 Output (to OUTPUT_pipeline/2-output/):
     - T1_proteomes/       Hard copies of all proteome .aa files
     - genomes/            Hard copies of all genome .fasta files
-    - gene_annotations/   Hard copies of all .gff3 and .gtf files
+    - genome_annotations/   Hard copies of all .gff3 and .gtf files
     - 2_ai-ingestion_log.tsv   Per-file log of what was copied
 
 Usage:
@@ -57,10 +57,10 @@ def parse_manifest( manifest_path: Path, workflow_dir: Path ) -> list:
     """
     Parse the 4-column source manifest TSV file.
 
-    # genus_species	genome_path	gff_path	proteome_path
+    # genus_species	genome_path	genome_annotation_path	proteome_path
     # Abeoforma_whisleri	../user_research/.../file.fasta	NA	../user_research/.../file.aa
 
-    Returns list of dicts with keys: genus_species, genome_path, gff_path, proteome_path.
+    Returns list of dicts with keys: genus_species, genome_path, genome_annotation_path, proteome_path.
     Each path is resolved to absolute. 'NA' or empty paths become None.
     """
     entries = []
@@ -89,13 +89,13 @@ def parse_manifest( manifest_path: Path, workflow_dir: Path ) -> list:
 
             genus_species = parts[ 0 ].strip()
             genome_path = resolve_path( parts[ 1 ].strip(), workflow_dir )
-            gff_path = resolve_path( parts[ 2 ].strip(), workflow_dir )
+            genome_annotation_path = resolve_path( parts[ 2 ].strip(), workflow_dir )
             proteome_path = resolve_path( parts[ 3 ].strip(), workflow_dir )
 
             entries.append( {
                 'genus_species': genus_species,
                 'genome_path': genome_path,
-                'gff_path': gff_path,
+                'genome_annotation_path': genome_annotation_path,
                 'proteome_path': proteome_path,
             } )
 
@@ -109,36 +109,36 @@ def ingest_files( entries: list, output_dir: Path, overwrite: bool = False ) -> 
     Output structure:
         output_dir/T1_proteomes/       proteome .aa files
         output_dir/genomes/            genome .fasta files
-        output_dir/gene_annotations/   annotation .gff3/.gtf files
+        output_dir/genome_annotations/   annotation .gff3/.gtf files
 
     Returns list of ingestion records for the log.
     """
     proteome_dir = output_dir / 'T1_proteomes'
     genome_dir = output_dir / 'genomes'
-    gff_dir = output_dir / 'gene_annotations'
+    genome_annotation_dir = output_dir / 'genome_annotations'
 
     proteome_dir.mkdir( parents = True, exist_ok = True )
     genome_dir.mkdir( parents = True, exist_ok = True )
-    gff_dir.mkdir( parents = True, exist_ok = True )
+    genome_annotation_dir.mkdir( parents = True, exist_ok = True )
 
     ingestion_records = []
 
     data_types___output_directories = {
         'proteome_path': proteome_dir,
         'genome_path': genome_dir,
-        'gff_path': gff_dir,
+        'genome_annotation_path': genome_annotation_dir,
     }
 
     data_types___labels = {
         'proteome_path': 'T1_proteome',
         'genome_path': 'genome',
-        'gff_path': 'gene_annotation',
+        'genome_annotation_path': 'genome_annotation',
     }
 
     for entry in entries:
         genus_species = entry[ 'genus_species' ]
 
-        for path_key in [ 'proteome_path', 'genome_path', 'gff_path' ]:
+        for path_key in [ 'proteome_path', 'genome_path', 'genome_annotation_path' ]:
             source_path = entry[ path_key ]
             data_label = data_types___labels[ path_key ]
             destination_directory = data_types___output_directories[ path_key ]
@@ -208,7 +208,7 @@ def write_ingestion_log( ingestion_records: list, output_dir: Path ):
     with open( log_path, 'w' ) as output_log:
         output = (
             'Genus_Species (species identifier)\t'
-            'Data_Type (type of data file: T1_proteome, genome, or gene_annotation)\t'
+            'Data_Type (type of data file: T1_proteome, genome, or genome_annotation)\t'
             'Source_Path (original file location)\t'
             'Destination_Path (GIGANTIC location in OUTPUT_pipeline 2-output)\t'
             'Status (copied, skipped, not_available, missing, or error)\n'
@@ -300,11 +300,11 @@ def main():
 
     proteome_count = sum( 1 for entry in entries if entry[ 'proteome_path' ] is not None )
     genome_count = sum( 1 for entry in entries if entry[ 'genome_path' ] is not None )
-    gff_count = sum( 1 for entry in entries if entry[ 'gff_path' ] is not None )
+    genome_annotation_count = sum( 1 for entry in entries if entry[ 'genome_annotation_path' ] is not None )
 
     print( f"  Proteomes: {proteome_count}" )
     print( f"  Genomes: {genome_count}" )
-    print( f"  Gene annotations: {gff_count}" )
+    print( f"  Genome annotations: {genome_annotation_count}" )
     print()
 
     if not entries:

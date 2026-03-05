@@ -13,14 +13,8 @@ This script produces:
 1. A consolidated quality summary TSV combining N50 stats and BUSCO scores
 2. A species selection manifest (all species included by default)
 
-The species selection manifest is written to BOTH:
-- OUTPUT_pipeline/5-output/ (as a script output, for archival)
-- output_to_input/ (as a REAL FILE for user editing and STEP_3 consumption)
-
-Users can:
-- Review the quality summary to identify low-quality species
-- Edit the manifest in output_to_input/ to exclude species (change YES to NO)
-- STEP_3 will read the manifest and only process species marked YES
+RUN-workflow.sh copies the manifest to output_to_input/ after this script completes.
+Users edit the copy in output_to_input/ to select species for STEP_4.
 
 Inputs:
     - Genome assembly statistics from Script 004 (OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv)
@@ -30,7 +24,6 @@ Inputs:
 Outputs:
     - Comprehensive quality summary: OUTPUT_pipeline/6-output/6_ai-comprehensive_quality_summary.tsv
     - Species selection manifest: OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv
-    - Species selection manifest (for editing): ../../output_to_input/species_selection_manifest.tsv
     - Processing log: OUTPUT_pipeline/6-output/6_ai-log-summarize_quality.log
 
 Usage:
@@ -38,8 +31,7 @@ Usage:
         --assembly-stats OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv \\
         --busco-summary OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv \\
         --proteome-manifest OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv \\
-        --output-dir OUTPUT_pipeline/6-output \\
-        --output-to-input-dir ../../output_to_input
+        --output-dir OUTPUT_pipeline/6-output
 """
 
 import argparse
@@ -396,8 +388,7 @@ Examples:
         --assembly-stats OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv \\
         --busco-summary OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv \\
         --proteome-manifest OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv \\
-        --output-dir OUTPUT_pipeline/6-output \\
-        --manifest-output-dir INPUT_user
+        --output-dir OUTPUT_pipeline/6-output
         """
     )
 
@@ -429,13 +420,6 @@ Examples:
         help = 'Output directory for quality summary (default: OUTPUT_pipeline/6-output)'
     )
 
-    parser.add_argument(
-        '--output-to-input-dir',
-        type = str,
-        default = '../../output_to_input',
-        help = 'output_to_input directory for species manifest (default: ../../output_to_input)'
-    )
-
     arguments = parser.parse_args()
 
     # ========================================================================
@@ -446,17 +430,13 @@ Examples:
     input_busco_summary_path = Path( arguments.busco_summary )
     input_proteome_manifest_path = Path( arguments.proteome_manifest )
     output_base_directory = Path( arguments.output_dir )
-    output_to_input_directory = Path( arguments.output_to_input_dir )
 
     output_summary_path = output_base_directory / '6_ai-comprehensive_quality_summary.tsv'
     output_log_path = output_base_directory / '6_ai-log-summarize_quality.log'
-    # Manifest goes to BOTH 5-output (as script output) AND output_to_input (for user editing and STEP_3)
     output_manifest_path = output_base_directory / '6_ai-species_selection_manifest.tsv'
-    output_to_input_manifest_path = output_to_input_directory / 'species_selection_manifest.tsv'
 
-    # Create output directories
+    # Create output directory
     output_base_directory.mkdir( parents = True, exist_ok = True )
-    output_to_input_directory.mkdir( parents = True, exist_ok = True )
 
     # ========================================================================
     # LOGGING SETUP
@@ -473,8 +453,7 @@ Examples:
     logger.info( f"BUSCO summary input: {input_busco_summary_path}" )
     logger.info( f"Proteome manifest input: {input_proteome_manifest_path}" )
     logger.info( f"Quality summary output: {output_summary_path}" )
-    logger.info( f"Species manifest output (5-output): {output_manifest_path}" )
-    logger.info( f"Species manifest output (output_to_input): {output_to_input_manifest_path}" )
+    logger.info( f"Species manifest output: {output_manifest_path}" )
     logger.info( "" )
 
     # ========================================================================
@@ -516,17 +495,10 @@ Examples:
         logger = logger
     )
 
-    # Write species selection manifest to 5-output (as script output)
+    # Write species selection manifest
+    # NOTE: RUN-workflow.sh copies this to output_to_input/ after pipeline completes
     write_species_selection_manifest(
         manifest_path = output_manifest_path,
-        phylonames___species_info = phylonames___species_info,
-        logger = logger
-    )
-
-    # Write species selection manifest to output_to_input (for user editing and STEP_3)
-    # This is a COPY (not symlink) so users can edit it directly
-    write_species_selection_manifest(
-        manifest_path = output_to_input_manifest_path,
         phylonames___species_info = phylonames___species_info,
         logger = logger
     )
@@ -550,8 +522,7 @@ Examples:
     logger.info( f"BUSCO lineages: {len( lineage_names )} ({', '.join( lineage_names ) if lineage_names else 'none'})" )
     logger.info( "" )
     logger.info( f"Quality summary: {output_summary_path}" )
-    logger.info( f"Species manifest (5-output): {output_manifest_path}" )
-    logger.info( f"Species manifest (output_to_input): {output_to_input_manifest_path}" )
+    logger.info( f"Species manifest: {output_manifest_path}" )
     logger.info( f"Log: {output_log_path}" )
     logger.info( "" )
     logger.info( f"End time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
@@ -562,13 +533,7 @@ Examples:
     print( "" )
     print( f"Done! Summarized quality for {total_species} species." )
     print( f"Quality summary: {output_summary_path}" )
-    print( f"Species selection manifest: {output_to_input_manifest_path}" )
-    print( "" )
-    print( "Next steps:" )
-    print( "  1. Review the quality summary to evaluate species" )
-    print( f"  2. Edit the species manifest to exclude species (change YES to NO):" )
-    print( f"     {output_to_input_manifest_path}" )
-    print( "  3. Run STEP_3 to build databases with selected species" )
+    print( f"Species selection manifest: {output_manifest_path}" )
 
 
 # ============================================================================

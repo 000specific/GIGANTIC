@@ -96,19 +96,22 @@ workflow-COPYME-create_final_species_set/
 |--------|----------|-------------|
 | Validated species list | `1-output/1_ai-validated_species_list.txt` | Species that passed validation |
 | Species count | `1-output/1_ai-species_count.txt` | Number of selected species (N) |
+| Species with annotations | `1-output/1_ai-species_with_genome_annotations.txt` | Species that have GFF/GTF files |
 | Final proteomes | `2-output/speciesN_gigantic_T1_proteomes/` | Copied proteome files |
 | Final BLAST DBs | `2-output/speciesN_gigantic_T1_blastp/` | Copied BLAST database files |
+| Genome annotations | `2-output/speciesN_gigantic_genome_annotations/` | Copied GFF/GTF files (subset) |
 | Copy manifest | `2-output/2_ai-copy_manifest.tsv` | Record of all copied files |
 
 ---
 
 ## Final Outputs in output_to_input/
 
-The workflow automatically copies final outputs to `../../output_to_input/`:
+The workflow automatically creates symlinks in `../../output_to_input/STEP_4-create_final_species_set/`:
 - `speciesN_gigantic_T1_proteomes/` - For downstream subprojects (orthohmm, etc.)
 - `speciesN_gigantic_T1_blastp/` - For BLAST searches
+- `speciesN_gigantic_genome_annotations/` - GFF/GTF files (subset with annotations)
 
-Where N = count of selected species (e.g., species69, species71)
+Where N = count of selected species (e.g., species71)
 
 ---
 
@@ -116,6 +119,7 @@ Where N = count of selected species (e.g., species69, species71)
 
 After this workflow completes, downstream subprojects can access:
 ```
-genomesDB/output_to_input/speciesN_gigantic_T1_proteomes/
-genomesDB/output_to_input/speciesN_gigantic_T1_blastp/
+genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
+genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/
+genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/
 ```

@@ -33,11 +33,14 @@ Edit `final_species_set_config.yaml`:
 
 ```yaml
 inputs:
-  # Path to cleaned proteomes from STEP_2
-  step2_proteomes: "../STEP_2-standardize_and_evaluate/workflow-RUN_01-.../OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned"
+  # Path to cleaned proteomes from STEP_2 (via output_to_input)
+  step2_proteomes: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
 
-  # Path to BLAST databases from STEP_3
-  step3_blastp: "../STEP_3-databases/workflow-RUN_01-.../OUTPUT_pipeline/1-output/gigantic_blastp"
+  # Path to BLAST databases from STEP_3 (via output_to_input)
+  step3_blastp: "../../output_to_input/STEP_3-databases/gigantic-T1-blastp"
+
+  # Path to genome annotations from STEP_2 (optional)
+  step2_genome_annotations: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
 
   # Species selection file (optional - defaults to all species)
   selected_species: "INPUT_user/selected_species.txt"

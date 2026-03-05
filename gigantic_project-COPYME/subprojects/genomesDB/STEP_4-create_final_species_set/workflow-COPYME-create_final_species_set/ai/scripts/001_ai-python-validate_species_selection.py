@@ -9,20 +9,20 @@ Purpose:
     Validates that all species in the user's selection exist in both STEP_2
     (cleaned proteomes) and STEP_3 (BLAST databases). If no selection file
     is provided, defaults to all species found in STEP_2. Also scans for
-    available gene annotations (GFF/GTF files) from STEP_2 - these are
+    available genome annotations (GFF/GTF files) from STEP_2 - these are
     optional and not all species will have them.
 
 Inputs:
     --step2-proteomes: Path to STEP_2 cleaned proteomes directory
     --step3-blastp: Path to STEP_3 BLAST databases directory
-    --step2-gene-annotations: Path to STEP_2 gene annotations directory (optional)
+    --step2-genome-annotations: Path to STEP_2 genome annotations directory (optional)
     --selected-species: Path to user's species selection file (optional)
     --output-dir: Output directory for validated list and count
 
 Outputs:
     1-output/1_ai-validated_species_list.txt - One species per line (all selected)
     1-output/1_ai-species_count.txt - Single number (count of species)
-    1-output/1_ai-species_with_gene_annotations.txt - Species that have GFF/GTF files
+    1-output/1_ai-species_with_genome_annotations.txt - Species that have GFF/GTF files
     1-output/1_ai-log-validate_species_selection.log - Execution log
 """
 
@@ -105,15 +105,15 @@ def get_species_from_blastp( blastp_dir: Path ) -> set:
     return species_names
 
 
-def get_species_from_gene_annotations( gene_annotations_dir: Path ) -> set:
-    """Extract species names from gene annotation filenames (GFF3/GTF)."""
+def get_species_from_genome_annotations( genome_annotations_dir: Path ) -> set:
+    """Extract species names from genome annotation filenames (GFF3/GTF)."""
     species_names = set()
 
-    if not gene_annotations_dir or not gene_annotations_dir.exists():
+    if not genome_annotations_dir or not genome_annotations_dir.exists():
         return species_names
 
-    # Gene annotation files are named: phyloname-genome.gff3 or phyloname-genome.gtf
-    for annotation_file in list( gene_annotations_dir.glob( '*.gff3' ) ) + list( gene_annotations_dir.glob( '*.gtf' ) ):
+    # Genome annotation files are named: phyloname-genome.gff3 or phyloname-genome.gtf
+    for annotation_file in list( genome_annotations_dir.glob( '*.gff3' ) ) + list( genome_annotations_dir.glob( '*.gtf' ) ):
         # Extract genus_species from phyloname portion
         # Format: phyloname-genome.gff3
         filename = annotation_file.stem  # phyloname-genome
@@ -155,8 +155,8 @@ def main():
                         help = 'Path to STEP_2 cleaned proteomes directory' )
     parser.add_argument( '--step3-blastp', required = True,
                         help = 'Path to STEP_3 BLAST databases directory' )
-    parser.add_argument( '--step2-gene-annotations', required = False, default = '',
-                        help = 'Path to STEP_2 gene annotations directory (optional)' )
+    parser.add_argument( '--step2-genome-annotations', required = False, default = '',
+                        help = 'Path to STEP_2 genome annotations directory (optional)' )
     parser.add_argument( '--selected-species', required = True,
                         help = 'Path to user species selection file' )
     parser.add_argument( '--output-dir', required = True,
@@ -167,7 +167,7 @@ def main():
     # Convert paths
     step2_proteomes_dir = Path( args.step2_proteomes )
     step3_blastp_dir = Path( args.step3_blastp )
-    step2_gene_annotations_dir = Path( args.step2_gene_annotations ) if args.step2_gene_annotations else None
+    step2_genome_annotations_dir = Path( args.step2_genome_annotations ) if args.step2_genome_annotations else None
     selected_species_file = Path( args.selected_species )
     output_dir = Path( args.output_dir )
 
@@ -252,41 +252,41 @@ def main():
         output_file.write( output )
     logger.info( f'Wrote species count: {output_species_count}' )
 
-    # Scan for gene annotations (optional - not all species have them)
+    # Scan for genome annotations (optional - not all species have them)
     species_with_annotations = []
-    if step2_gene_annotations_dir and step2_gene_annotations_dir.exists():
+    if step2_genome_annotations_dir and step2_genome_annotations_dir.exists():
         logger.info( '' )
-        logger.info( f'Scanning for gene annotations: {step2_gene_annotations_dir}' )
-        all_annotation_species = get_species_from_gene_annotations( step2_gene_annotations_dir )
-        logger.info( f'  Found {len( all_annotation_species )} species with gene annotations in STEP_2' )
+        logger.info( f'Scanning for genome annotations: {step2_genome_annotations_dir}' )
+        all_annotation_species = get_species_from_genome_annotations( step2_genome_annotations_dir )
+        logger.info( f'  Found {len( all_annotation_species )} species with genome annotations in STEP_2' )
 
         # Filter to only include validated (selected) species
         species_with_annotations = sorted( set( validated_species ) & all_annotation_species )
         species_without_annotations = sorted( set( validated_species ) - all_annotation_species )
 
-        logger.info( f'  {len( species_with_annotations )} of {species_count} selected species have gene annotations' )
-        logger.info( f'  {len( species_without_annotations )} selected species lack gene annotations' )
+        logger.info( f'  {len( species_with_annotations )} of {species_count} selected species have genome annotations' )
+        logger.info( f'  {len( species_without_annotations )} selected species lack genome annotations' )
 
         if species_without_annotations:
-            logger.info( '  Species without gene annotations:' )
+            logger.info( '  Species without genome annotations:' )
             for species_name in species_without_annotations:
                 logger.info( f'    - {species_name}' )
     else:
         logger.info( '' )
-        logger.info( 'No gene annotations directory specified or found - skipping annotation scan' )
+        logger.info( 'No genome annotations directory specified or found - skipping annotation scan' )
 
-    # Write species with gene annotations list
-    output_species_with_annotations = output_dir / '1_ai-species_with_gene_annotations.txt'
+    # Write species with genome annotations list
+    output_species_with_annotations = output_dir / '1_ai-species_with_genome_annotations.txt'
     with open( output_species_with_annotations, 'w' ) as output_file:
         for species_name in species_with_annotations:
             output = species_name + '\n'
             output_file.write( output )
-    logger.info( f'Wrote species with gene annotations list: {output_species_with_annotations} ({len( species_with_annotations )} species)' )
+    logger.info( f'Wrote species with genome annotations list: {output_species_with_annotations} ({len( species_with_annotations )} species)' )
 
     logger.info( '' )
     logger.info( '=' * 70 )
     logger.info( f'SUCCESS: {species_count} species validated' )
-    logger.info( f'  {len( species_with_annotations )} species have gene annotations' )
+    logger.info( f'  {len( species_with_annotations )} species have genome annotations' )
     logger.info( '=' * 70 )
 
 

@@ -63,10 +63,11 @@ sbatch RUN-workflow.sbatch
 
 | Output | Location | Description |
 |--------|----------|-------------|
-| Final proteomes | `output_to_input/speciesN_gigantic_T1_proteomes/` | For downstream subprojects |
-| Final BLAST DBs | `output_to_input/speciesN_gigantic_T1_blastp/` | For BLAST searches |
+| Final proteomes | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` | For downstream subprojects |
+| Final BLAST DBs | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` | For BLAST searches |
+| Genome annotations | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/` | GFF/GTF files (subset) |
 
-Where N = count of selected species (e.g., species69, species71).
+Where N = count of selected species (e.g., species71).
 
 ---
 

@@ -33,8 +33,8 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 
 4. Create `INPUT_user/source_manifest.tsv` with **4 columns**:
    ```tsv
-   genus_species	genome_path	gff_path	proteome_path
-   Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+   genus_species	genome_path	genome_annotation_path	proteome_path
+   Homo_sapiens	../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
    ```
    Paths reference the project-level `INPUT_user/genomic_resources/` subdirectories:
    - `genomic_resources/genomes/` for `.fasta` files
@@ -70,7 +70,7 @@ OUTPUT_pipeline/
 ├── 2-output/                           # Ingested data (hard copies)
 │   ├── T1_proteomes/
 │   ├── genomes/
-│   ├── gene_annotations/
+│   ├── genome_annotations/
 │   └── 2_ai-ingestion_log.tsv
 └── 3-output/                           # Symlink documentation
     └── 3_ai-symlink_manifest.tsv
@@ -83,7 +83,7 @@ After running, STEP_2 reads from:
 ../../output_to_input/
 ├── T1_proteomes/     -> OUTPUT_pipeline/2-output/T1_proteomes/
 ├── genomes/          -> OUTPUT_pipeline/2-output/genomes/
-└── gene_annotations/ -> OUTPUT_pipeline/2-output/gene_annotations/
+└── genome_annotations/ -> OUTPUT_pipeline/2-output/genome_annotations/
 ```
 
 ## Next Step
