@@ -53,11 +53,11 @@ wget https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
 diamond makedb --in nr.gz --db nr.dmnd
 ```
 
-Update the database path in `diamond_ncbi_nr_config.yaml`.
+Update the database path in `START_HERE-user_config.yaml`.
 
 ### Step 2: Edit Configuration
 
-Edit `BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/diamond_ncbi_nr_config.yaml`:
+Edit `BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/START_HERE-user_config.yaml`:
 
 ```yaml
 project:
@@ -118,7 +118,7 @@ one_direction_homologs/
         ├── README.md                           # Quick start guide
         ├── RUN-workflow.sh                     # bash RUN-workflow.sh (local)
         ├── RUN-workflow.sbatch                 # sbatch RUN-workflow.sbatch (SLURM)
-        ├── diamond_ncbi_nr_config.yaml         # Edit this for your project
+        ├── START_HERE-user_config.yaml         # Edit this for your project
         ├── INPUT_user/                         # Workflow inputs
         │   └── proteome_manifest_example.tsv   # Example manifest
         ├── OUTPUT_pipeline/                    # Generated results

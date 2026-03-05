@@ -53,7 +53,7 @@ cd workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb
 **Configure your run:**
 ```bash
 # Edit the configuration file with your project settings
-nano standardize_evaluate_config.yaml
+nano START_HERE-user_config.yaml
 ```
 
 **Run locally:**
@@ -87,7 +87,7 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 ├── README.md                              # This file
 ├── RUN-workflow.sh            # Local runner (calls NextFlow)
 ├── RUN-workflow.sbatch        # SLURM wrapper
-├── standardize_evaluate_config.yaml       # User-editable configuration
+├── START_HERE-user_config.yaml       # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   └── busco_lineages.txt                 # BUSCO lineage assignments
 ├── OUTPUT_pipeline/                       # Workflow outputs

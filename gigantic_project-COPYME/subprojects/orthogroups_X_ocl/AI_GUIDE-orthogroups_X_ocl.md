@@ -57,7 +57,7 @@ orthogroups_X_ocl/
     └── workflow-COPYME-ocl_analysis/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        ├── ocl_config.yaml
+        ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   └── structure_manifest.tsv
         ├── OUTPUT_pipeline/
@@ -101,7 +101,7 @@ workflow-RUN_01-ocl_analysis/  → run_label: "Species71_X_OrthoFinder"
 workflow-RUN_02-ocl_analysis/  → run_label: "Species71_X_OrthoHMM"
 ```
 
-The `run_label` in `ocl_config.yaml` determines the output_to_input subdirectory name,
+The `run_label` in `START_HERE-user_config.yaml` determines the output_to_input subdirectory name,
 so different runs coexist without overwriting each other.
 
 ### Terminal Self-Loop Exclusion
@@ -142,7 +142,7 @@ This is used by:
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "Config file not found" | Missing ocl_config.yaml | Verify config file exists in workflow directory |
+| "Config file not found" | Missing START_HERE-user_config.yaml | Verify config file exists in workflow directory |
 | "Structure manifest empty" | No structure IDs in manifest | Add structure IDs (001-105) to INPUT_user/structure_manifest.tsv |
 | "Phylogenetic blocks file not found" | trees_species not run | Run trees_species subproject first |
 | "Orthogroups file not found" | orthogroups not run | Run orthogroups subproject with matching tool |
@@ -155,7 +155,7 @@ This is used by:
 
 | File | User Edits? | Purpose |
 |------|------------|---------|
-| `ocl_config.yaml` | Yes | All configuration: run_label, tool, paths, FASTA flag |
+| `START_HERE-user_config.yaml` | Yes | All configuration: run_label, tool, paths, FASTA flag |
 | `INPUT_user/structure_manifest.tsv` | Yes | Which tree structures to analyze |
 | `RUN-workflow.sh` | No | Launches pipeline, creates symlinks |
 | `RUN-workflow.sbatch` | Yes (account/qos) | SLURM wrapper for cluster submission |

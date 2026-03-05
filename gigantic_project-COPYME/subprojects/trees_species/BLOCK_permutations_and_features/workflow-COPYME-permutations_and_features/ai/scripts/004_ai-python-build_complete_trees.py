@@ -43,7 +43,7 @@ Inputs:
     Reads: OUTPUT_pipeline/1-output/ (metadata with variable_root_label)
            OUTPUT_pipeline/3-output/newick_trees/ (annotated topology skeletons)
            INPUT_user/species_tree.newick (original annotated species tree)
-           permutations_and_features_config.yaml
+           START_HERE-user_config.yaml
 
 Outputs:
     OUTPUT_pipeline/4-output/4_ai-clade_registry.tsv
@@ -585,7 +585,7 @@ args = parse_arguments()
 workflow_dir = Path( args.workflow_dir )
 
 # Read config
-config_path = workflow_dir / 'permutations_and_features_config.yaml'
+config_path = workflow_dir / 'START_HERE-user_config.yaml'
 with open( config_path, 'r' ) as config_file:
     config = yaml.safe_load( config_file )
 

@@ -18,7 +18,7 @@
 # 2. Complete STEP_3 (create BLAST databases for all species)
 # 3. Review STEP_2 quality metrics and decide which species to keep
 # 4. Edit INPUT_user/selected_species.txt (or use all species by default)
-# 5. Edit final_species_set_config.yaml with paths to STEP_2 and STEP_3 outputs
+# 5. Edit START_HERE-user_config.yaml with paths to STEP_2 and STEP_3 outputs
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
@@ -97,9 +97,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "final_species_set_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: final_species_set_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"

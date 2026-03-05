@@ -37,6 +37,6 @@ Broccoli identifies orthogroups using a phylogeny-network approach: rapid phylog
 
 ## Configuration
 
-Edit `workflow-COPYME-run_broccoli/broccoli_config.yaml`:
+Edit `workflow-COPYME-run_broccoli/START_HERE-user_config.yaml`:
 - `cpus`: Number of threads (default: 8)
 - `tree_method`: Tree construction method - `nj` (neighbor joining), `me` (minimum evolution), `ml` (maximum likelihood)

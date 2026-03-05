@@ -51,7 +51,7 @@ The database builder parses consecutive H/h characters to extract helix boundary
 
 ## Configuration
 
-Edit `workflow-COPYME-run_tmbed/tmbed_config.yaml`:
+Edit `workflow-COPYME-run_tmbed/START_HERE-user_config.yaml`:
 - `batch_size`: Sequences per batch (default: 1)
 - `use_gpu`: Enable GPU (default: true)
 - `cpu_fallback`: Fall back to CPU if no GPU (default: true)

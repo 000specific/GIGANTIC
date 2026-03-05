@@ -43,7 +43,7 @@ OG0000000    gene1    gene2    gene3    ...
 
 ## Configuration
 
-Edit `workflow-COPYME-run_orthofinder/orthofinder_config.yaml`:
+Edit `workflow-COPYME-run_orthofinder/START_HERE-user_config.yaml`:
 - `cpus`: Number of threads (default: 8)
 - `search_method`: `diamond` or `blast` (default: diamond)
 - `mcl_inflation`: MCL inflation parameter (default: 1.5)

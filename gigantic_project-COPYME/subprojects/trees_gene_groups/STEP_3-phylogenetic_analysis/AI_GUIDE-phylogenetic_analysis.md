@@ -41,7 +41,7 @@
 
 ## Tree Methods
 
-Four methods available, configurable in `phylogenetic_analysis_config.yaml`:
+Four methods available, configurable in `START_HERE-user_config.yaml`:
 
 | Method | Script | Default | Speed | Best For |
 |--------|--------|---------|-------|----------|
@@ -107,7 +107,7 @@ STEP_3-phylogenetic_analysis/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── phylogenetic_analysis_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     ├── OUTPUT_pipeline/
     └── ai/
@@ -133,7 +133,7 @@ STEP_3-phylogenetic_analysis/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/phylogenetic_analysis_config.yaml` | Gene group, tree methods, alignment settings | **YES** |
+| `workflow-*/START_HERE-user_config.yaml` | Gene group, tree methods, alignment settings | **YES** |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
 | `../output_to_input/STEP_3-phylogenetic_analysis/trees/` | Final trees | No (auto-created) |
 

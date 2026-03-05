@@ -34,7 +34,7 @@ GIGANTIC headers (`g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_..._Genus_specie
 
 ## Configuration
 
-Edit `workflow-COPYME-run_orthohmm/orthohmm_config.yaml`:
+Edit `workflow-COPYME-run_orthohmm/START_HERE-user_config.yaml`:
 - `cpus`: Number of threads (default: 8)
 - `evalue`: E-value threshold (default: 0.0001)
 - `single_copy_threshold`: Threshold for single-copy orthogroups (default: 0.5)

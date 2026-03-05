@@ -2,7 +2,7 @@
 
 ## Setup
 - [ ] Create NCBI nr DIAMOND database on HPC
-- [ ] Configure diamond_ncbi_nr_config.yaml with database path
+- [ ] Configure START_HERE-user_config.yaml with database path
 - [ ] Set SLURM account/qos in RUN-workflow.sbatch
 - [ ] Add DIAMOND to conda environment and test
 

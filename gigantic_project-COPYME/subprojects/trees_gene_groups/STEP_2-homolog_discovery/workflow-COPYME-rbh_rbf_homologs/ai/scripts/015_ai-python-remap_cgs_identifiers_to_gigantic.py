@@ -15,7 +15,7 @@ because:
 
 Input:
     - output/14-output/14_ai-CGS-{project_db}-{gene_family}-filtered.aa: CGS with short IDs
-    - Mapping file: Provided via --mapping-file argument (configurable via gene_families_config.yaml)
+    - Mapping file: Provided via --mapping-file argument (configurable via START_HERE-user_config.yaml)
 
 Output:
     - output/15-output/15_ai-CGS-{project_db}-{gene_family}-remapped.aa: CGS with full GIGANTIC IDs

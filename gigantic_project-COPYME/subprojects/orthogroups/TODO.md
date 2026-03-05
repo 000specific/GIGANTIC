@@ -11,7 +11,7 @@
 - [x] Removed old inconsistent structure (flat OrthoFinder, Nextflow OrthoHMM, empty Broccoli)
 - [x] Created four equivalent self-contained BLOCK projects (BLOCK_orthofinder, BLOCK_orthohmm, BLOCK_broccoli, BLOCK_comparison)
 - [x] All projects mirror genomesDB STEP pattern
-- [x] Consistent naming: RUN-workflow.sh, RUN-workflow.sbatch, *_config.yaml
+- [x] Consistent naming: RUN-workflow.sh, RUN-workflow.sbatch, START_HERE-user_config.yaml
 - [x] OrthoHMM: 6 scripts, Nextflow pipeline, documentation
 - [x] Broccoli: 6 scripts, Nextflow pipeline, documentation
 - [x] OrthoFinder: 6 scripts (with -X flag support), Nextflow pipeline, documentation

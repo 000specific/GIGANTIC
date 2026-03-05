@@ -36,7 +36,7 @@ Outputs (to 5-output/):
   - QC metrics summary (TSV)
 
 Usage:
-    python 005_ai-python-validate_results.py --structure_id 001 --config ../../ocl_config.yaml
+    python 005_ai-python-validate_results.py --structure_id 001 --config ../../START_HERE-user_config.yaml
 """
 
 import csv
@@ -74,7 +74,7 @@ def parse_arguments():
         '--config',
         type = str,
         required = True,
-        help = 'Path to ocl_config.yaml configuration file'
+        help = 'Path to START_HERE-user_config.yaml configuration file'
     )
 
     parser.add_argument(

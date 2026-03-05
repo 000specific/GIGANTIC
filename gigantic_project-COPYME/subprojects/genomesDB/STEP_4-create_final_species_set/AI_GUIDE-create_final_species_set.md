@@ -66,7 +66,7 @@ STEP_3 (BLAST databases)   ──┘                                   ├──
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/final_species_set_config.yaml` | Paths to STEP_2 and STEP_3 outputs | **YES** (required) |
+| `workflow-*/START_HERE-user_config.yaml` | Paths to STEP_2 and STEP_3 outputs | **YES** (required) |
 | `workflow-*/INPUT_user/selected_species.txt` | Species selection list | **YES** (optional - defaults to all) |
 | `workflow-*/RUN-workflow.sh` | Local execution script | No |
 | `workflow-*/RUN-workflow.sbatch` | SLURM execution script | **YES** (account/qos) |
@@ -93,8 +93,8 @@ This convention makes it immediately clear how many species are in the final set
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "STEP_2 proteomes not found" | Config path wrong or STEP_2 not run | Verify path in `final_species_set_config.yaml`; run STEP_2 first |
-| "STEP_3 BLAST databases not found" | Config path wrong or STEP_3 not run | Verify path in `final_species_set_config.yaml`; run STEP_3 first |
+| "STEP_2 proteomes not found" | Config path wrong or STEP_2 not run | Verify path in `START_HERE-user_config.yaml`; run STEP_2 first |
+| "STEP_3 BLAST databases not found" | Config path wrong or STEP_3 not run | Verify path in `START_HERE-user_config.yaml`; run STEP_3 first |
 | "Species X not found in STEP_2" | Species in selection file but not in STEP_2 output | Check spelling in `selected_species.txt`; verify STEP_2 processed this species |
 | "Species X not found in STEP_3" | Species in STEP_2 but missing from STEP_3 | Run STEP_3 for missing species; or remove from selection |
 | "No species selected" | Empty selection file | Delete the file (defaults to all species) or add species names |
@@ -147,7 +147,7 @@ STEP_4-create_final_species_set/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── final_species_set_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   └── selected_species.txt           # User species selection (optional)
     ├── OUTPUT_pipeline/

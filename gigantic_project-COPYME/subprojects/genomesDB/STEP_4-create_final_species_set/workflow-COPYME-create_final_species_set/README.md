@@ -39,7 +39,7 @@ cd workflow-RUN_01-create_final_species_set
 **Configure your run:**
 ```bash
 # Edit the configuration file with paths to STEP_2 and STEP_3 outputs
-nano final_species_set_config.yaml
+nano START_HERE-user_config.yaml
 
 # Optional: Edit species selection (defaults to all species)
 nano INPUT_user/selected_species.txt
@@ -74,7 +74,7 @@ workflow-COPYME-create_final_species_set/
 ├── README.md                              # This file
 ├── RUN-workflow.sh        # Local runner (calls NextFlow)
 ├── RUN-workflow.sbatch    # SLURM wrapper
-├── final_species_set_config.yaml          # User-editable configuration
+├── START_HERE-user_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User inputs
 │   └── selected_species.txt               # Species selection (optional)
 ├── OUTPUT_pipeline/                       # Workflow outputs

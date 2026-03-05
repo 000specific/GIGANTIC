@@ -38,7 +38,7 @@ ls ../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species
 
 ### 2. Configure
 
-Edit `ocl_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 ```yaml
 run_label: "Species71_X_OrthoFinder"    # Unique name for this exploration

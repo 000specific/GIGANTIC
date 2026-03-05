@@ -11,7 +11,7 @@ Takes the All Gene Set (AGS) from STEP_2, aligns sequences with MAFFT, trims wit
 ```bash
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 cd workflow-RUN_01-phylogenetic_analysis/
-# Edit phylogenetic_analysis_config.yaml (set gene_family name, choose tree methods)
+# Edit START_HERE-user_config.yaml (set gene_family name, choose tree methods)
 bash RUN-workflow.sh
 ```
 
@@ -28,7 +28,7 @@ bash RUN-workflow.sh
 | VeryFastTree | OFF | Very fast | Large datasets (>10,000 seqs) |
 | PhyloBayes | OFF | Days-weeks | Bayesian counterpoint |
 
-Enable/disable methods in `phylogenetic_analysis_config.yaml`.
+Enable/disable methods in `START_HERE-user_config.yaml`.
 
 ## Output
 

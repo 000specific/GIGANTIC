@@ -98,7 +98,7 @@ STEP_1-rgs_preparation/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── rgs_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   ├── rgs_species_map.tsv
     │   └── [rgs FASTA files]
@@ -118,7 +118,7 @@ STEP_1-rgs_preparation/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/rgs_config.yaml` | Gene group name, RGS file path | **YES** |
+| `workflow-*/START_HERE-user_config.yaml` | Gene group name, RGS file path | **YES** |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** (user provides) |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Short name to Genus_species mapping | **YES** (if needed) |
 | `../output_to_input/STEP_1-rgs_preparation/rgs_fastas/` | Validated RGS | No (auto-created) |
@@ -129,7 +129,7 @@ STEP_1-rgs_preparation/
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "RGS file not found" | Wrong path in rgs_config.yaml | Check rgs_file path |
+| "RGS file not found" | Wrong path in START_HERE-user_config.yaml | Check rgs_file path |
 | "Invalid header format" | Headers don't match rgsN-species-source-id pattern | Fix headers or update validation |
 | "Duplicate sequences" | Same sequence ID appears twice | Remove duplicates from RGS file |
 | Validation fails | RGS file has formatting issues | Check validation report for details |

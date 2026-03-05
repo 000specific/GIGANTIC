@@ -1,0 +1,192 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC Phylonames Workflow Configuration - STEP 1: Generate and Evaluate
+# AI: Claude Code | Opus 4.6 | 2026 March 04
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration file controls how the STEP 1 phylonames workflow runs.
+# Most users only need to edit the "Project Settings" section below.
+#
+# After editing, run: bash RUN-workflow.sh
+#
+# STEP 1 generates phylonames from NCBI taxonomy for your species list.
+# After reviewing the output, use STEP 2 to apply custom phylonames
+# for any species that need overrides.
+#
+# ============================================================================
+
+# ============================================================================
+# PROJECT SETTINGS (EDIT THESE)
+# ============================================================================
+
+project:
+  # Your project name (used in output file naming)
+  # Example: "ctenophore_study", "mollusc_comparative", "my_project"
+  name: "my_project"
+
+  # Path to your species list file
+  # This file should contain one species per line in Genus_species format
+  # Lines starting with # are treated as comments
+  species_list: "INPUT_user/species_list.txt"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory for generated files
+  # The workflow will create subdirectories here
+  base_dir: "OUTPUT_pipeline"
+
+  # Location for files shared with other subprojects
+  # Your final mapping file will be placed here
+  shared_dir: "output_to_input/maps"
+
+  # Mapping file name pattern
+  # {project_name} will be replaced with your project name above
+  mapping_filename: "{project_name}_map-genus_species_X_phylonames.tsv"
+
+# ============================================================================
+# NCBI TAXONOMY SETTINGS
+# ============================================================================
+
+ncbi_taxonomy:
+  # Whether to download fresh taxonomy on each run
+  # Set to false to use existing database (faster)
+  # Set to true to always get the latest NCBI taxonomy
+  force_download: false
+
+  # NCBI FTP URL for taxonomy download
+  # (Usually no need to change this)
+  download_url: "ftp://ftp.ncbi.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz"
+
+  # Versioned database directory pattern
+  # {timestamp} will be replaced with download date/time (YYYYMMDD_HHMMSS)
+  database_dir_pattern: "database-ncbi_taxonomy_{timestamp}"
+
+# ============================================================================
+# PHYLONAME GENERATION SETTINGS
+# ============================================================================
+
+phylonames:
+  # Generate both phyloname formats:
+  # - phyloname: Kingdom_Phylum_Class_Order_Family_Genus_species
+  # - phyloname_taxonid: Kingdom_Phylum_Class_Order_Family_Genus_species___taxonID
+  generate_both_formats: true
+
+  # Species not found in NCBI taxonomy are NEVER dropped.
+  # They receive NOTINNCBI placeholder phylonames and are included in the output.
+  # Use STEP 2 to provide proper phylonames for these species.
+
+  # Characters to replace in phylonames (these cause problems in filenames)
+  # These are replaced with underscores
+  problematic_characters:
+    - "("
+    - ")"
+    - "["
+    - "]"
+    - "/"
+    - "."
+    - "'"
+    - ":"
+    - "-"
+
+# ============================================================================
+# SLURM SETTINGS (FOR HPC USERS)
+# ============================================================================
+
+slurm:
+  # Enable SLURM job submission
+  # Set to true if running on an HPC cluster
+  enabled: false
+
+  # SLURM account to charge
+  account: "your_account"
+
+  # SLURM Quality of Service
+  qos: "your_qos"
+
+  # Resource allocation
+  memory: "8gb"
+  time: "2:00:00"
+  cpus: 2
+
+# ============================================================================
+# LOGGING SETTINGS
+# ============================================================================
+
+logging:
+  # Log file location
+  log_dir: "OUTPUT_pipeline/logs"
+
+  # Logging level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+
+  # Include timestamps in log messages
+  include_timestamps: true
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# PHYLONAME FORMAT EXAMPLES:
+#
+# Standard phyloname (used in most analyses):
+#   Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens
+#
+# Extended phyloname_taxonid (used for file naming):
+#   Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606
+#
+# NUMBERED CLADES (e.g., Kingdom6555, Family1426):
+#
+# NCBI Taxonomy is both INCOMPLETE and represents only ONE possible hypothesis
+# about phylogenetic history. When NCBI lacks data for a taxonomic level,
+# GIGANTIC assigns numbered identifiers - these are NOT from NCBI but are
+# GIGANTIC's unbiased, neutral way to fill gaps while preserving phylogenetic
+# information based on shared ancestry.
+#
+# Species sharing the same "first named clade below" get the same number,
+# grouping related species together despite missing higher taxonomy.
+#
+# Example: All choanoflagellates might share Kingdom6555 and Phylum6554 because
+# they all have "Choanoflagellata" as their first named clade below those levels.
+#
+# If you see numbered clades and want meaningful names, use STEP 2
+# to provide custom phylonames based on current literature or alternative
+# phylogenetic hypotheses.
+#
+# NOTINNCBI SPECIES (species not in NCBI taxonomy at all):
+#
+# Some species may not appear in NCBI's taxonomy database (recently described,
+# non-standard spelling, or from specialized databases). These species are
+# NEVER dropped from the output. Instead, they receive placeholder phylonames:
+#
+#   Chromosphaera_perkinsii -> NOTINNCBI_NOTINNCBI_NOTINNCBI_NOTINNCBI_NOTINNCBI_Chromosphaera_perkinsii
+#
+# The NOTINNCBI markers make these species clearly identifiable. To provide
+# proper phylonames for NOTINNCBI species, use STEP 2 to override the
+# placeholders with real taxonomy.
+#
+# SPECIES LIST FORMAT:
+#
+# Your species_list.txt should look like:
+#   # My project species (comments start with #)
+#   Homo_sapiens
+#   Aplysia_californica
+#   Octopus_bimaculoides
+#
+# Use underscores between genus and species (not spaces).
+#

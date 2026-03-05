@@ -23,7 +23,7 @@ Lists which species tree structure(s) to analyze for origin-conservation-loss.
 
 2. Edit structure_manifest.tsv to list desired structure IDs (one per line)
 
-3. Edit ocl_config.yaml to set:
+3. Edit START_HERE-user_config.yaml to set:
    - `run_label` for this exploration
    - `orthogroup_tool` matching your input data
    - `orthogroups_dir` pointing to the correct BLOCK

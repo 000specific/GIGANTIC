@@ -68,7 +68,7 @@ gene_sizes/
         ├── README.md                  # Quick start guide
         ├── RUN-workflow.sh            # Run locally
         ├── RUN-workflow.sbatch        # Run on SLURM
-        ├── gene_sizes_config.yaml     # User configuration
+        ├── START_HERE-user_config.yaml     # User configuration
         ├── INPUT_user/                # User-provided gene structure TSV files
         ├── OUTPUT_pipeline/           # Workflow outputs
         └── ai/                        # Nextflow pipeline and scripts
@@ -96,7 +96,7 @@ Also provide the GIGANTIC species list in `INPUT_user/gigantic_species_list.txt`
 ### Step 2: Review Configuration
 ```bash
 cd BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes/
-# Edit gene_sizes_config.yaml to verify input paths
+# Edit START_HERE-user_config.yaml to verify input paths
 ```
 
 ### Step 3: Run the Pipeline

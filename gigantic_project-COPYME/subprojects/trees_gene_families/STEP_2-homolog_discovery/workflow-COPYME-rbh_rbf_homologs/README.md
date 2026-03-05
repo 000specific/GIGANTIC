@@ -57,10 +57,10 @@ cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_02-rbh_rbf_homologs
 **Configure your run:**
 ```bash
 # Edit the configuration file - set gene_family name and rgs_file path
-nano rbh_rbf_homologs_config.yaml
+nano START_HERE-user_config.yaml
 ```
 
-**Example rbh_rbf_homologs_config.yaml settings:**
+**Example START_HERE-user_config.yaml settings:**
 ```yaml
 gene_family:
   name: "innexin_pannexin"
@@ -108,7 +108,7 @@ workflow-COPYME-rbh_rbf_homologs/
 ├── README.md                              # This file
 ├── RUN-workflow.sh               # Local runner (calls NextFlow)
 ├── RUN-workflow.sbatch           # SLURM wrapper
-├── rbh_rbf_homologs_config.yaml          # User-editable configuration
+├── START_HERE-user_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   ├── <rgs_file>.aa                      # RGS FASTA for this gene family
 │   ├── species_keeper_list.tsv            # Species to keep in final output

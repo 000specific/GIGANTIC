@@ -12,7 +12,7 @@
 ## Quick Start
 
 ```bash
-vi build_annotation_database_config.yaml
+vi build_START_HERE-user_config.yaml
 bash RUN-workflow.sh
 ```
 
@@ -37,7 +37,7 @@ bash RUN-workflow.sh
 
 ## Key Configuration
 
-- `annotation_database_config.yaml` - Set species set name, GO OBO URL, proteomes directory, clade comparisons
+- `START_HERE-user_config.yaml` - Set species set name, GO OBO URL, proteomes directory, clade comparisons
 - `ai/nextflow.config` - Set `species_set_name`, `proteomes_dir`, resource allocations
 - Pipeline auto-discovers which tool BLOCKs have been completed (handles partial annotation sets)
 

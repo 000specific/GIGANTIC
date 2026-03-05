@@ -13,7 +13,7 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Edit diamond_ncbi_nr_config.yaml with your DIAMOND database path
+# 1. Edit START_HERE-user_config.yaml with your DIAMOND database path
 # 2. Create INPUT_user/proteome_manifest.tsv with your species and proteome paths
 #    (in this workflow directory)
 #
@@ -146,7 +146,7 @@ if [ ! -f "INPUT_user/proteome_manifest.tsv" ]; then
 fi
 
 # Check for DIAMOND database in config
-CONFIG_FILE="diamond_ncbi_nr_config.yaml"
+CONFIG_FILE="START_HERE-user_config.yaml"
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "ERROR: Configuration file not found: ${CONFIG_FILE}"
     exit 1

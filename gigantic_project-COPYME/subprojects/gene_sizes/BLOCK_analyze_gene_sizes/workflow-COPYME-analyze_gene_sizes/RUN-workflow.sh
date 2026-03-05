@@ -15,9 +15,9 @@
 #
 # BEFORE RUNNING:
 # 1. Provide per-species gene structure TSV files in INPUT_user/
-#    (see gene_sizes_config.yaml for format details)
+#    (see START_HERE-user_config.yaml for format details)
 # 2. Copy or symlink the GIGANTIC species list to INPUT_user/gigantic_species_list.txt
-# 3. Edit gene_sizes_config.yaml to verify paths
+# 3. Edit START_HERE-user_config.yaml to verify paths
 # 4. (Optional) Set proteome_dir in config for GIGANTIC ID linkage
 #
 # FOR SLURM CLUSTERS:
@@ -85,9 +85,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "gene_sizes_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: gene_sizes_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
@@ -96,7 +96,7 @@ echo "  [OK] Configuration file found"
 if [ ! -d "INPUT_user" ]; then
     echo "ERROR: INPUT_user/ directory not found!"
     echo "  Create it and add per-species gene structure TSV files."
-    echo "  See gene_sizes_config.yaml for format details."
+    echo "  See START_HERE-user_config.yaml for format details."
     exit 1
 fi
 echo "  [OK] INPUT_user/ directory found"

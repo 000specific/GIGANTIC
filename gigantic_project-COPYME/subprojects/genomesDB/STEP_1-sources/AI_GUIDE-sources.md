@@ -187,7 +187,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `workflow-*/INPUT_user/source_manifest.tsv` | 4-column manifest | **YES** (required) |
-| `workflow-*/ingest_sources_config.yaml` | Project name, options | **YES** (project name) |
+| `workflow-*/START_HERE-user_config.yaml` | Project name, options | **YES** (project name) |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
 | `output_to_input/proteomes/` | Symlinks for STEP_2 | No (auto-created) |
 | `user_research/` | User's personal source data | Personal space |
@@ -275,7 +275,7 @@ STEP_1-sources/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── ingest_sources_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   ├── source_manifest.tsv      # User creates this (4 columns)
     │   └── source_manifest_example.tsv

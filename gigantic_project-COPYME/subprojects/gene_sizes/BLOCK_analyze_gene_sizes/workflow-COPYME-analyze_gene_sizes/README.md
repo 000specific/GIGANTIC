@@ -35,7 +35,7 @@ ENSG00000139618	chr13	32315474	32400266	+	32316422-32316527,32319077-32319325
 ```
 
 ### 2. Configure
-Edit `gene_sizes_config.yaml` to verify input paths.
+Edit `START_HERE-user_config.yaml` to verify input paths.
 
 ### 3. Run
 ```bash

@@ -16,7 +16,7 @@
 #
 # BEFORE RUNNING:
 # 1. Place your species tree (Newick format) in INPUT_user/species_tree.newick
-# 2. Edit permutations_and_features_config.yaml:
+# 2. Edit START_HERE-user_config.yaml:
 #    - Set species_set_name (e.g., "species71")
 #    - List unresolved_clades for permutation (or leave empty for single tree)
 # 3. Optionally provide clade_names.tsv in INPUT_user/
@@ -88,9 +88,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "permutations_and_features_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: permutations_and_features_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"

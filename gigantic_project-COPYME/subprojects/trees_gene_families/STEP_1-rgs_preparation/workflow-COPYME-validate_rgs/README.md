@@ -43,10 +43,10 @@ cp -r workflow-COPYME-validate_rgs workflow-RUN_02-validate_rgs
 **Configure your run:**
 ```bash
 # Edit the configuration file - set gene_family name and rgs_file path
-nano rgs_config.yaml
+nano START_HERE-user_config.yaml
 ```
 
-**Example rgs_config.yaml settings:**
+**Example START_HERE-user_config.yaml settings:**
 ```yaml
 gene_family:
   name: "innexin_pannexin"
@@ -86,7 +86,7 @@ workflow-COPYME-validate_rgs/
 ├── README.md                              # This file
 ├── RUN-workflow.sh                    # Local runner
 ├── RUN-workflow.sbatch                # SLURM wrapper
-├── rgs_config.yaml                        # Configuration
+├── START_HERE-user_config.yaml                        # Configuration
 ├── INPUT_user/                            # User-provided RGS file
 ├── OUTPUT_pipeline/                       # Workflow outputs (flat structure)
 │   └── 1-output/                          # Validated RGS + report

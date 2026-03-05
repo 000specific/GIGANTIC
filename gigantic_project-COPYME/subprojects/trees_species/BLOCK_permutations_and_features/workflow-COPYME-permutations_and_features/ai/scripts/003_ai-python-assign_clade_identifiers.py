@@ -231,7 +231,7 @@ args = parse_arguments()
 workflow_dir = Path( args.workflow_dir )
 
 # Read config
-config_path = workflow_dir / 'permutations_and_features_config.yaml'
+config_path = workflow_dir / 'START_HERE-user_config.yaml'
 with open( config_path, 'r' ) as config_file:
     config = yaml.safe_load( config_file )
 

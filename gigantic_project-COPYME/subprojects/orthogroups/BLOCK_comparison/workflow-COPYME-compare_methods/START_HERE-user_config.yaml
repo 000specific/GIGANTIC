@@ -1,0 +1,22 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Comparison pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# Cross-Method Comparison Pipeline Configuration
+# =============================================================================
+
+# Paths to subproject-root output_to_input/BLOCK_*/ directories (relative to workflow directory)
+orthofinder_dir: "../../output_to_input/BLOCK_orthofinder"
+orthohmm_dir: "../../output_to_input/BLOCK_orthohmm"
+broccoli_dir: "../../output_to_input/BLOCK_broccoli"

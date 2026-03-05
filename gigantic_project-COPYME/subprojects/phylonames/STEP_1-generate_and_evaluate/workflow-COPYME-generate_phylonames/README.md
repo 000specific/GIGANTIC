@@ -6,7 +6,7 @@ This is **STEP_1** of the 2-STEP phylonames architecture. It downloads NCBI taxo
 
 ## Quick Start
 
-1. Edit `phylonames_config.yaml` with your project name
+1. Edit `START_HERE-user_config.yaml` with your project name
 2. Put your species list in `INPUT_user/species_list.txt` (one species per line, e.g., `Homo_sapiens`)
 3. Run the workflow:
    - **Local**: `bash RUN-workflow.sh`

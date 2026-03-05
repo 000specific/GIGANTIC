@@ -61,7 +61,7 @@ workflow-COPYME-generate_phylonames/
 ├── README.md                    # Quick start guide
 ├── RUN-workflow.sh               # Local: bash RUN-workflow.sh
 ├── RUN-workflow.sbatch           # SLURM: sbatch RUN-workflow.sbatch
-├── phylonames_config.yaml       # Project name and options
+├── START_HERE-user_config.yaml       # Project name and options
 │
 ├── INPUT_user/                  # Species list resolved at runtime (see override design below)
 │   └── species_list.txt         # Species to process (override or auto-copied default)
@@ -113,7 +113,7 @@ Octopus_bimaculoides
 
 ### Step 2: Set Project Name
 
-Edit `phylonames_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 ```yaml
 project:
   name: "my_project"  # Change this

@@ -46,7 +46,7 @@ gene_sizes/
     └── workflow-COPYME-analyze_gene_sizes/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        ├── gene_sizes_config.yaml
+        ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         ├── OUTPUT_pipeline/
         └── ai/
@@ -159,7 +159,7 @@ linkage to the full GIGANTIC identifier system.
 | Error | Cause | Solution |
 |-------|-------|----------|
 | No species have valid gene structure data | INPUT_user/ is empty or files have wrong format | Add Genus_species-gene_coordinates.tsv files to INPUT_user/ |
-| Species list not found | Wrong path in config | Verify gigantic_species_list path in gene_sizes_config.yaml |
+| Species list not found | Wrong path in config | Verify gigantic_species_list path in START_HERE-user_config.yaml |
 | Zero genes extracted for a species | TSV file has wrong column format | Check TSV matches expected 6-column format with CDS_Intervals |
 | Protein size = 0 | CDS intervals are empty or invalid | Verify CDS_Intervals column has valid start-end pairs |
 | Many species SKIPPED_INCOMPLETE | Files exist but validation fails | Check field counts, integer values, interval format |
@@ -194,7 +194,7 @@ output_to_input/BLOCK_analyze_gene_sizes/ (symlinks for downstream subprojects)
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `gene_sizes_config.yaml` | Input paths, output settings | Yes |
+| `START_HERE-user_config.yaml` | Input paths, output settings | Yes |
 | `INPUT_user/*.tsv` | Per-species gene structure data | Yes (user creates these) |
 | `INPUT_user/gigantic_species_list.txt` | GIGANTIC species list | Yes (copy from genomesDB) |
 | `RUN-workflow.sh` | Local pipeline runner | No |

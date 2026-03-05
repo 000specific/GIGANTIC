@@ -13,7 +13,7 @@ Builds a standardized, integrated annotation database from all completed tool BL
 ## Usage
 
 ```bash
-vi annotation_database_config.yaml   # Set species set name, proteomes path
+vi START_HERE-user_config.yaml   # Set species set name, proteomes path
 vi ai/nextflow.config                # Set species_set_name, proteomes_dir
 bash RUN-workflow.sh                 # Local
 sbatch RUN-workflow.sbatch           # SLURM

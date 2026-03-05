@@ -78,7 +78,7 @@ workflow-COPYME-validate_rgs/
 ├── README.md                              # This file
 ├── RUN-workflow.sh                    # Local runner
 ├── RUN-workflow.sbatch                # SLURM wrapper
-├── rgs_config.yaml                        # Configuration
+├── START_HERE-user_config.yaml                        # Configuration
 ├── INPUT_user/                            # User-provided RGS files
 │   └── rgs_manifest.tsv                   # Gene family manifest
 ├── OUTPUT_pipeline/                       # Workflow outputs

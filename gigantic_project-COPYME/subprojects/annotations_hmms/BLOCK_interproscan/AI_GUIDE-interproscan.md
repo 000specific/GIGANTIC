@@ -50,7 +50,7 @@ The database builder (BLOCK_build_annotation_database) parses column 4 (analysis
 
 ## Configuration
 
-Edit `workflow-COPYME-run_interproscan/interproscan_config.yaml`:
+Edit `workflow-COPYME-run_interproscan/START_HERE-user_config.yaml`:
 - `interproscan_install_path`: Path to InterProScan installation
 - `chunk_size`: Sequences per chunk (default: 1000)
 - `cpus_per_job`: Threads per InterProScan run (default: 16)

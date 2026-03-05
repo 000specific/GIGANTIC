@@ -53,7 +53,7 @@ cd workflow-RUN_01-phylogenetic_analysis
 **Configure your run:**
 ```bash
 # Edit the configuration file with your project settings
-nano phylogenetic_analysis_config.yaml
+nano START_HERE-user_config.yaml
 ```
 
 **Prepare input files:**
@@ -63,7 +63,7 @@ nano INPUT_user/rgs_manifest.tsv
 ```
 
 **Choose tree-building methods:**
-Edit `phylogenetic_analysis_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 ```yaml
 tree_methods:
   fasttree: true        # Fast ML (default)
@@ -101,7 +101,7 @@ workflow-COPYME-phylogenetic_analysis/
 ├── README.md                              # This file
 ├── RUN-workflow.sh           # Local runner (calls NextFlow)
 ├── RUN-workflow.sbatch       # SLURM wrapper
-├── phylogenetic_analysis_config.yaml      # User-editable configuration
+├── START_HERE-user_config.yaml      # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   └── rgs_manifest.tsv                   # Gene family names
 ├── OUTPUT_pipeline/                       # Workflow outputs (per gene family)

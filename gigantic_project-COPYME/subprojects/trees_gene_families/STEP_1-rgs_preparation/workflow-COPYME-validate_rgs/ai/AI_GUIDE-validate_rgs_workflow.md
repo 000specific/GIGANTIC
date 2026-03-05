@@ -46,7 +46,7 @@ workflow-COPYME-validate_rgs/
 ├── README.md
 ├── RUN-workflow.sh            # Local: bash RUN-workflow.sh
 ├── RUN-workflow.sbatch        # SLURM: sbatch RUN-workflow.sbatch
-├── rgs_config.yaml                # User configuration
+├── START_HERE-user_config.yaml                # User configuration
 │
 ├── INPUT_user/                    # User places RGS file here
 │   ├── rgs_species_map.tsv        # Short name → Genus_species (if needed)
@@ -87,7 +87,7 @@ cd workflow-RUN_01-validate_rgs/
 
 ### Step 2: Configure
 
-Edit `rgs_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 ```yaml
 gene_family:
   name: "innexin_pannexin"
@@ -150,12 +150,12 @@ cat OUTPUT_pipeline/1-output/1_ai-log-validate_rgs-*.log
 
 ### "RGS file not found"
 
-**Cause**: Path in rgs_config.yaml doesn't match actual file location
+**Cause**: Path in START_HERE-user_config.yaml doesn't match actual file location
 
 **Fix**:
 ```bash
 ls INPUT_user/
-# Update rgs_config.yaml with correct filename
+# Update START_HERE-user_config.yaml with correct filename
 ```
 
 ### Validation fails

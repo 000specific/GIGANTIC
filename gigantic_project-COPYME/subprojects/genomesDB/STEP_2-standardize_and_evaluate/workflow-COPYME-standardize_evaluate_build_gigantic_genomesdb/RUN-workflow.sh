@@ -13,7 +13,7 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Edit standardize_evaluate_config.yaml with your project settings
+# 1. Edit START_HERE-user_config.yaml with your project settings
 # 2. Ensure STEP_1-sources is complete (provides proteomes, genomes, annotations)
 # 3. Ensure phylonames subproject is complete (provides species naming)
 # 4. Ensure INPUT_user/busco_lineages.txt exists for BUSCO evaluation
@@ -95,16 +95,16 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "standardize_evaluate_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: standardize_evaluate_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
 
 # Check BUSCO configuration
 # Read busco.enabled from config (defaults to true if not found)
-BUSCO_ENABLED=$(grep -A1 "^busco:" standardize_evaluate_config.yaml | grep "enabled:" | awk '{print $2}' | tr -d '[:space:]')
+BUSCO_ENABLED=$(grep -A1 "^busco:" START_HERE-user_config.yaml | grep "enabled:" | awk '{print $2}' | tr -d '[:space:]')
 if [ -z "${BUSCO_ENABLED}" ]; then
     BUSCO_ENABLED="true"
 fi
@@ -116,7 +116,7 @@ if [ "${BUSCO_ENABLED}" = "true" ]; then
         echo ""
         echo "Either:"
         echo "  1. Create INPUT_user/busco_lineages.txt with BUSCO lineage assignments"
-        echo "  2. Set busco.enabled: false in standardize_evaluate_config.yaml to skip BUSCO"
+        echo "  2. Set busco.enabled: false in START_HERE-user_config.yaml to skip BUSCO"
         exit 1
     fi
     echo "  [OK] BUSCO lineage manifest found"

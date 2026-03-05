@@ -143,7 +143,7 @@ annotations_X_ocl/
     └── workflow-COPYME-ocl_analysis/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        ├── ocl_config.yaml
+        ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   └── structure_manifest.tsv
         ├── OUTPUT_pipeline/
@@ -188,7 +188,7 @@ This is used by:
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "Config file not found" | Missing ocl_config.yaml | Verify config file exists in workflow directory |
+| "Config file not found" | Missing START_HERE-user_config.yaml | Verify config file exists in workflow directory |
 | "Structure manifest empty" | No structure IDs in manifest | Add structure IDs (001-105) to INPUT_user/structure_manifest.tsv |
 | "Phylogenetic blocks file not found" | trees_species not run | Run trees_species subproject first |
 | "Annotations directory not found" | annotations_hmms not run | Run annotations_hmms subproject with matching database |
@@ -202,7 +202,7 @@ This is used by:
 
 | File | User Edits? | Purpose |
 |------|------------|---------|
-| `ocl_config.yaml` | Yes | All configuration: run_label, database, subtypes, paths |
+| `START_HERE-user_config.yaml` | Yes | All configuration: run_label, database, subtypes, paths |
 | `INPUT_user/structure_manifest.tsv` | Yes | Which tree structures to analyze |
 | `RUN-workflow.sh` | No | Launches pipeline, creates symlinks |
 | `RUN-workflow.sbatch` | Yes (account/qos) | SLURM wrapper for cluster submission |

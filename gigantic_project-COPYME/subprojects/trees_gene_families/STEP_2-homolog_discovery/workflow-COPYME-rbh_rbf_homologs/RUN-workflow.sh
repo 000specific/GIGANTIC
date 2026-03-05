@@ -13,7 +13,7 @@
 # USAGE:
 #   1. Copy the template:
 #      cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
-#   2. Edit rbh_rbf_homologs_config.yaml (set gene_family name and rgs_file)
+#   2. Edit START_HERE-user_config.yaml (set gene_family name and rgs_file)
 #   3. Place your RGS file and species keeper list in INPUT_user/
 #   4. Run: bash RUN-workflow.sh
 #
@@ -69,9 +69,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "rbh_rbf_homologs_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: rbh_rbf_homologs_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
@@ -121,7 +121,7 @@ echo ""
 echo "Creating symlinks for downstream workflows..."
 
 # Extract gene family name from config
-GENE_FAMILY=$(grep -A1 "^gene_family:" rbh_rbf_homologs_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
+GENE_FAMILY=$(grep -A1 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
 # --- Subproject-root output_to_input ---

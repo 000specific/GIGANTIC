@@ -8,7 +8,7 @@
  *          BLAST methodology for a SINGLE gene family.
  *
  * Usage: Each workflow copy processes ONE gene family. Copy the template,
- *        configure rbh_rbf_homologs_config.yaml, then run.
+ *        configure START_HERE-user_config.yaml, then run.
  *
  * Process Overview:
  *    1: List BLAST databases
@@ -627,10 +627,10 @@ workflow {
     def workflow_dir = "${projectDir}/.."
 
     if ( !params.gene_family ) {
-        error "gene_family not set in config! Edit rbh_rbf_homologs_config.yaml."
+        error "gene_family not set in config! Edit START_HERE-user_config.yaml."
     }
     if ( !params.rgs_file ) {
-        error "rgs_file not set in config! Edit rbh_rbf_homologs_config.yaml."
+        error "rgs_file not set in config! Edit START_HERE-user_config.yaml."
     }
     if ( !params.blast_databases_dir ) {
         error "blast_databases_dir must be set in config. This is the path to BLAST protein databases."
@@ -645,7 +645,7 @@ workflow {
     // ---- Resolve RGS file path ----
     def rgs_path = file( "${workflow_dir}/${params.rgs_file}" )
     if ( !rgs_path.exists() ) {
-        error "RGS file not found: ${params.rgs_file}\nExpected at: ${rgs_path}\nEnsure the RGS file path is correct in rbh_rbf_homologs_config.yaml."
+        error "RGS file not found: ${params.rgs_file}\nExpected at: ${rgs_path}\nEnsure the RGS file path is correct in START_HERE-user_config.yaml."
     }
 
     def species_keeper_path = file( "${workflow_dir}/${params.species_keeper_list}" )

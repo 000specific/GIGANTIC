@@ -12,7 +12,7 @@ Runs Broccoli orthogroup detection with phylogenetic analysis and network-based 
 ## Usage
 
 ```bash
-vi broccoli_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh
 # Or: sbatch RUN-workflow.sbatch
 ```

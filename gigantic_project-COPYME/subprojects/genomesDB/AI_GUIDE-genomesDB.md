@@ -329,7 +329,7 @@ ls output_to_input/STEP_4-create_final_species_set/
 | `STEP_1-sources/workflow-*/INPUT_user/source_manifest.tsv` | List of genomes/proteomes to ingest | **YES** |
 | `STEP_2-standardize_and_evaluate/workflow-*/INPUT_user/` | (from STEP_1) | No |
 | `STEP_3-databases/workflow-*/INPUT_user/` | (from STEP_2) | No |
-| `STEP_4-create_final_species_set/workflow-*/final_species_set_config.yaml` | Paths to STEP_2/STEP_3 outputs | **YES** |
+| `STEP_4-create_final_species_set/workflow-*/START_HERE-user_config.yaml` | Paths to STEP_2/STEP_3 outputs | **YES** |
 | `STEP_4-create_final_species_set/workflow-*/INPUT_user/selected_species.txt` | Species selection (optional) | **YES** (optional) |
 | `output_to_input/STEP_4-create_final_species_set/` | Final species set | No |
 | `upload_to_server/upload_manifest.tsv` | What to share | **YES** |

@@ -23,7 +23,7 @@ This guide focuses on running the workflow.
 
 ### Prerequisites
 1. Species tree in Newick format with CXXX_Name labels placed in `INPUT_user/species_tree.newick`
-2. `permutations_and_features_config.yaml` edited with:
+2. `START_HERE-user_config.yaml` edited with:
    - `species_set_name` (e.g., "species71")
    - `unresolved_clades` list (clade names matching the Newick tree)
 3. Conda environment `ai_gigantic_trees_species` installed (for Script 008 visualization)
@@ -128,7 +128,7 @@ Script 008 (visualization) is typically the slowest process due to ete3 renderin
 
 | File | User Edits? | Purpose |
 |------|-------------|---------|
-| `permutations_and_features_config.yaml` | Yes | Species set name, unresolved clades, paths |
+| `START_HERE-user_config.yaml` | Yes | Species set name, unresolved clades, paths |
 | `INPUT_user/species_tree.newick` | Yes | Annotated species tree (CXXX_Name:branch_length format) |
 | `INPUT_user/clade_names.tsv` | Optional | Clade ID to human-readable name mapping |
 | `RUN-workflow.sh` | No | Local runner |

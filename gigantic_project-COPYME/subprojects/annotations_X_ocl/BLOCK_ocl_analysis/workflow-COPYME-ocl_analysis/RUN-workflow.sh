@@ -15,7 +15,7 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Edit ocl_config.yaml to set:
+# 1. Edit START_HERE-user_config.yaml to set:
 #    - run_label (e.g., "Species71_pfam")
 #    - annotation_database (pfam, gene3d, deeploc, etc.)
 #    - annogroup_subtypes (single, combo, zero)
@@ -27,7 +27,7 @@
 # This is a workflow-COPYME template. Each database exploration gets its own copy:
 #   cp -r workflow-COPYME-ocl_analysis workflow-RUN_01-ocl_analysis
 #   cd workflow-RUN_01-ocl_analysis
-#   # Edit ocl_config.yaml for this specific database
+#   # Edit START_HERE-user_config.yaml for this specific database
 #   bash RUN-workflow.sh
 #
 # FOR SLURM CLUSTERS:
@@ -64,16 +64,16 @@ cd "${SCRIPT_DIR}"
 # Read Configuration
 # ============================================================================
 
-if [ ! -f "ocl_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: ocl_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 
 # Extract configuration values
-RUN_LABEL=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['run_label'])")
-ANNOTATION_DATABASE=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['annotation_database'])")
-SPECIES_SET=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['species_set_name'])")
+RUN_LABEL=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['run_label'])")
+ANNOTATION_DATABASE=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['annotation_database'])")
+SPECIES_SET=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['species_set_name'])")
 
 echo "Configuration:"
 echo "  Run Label           : ${RUN_LABEL}"
@@ -123,7 +123,7 @@ fi
 echo "  [OK] INPUT_user/ directory found"
 
 # Check structure manifest exists
-MANIFEST=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['inputs']['structure_manifest'])")
+MANIFEST=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['inputs']['structure_manifest'])")
 if [ ! -f "${MANIFEST}" ]; then
     echo "ERROR: Structure manifest not found: ${MANIFEST}"
     echo "  Create the manifest with structure IDs to analyze."

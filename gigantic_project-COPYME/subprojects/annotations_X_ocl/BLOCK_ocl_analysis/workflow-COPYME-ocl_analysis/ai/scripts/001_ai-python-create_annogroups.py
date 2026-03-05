@@ -32,7 +32,7 @@ Outputs (to 1-output/):
   - Annogroup subtypes manifest
 
 Usage:
-    python 001_ai-python-create_annogroups.py --structure_id 001 --config ../../ocl_config.yaml --output_dir OUTPUT_pipeline
+    python 001_ai-python-create_annogroups.py --structure_id 001 --config ../../START_HERE-user_config.yaml --output_dir OUTPUT_pipeline
 """
 
 import sys
@@ -67,7 +67,7 @@ def parse_arguments():
         '--config',
         type = str,
         required = True,
-        help = 'Path to ocl_config.yaml'
+        help = 'Path to START_HERE-user_config.yaml'
     )
 
     parser.add_argument(

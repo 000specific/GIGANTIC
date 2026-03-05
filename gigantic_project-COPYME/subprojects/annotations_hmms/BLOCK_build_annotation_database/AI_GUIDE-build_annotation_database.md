@@ -82,7 +82,7 @@ Parsers 003-007 can optionally identify proteins with zero annotations from each
 
 ## Configuration
 
-Edit `workflow-COPYME-build_annotation_database/annotation_database_config.yaml`:
+Edit `workflow-COPYME-build_annotation_database/START_HERE-user_config.yaml`:
 - `go_ontology_url`: GO OBO download URL
 - `go_ontology_cache_days`: Days before re-downloading (default: 30)
 - `clade_comparison`: Groups for phylogenetic pattern analysis

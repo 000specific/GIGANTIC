@@ -12,7 +12,7 @@
 ## Quick Start
 
 ```bash
-vi interproscan_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh
 ```
 
@@ -25,7 +25,7 @@ bash RUN-workflow.sh
 
 ## Key Configuration
 
-- `interproscan_config.yaml` - Set InterProScan install path, database path, chunk size, and species list
+- `START_HERE-user_config.yaml` - Set InterProScan install path, database path, chunk size, and species list
 - `INPUT_user/` - Proteome FASTA files or manifest pointing to genomesDB proteomes
 
 ## Verification Commands

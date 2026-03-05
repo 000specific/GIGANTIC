@@ -29,7 +29,7 @@ cd workflow-RUN_01-create_final_species_set
 
 ### 2. Configure input paths
 
-Edit `final_species_set_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 ```yaml
 inputs:
@@ -140,7 +140,7 @@ cat OUTPUT_pipeline/2-output/2_ai-log-copy_selected_files.log
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "Config file not found" | `final_species_set_config.yaml` missing | Ensure you copied the template correctly |
+| "Config file not found" | `START_HERE-user_config.yaml` missing | Ensure you copied the template correctly |
 | "NextFlow not found" | Conda environment not activated | Run `module load conda && conda activate ai_gigantic_genomesdb` |
 | "No proteomes found at path" | Wrong path in config for `step2_proteomes` | Verify the path exists: `ls <path_from_config>` |
 | "No BLAST databases found at path" | Wrong path in config for `step3_blastp` | Verify the path exists: `ls <path_from_config>` |

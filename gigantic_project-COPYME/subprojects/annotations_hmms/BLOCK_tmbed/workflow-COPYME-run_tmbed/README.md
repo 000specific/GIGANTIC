@@ -11,7 +11,7 @@ Runs tmbed transmembrane topology prediction across all genomesDB proteomes. tmb
 ## Usage
 
 ```bash
-vi tmbed_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh         # Local
 sbatch RUN-workflow.sbatch   # SLURM
 ```

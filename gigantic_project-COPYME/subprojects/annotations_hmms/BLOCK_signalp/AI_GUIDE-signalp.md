@@ -36,7 +36,7 @@ TSV output with columns including: protein ID, prediction (SP/NO_SP), signal pep
 
 ## Configuration
 
-Edit `workflow-COPYME-run_signalp/signalp_config.yaml`:
+Edit `workflow-COPYME-run_signalp/START_HERE-user_config.yaml`:
 - `organism_type`: "eukarya", "gram_positive", "gram_negative", or "archaea" (default: eukarya)
 - `mode`: "slow" or "fast" (default: slow)
 

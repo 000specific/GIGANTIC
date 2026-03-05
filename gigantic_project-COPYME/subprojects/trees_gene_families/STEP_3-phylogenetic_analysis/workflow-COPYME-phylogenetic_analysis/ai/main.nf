@@ -14,7 +14,7 @@ nextflow.enable.dsl=2
 // via config.yaml.
 //
 // Usage: Each workflow copy processes ONE gene family. Copy the template,
-//        configure phylogenetic_analysis_config.yaml, then run.
+//        configure START_HERE-user_config.yaml, then run.
 //
 // PROCESSES:
 // 1. prepare_alignment_input       - Stage AGS sequences from STEP_2
@@ -36,7 +36,7 @@ import org.yaml.snakeyaml.Yaml
 
 def load_config() {
     def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../phylogenetic_analysis_config.yaml" )
+    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
     if ( !config_file.exists() ) {
         error "Configuration file not found: ${config_file}"
     }
@@ -534,12 +534,12 @@ workflow {
 
     // Validate critical parameters
     if ( !params.gene_family ) {
-        error "gene_family not set in config! Edit phylogenetic_analysis_config.yaml."
+        error "gene_family not set in config! Edit START_HERE-user_config.yaml."
     }
 
     // Validate at least one tree method is enabled
     if ( !params.run_fasttree && !params.run_iqtree && !params.run_veryfasttree && !params.run_phylobayes ) {
-        error "No tree-building methods enabled! Enable at least one in phylogenetic_analysis_config.yaml (tree_methods section)."
+        error "No tree-building methods enabled! Enable at least one in START_HERE-user_config.yaml (tree_methods section)."
     }
 
     // Create single-item channel for the gene family

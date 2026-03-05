@@ -42,7 +42,7 @@ cp -r BLOCK_orthofinder/workflow-COPYME-run_orthofinder BLOCK_orthofinder/workfl
 cd BLOCK_orthofinder/workflow-RUN_01-run_orthofinder/
 
 # 2. Edit configuration
-vi orthofinder_config.yaml
+vi START_HERE-user_config.yaml
 
 # 3. Run (conda environment is activated automatically by the script)
 bash RUN-workflow.sh       # Local
@@ -90,7 +90,7 @@ orthogroups/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── orthofinder_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_orthohmm/                      # OrthoHMM project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
@@ -98,7 +98,7 @@ orthogroups/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── orthohmm_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_broccoli/                      # Broccoli project (6 scripts)
 │   ├── AI_GUIDE-broccoli.md
@@ -106,7 +106,7 @@ orthogroups/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── broccoli_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 └── BLOCK_comparison/                    # Cross-method comparison (2 scripts)
     ├── AI_GUIDE-comparison.md
@@ -114,7 +114,7 @@ orthogroups/
         ├── ai/ (main.nf, nextflow.config, scripts/)
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        └── comparison_config.yaml
+        └── START_HERE-user_config.yaml
 ```
 
 ---

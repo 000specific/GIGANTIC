@@ -317,7 +317,7 @@ Examples:
         print( "" )
         print( "  1. PROVIDE USER PHYLONAMES (recommended):" )
         print( "     Create a user_phylonames file and set user_phylonames in" )
-        print( "     phylonames_config.yaml. Script 004 will apply your phylonames" )
+        print( "     START_HERE-user_config.yaml. Script 004 will apply your phylonames" )
         print( "     and mark overridden clades as UNOFFICIAL." )
         print( "" )
         print( "  2. CHECK SPECIES SPELLING:" )

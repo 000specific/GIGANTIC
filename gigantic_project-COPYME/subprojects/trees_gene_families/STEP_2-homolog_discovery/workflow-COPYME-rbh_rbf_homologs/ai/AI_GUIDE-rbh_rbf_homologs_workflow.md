@@ -34,7 +34,7 @@ workflow-COPYME-rbh_rbf_homologs/
 ├── README.md
 ├── RUN-workflow.sh         # Local: bash RUN-workflow.sh
 ├── RUN-workflow.sbatch     # SLURM: sbatch RUN-workflow.sbatch
-├── rbh_rbf_homologs_config.yaml    # User configuration
+├── START_HERE-user_config.yaml    # User configuration
 │
 ├── INPUT_user/
 │   ├── species_keeper_list.tsv     # One Genus_species per line (required)
@@ -98,7 +98,7 @@ cd workflow-RUN_01-rbh_rbf_homologs/
 
 ### Step 2: Configure
 
-Edit `rbh_rbf_homologs_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 ```yaml
 gene_family:
   name: "innexin_pannexin"

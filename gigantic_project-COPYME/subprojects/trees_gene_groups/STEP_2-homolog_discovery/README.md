@@ -11,7 +11,7 @@ Takes a Reference Gene Set (RGS) of curated protein sequences and finds homologs
 ```bash
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
 cd workflow-RUN_01-rbh_rbf_homologs/
-# Edit rbh_rbf_homologs_config.yaml (set gene_group name, rgs_file, database paths)
+# Edit START_HERE-user_config.yaml (set gene_group name, rgs_file, database paths)
 # Place RGS file and species_keeper_list.tsv in INPUT_user/
 bash RUN-workflow.sh
 ```

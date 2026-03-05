@@ -42,7 +42,7 @@ See `INPUT_user/proteome_manifest_example.tsv` for a complete example.
 
 ### Step 2: Configure DIAMOND Settings
 
-Edit `diamond_ncbi_nr_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 ```yaml
 diamond:
@@ -101,7 +101,7 @@ cat OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv
 |-------|-------|----------|
 | "Manifest not found" | No proteome_manifest.tsv | Create in INPUT_user/ |
 | "Proteome file does not exist" | Path in manifest is wrong | Check proteome_path column, ensure files exist |
-| "DIAMOND database not found" | Config path incorrect | Edit diamond_ncbi_nr_config.yaml database path |
+| "DIAMOND database not found" | Config path incorrect | Edit START_HERE-user_config.yaml database path |
 | "diamond: command not found" | DIAMOND not in environment | Activate conda env or install DIAMOND |
 | Script 003 SLURM failures | Memory or time limits | Increase mem/time in nextflow.config |
 | No results in 4-output/ | DIAMOND search produced no hits | Check e-value threshold, verify database |

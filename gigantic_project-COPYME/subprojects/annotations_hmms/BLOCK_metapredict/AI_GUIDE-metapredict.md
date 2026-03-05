@@ -33,7 +33,7 @@ The database builder uses IDR region boundaries as coordinates (Start=region_sta
 
 ## Configuration
 
-Edit `workflow-COPYME-run_metapredict/metapredict_config.yaml`:
+Edit `workflow-COPYME-run_metapredict/START_HERE-user_config.yaml`:
 - `prediction_types`: Which predictions to run (default: disorder, idrs, plddt)
 
 ## Resource Requirements

@@ -30,7 +30,7 @@ Searches species proteomes against the NCBI non-redundant (nr) protein database 
 
 ## Configuration
 
-Edit `workflow-COPYME-diamond_ncbi_nr/diamond_ncbi_nr_config.yaml`:
+Edit `workflow-COPYME-diamond_ncbi_nr/START_HERE-user_config.yaml`:
 - `diamond.database`: Path to DIAMOND nr database (REQUIRED)
 - `diamond.evalue`: E-value threshold (default: 1e-5)
 - `diamond.max_target_sequences`: Max hits per query (default: 10)

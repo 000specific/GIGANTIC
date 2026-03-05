@@ -12,7 +12,7 @@
 ## Quick Start
 
 ```bash
-vi tmbed_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh
 ```
 
@@ -23,7 +23,7 @@ bash RUN-workflow.sh
 
 ## Key Configuration
 
-- `tmbed_config.yaml` - Set batch size, GPU settings, and species list
+- `START_HERE-user_config.yaml` - Set batch size, GPU settings, and species list
 - `INPUT_user/` - Proteome FASTA files or manifest pointing to genomesDB proteomes
 
 ## Verification Commands

@@ -57,7 +57,7 @@ cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_02-phylogenetic_analysi
 **Configure your run:**
 ```bash
 # Edit the configuration file - set gene_family name and tree methods
-nano phylogenetic_analysis_config.yaml
+nano START_HERE-user_config.yaml
 ```
 
 **Example config settings:**
@@ -100,7 +100,7 @@ workflow-COPYME-phylogenetic_analysis/
 ├── README.md                              # This file
 ├── RUN-workflow.sh           # Local runner (calls NextFlow)
 ├── RUN-workflow.sbatch       # SLURM wrapper
-├── phylogenetic_analysis_config.yaml      # User-editable configuration
+├── START_HERE-user_config.yaml      # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs (if any)
 ├── OUTPUT_pipeline/                       # Workflow outputs (flat structure)
 │   ├── 1-output/                          # Staged AGS sequences

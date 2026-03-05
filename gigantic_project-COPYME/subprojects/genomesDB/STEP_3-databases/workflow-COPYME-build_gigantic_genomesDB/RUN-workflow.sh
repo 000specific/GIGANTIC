@@ -16,7 +16,7 @@
 # BEFORE RUNNING:
 # 1. Ensure STEP_2-standardize_and_evaluate is complete
 # 2. User should have edited the species_selection_manifest.tsv (Include=YES/NO)
-# 3. Edit databases_config.yaml if needed
+# 3. Edit START_HERE-user_config.yaml if needed
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
@@ -90,9 +90,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "databases_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: databases_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"

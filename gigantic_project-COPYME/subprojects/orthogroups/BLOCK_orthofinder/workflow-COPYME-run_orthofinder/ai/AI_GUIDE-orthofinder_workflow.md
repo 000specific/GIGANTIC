@@ -11,7 +11,7 @@ conda activate ai_gigantic_orthogroups
 module load nextflow
 
 # 2. Edit configuration
-vi ../orthofinder_config.yaml
+vi ../START_HERE-user_config.yaml
 
 # 3. Run pipeline
 bash ../RUN-workflow.sh

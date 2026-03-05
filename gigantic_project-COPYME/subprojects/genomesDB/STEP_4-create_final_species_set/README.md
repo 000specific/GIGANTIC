@@ -35,7 +35,7 @@ cp -r workflow-COPYME-create_final_species_set workflow-RUN_01-create_final_spec
 cd workflow-RUN_01-create_final_species_set
 
 # 2. Edit configuration with paths to STEP_2 and STEP_3 outputs
-nano final_species_set_config.yaml
+nano START_HERE-user_config.yaml
 
 # 3. Optional: edit species selection (defaults to all species)
 nano INPUT_user/selected_species.txt
@@ -53,8 +53,8 @@ sbatch RUN-workflow.sbatch
 
 | Source | Data | Location |
 |--------|------|----------|
-| STEP_2 | Cleaned proteomes | Configured in `final_species_set_config.yaml` |
-| STEP_3 | BLAST databases | Configured in `final_species_set_config.yaml` |
+| STEP_2 | Cleaned proteomes | Configured in `START_HERE-user_config.yaml` |
+| STEP_3 | BLAST databases | Configured in `START_HERE-user_config.yaml` |
 | User | Species selection (optional) | `INPUT_user/selected_species.txt` |
 
 ---
@@ -99,7 +99,7 @@ STEP_4-create_final_species_set/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── final_species_set_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   └── selected_species.txt           # Species selection (optional)
     └── ai/

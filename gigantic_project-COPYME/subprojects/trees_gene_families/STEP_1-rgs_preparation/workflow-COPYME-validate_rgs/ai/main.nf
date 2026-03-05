@@ -13,7 +13,7 @@ nextflow.enable.dsl=2
 // downstream STEP_2 homolog discovery.
 //
 // Usage: Each workflow copy processes ONE gene family. Copy the template,
-//        configure rgs_config.yaml, then run.
+//        configure START_HERE-user_config.yaml, then run.
 //
 // PROCESSES:
 // 1. validate_rgs           - Validate RGS FASTA format, headers, duplicates
@@ -32,7 +32,7 @@ import org.yaml.snakeyaml.Yaml
 
 def load_config() {
     def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../rgs_config.yaml" )
+    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
     if ( !config_file.exists() ) {
         error "Configuration file not found: ${config_file}"
     }
@@ -128,10 +128,10 @@ workflow {
 
     // Validate critical parameters
     if ( !params.gene_family ) {
-        error "gene_family not set in config! Edit rgs_config.yaml."
+        error "gene_family not set in config! Edit START_HERE-user_config.yaml."
     }
     if ( !params.rgs_file ) {
-        error "rgs_file not set in config! Edit rgs_config.yaml."
+        error "rgs_file not set in config! Edit START_HERE-user_config.yaml."
     }
 
     // Resolve RGS file path

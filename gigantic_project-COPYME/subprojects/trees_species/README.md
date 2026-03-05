@@ -71,7 +71,7 @@ trees_species/
     └── workflow-COPYME-permutations_and_features/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        ├── permutations_and_features_config.yaml
+        ├── START_HERE-user_config.yaml
         ├── INPUT_user/                    # User provides: tree + clade names
         ├── OUTPUT_pipeline/               # Results (N-output/ per script)
         └── ai/

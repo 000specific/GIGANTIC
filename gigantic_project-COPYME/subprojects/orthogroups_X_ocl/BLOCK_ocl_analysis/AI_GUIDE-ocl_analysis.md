@@ -37,7 +37,7 @@ BLOCK_ocl_analysis/
 └── workflow-RUN_03-ocl_analysis/    # Copy for Species71 X Broccoli
 ```
 
-Each copy has its own `ocl_config.yaml` with a unique `run_label`, and outputs go to
+Each copy has its own `START_HERE-user_config.yaml` with a unique `run_label`, and outputs go to
 separate subdirectories in `output_to_input/BLOCK_ocl_analysis/{run_label}/`.
 
 ---
@@ -50,7 +50,7 @@ cp -r workflow-COPYME-ocl_analysis workflow-RUN_01-ocl_analysis
 
 # 2. Edit config for this specific run
 cd workflow-RUN_01-ocl_analysis
-vi ocl_config.yaml
+vi START_HERE-user_config.yaml
 # Set: run_label, orthogroup_tool, input paths
 
 # 3. Edit structure manifest

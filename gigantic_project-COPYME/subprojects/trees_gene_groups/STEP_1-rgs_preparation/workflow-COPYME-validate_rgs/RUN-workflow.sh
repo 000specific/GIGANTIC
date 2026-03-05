@@ -18,7 +18,7 @@
 # 1. Place RGS FASTA files in INPUT_user/
 # 2. Create INPUT_user/rgs_manifest.tsv:
 #    gene_family_name<TAB>rgs_fasta_filename
-# 3. Edit rgs_config.yaml if needed
+# 3. Edit START_HERE-user_config.yaml if needed
 #
 # OUTPUT:
 # Validated RGS files in OUTPUT_pipeline/<gene_family>/1-output/
@@ -63,9 +63,9 @@ echo ""
 echo "Validating prerequisites..."
 echo ""
 
-if [ ! -f "rgs_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: rgs_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"

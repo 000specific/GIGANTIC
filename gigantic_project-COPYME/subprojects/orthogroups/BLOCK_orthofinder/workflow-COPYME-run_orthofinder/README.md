@@ -13,7 +13,7 @@ Runs OrthoFinder orthogroup detection with Diamond similarity search and MCL clu
 
 ```bash
 # Edit configuration
-vi orthofinder_config.yaml
+vi START_HERE-user_config.yaml
 
 # Run locally
 bash RUN-workflow.sh

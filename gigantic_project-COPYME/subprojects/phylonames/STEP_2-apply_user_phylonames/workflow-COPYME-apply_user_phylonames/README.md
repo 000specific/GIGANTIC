@@ -12,7 +12,7 @@
 
 1. Copy the example: `cp INPUT_user/user_phylonames_example.tsv INPUT_user/user_phylonames.tsv`
 2. Edit `INPUT_user/user_phylonames.tsv` with your custom phylonames
-3. Edit `phylonames_config.yaml` - set your project name (must match STEP 1)
+3. Edit `START_HERE-user_config.yaml` - set your project name (must match STEP 1)
 4. Run: `bash RUN-workflow.sh` (local) or `sbatch RUN-workflow.sbatch` (SLURM)
 
 ## User Phylonames Format
@@ -33,4 +33,4 @@ Chromosphaera_perkinsii	Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaeraceae_C
 
 ## UNOFFICIAL Marking
 
-By default, clades that differ from NCBI get an "UNOFFICIAL" suffix to maintain transparency about data sources. Set `mark_unofficial: false` in `phylonames_config.yaml` to disable.
+By default, clades that differ from NCBI get an "UNOFFICIAL" suffix to maintain transparency about data sources. Set `mark_unofficial: false` in `START_HERE-user_config.yaml` to disable.

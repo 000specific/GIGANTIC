@@ -21,7 +21,7 @@ Inputs come from three upstream subprojects via output_to_input:
 - genomesDB (proteome FASTAs - used by Scripts 002/004 directly)
 
 Usage:
-    python 001_ai-python-prepare_inputs.py --structure_id 001 --config ../../ocl_config.yaml
+    python 001_ai-python-prepare_inputs.py --structure_id 001 --config ../../START_HERE-user_config.yaml
 """
 
 import sys
@@ -55,7 +55,7 @@ def parse_arguments():
         '--config',
         type = str,
         required = True,
-        help = 'Path to ocl_config.yaml'
+        help = 'Path to START_HERE-user_config.yaml'
     )
 
     return parser.parse_args()

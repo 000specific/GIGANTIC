@@ -35,7 +35,7 @@ ls ../../../../annotations_hmms/output_to_input/BLOCK_build_annotation_database/
 
 ### 2. Configure
 
-Edit `ocl_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 ```yaml
 run_label: "Species71_pfam"

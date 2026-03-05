@@ -45,7 +45,7 @@ BLOCK_permutations_and_features/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── permutations_and_features_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/                          # species_tree.newick (+ optional clade_names.tsv)
     ├── OUTPUT_pipeline/
     └── ai/

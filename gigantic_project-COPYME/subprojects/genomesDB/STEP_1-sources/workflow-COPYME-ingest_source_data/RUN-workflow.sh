@@ -19,7 +19,7 @@
 # 2. Create INPUT_user/source_manifest.tsv in this workflow directory
 #    listing paths to your files in the project-level INPUT_user/
 #    (see INPUT_user/source_manifest_example.tsv for format)
-# 3. Edit ingest_sources_config.yaml with your project settings
+# 3. Edit START_HERE-user_config.yaml with your project settings
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:

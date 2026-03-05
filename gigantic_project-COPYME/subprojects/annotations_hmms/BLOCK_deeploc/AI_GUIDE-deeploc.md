@@ -36,7 +36,7 @@ CSV with columns including: protein ID, localization, signal peptide, membrane t
 
 ## Configuration
 
-Edit `workflow-COPYME-run_deeploc/deeploc_config.yaml`:
+Edit `workflow-COPYME-run_deeploc/START_HERE-user_config.yaml`:
 - `model_type`: "Accurate" or "Fast" (default: Accurate)
 
 ## Resource Requirements

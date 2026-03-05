@@ -9,7 +9,7 @@ module load conda
 conda activate ai_gigantic_orthogroups
 module load nextflow
 
-vi ../broccoli_config.yaml
+vi ../START_HERE-user_config.yaml
 
 bash ../RUN-workflow.sh
 # Or: sbatch ../RUN-workflow.sbatch

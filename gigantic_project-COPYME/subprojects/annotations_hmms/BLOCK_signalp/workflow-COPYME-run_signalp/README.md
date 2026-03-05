@@ -11,7 +11,7 @@ Runs SignalP signal peptide prediction across all genomesDB proteomes. SignalP p
 ## Usage
 
 ```bash
-vi signalp_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh         # Local
 sbatch RUN-workflow.sbatch   # SLURM
 ```

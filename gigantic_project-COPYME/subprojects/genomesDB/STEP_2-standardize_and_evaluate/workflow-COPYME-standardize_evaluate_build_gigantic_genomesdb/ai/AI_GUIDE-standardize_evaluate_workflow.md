@@ -125,7 +125,7 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 |------|-------------|-------------|
 | `RUN-workflow.sh` | No | Main workflow script |
 | `RUN-workflow.sbatch` | Yes (account/qos) | SLURM job wrapper |
-| `standardize_evaluate_config.yaml` | Yes (project settings) | User-editable configuration |
+| `START_HERE-user_config.yaml` | Yes (project settings) | User-editable configuration |
 | `INPUT_user/busco_lineages.txt` | Yes (lineage assignments) | BUSCO lineage per species |
 | `ai/scripts/001_*.py` | No | Proteome standardization |
 | `ai/scripts/002_*.py` | No | Proteome cleaning |

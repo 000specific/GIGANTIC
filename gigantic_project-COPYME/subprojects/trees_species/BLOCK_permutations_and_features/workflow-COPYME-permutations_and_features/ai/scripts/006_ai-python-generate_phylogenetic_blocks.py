@@ -20,7 +20,7 @@ Purpose:
 
 Inputs:
     --workflow-dir: Workflow root directory
-    Reads: permutations_and_features_config.yaml (for species_set_name)
+    Reads: START_HERE-user_config.yaml (for species_set_name)
            OUTPUT_pipeline/5-output/{species_set_name}_Parent_Sibling_Sets/
                5_ai-structure_XXX_parent_child_table.tsv (9-column format)
 
@@ -51,7 +51,7 @@ args = parse_arguments()
 workflow_dir = Path( args.workflow_dir )
 
 # Read config
-config_path = workflow_dir / 'permutations_and_features_config.yaml'
+config_path = workflow_dir / 'START_HERE-user_config.yaml'
 with open( config_path, 'r' ) as config_file:
     config = yaml.safe_load( config_file )
 

@@ -1,0 +1,35 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 March 03 | Purpose: InterProScan pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# InterProScan Pipeline Configuration
+# =============================================================================
+
+# Path to InterProScan installation directory (user must set this)
+interproscan_install_path: "/path/to/interproscan"
+
+# Input proteomes directory (from genomesDB output_to_input)
+proteomes_dir: "../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes"
+
+# Number of sequences per chunk for parallel processing
+chunk_size: 1000
+
+# Number of CPU threads per InterProScan job
+cpus_per_job: 16
+
+# InterProScan analysis applications to run ("all" uses all available databases)
+applications: "all"
+
+# Conda environment name
+conda_environment: "ai_gigantic_interproscan"

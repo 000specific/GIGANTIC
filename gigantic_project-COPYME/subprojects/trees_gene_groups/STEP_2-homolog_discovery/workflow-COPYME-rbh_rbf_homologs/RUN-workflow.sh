@@ -13,7 +13,7 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Edit rbh_rbf_homologs_config.yaml with your project settings
+# 1. Edit START_HERE-user_config.yaml with your project settings
 # 2. Place your RGS manifest in INPUT_user/rgs_manifest.tsv
 # 3. Place your species keeper list in INPUT_user/species_keeper_list.tsv
 # 4. Place your RGS species map in INPUT_user/rgs_species_map.tsv (if needed)
@@ -84,9 +84,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "rbh_rbf_homologs_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: rbh_rbf_homologs_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"

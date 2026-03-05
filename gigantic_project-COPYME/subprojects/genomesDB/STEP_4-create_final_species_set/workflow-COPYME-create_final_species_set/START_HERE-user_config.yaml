@@ -1,0 +1,77 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC genomesDB STEP_4 - Create Final Species Set Configuration
+# AI: Claude Code | Opus 4.6 | 2026 February 27
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration file controls how the STEP_4 workflow runs.
+# Edit the paths below to match your project setup.
+#
+# After editing, run: bash RUN-workflow.sh
+#
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  # Path to cleaned proteomes from STEP_2 (via output_to_input)
+  step2_proteomes: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
+
+  # Path to BLAST databases from STEP_3 (via output_to_input)
+  step3_blastp: "../../output_to_input/STEP_3-databases/gigantic-T1-blastp"
+
+  # Path to phyloname-named genome annotations from STEP_2 (optional - not all species have GFFs)
+  # These are symlinks to original GFF/GTF files with phyloname-based filenames
+  step2_genome_annotations: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
+
+  # Path to species selection file (defaults to all species if not specified)
+  # User can edit this file to remove species they don't want
+  selected_species: "INPUT_user/selected_species.txt"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# WORKFLOW PURPOSE:
+# STEP_4 creates the final species set for downstream subprojects.
+# It COPIES (not processes) files from STEP_2 and STEP_3 based on user selection.
+#
+# HOW IT WORKS:
+# 1. User reviews STEP_2 quality metrics and decides which species to keep
+# 2. User edits INPUT_user/selected_species.txt (or uses all species by default)
+# 3. Script 001 validates the species selection against STEP_2 and STEP_3
+# 4. Script 002 copies selected proteomes, blastp databases, and genome annotations
+# 5. Outputs go to ../../output_to_input/STEP_4-create_final_species_set/ with speciesN_ naming convention
+#
+# OUTPUT STRUCTURE:
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/       - Selected proteomes
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/          - Selected BLAST databases
+#   ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/   - Selected GFF/GTF files (subset - only species with annotations)
+#
+# Where N = count of selected species (e.g., species71)
+# NOTE: Genome annotations are optional - not all species have GFF/GTF files.
+# The genome_annotations directory will contain only species that have annotations.
+#

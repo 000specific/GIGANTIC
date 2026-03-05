@@ -21,7 +21,7 @@ This subproject takes curated reference gene sequences (RGS), finds homologs acr
 cd STEP_2-homolog_discovery/
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
 cd workflow-RUN_01-rbh_rbf_homologs/
-# Edit rbh_rbf_homologs_config.yaml (set gene_group name, rgs_file)
+# Edit START_HERE-user_config.yaml (set gene_group name, rgs_file)
 # Place RGS file and species_keeper_list.tsv in INPUT_user/
 bash RUN-workflow.sh
 
@@ -29,7 +29,7 @@ bash RUN-workflow.sh
 cd ../../STEP_3-phylogenetic_analysis/
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 cd workflow-RUN_01-phylogenetic_analysis/
-# Edit phylogenetic_analysis_config.yaml (set gene_group name, choose tree methods)
+# Edit START_HERE-user_config.yaml (set gene_group name, choose tree methods)
 bash RUN-workflow.sh
 ```
 

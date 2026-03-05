@@ -97,7 +97,7 @@ GIGANTIC allows you to override NCBI-generated phylonames with your own taxonomy
 
 ### Configuration
 
-In `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/phylonames_config.yaml`:
+In `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/START_HERE-user_config.yaml`:
 
 ```yaml
 project:
@@ -193,7 +193,7 @@ phylonames/
 │       ├── README.md                       # Quick start guide
 │       ├── RUN-workflow.sh                 # bash RUN-workflow.sh (local)
 │       ├── RUN-workflow.sbatch             # sbatch RUN-workflow.sbatch (SLURM)
-│       ├── phylonames_config.yaml          # Edit this for your project
+│       ├── START_HERE-user_config.yaml          # Edit this for your project
 │       ├── INPUT_user/                     # Workflow-specific inputs (archived copy)
 │       │   └── species_list_example.txt    # Example species list (template)
 │       ├── OUTPUT_pipeline/                # Generated phylonames and mappings
@@ -215,7 +215,7 @@ phylonames/
         ├── README.md                       # Quick start guide
         ├── RUN-workflow.sh                 # bash RUN-workflow.sh (local)
         ├── RUN-workflow.sbatch             # sbatch RUN-workflow.sbatch (SLURM)
-        ├── phylonames_config.yaml          # Edit this for your project
+        ├── START_HERE-user_config.yaml          # Edit this for your project
         ├── INPUT_user/                     # User-provided phylonames input
         │   └── user_phylonames.tsv         # Your custom phylonames (template)
         ├── OUTPUT_pipeline/                # Final mapping with user overrides
@@ -274,7 +274,7 @@ Octopus_bimaculoides
 
 ### Step 2: Edit Configuration (Optional)
 
-Edit `STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/phylonames_config.yaml` to set your project name:
+Edit `STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/START_HERE-user_config.yaml` to set your project name:
 
 ```yaml
 project:
@@ -321,7 +321,7 @@ If you have custom phylonames to apply:
 
 2. Edit the STEP_2 config:
    ```
-   STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/phylonames_config.yaml
+   STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/START_HERE-user_config.yaml
    ```
 
 3. Run STEP_2:

@@ -79,7 +79,7 @@ phylonames/
 │   └── workflow-COPYME-generate_phylonames/
 │       ├── RUN-workflow.sh                   # bash RUN-workflow.sh
 │       ├── RUN-workflow.sbatch               # sbatch RUN-workflow.sbatch
-│       ├── phylonames_config.yaml            # User edits project name here
+│       ├── START_HERE-user_config.yaml            # User edits project name here
 │       ├── INPUT_user/                       # Species list (copied from project INPUT_user at runtime)
 │       ├── OUTPUT_pipeline/                  # Results
 │       └── ai/                               # Nextflow pipeline and scripts
@@ -99,7 +99,7 @@ phylonames/
     └── workflow-COPYME-apply_user_phylonames/
         ├── RUN-workflow.sh                   # bash RUN-workflow.sh
         ├── RUN-workflow.sbatch               # sbatch RUN-workflow.sbatch
-        ├── phylonames_config.yaml            # User edits project name and user phylonames path
+        ├── START_HERE-user_config.yaml            # User edits project name and user phylonames path
         ├── INPUT_user/                       # User phylonames TSV goes here
         ├── OUTPUT_pipeline/                  # Results
         └── ai/                               # Nextflow pipeline and scripts
@@ -167,7 +167,7 @@ Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoe
 
 An example file is provided at `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames_example.tsv`.
 
-**3. Edit** `phylonames_config.yaml` in the STEP_2 workflow directory:
+**3. Edit** `START_HERE-user_config.yaml` in the STEP_2 workflow directory:
 ```yaml
 project:
   user_phylonames: "INPUT_user/user_phylonames.tsv"
@@ -218,7 +218,7 @@ output_to_input/
 | "Permission denied" | Scripts not executable | `chmod +x ai/scripts/*.sh` |
 | Download failed | Network or NCBI down | Check connectivity, try later |
 | STEP_2 fails with missing input | STEP_1 not run yet | Run STEP_1 before STEP_2 |
-| User phylonames not applied | Wrong path in STEP_2 config | Check `user_phylonames` path in STEP_2 `phylonames_config.yaml` |
+| User phylonames not applied | Wrong path in STEP_2 config | Check `user_phylonames` path in STEP_2 `START_HERE-user_config.yaml` |
 
 ### Diagnostic Commands
 
@@ -272,10 +272,10 @@ workflow-*/ai/logs/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `../../INPUT_user/species_set/species_list.txt` | Project-wide default species list | **YES** |
-| `STEP_1-*/workflow-*/phylonames_config.yaml` | STEP_1 project name and options | **YES** |
+| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 project name and options | **YES** |
 | `STEP_1-*/workflow-*/RUN-workflow.sbatch` | STEP_1 SLURM account/qos | **YES** (SLURM) |
 | `STEP_1-*/workflow-*/INPUT_user/species_list.txt` | STEP_1 species list override (optional, auto-copied from project default) | **YES** (to override) |
-| `STEP_2-*/workflow-*/phylonames_config.yaml` | STEP_2 project name, user phylonames path, unofficial marking | **YES** |
+| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | STEP_2 project name, user phylonames path, unofficial marking | **YES** |
 | `STEP_2-*/workflow-*/RUN-workflow.sbatch` | STEP_2 SLURM account/qos | **YES** (SLURM) |
 | `STEP_2-*/workflow-*/INPUT_user/user_phylonames.tsv` | User-provided phyloname overrides | **YES** |
 | `output_to_input/maps/*.tsv` | Output for downstream subprojects (symlink to latest STEP) | No |

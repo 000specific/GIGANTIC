@@ -1,0 +1,60 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC Origin-Conservation-Loss (OCL) Pipeline Configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 04
+# Human: Eric Edsinger
+
+# Run identification
+# run_label names the output_to_input subdirectory for this exploration
+# Different COPYME copies can coexist by using different run_labels
+# Replace SET_NAME_HERE with your species set name (e.g., Species71)
+# Example labels: "Species71_X_OrthoFinder", "Species71_X_OrthoHMM", "Species71_X_Broccoli"
+run_label: "SET_NAME_HERE_X_OrthoFinder"
+
+# Species set identifier (e.g., "species71", "speciesN")
+# Replace SET_NAME_HERE with your species set name (e.g., species71)
+species_set_name: "SET_NAME_HERE"
+
+# Orthogroup clustering tool used to generate the input data
+# Valid values: OrthoFinder | OrthoHMM | Broccoli
+orthogroup_tool: "OrthoFinder"
+
+# Input paths (relative to this workflow directory)
+inputs:
+  # Structure manifest file listing which tree structures to analyze
+  # Format: TSV with column "structure_id" (e.g., "001", "002", ...)
+  # Pipeline will analyze OCL for each structure listed
+  structure_manifest: "INPUT_user/structure_manifest.tsv"
+
+  # trees_species output directory (phylogenetic blocks, paths, clade-species mappings)
+  # Points to trees_species output_to_input via relative path
+  trees_species_dir: "../../../../trees_species/output_to_input/BLOCK_permutations_and_features"
+
+  # Orthogroups output directory (orthogroup assignments in GIGANTIC IDs)
+  # Change the BLOCK name to match the tool: BLOCK_orthofinder, BLOCK_orthohmm, BLOCK_broccoli
+  orthogroups_dir: "../../../../orthogroups/output_to_input/BLOCK_orthofinder"
+
+  # Proteomes directory (FASTA files for GIGANTIC species)
+  # Used by Script 002 to load sequences for origin determination
+  # Replace SET_NAME_HERE with your species set name (e.g., species71)
+  proteomes_dir: "../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/SET_NAME_HERE_gigantic_T1_proteomes"
+
+# FASTA embedding in output TSVs
+# true = embed protein sequences in summary tables (~1GB per structure)
+# false = output tables without sequences (much smaller, faster)
+include_fasta_in_output: false
+
+# Output configuration
+output:
+  # Main output directory (relative to this workflow directory)
+  # Each structure gets: OUTPUT_pipeline/structure_NNN/1-output/ through 5-output/
+  base_dir: "OUTPUT_pipeline"

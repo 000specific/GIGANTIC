@@ -33,7 +33,7 @@ Downloads the NCBI taxonomy database and generates phylogenetically-informative 
 
 ## Configuration
 
-Edit `workflow-COPYME-generate_phylonames/phylonames_config.yaml`:
+Edit `workflow-COPYME-generate_phylonames/START_HERE-user_config.yaml`:
 - `project_name`: Your project name (used in output filenames)
 
 ## After Running STEP 1

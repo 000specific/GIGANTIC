@@ -34,6 +34,6 @@ C079	Metazoa
 
 ## Configuration
 
-Edit `permutations_and_features_config.yaml` (one directory up) to specify:
+Edit `START_HERE-user_config.yaml` (one directory up) to specify:
 - `species_set_name`: Identifier for your species set (e.g., "species71")
 - `unresolved_clades`: Which clades to permute (empty = single tree mode)

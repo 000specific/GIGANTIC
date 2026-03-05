@@ -54,7 +54,7 @@ one_direction_homologs/
     └── workflow-COPYME-diamond_ncbi_nr/
         ├── RUN-workflow.sh             # bash RUN-workflow.sh
         ├── RUN-workflow.sbatch         # sbatch RUN-workflow.sbatch
-        ├── diamond_ncbi_nr_config.yaml # User edits DIAMOND settings here
+        ├── START_HERE-user_config.yaml # User edits DIAMOND settings here
         ├── INPUT_user/                 # Proteome manifest
         ├── OUTPUT_pipeline/            # Results (6 numbered directories)
         └── ai/                         # Internal
@@ -104,7 +104,7 @@ Each species proteome is split into N parts (default: 40) for parallel DIAMOND s
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "DIAMOND database not found" | Path incorrect in config | Check `diamond_ncbi_nr_config.yaml` database path |
+| "DIAMOND database not found" | Path incorrect in config | Check `START_HERE-user_config.yaml` database path |
 | "Proteome file not found" | Missing from genomesDB | Verify genomesDB output_to_input/ is populated |
 | "No results for species X" | DIAMOND search failed | Check SLURM logs, verify database is valid |
 | "Permission denied" | Scripts not executable | `chmod +x ai/scripts/*.sh` |
@@ -168,7 +168,7 @@ output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `BLOCK_*/workflow-*/diamond_ncbi_nr_config.yaml` | Project name, database path, options | **YES** |
+| `BLOCK_*/workflow-*/START_HERE-user_config.yaml` | Project name, database path, options | **YES** |
 | `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `BLOCK_*/workflow-*/INPUT_user/proteome_manifest.tsv` | Species and proteome paths | **YES** (or auto-generated) |
 | `output_to_input/BLOCK_*/ncbi_nr_top_hits/*.tsv` | Top hits + statistics for downstream | No |

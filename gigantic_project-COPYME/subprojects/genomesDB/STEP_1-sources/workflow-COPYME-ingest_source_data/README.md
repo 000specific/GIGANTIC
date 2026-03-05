@@ -44,7 +44,7 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
    Use "NA" for any data type not available for a species.
    (See `INPUT_user/source_manifest_example.tsv` for detailed format)
 
-5. Edit `ingest_sources_config.yaml` with your project name
+5. Edit `START_HERE-user_config.yaml` with your project name
 
 6. Run the workflow:
    - **Local**: `bash RUN-workflow.sh`

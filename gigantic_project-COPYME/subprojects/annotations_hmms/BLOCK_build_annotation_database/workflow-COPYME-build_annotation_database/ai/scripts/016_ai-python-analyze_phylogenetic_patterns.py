@@ -6,7 +6,7 @@
 016_ai-python-analyze_phylogenetic_patterns.py
 
 Compares annotation frequencies across user-defined phylogenetic clade groups
-from the annotation_database_config.yaml file. This analysis reveals whether
+from the START_HERE-user_config.yaml file. This analysis reveals whether
 certain annotation types are enriched or depleted in specific phylogenetic
 clades (e.g., ctenophores vs. cnidarians vs. bilaterians).
 
@@ -28,7 +28,7 @@ The YAML config file is parsed using standard library string operations only
 
 Input:
     --statistics: Path to 8_ai-annotation_statistics.tsv from script 008
-    --config-file: Path to annotation_database_config.yaml
+    --config-file: Path to START_HERE-user_config.yaml
     --output-dir: Directory for output files
 
 Output:
@@ -43,7 +43,7 @@ Output:
 Usage:
     python3 016_ai-python-analyze_phylogenetic_patterns.py \\
         --statistics 8_ai-annotation_statistics.tsv \\
-        --config-file annotation_database_config.yaml \\
+        --config-file START_HERE-user_config.yaml \\
         --output-dir .
 """
 
@@ -80,7 +80,7 @@ def setup_logging( output_directory: Path ) -> logging.Logger:
 
 def parse_yaml_config( config_path: Path, logger: logging.Logger ) -> list:
     """
-    Parse the clade_comparison section from the annotation_database_config.yaml
+    Parse the clade_comparison section from the START_HERE-user_config.yaml
     using standard library string operations only (no PyYAML dependency).
 
     The expected format is:
@@ -99,7 +99,7 @@ def parse_yaml_config( config_path: Path, logger: logging.Logger ) -> list:
     if not config_path.exists():
         logger.error( "CRITICAL ERROR: Config file does not exist!" )
         logger.error( f"Expected path: {config_path}" )
-        logger.error( "Ensure annotation_database_config.yaml is available." )
+        logger.error( "Ensure START_HERE-user_config.yaml is available." )
         sys.exit( 1 )
 
     with open( config_path, 'r' ) as input_config:
@@ -639,7 +639,7 @@ def main():
         '--config-file',
         type = str,
         required = True,
-        help = 'Path to annotation_database_config.yaml'
+        help = 'Path to START_HERE-user_config.yaml'
     )
 
     parser.add_argument(

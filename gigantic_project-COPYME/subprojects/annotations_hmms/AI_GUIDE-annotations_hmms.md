@@ -135,7 +135,7 @@ output_to_input/  (consolidated at subproject root)
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `{tool}_config.yaml` | Tool parameters | **Yes** - edit before running |
+| `START_HERE-user_config.yaml` | Workflow configuration | **Yes** - edit before running |
 | `RUN-workflow.sh` | Run pipeline locally | No |
 | `RUN-workflow.sbatch` | Submit to SLURM | **Yes** - edit account/qos |
 | `ai/main.nf` | Nextflow pipeline | No |

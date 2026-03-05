@@ -184,7 +184,7 @@ echo ""
 echo "Creating symlinks for downstream subprojects..."
 
 # Read project name from config (nested YAML: project: name: "value")
-PROJECT_NAME=$(grep "^  name:" phylonames_config.yaml 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
+PROJECT_NAME=$(grep "^  name:" START_HERE-user_config.yaml 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
 if [ -z "${PROJECT_NAME}" ]; then
     PROJECT_NAME="my_project"
 fi

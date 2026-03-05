@@ -29,7 +29,7 @@ cd workflow-RUN_01-build_gigantic_genomesDB
 
 ### 2. Configure (optional)
 
-Edit `databases_config.yaml` if needed:
+Edit `START_HERE-user_config.yaml` if needed:
 
 ```yaml
 inputs:

@@ -30,7 +30,7 @@ import org.yaml.snakeyaml.Yaml
 
 def load_config() {
     def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../rgs_config.yaml" )
+    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
     if ( !config_file.exists() ) {
         error "Configuration file not found: ${config_file}"
     }

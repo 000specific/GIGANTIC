@@ -10,7 +10,7 @@
  * Design: "Scripts Own the Data, NextFlow Manages Execution"
  * - Scripts read/write directly to OUTPUT_pipeline/structure_NNN/N-output/
  * - NextFlow passes only val structure_id between processes (done signal)
- * - All paths resolved from ocl_config.yaml (relative to workflow directory)
+ * - All paths resolved from START_HERE-user_config.yaml (relative to workflow directory)
  *
  * AI: Claude Code | Opus 4.6 | 2026 March 04
  * Human: Eric Edsinger
@@ -21,7 +21,7 @@
 // PARAMETERS
 // ============================================================================
 
-params.config = "${projectDir}/../ocl_config.yaml"
+params.config = "${projectDir}/../START_HERE-user_config.yaml"
 params.structure_manifest = null  // Read from config if not provided
 params.output_dir = null          // Read from config if not provided
 params.help = false
@@ -37,8 +37,8 @@ if ( params.help ) {
         nextflow run main.nf [options]
 
     Options:
-        --config               Path to ocl_config.yaml
-                               (default: ../ocl_config.yaml)
+        --config               Path to START_HERE-user_config.yaml
+                               (default: ../START_HERE-user_config.yaml)
 
         --structure_manifest   Path to structure manifest TSV file
                                (overrides config value)
@@ -48,7 +48,7 @@ if ( params.help ) {
 
         --help                 Show this help message
 
-    The pipeline reads all configuration from ocl_config.yaml including:
+    The pipeline reads all configuration from START_HERE-user_config.yaml including:
       - run_label (for output_to_input namespacing)
       - orthogroup_tool (OrthoFinder, OrthoHMM, Broccoli)
       - Input paths to upstream subprojects
@@ -63,7 +63,7 @@ if ( params.help ) {
 // CONFIGURATION FROM YAML
 // ============================================================================
 
-// Load ocl_config.yaml
+// Load START_HERE-user_config.yaml
 def config_file = file( params.config )
 if ( !config_file.exists() ) {
     log.error "Configuration file not found: ${params.config}"
@@ -73,7 +73,7 @@ if ( !config_file.exists() ) {
 def config = new org.yaml.snakeyaml.Yaml().load( config_file.text )
 
 // Resolve parameters (CLI overrides config)
-def workflow_dir = config_file.parent  // Directory containing ocl_config.yaml
+def workflow_dir = config_file.parent  // Directory containing START_HERE-user_config.yaml
 def structure_manifest = params.structure_manifest ?: "${workflow_dir}/${config.inputs.structure_manifest}"
 def output_dir = params.output_dir ?: "${workflow_dir}/${config.output.base_dir}"
 def config_path = params.config

@@ -14,7 +14,7 @@
 #
 # BEFORE RUNNING:
 # 1. Ensure STEP_2 has completed (AGS files in output_to_input/)
-# 2. Edit phylogenetic_analysis_config.yaml with your settings
+# 2. Edit START_HERE-user_config.yaml with your settings
 # 3. Place your RGS manifest in INPUT_user/rgs_manifest.tsv
 # 4. Choose tree-building methods in config (tree_methods section)
 #
@@ -81,9 +81,9 @@ echo "Validating prerequisites..."
 echo ""
 
 # Check config file exists
-if [ ! -f "phylogenetic_analysis_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: phylogenetic_analysis_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
@@ -99,7 +99,7 @@ fi
 echo "  [OK] RGS manifest found"
 
 # Check STEP_2 output exists
-STEP2_DIR=$(grep "step2_homolog_sequences_dir" phylogenetic_analysis_config.yaml | head -1 | sed 's/.*: *"\(.*\)"/\1/')
+STEP2_DIR=$(grep "step2_homolog_sequences_dir" START_HERE-user_config.yaml | head -1 | sed 's/.*: *"\(.*\)"/\1/')
 if [ -n "${STEP2_DIR}" ] && [ -d "${STEP2_DIR}" ]; then
     echo "  [OK] STEP_2 output directory found: ${STEP2_DIR}"
 elif [ -d "../../output_to_input/STEP_2-homolog_discovery/homolog_sequences" ]; then

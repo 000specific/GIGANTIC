@@ -406,7 +406,7 @@ process analyze_phylogenetic_patterns {
     """
     python3 ${scripts_dir}/016_ai-python-analyze_phylogenetic_patterns.py \
         --statistics ${statistics} \
-        --config-file ${projectDir}/../annotation_database_config.yaml \
+        --config-file ${projectDir}/../START_HERE-user_config.yaml \
         --output-dir .
     """
 }

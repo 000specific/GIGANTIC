@@ -24,7 +24,7 @@ nextflow.enable.dsl=2
 // (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
 //
 // CONFIGURABLE TREE METHODS:
-// Set in phylogenetic_analysis_config.yaml under tree_methods:
+// Set in START_HERE-user_config.yaml under tree_methods:
 //   fasttree: true/false
 //   superfasttree: true/false (FUTURE)
 //   iqtree: true/false
@@ -37,7 +37,7 @@ import org.yaml.snakeyaml.Yaml
 
 def load_config() {
     def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../phylogenetic_analysis_config.yaml" )
+    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
     if ( !config_file.exists() ) {
         error "Configuration file not found: ${config_file}"
     }
@@ -453,7 +453,7 @@ workflow {
 
     // Validate at least one tree method is enabled
     if ( !params.run_fasttree && !params.run_iqtree ) {
-        error "No tree-building methods enabled! Enable at least one in phylogenetic_analysis_config.yaml (tree_methods section)."
+        error "No tree-building methods enabled! Enable at least one in START_HERE-user_config.yaml (tree_methods section)."
     }
 
     // Load gene families from manifest

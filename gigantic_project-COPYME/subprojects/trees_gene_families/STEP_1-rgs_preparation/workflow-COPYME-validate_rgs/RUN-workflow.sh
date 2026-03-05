@@ -13,7 +13,7 @@
 # USAGE:
 #   1. Copy the template:
 #      cp -r workflow-COPYME-validate_rgs workflow-RUN_01-validate_rgs
-#   2. Edit rgs_config.yaml (set gene_family name and rgs_file)
+#   2. Edit START_HERE-user_config.yaml (set gene_family name and rgs_file)
 #   3. Place your RGS FASTA file in INPUT_user/
 #   4. Run: bash RUN-workflow.sh
 #
@@ -63,9 +63,9 @@ echo ""
 echo "Validating prerequisites..."
 echo ""
 
-if [ ! -f "rgs_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: rgs_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
@@ -107,7 +107,7 @@ echo ""
 echo "Creating symlinks for downstream workflows..."
 
 # Extract gene family name from config
-GENE_FAMILY=$(grep -A1 "^gene_family:" rgs_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
+GENE_FAMILY=$(grep -A1 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
 # --- Subproject-root output_to_input ---

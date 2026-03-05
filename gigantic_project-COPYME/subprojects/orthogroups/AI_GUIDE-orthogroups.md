@@ -75,7 +75,7 @@ orthogroups/
 │       ├── INPUT_user/
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── orthofinder_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_orthohmm/                            # OrthoHMM tool project (6 scripts)
 │   ├── AI_GUIDE-orthohmm.md
@@ -84,7 +84,7 @@ orthogroups/
 │       ├── INPUT_user/
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── orthohmm_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_broccoli/                            # Broccoli tool project (6 scripts)
 │   ├── AI_GUIDE-broccoli.md
@@ -93,7 +93,7 @@ orthogroups/
 │       ├── INPUT_user/
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── broccoli_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 └── BLOCK_comparison/                          # Cross-method comparison project (2 scripts)
     ├── AI_GUIDE-comparison.md
@@ -102,7 +102,7 @@ orthogroups/
         ├── INPUT_user/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        └── comparison_config.yaml
+        └── START_HERE-user_config.yaml
 ```
 
 ---
@@ -178,7 +178,7 @@ All outputs are consolidated under a single `orthogroups/output_to_input/` direc
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `{tool}_config.yaml` | Tool parameters | **Yes** - edit before running |
+| `START_HERE-user_config.yaml` | Workflow configuration | **Yes** - edit before running |
 | `RUN-workflow.sh` | Run pipeline locally | No |
 | `RUN-workflow.sbatch` | Submit to SLURM | **Yes** - edit account/qos |
 | `ai/main.nf` | Nextflow pipeline | No |

@@ -124,7 +124,7 @@ STEP_2-homolog_discovery/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── rbh_rbf_homologs_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   ├── species_keeper_list.tsv
     │   ├── rgs_species_map.tsv
@@ -157,7 +157,7 @@ STEP_2-homolog_discovery/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/rbh_rbf_homologs_config.yaml` | Gene family, BLAST settings, database paths | **YES** |
+| `workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, database paths | **YES** |
 | `workflow-*/INPUT_user/species_keeper_list.tsv` | Species to keep in final AGS | **YES** |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Map short names to Genus_species | **YES** (if needed) |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** |

@@ -18,12 +18,12 @@ structure_id
 **Default:** Single structure `001` (the original input tree topology).
 
 **To populate:** Check available structures in the trees_species output directory
-specified by `trees_species_dir` in `ocl_config.yaml`, then list the desired
+specified by `trees_species_dir` in `START_HERE-user_config.yaml`, then list the desired
 structure IDs (one per line after the header).
 
 ## Before Running
 
-1. Edit `../ocl_config.yaml` to set:
+1. Edit `../START_HERE-user_config.yaml` to set:
    - `run_label` (e.g., "Species71_pfam", "Species71_deeploc")
    - `annotation_database` (pfam, gene3d, deeploc, etc.)
    - `annogroup_subtypes` (single, combo, zero - see config for guidance)

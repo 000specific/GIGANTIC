@@ -32,7 +32,7 @@ Outputs (to 2-output/):
 - Annogroups grouped by origin clade
 
 Usage:
-    python 002_ai-python-determine_origins.py --structure_id 001 --config ../../ocl_config.yaml --output_dir OUTPUT_pipeline
+    python 002_ai-python-determine_origins.py --structure_id 001 --config ../../START_HERE-user_config.yaml --output_dir OUTPUT_pipeline
 """
 
 import csv
@@ -70,7 +70,7 @@ def parse_arguments():
         '--config',
         type = str,
         required = True,
-        help = 'Path to ocl_config.yaml'
+        help = 'Path to START_HERE-user_config.yaml'
     )
 
     parser.add_argument(

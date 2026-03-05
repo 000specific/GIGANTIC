@@ -17,7 +17,7 @@ No access to centralized trees_species data is needed (Script 003 already carrie
 phylogenetic block and path annotations from Script 002).
 
 Usage:
-    python 004_ai-python-comprehensive_ocl_analysis.py --structure_id 001 --config ../../ocl_config.yaml
+    python 004_ai-python-comprehensive_ocl_analysis.py --structure_id 001 --config ../../START_HERE-user_config.yaml
 """
 
 import csv
@@ -56,7 +56,7 @@ def parse_arguments():
         '--config',
         type = str,
         required = True,
-        help = 'Path to ocl_config.yaml configuration file'
+        help = 'Path to START_HERE-user_config.yaml configuration file'
     )
 
     parser.add_argument(

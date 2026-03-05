@@ -15,7 +15,7 @@ Run DIAMOND blastp searches of species proteomes against the NCBI nr database. I
 
 ### 1. Edit Configuration
 
-Edit `diamond_ncbi_nr_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 ```yaml
 project:
@@ -58,7 +58,7 @@ sbatch RUN-workflow.sbatch
 
 ## Configuration
 
-Edit `diamond_ncbi_nr_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|

@@ -76,7 +76,7 @@ workflow-COPYME-ingest_source_data/
 ├── README.md                       # Quick start guide
 ├── RUN-workflow.sh           # Local: bash RUN-workflow.sh
 ├── RUN-workflow.sbatch       # SLURM: sbatch RUN-workflow.sbatch
-├── ingest_sources_config.yaml      # Project name and ingestion options
+├── START_HERE-user_config.yaml      # Project name and ingestion options
 │
 ├── INPUT_user/                     # User creates manifest here
 │   ├── source_manifest.tsv         # User creates this (required)
@@ -181,7 +181,7 @@ INPUT_user/
 
 ### Step 4: Set Project Name
 
-Edit `ingest_sources_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 ```yaml
 project:
   name: "my_project"  # Change this

@@ -12,7 +12,7 @@ Runs DeepLoc subcellular localization prediction across all genomesDB proteomes.
 ## Usage
 
 ```bash
-vi deeploc_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh         # Local
 sbatch RUN-workflow.sbatch   # SLURM
 ```

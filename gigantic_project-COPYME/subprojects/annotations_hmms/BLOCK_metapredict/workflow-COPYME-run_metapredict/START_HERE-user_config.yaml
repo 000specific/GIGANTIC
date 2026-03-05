@@ -1,0 +1,26 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 March 03 | Purpose: metapredict pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# metapredict Pipeline Configuration
+# =============================================================================
+
+# Input proteomes directory (from genomesDB output_to_input)
+proteomes_dir: "../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes"
+
+# Comma-separated prediction types to run ("disorder", "idrs", "plddt")
+prediction_types: "disorder,idrs,plddt"
+
+# Conda environment name
+conda_environment: "ai_gigantic_metapredict"

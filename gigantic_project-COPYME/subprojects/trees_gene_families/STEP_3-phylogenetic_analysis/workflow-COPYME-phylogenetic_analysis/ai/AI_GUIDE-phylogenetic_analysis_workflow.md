@@ -32,7 +32,7 @@ workflow-COPYME-phylogenetic_analysis/
 ├── README.md
 ├── RUN-workflow.sh       # Local: bash RUN-workflow.sh
 ├── RUN-workflow.sbatch   # SLURM: sbatch RUN-workflow.sbatch
-├── phylogenetic_analysis_config.yaml  # User configuration
+├── START_HERE-user_config.yaml  # User configuration
 │
 ├── INPUT_user/                        # (empty - reads from subproject output_to_input/STEP_2-homolog_discovery)
 │
@@ -108,7 +108,7 @@ cd workflow-RUN_01-phylogenetic_analysis/
 
 ### Step 2: Configure
 
-Edit `phylogenetic_analysis_config.yaml`:
+Edit `START_HERE-user_config.yaml`:
 
 ```yaml
 gene_family:
@@ -215,7 +215,7 @@ ls ../../../output_to_input/STEP_2-homolog_discovery/ags_fastas/*/
 
 **Cause**: Very large sequence set
 
-**Fix**: Increase memory in `phylogenetic_analysis_config.yaml`:
+**Fix**: Increase memory in `START_HERE-user_config.yaml`:
 ```yaml
 phylogenetics:
   mafft:

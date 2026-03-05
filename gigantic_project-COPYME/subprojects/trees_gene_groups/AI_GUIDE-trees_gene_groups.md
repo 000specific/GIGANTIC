@@ -293,11 +293,11 @@ ls output_to_input/STEP_3-phylogenetic_analysis/trees/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `STEP_1-*/workflow-*/rgs_config.yaml` | Gene group name, RGS file path | **YES** |
-| `STEP_2-*/workflow-*/rbh_rbf_homologs_config.yaml` | Gene group, BLAST settings, species DB | **YES** |
+| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | Gene group name, RGS file path | **YES** |
+| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | Gene group, BLAST settings, species DB | **YES** |
 | `STEP_2-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
 | `STEP_2-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
-| `STEP_3-*/workflow-*/phylogenetic_analysis_config.yaml` | Tree methods, alignment settings | **YES** |
+| `STEP_3-*/workflow-*/START_HERE-user_config.yaml` | Tree methods, alignment settings | **YES** |
 | `RUN-*.sbatch` files | SLURM account/qos | **YES** (SLURM users) |
 
 ---

@@ -1,0 +1,30 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: OrthoHMM pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# OrthoHMM Pipeline Configuration
+# =============================================================================
+# Edit these parameters before running the pipeline.
+# These values are passed to nextflow.config via command-line overrides.
+
+# Input proteomes directory (from genomesDB output_to_input)
+proteomes_dir: "../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes"
+
+# OrthoHMM parameters
+cpus: 8
+evalue: "0.0001"
+single_copy_threshold: "0.5"
+
+# Conda environment name
+conda_environment: "ai_gigantic_orthogroups"

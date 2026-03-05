@@ -53,7 +53,7 @@ cd workflow-RUN_01-rbh_rbf_homologs
 **Configure your run:**
 ```bash
 # Edit the configuration file with your project settings
-nano rbh_rbf_homologs_config.yaml
+nano START_HERE-user_config.yaml
 ```
 
 **Prepare input files:**
@@ -99,7 +99,7 @@ workflow-COPYME-rbh_rbf_homologs/
 ├── README.md                              # This file
 ├── RUN-workflow.sh               # Local runner (calls NextFlow)
 ├── RUN-workflow.sbatch           # SLURM wrapper
-├── rbh_rbf_homologs_config.yaml          # User-editable configuration
+├── START_HERE-user_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   ├── rgs_manifest.tsv                   # Gene families and RGS file paths
 │   ├── species_keeper_list.tsv            # Species to keep in final output

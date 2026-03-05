@@ -64,7 +64,7 @@ orthogroups_X_ocl/
 └── BLOCK_ocl_analysis/
     ├── AI_GUIDE-ocl_analysis.md
     └── workflow-COPYME-ocl_analysis/
-        ├── ocl_config.yaml
+        ├── START_HERE-user_config.yaml
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
         ├── INPUT_user/                    # structure_manifest.tsv

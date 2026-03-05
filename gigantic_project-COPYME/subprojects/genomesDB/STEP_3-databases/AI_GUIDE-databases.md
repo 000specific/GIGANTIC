@@ -64,7 +64,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/databases_config.yaml` | Workflow configuration | Optional |
+| `workflow-*/START_HERE-user_config.yaml` | Workflow configuration | Optional |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `output_to_input/` | BLAST databases | No |
 | `../output_to_input/` | Shared with other subprojects | No |

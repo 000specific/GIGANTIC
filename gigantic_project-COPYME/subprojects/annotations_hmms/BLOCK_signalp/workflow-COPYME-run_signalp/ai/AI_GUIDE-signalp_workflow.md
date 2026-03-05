@@ -12,7 +12,7 @@
 ## Quick Start
 
 ```bash
-vi signalp_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh
 ```
 
@@ -23,7 +23,7 @@ bash RUN-workflow.sh
 
 ## Key Configuration
 
-- `signalp_config.yaml` - Set SignalP install path, organism type (eukarya/gram+/gram-), and species list
+- `START_HERE-user_config.yaml` - Set SignalP install path, organism type (eukarya/gram+/gram-), and species list
 - `INPUT_user/` - Proteome FASTA files or manifest pointing to genomesDB proteomes
 
 ## Verification Commands

@@ -14,7 +14,7 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Edit phylonames_config.yaml with your project settings
+# 1. Edit START_HERE-user_config.yaml with your project settings
 # 2. Species list is loaded from (in priority order):
 #    a. INPUT_user/species_list.txt  (workflow-level override, if present)
 #    b. ../../../../INPUT_user/species_set/species_list.txt  (project-level default)
@@ -215,7 +215,7 @@ echo ""
 echo "Creating symlinks for downstream subprojects..."
 
 # Read project name from config (nested YAML: project: name: "value")
-PROJECT_NAME=$(grep "^  name:" phylonames_config.yaml 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
+PROJECT_NAME=$(grep "^  name:" START_HERE-user_config.yaml 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
 if [ -z "${PROJECT_NAME}" ]; then
     PROJECT_NAME="my_project"
 fi

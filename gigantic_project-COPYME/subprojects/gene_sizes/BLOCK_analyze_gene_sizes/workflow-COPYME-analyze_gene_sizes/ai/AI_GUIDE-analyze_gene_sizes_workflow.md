@@ -25,7 +25,7 @@ This guide focuses on running the workflow.
 1. genomesDB STEP_4 completed (species list available)
 2. User has created per-species gene structure TSV files in `INPUT_user/`
 3. GIGANTIC species list copied to `INPUT_user/gigantic_species_list.txt`
-4. `gene_sizes_config.yaml` edited with correct paths
+4. `START_HERE-user_config.yaml` edited with correct paths
 
 ### Running
 
@@ -90,7 +90,7 @@ head OUTPUT_pipeline/3-output/3_ai-genome_summary-Homo_sapiens.tsv
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `Species list not found` | Wrong path in config | Verify gigantic_species_list in gene_sizes_config.yaml |
+| `Species list not found` | Wrong path in config | Verify gigantic_species_list in START_HERE-user_config.yaml |
 | `No species have valid gene structure data` | INPUT_user/ is empty | Add per-species TSV files to INPUT_user/ |
 | `Gene structure file not found` | Species file missing | Create Genus_species-gene_coordinates.tsv in INPUT_user/ |
 | `No valid gene metrics computed` | TSV data fails validation | Check column format, integer values, CDS_Intervals syntax |
@@ -102,7 +102,7 @@ head OUTPUT_pipeline/3-output/3_ai-genome_summary-Homo_sapiens.tsv
 
 | File | User Edits? | Purpose |
 |------|-------------|---------|
-| `gene_sizes_config.yaml` | Yes | Input paths |
+| `START_HERE-user_config.yaml` | Yes | Input paths |
 | `INPUT_user/*.tsv` | Yes | Gene structure data per species |
 | `INPUT_user/gigantic_species_list.txt` | Yes | GIGANTIC species list |
 | `RUN-workflow.sh` | No | Local runner |

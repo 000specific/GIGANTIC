@@ -12,7 +12,7 @@
 ## Quick Start
 
 ```bash
-vi deeploc_config.yaml
+vi START_HERE-user_config.yaml
 bash RUN-workflow.sh
 ```
 
@@ -23,7 +23,7 @@ bash RUN-workflow.sh
 
 ## Key Configuration
 
-- `deeploc_config.yaml` - Set DeepLoc install path, model type (fast/accurate), GPU settings, and species list
+- `START_HERE-user_config.yaml` - Set DeepLoc install path, model type (fast/accurate), GPU settings, and species list
 - `INPUT_user/` - Proteome FASTA files or manifest pointing to genomesDB proteomes
 
 ## Verification Commands

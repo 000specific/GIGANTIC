@@ -40,7 +40,7 @@ BLOCK_analyze_gene_sizes/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── gene_sizes_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/                   # User-provided gene structure TSV files
     ├── OUTPUT_pipeline/
     └── ai/

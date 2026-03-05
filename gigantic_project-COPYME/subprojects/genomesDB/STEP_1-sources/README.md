@@ -161,7 +161,7 @@ STEP_1-sources/
     ├── README.md
     ├── RUN-workflow.sh
     ├── RUN-workflow.sbatch
-    ├── ingest_sources_config.yaml
+    ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   └── source_manifest.tsv  # 4-column manifest (genus_species, genome, genome_annotation, proteome)
     └── ai/

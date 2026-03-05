@@ -108,7 +108,7 @@ gigantic_project-[project_name]/
         │   ├── README.md                    # Quick start guide
         │   ├── RUN-workflow.sh              # Local execution: bash RUN-workflow.sh
         │   ├── RUN-workflow.sbatch          # SLURM execution: sbatch RUN-workflow.sbatch
-        │   ├── [workflow]_config.yaml       # User configuration
+        │   ├── START_HERE-user_config.yaml  # User configuration (edit before running)
         │   │
         │   ├── INPUT_user/                  # WORKFLOW INPUTS
         │   │   │                            # Copied from project INPUT_user/ at runtime
@@ -526,7 +526,7 @@ pwd
 
 Look at these files:
 - `INPUT_user/species_set/species_list.txt` - do they have species listed?
-- `[workflow]_config.yaml` - is project name set?
+- `START_HERE-user_config.yaml` - is project name set?
 - `RUN-*.sbatch` - is account/qos configured? (SLURM only)
 
 ### Step 4: Check Logs

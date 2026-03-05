@@ -14,7 +14,7 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Edit ocl_config.yaml to set:
+# 1. Edit START_HERE-user_config.yaml to set:
 #    - run_label (e.g., "Species71_X_OrthoFinder")
 #    - orthogroup_tool (OrthoFinder, OrthoHMM, or Broccoli)
 #    - Input paths to upstream subprojects
@@ -25,7 +25,7 @@
 # This is a workflow-COPYME template. Each exploration gets its own copy:
 #   cp -r workflow-COPYME-ocl_analysis workflow-RUN_01-ocl_analysis
 #   cd workflow-RUN_01-ocl_analysis
-#   # Edit ocl_config.yaml for this specific run
+#   # Edit START_HERE-user_config.yaml for this specific run
 #   bash RUN-workflow.sh
 #
 # FOR SLURM CLUSTERS:
@@ -62,16 +62,16 @@ cd "${SCRIPT_DIR}"
 # Read Configuration
 # ============================================================================
 
-if [ ! -f "ocl_config.yaml" ]; then
+if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
-    echo "Expected: ocl_config.yaml"
+    echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 
 # Extract run_label from config
-RUN_LABEL=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['run_label'])")
-ORTHOGROUP_TOOL=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['orthogroup_tool'])")
-SPECIES_SET=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['species_set_name'])")
+RUN_LABEL=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['run_label'])")
+ORTHOGROUP_TOOL=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['orthogroup_tool'])")
+SPECIES_SET=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['species_set_name'])")
 
 echo "Configuration:"
 echo "  Run Label       : ${RUN_LABEL}"
@@ -121,7 +121,7 @@ fi
 echo "  [OK] INPUT_user/ directory found"
 
 # Check structure manifest exists
-MANIFEST=$(python3 -c "import yaml; print(yaml.safe_load(open('ocl_config.yaml'))['inputs']['structure_manifest'])")
+MANIFEST=$(python3 -c "import yaml; print(yaml.safe_load(open('START_HERE-user_config.yaml'))['inputs']['structure_manifest'])")
 if [ ! -f "${MANIFEST}" ]; then
     echo "ERROR: Structure manifest not found: ${MANIFEST}"
     echo "  Create the manifest with structure IDs to analyze."

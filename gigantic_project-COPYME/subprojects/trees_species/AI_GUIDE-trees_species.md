@@ -100,7 +100,7 @@ trees_species/
     └── workflow-COPYME-permutations_and_features/
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        ├── permutations_and_features_config.yaml
+        ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   ├── species_tree.newick        # User provides
         │   └── clade_names.tsv            # User provides (optional)
@@ -155,7 +155,7 @@ trees_species/
 
 | File | User Edits? | Purpose |
 |------|-------------|---------|
-| `permutations_and_features_config.yaml` | Yes | Species set name, unresolved clades, paths |
+| `START_HERE-user_config.yaml` | Yes | Species set name, unresolved clades, paths |
 | `INPUT_user/species_tree.newick` | Yes | The input species tree |
 | `INPUT_user/clade_names.tsv` | Optional | Custom clade ID → name mapping |
 | `RUN-workflow.sh` | Rarely | Only to change conda environment name |

@@ -1,0 +1,28 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: OrthoFinder pipeline configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# OrthoFinder Pipeline Configuration
+# =============================================================================
+
+# Input proteomes directory (from genomesDB output_to_input)
+proteomes_dir: "../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes"
+
+# OrthoFinder parameters
+cpus: 8
+search_method: "diamond"  # diamond or blast
+mcl_inflation: "1.5"
+
+# Conda environment name
+conda_environment: "ai_gigantic_orthogroups"

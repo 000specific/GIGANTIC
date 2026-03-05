@@ -88,7 +88,7 @@ workflow-COPYME-build_gigantic_genomesDB/
 ├── RUN-workflow.sh              # Local execution script
 ├── RUN-workflow.sbatch          # SLURM submission script
 ├── README.md                    # This file
-├── databases_config.yaml        # Workflow configuration
+├── START_HERE-user_config.yaml        # Workflow configuration
 ├── OUTPUT_pipeline/
 │   ├── 1-output/                # Script 001 outputs
 │   │   └── 1_ai-filtered_species_manifest.tsv

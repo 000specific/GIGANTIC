@@ -31,7 +31,7 @@ Applies user-provided custom phylonames to override the NCBI-generated phyloname
 
 ## Configuration
 
-Edit `workflow-COPYME-apply_user_phylonames/phylonames_config.yaml`:
+Edit `workflow-COPYME-apply_user_phylonames/START_HERE-user_config.yaml`:
 - `project_name`: Must match STEP 1 project name
 - `user_phylonames`: Path to your custom phylonames TSV
 - `mark_unofficial`: Whether to mark user clades as UNOFFICIAL (default: true)

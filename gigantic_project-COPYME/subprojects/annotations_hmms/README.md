@@ -45,7 +45,7 @@ cp -r BLOCK_interproscan/workflow-COPYME-run_interproscan BLOCK_interproscan/wor
 cd BLOCK_interproscan/workflow-RUN_01-run_interproscan/
 
 # 2. Edit configuration
-vi interproscan_config.yaml
+vi START_HERE-user_config.yaml
 
 # 3. Run (conda environment is activated automatically by the script)
 bash RUN-workflow.sh       # Local
@@ -100,7 +100,7 @@ annotations_hmms/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── interproscan_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_deeploc/                           # DeepLoc (2 scripts)
 │   ├── AI_GUIDE-deeploc.md
@@ -108,7 +108,7 @@ annotations_hmms/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── deeploc_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_signalp/                           # SignalP (2 scripts)
 │   ├── AI_GUIDE-signalp.md
@@ -116,7 +116,7 @@ annotations_hmms/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── signalp_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_tmbed/                             # tmbed (2 scripts)
 │   ├── AI_GUIDE-tmbed.md
@@ -124,7 +124,7 @@ annotations_hmms/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── tmbed_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 ├── BLOCK_metapredict/                       # MetaPredict (2 scripts)
 │   ├── AI_GUIDE-metapredict.md
@@ -132,7 +132,7 @@ annotations_hmms/
 │       ├── ai/ (main.nf, nextflow.config, scripts/)
 │       ├── RUN-workflow.sh
 │       ├── RUN-workflow.sbatch
-│       └── metapredict_config.yaml
+│       └── START_HERE-user_config.yaml
 │
 └── BLOCK_build_annotation_database/         # Database builder (16 scripts)
     ├── AI_GUIDE-build_annotation_database.md
@@ -140,7 +140,7 @@ annotations_hmms/
         ├── ai/ (main.nf, nextflow.config, scripts/)
         ├── RUN-workflow.sh
         ├── RUN-workflow.sbatch
-        └── annotation_database_config.yaml
+        └── START_HERE-user_config.yaml
 ```
 
 ---

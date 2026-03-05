@@ -34,7 +34,7 @@ Outputs (to 3-output/):
 - Conservation/loss summary
 
 Usage:
-    python 003_ai-python-quantify_conservation_loss.py --structure_id 001 --config ../../ocl_config.yaml --output_dir OUTPUT_pipeline
+    python 003_ai-python-quantify_conservation_loss.py --structure_id 001 --config ../../START_HERE-user_config.yaml --output_dir OUTPUT_pipeline
 """
 
 import csv
@@ -73,7 +73,7 @@ def parse_arguments():
         '--config',
         type = str,
         required = True,
-        help = 'Path to ocl_config.yaml configuration file'
+        help = 'Path to START_HERE-user_config.yaml configuration file'
     )
 
     parser.add_argument(
