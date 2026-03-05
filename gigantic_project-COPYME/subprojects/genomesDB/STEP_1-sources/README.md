@@ -37,11 +37,23 @@ The manifest is a **four-column TSV**:
 genus_species	genome_path	gtf_path	proteome_path
 ```
 
-**Example**:
+**Example** (using relative paths to project-level INPUT_user):
 ```tsv
 genus_species	genome_path	gtf_path	proteome_path
-Homo_sapiens	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.gtf	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
-Mus_musculus	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.gtf	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
+```
+
+**Project-level INPUT_user structure**:
+```
+INPUT_user/
+├── species_set/
+│   └── species_list.txt              # Master species list for the project
+└── genomic_resources/
+    ├── genomes/                       # .fasta files
+    ├── proteomes/                     # .aa files
+    ├── annotations/                   # .gff3/.gtf files
+    └── maps/                          # identifier mapping .tsv files
 ```
 
 ### File Naming Convention (REQUIRED)
@@ -49,23 +61,22 @@ Mus_musculus	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.fast
 All source files must follow this structure:
 
 ```
-genus_species-genome-source_genome_project_identifier-download_date.extension
+genus_species-genome_source_identifier-downloaded_date.extension
 ```
 
 **Components**:
 | Part | Description | Example |
 |------|-------------|---------|
 | `genus_species` | Species name | `Homo_sapiens` |
-| `genome` | Literal string | `genome` |
-| `source_genome_project_identifier` | Source ID | `GCF_000001405.40` |
-| `download_date` | YYYYMMDD | `20240115` |
-| `extension` | File type | `.fasta`, `.gtf`, `.aa` |
+| `genome_source_identifier` | "genome" joined with source database + assembly ID | `genome_ncbi_GCF_000001405.40` |
+| `downloaded_date` | downloaded_YYYYMMDD format | `downloaded_20240115` |
+| `extension` | File type | `.fasta`, `.gff3`, `.aa` |
 
 **Examples**:
 ```
-Homo_sapiens-genome-GCF_000001405.40-20240115.fasta    # Genome
-Homo_sapiens-genome-GCF_000001405.40-20240115.gtf      # Annotation
-Homo_sapiens-genome-GCF_000001405.40-20240115.aa       # Proteome
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta    # Genome
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3    # Annotation
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa      # Proteome
 ```
 
 ### Sequence Header Convention (REQUIRED)

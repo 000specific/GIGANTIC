@@ -10,7 +10,7 @@ BLOCK2_OUTPUT=$3
 
 if [ -z "$GENE_FAMILY" ] || [ -z "$PROJECT_DB" ] || [ -z "$BLOCK2_OUTPUT" ]; then
     echo "Usage: $0 GENE_FAMILY PROJECT_DB BLOCK2_OUTPUT"
-    echo "Example: $0 innexin_pannexin species67_T1-species37 ../block_2-homologs/job_1/output"
+    echo "Example: $0 innexin_pannexin speciesN_T1-species37 ../block_2-homologs/job_1/output"
     exit 1
 fi
 

@@ -46,14 +46,14 @@ Notes:
     - Use clade IDs to identify rooting points for re-rooting trees
 
 Input Files:
-    - FastTree Newick file: output/5-AGS-species67_T1-species37-innexin_pannexin.fasttree
-    - IQ-TREE Newick file: output/6-AGS-species67_T1-species37-innexin_pannexin.treefile
+    - FastTree Newick file: output/5-AGS-speciesN_T1-species37-innexin_pannexin.fasttree
+    - IQ-TREE Newick file: output/6-AGS-speciesN_T1-species37-innexin_pannexin.treefile
 
 Output Files:
-    - output/7-AGS-species67_T1-species37-innexin_pannexin-fasttree-human_friendly.svg
-    - output/7-AGS-species67_T1-species37-innexin_pannexin-fasttree-human_friendly.pdf
-    - output/7-AGS-species67_T1-species37-innexin_pannexin-iqtree-human_friendly.svg
-    - output/7-AGS-species67_T1-species37-innexin_pannexin-iqtree-human_friendly.pdf
+    - output/7-AGS-speciesN_T1-species37-innexin_pannexin-fasttree-human_friendly.svg
+    - output/7-AGS-speciesN_T1-species37-innexin_pannexin-fasttree-human_friendly.pdf
+    - output/7-AGS-speciesN_T1-species37-innexin_pannexin-iqtree-human_friendly.svg
+    - output/7-AGS-speciesN_T1-species37-innexin_pannexin-iqtree-human_friendly.pdf
 
 Log File:
     - 7_ai-log-visualize_trees.log
@@ -734,7 +734,7 @@ def main():
     
     # Generate output filenames dynamically based on input file basenames
     if input_fasttree_path:
-        # Extract base name without extension (e.g., "5-AGS-species67_T1-species37-innexin_pannexin")
+        # Extract base name without extension (e.g., "5-AGS-speciesN_T1-species37-innexin_pannexin")
         fasttree_base = input_fasttree_path.stem
         # Create output prefix by replacing the leading number with "7"
         fasttree_parts = fasttree_base.split( '-', 1 )

@@ -18,7 +18,7 @@ THREADS=${2:-4}
 
 if [ -z "$HOMOLOG_ID" ]; then
     echo "Usage: $0 HOMOLOG_ID [THREADS]"
-    echo "Example: $0 ags-species67_T1-species67-innexin_pannexin 4"
+    echo "Example: $0 ags-speciesN_T1-speciesN-innexin_pannexin 4"
     exit 1
 fi
 

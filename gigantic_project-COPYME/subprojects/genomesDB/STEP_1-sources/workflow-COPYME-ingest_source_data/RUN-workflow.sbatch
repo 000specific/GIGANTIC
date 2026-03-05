@@ -30,7 +30,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=4gb
+#SBATCH --mem=8gb
 #SBATCH --time=1:00:00
 #SBATCH --output=slurm_logs/ingest_sources-%j.log
 

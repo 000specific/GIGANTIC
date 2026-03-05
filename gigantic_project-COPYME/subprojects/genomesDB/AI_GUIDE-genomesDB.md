@@ -54,11 +54,11 @@ The source manifest is a **four-column TSV**:
 genus_species	genome_path	gtf_path	proteome_path
 ```
 
-**Example**:
+**Example** (using relative paths to project-level INPUT_user):
 ```tsv
 genus_species	genome_path	gtf_path	proteome_path
-Homo_sapiens	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.gtf	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
-Mus_musculus	/data/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	/data/Mus_musculus-genome-GCF_000001635.27-20240115.gtf	/data/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
 ```
 
 ### File Naming Convention
@@ -66,27 +66,26 @@ Mus_musculus	/data/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	/data/Mus
 **All source files follow this structure**:
 
 ```
-genus_species-genome-source_genome_project_identifier-download_date.extension
+genus_species-genome_source_identifier-downloaded_date.extension
 ```
 
 | Component | Description | Example |
 |-----------|-------------|---------|
 | `genus_species` | Species name | `Homo_sapiens` |
-| `genome` | Literal string (indicates genome-level data) | `genome` |
-| `source_genome_project_identifier` | Source database + assembly ID | `GCF_000001405.40` |
-| `download_date` | YYYYMMDD format | `20240115` |
-| `extension` | File type | `.fasta`, `.gtf`, `.gff`, `.aa` |
+| `genome_source_identifier` | "genome" joined with source database + assembly ID | `genome_ncbi_GCF_000001405.40` |
+| `downloaded_date` | downloaded_YYYYMMDD format | `downloaded_20240115` |
+| `extension` | File type | `.fasta`, `.gff3`, `.aa` |
 
 **File type extensions**:
 - `.fasta` - Genome sequence (nucleotide)
-- `.gff` or `.gtf` - Gene annotation
+- `.gff3` - Gene annotation
 - `.aa` - Proteome (amino acid sequences)
 
 **Examples**:
 ```
-Homo_sapiens-genome-GCF_000001405.40-20240115.fasta
-Homo_sapiens-genome-GCF_000001405.40-20240115.gtf
-Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 ```
 
 ### Sequence Header Convention
@@ -307,7 +306,7 @@ This consolidates documentation regardless of which step generated it.
 
 ```bash
 # Check phylonames dependency
-ls ../phylonames/output_to_input/BLOCK_generate_phylonames/maps/
+ls ../phylonames/output_to_input/maps/
 
 # Check STEP_1 outputs
 ls output_to_input/STEP_1-sources/
@@ -344,7 +343,7 @@ ls output_to_input/STEP_4-create_final_species_set/
 |-----------|-----|
 | Starting genomesDB | "Have you run the phylonames subproject first?" |
 | Before STEP_1 | "Where are your genome, GTF, and proteome files located?" |
-| Manifest creation | "Are your files named with the GIGANTIC convention? (genus_species-genome-source_id-date.ext)" |
+| Manifest creation | "Are your files named with the GIGANTIC convention? (genus_species-genome_source_identifier-downloaded_date.ext)" |
 | Header format | "Do your FASTA headers follow the convention? (genus_species-gene_id-transcript_id-protein_id)" |
 | Quality thresholds | "What quality thresholds should we use for evaluation?" |
 | Before STEP_4 | "Have STEP_2 and STEP_3 completed? Do you want all species or a subset?" |

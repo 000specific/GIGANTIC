@@ -1,41 +1,14 @@
 # research_user - Your Personal Workspace
 
-**This is your playground. No rules.**
+**This is your open sandbox. No rules, no required structure.**
+
+Use this for anything related to your project - notes, literature, drafts, exploratory analyses, meeting notes, figures, or anything else. Organize however works for you, or don't organize at all.
 
 ---
 
-## Use This Directory For
+## Key Points
 
-- Personal notes and documentation
-- Literature references and papers
-- Draft manuscripts and figures
-- Meeting notes and discussions
-- Exploratory analyses and experiments
-- Preliminary results
-- Anything related to your project
-
----
-
-## Organization
-
-Organize however works for you. Some ideas:
-
-```
-research_user/
-├── literature/           # Papers and references
-├── notes/                # Personal documentation
-├── drafts/               # Manuscript drafts
-├── figures/              # Work-in-progress figures
-├── meetings/             # Meeting notes
-└── exploratory/          # Quick analyses
-```
-
-Or don't organize at all - it's up to you.
-
----
-
-## This Directory Is
-
-- **Not accessed by pipelines** - workflows won't touch it
+- **Not accessed by pipelines** - workflows won't touch this directory
 - **Preserved for archiving** - included in project backups
 - **Part of your scientific record** - documents your research process
+- **Complete freedom** - no naming conventions or structure requirements

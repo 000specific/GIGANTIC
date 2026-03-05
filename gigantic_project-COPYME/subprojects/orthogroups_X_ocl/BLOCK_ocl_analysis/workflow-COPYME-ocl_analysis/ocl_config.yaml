@@ -9,7 +9,7 @@
 # Example labels: "Species71_X_OrthoFinder", "Species71_X_OrthoHMM", "Species71_X_Broccoli"
 run_label: "SET_NAME_HERE_X_OrthoFinder"
 
-# Species set identifier (e.g., "species71", "species43")
+# Species set identifier (e.g., "species71", "speciesN")
 # Replace SET_NAME_HERE with your species set name (e.g., species71)
 species_set_name: "SET_NAME_HERE"
 

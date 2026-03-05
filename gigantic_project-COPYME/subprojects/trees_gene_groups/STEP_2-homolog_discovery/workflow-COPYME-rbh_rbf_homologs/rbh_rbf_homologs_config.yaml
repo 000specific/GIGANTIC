@@ -54,7 +54,7 @@ inputs:
 
 project:
   # Project database name (used in output filenames)
-  database: "species67_T1-species67"
+  database: "speciesN_T1-speciesN"
 
 # ============================================================================
 # BLAST PARAMETERS

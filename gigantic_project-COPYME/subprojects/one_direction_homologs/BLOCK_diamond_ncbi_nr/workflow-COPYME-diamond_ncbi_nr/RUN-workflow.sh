@@ -15,7 +15,7 @@
 # BEFORE RUNNING:
 # 1. Edit diamond_ncbi_nr_config.yaml with your DIAMOND database path
 # 2. Create INPUT_user/proteome_manifest.tsv with your species and proteome paths
-#    OR place a proteome_manifest.tsv in INPUT_gigantic/ at the project root
+#    (in this workflow directory)
 #
 # FOR SLURM CLUSTERS:
 # Use the SLURM version instead:
@@ -46,46 +46,88 @@ echo ""
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
-# Path to project-level INPUT_gigantic (relative to this workflow)
-INPUT_GIGANTIC="../../../../INPUT_gigantic"
+# Path to project-level INPUT_user (relative to this workflow)
+INPUT_USER_PROJECT="../../../../INPUT_user"
 
-# Copy proteome manifest from INPUT_gigantic if it exists
-if [ -f "${INPUT_GIGANTIC}/proteome_manifest.tsv" ]; then
-    MANIFEST_LINES=$(grep -v "^#" "${INPUT_GIGANTIC}/proteome_manifest.tsv" | grep -v "^$" | wc -l)
-    if [ "$MANIFEST_LINES" -gt 0 ]; then
-        echo "Copying proteome manifest from INPUT_gigantic/ (project-wide source)..."
-        cp "${INPUT_GIGANTIC}/proteome_manifest.tsv" "INPUT_user/proteome_manifest.tsv"
-        echo "  Copied manifest with ${MANIFEST_LINES} entries to INPUT_user/ for archival"
+# ============================================================================
+# Resolve species list: workflow INPUT_user/ overrides project-level default
+# ============================================================================
+# Priority order:
+#   1. Workflow INPUT_user/species_list.txt  (user override for this workflow)
+#   2. Project INPUT_user/species_set/species_list.txt  (project-wide default)
+# ============================================================================
+if [ -f "INPUT_user/species_list.txt" ]; then
+    WORKFLOW_SPECIES_COUNT=$(grep -v "^#" "INPUT_user/species_list.txt" | grep -v "^$" | wc -l)
+    if [ "$WORKFLOW_SPECIES_COUNT" -gt 0 ]; then
+        echo "Using workflow-level species list (user override)..."
+        echo "  ${WORKFLOW_SPECIES_COUNT} species in INPUT_user/species_list.txt"
+        echo ""
+    fi
+elif [ -f "${INPUT_USER_PROJECT}/species_set/species_list.txt" ]; then
+    PROJECT_SPECIES_COUNT=$(grep -v "^#" "${INPUT_USER_PROJECT}/species_set/species_list.txt" | grep -v "^$" | wc -l)
+    if [ "$PROJECT_SPECIES_COUNT" -gt 0 ]; then
+        echo "Using project-level species list (default)..."
+        cp "${INPUT_USER_PROJECT}/species_set/species_list.txt" "INPUT_user/species_list.txt"
+        echo "  Copied ${PROJECT_SPECIES_COUNT} species from project INPUT_user/species_set/"
         echo ""
     fi
 fi
 
 # ============================================================================
-# Activate GIGANTIC Environment
+# Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
-# Load conda module (required on HPC systems like HiPerGator)
+# The environment is created automatically on first run from the yml spec
+# in conda_environments/. You can also pre-create all environments at once:
+#   cd ../../../../ && bash RUN-setup_environments.sh
+# ============================================================================
+
+ENV_NAME="ai_gigantic_one_direction_homologs"
+ENV_YML="../../../../conda_environments/${ENV_NAME}.yml"
+
 module load conda 2>/dev/null || true
 
-# Activate the one_direction_homologs environment
-# This environment is created by: bash RUN-setup_environments.sh (at project root)
-if conda activate ai_gigantic_one_direction_homologs 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_one_direction_homologs"
-else
-    # Check if nextflow is already available in PATH
-    if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_one_direction_homologs' not found!"
-        echo ""
-        echo "Please run the environment setup script first:"
-        echo ""
-        echo "  cd ../../../../  # Go to project root"
-        echo "  bash RUN-setup_environments.sh"
-        echo ""
-        echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_one_direction_homologs.yml"
-        echo ""
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
+    echo "On HPC (HiPerGator): module load conda"
+    exit 1
+fi
+
+# Create environment on-demand if it does not exist
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Environment '${ENV_NAME}' not found. Creating on-demand..."
+    echo ""
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    echo ""
+    echo "Environment '${ENV_NAME}' created successfully."
+    echo ""
+fi
+
+# Activate the environment
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+# Ensure NextFlow is available (conda env or system module)
+if ! command -v nextflow &> /dev/null; then
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available!"
+        echo "Options: conda install -n ${ENV_NAME} -c bioconda nextflow, or module load nextflow"
+        exit 1
+    fi
+    echo "Using NextFlow from system module"
+else
+    echo "NextFlow available"
 fi
 echo ""
 
@@ -95,10 +137,7 @@ if [ ! -f "INPUT_user/proteome_manifest.tsv" ]; then
     echo ""
     echo "Please create a manifest at one of these locations:"
     echo ""
-    echo "  RECOMMENDED (project-wide):"
-    echo "    INPUT_gigantic/proteome_manifest.tsv  (at project root)"
-    echo ""
-    echo "  OR workflow-specific:"
+    echo "  Workflow-specific:"
     echo "    INPUT_user/proteome_manifest.tsv  (in this workflow directory)"
     echo ""
     echo "See INPUT_user/proteome_manifest_example.tsv for format."

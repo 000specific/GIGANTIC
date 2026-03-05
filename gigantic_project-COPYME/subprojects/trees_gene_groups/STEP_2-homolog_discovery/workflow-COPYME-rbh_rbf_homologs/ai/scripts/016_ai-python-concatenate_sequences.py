@@ -127,7 +127,7 @@ def load_cgs_to_gigantic_map( map_file: Path, logger: logging.Logger = None ) ->
             logger.error( f"CGS-to-GIGANTIC map file not found: {map_file}" )
         return cgs_ids___gigantic_ids
 
-    # 5-map-species67-headers-complete-to-first-50-characters
+    # 5-map-speciesN-headers-complete-to-first-50-characters
     # Homo_sapiens-00372	g_OR4F5-t_000-p_NP_001005484.2-n_Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens
     with open( map_file, 'r' ) as input_file:
         for line in input_file:
@@ -300,7 +300,7 @@ def main():
     parser.add_argument(
         '--project-db',
         type=str,
-        default='species67_T1-species67',
+        default='speciesN_T1-speciesN',
         help='Project database identifier'
     )
 

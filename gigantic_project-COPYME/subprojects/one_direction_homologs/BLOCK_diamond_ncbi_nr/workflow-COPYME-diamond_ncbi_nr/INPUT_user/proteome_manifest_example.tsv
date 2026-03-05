@@ -13,8 +13,7 @@
 # 2. Replace example entries with your species
 # 3. Ensure all proteome_path files exist
 #
-# Or place a proteome_manifest.tsv in INPUT_gigantic/ at the project root
-# and it will be automatically copied here at runtime.
+# This is a workflow-specific manifest - create it in this INPUT_user/ directory.
 #
 species_name	proteome_path	phyloname
 Homo_sapiens	../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606-ncbi_GCF_000001405.40-downloaded_20241015-gene_models_T1.aa	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens

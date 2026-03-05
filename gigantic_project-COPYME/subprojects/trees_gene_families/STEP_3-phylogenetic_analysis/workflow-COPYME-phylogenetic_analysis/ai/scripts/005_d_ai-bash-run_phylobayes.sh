@@ -23,7 +23,7 @@ BURNIN=${3:-2500}
 
 if [ -z "$HOMOLOG_ID" ]; then
     echo "Usage: $0 HOMOLOG_ID [GENERATIONS] [BURNIN]"
-    echo "Example: $0 ags-species67_T1-species67-innexin_pannexin 10000 2500"
+    echo "Example: $0 ags-speciesN_T1-speciesN-innexin_pannexin 10000 2500"
     exit 1
 fi
 

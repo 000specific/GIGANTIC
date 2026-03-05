@@ -92,7 +92,7 @@ jobs:
 
           # Required directories
           required_dirs=(
-            "gigantic_project-COPYME/INPUT_gigantic"
+            "gigantic_project-COPYME/INPUT_user"
             "gigantic_project-COPYME/research_notebook"
             "gigantic_project-COPYME/research_notebook/research_user"
             "gigantic_project-COPYME/research_notebook/research_ai"

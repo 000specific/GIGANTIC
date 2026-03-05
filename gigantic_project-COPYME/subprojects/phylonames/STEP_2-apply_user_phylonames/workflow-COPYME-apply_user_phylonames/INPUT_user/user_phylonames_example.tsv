@@ -1,0 +1,16 @@
+# User-Provided Custom Phylonames
+# Format: genus_species<TAB>custom_phyloname
+# Lines starting with # are comments
+#
+# Each custom_phyloname follows GIGANTIC format:
+#   Kingdom_Phylum_Class_Order_Family_Genus_species
+#
+# Use this file to override NCBI-generated phylonames for species that:
+#   - Have NOTINNCBI placeholders (not found in NCBI taxonomy)
+#   - Have numbered clades (e.g., Kingdom6555) you want to name
+#   - Have NCBI taxonomy you disagree with
+#
+# Copy this file to user_phylonames.tsv and edit with your overrides.
+#
+Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+Salpingoeca_rosetta	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Salpingoeca_rosetta

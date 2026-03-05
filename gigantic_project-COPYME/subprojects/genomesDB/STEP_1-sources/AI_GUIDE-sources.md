@@ -73,11 +73,23 @@ genus_species	genome_path	gtf_path	proteome_path
 | `gtf_path` | Path to GTF/GFF annotation file |
 | `proteome_path` | Path to proteome (amino acid) file |
 
-**Example manifest**:
+**Example manifest** (using relative paths to project-level INPUT_user):
 ```tsv
 genus_species	genome_path	gtf_path	proteome_path
-Homo_sapiens	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.gtf	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
-Mus_musculus	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.gtf	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
+```
+
+**Project-level INPUT_user structure**:
+```
+INPUT_user/
+├── species_set/
+│   └── species_list.txt              # Master species list for the project
+└── genomic_resources/
+    ├── genomes/                       # .fasta files
+    ├── proteomes/                     # .aa files
+    ├── annotations/                   # .gff3/.gtf files
+    └── maps/                          # identifier mapping .tsv files
 ```
 
 ### File Naming Convention
@@ -85,27 +97,26 @@ Mus_musculus	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.fast
 **All source files MUST follow**:
 
 ```
-genus_species-genome-source_genome_project_identifier-download_date.extension
+genus_species-genome_source_identifier-downloaded_date.extension
 ```
 
 | Component | Description | Example |
 |-----------|-------------|---------|
 | `genus_species` | Species name | `Homo_sapiens` |
-| `genome` | Literal string (indicates genome-level data) | `genome` |
-| `source_genome_project_identifier` | Source database + assembly ID | `GCF_000001405.40` |
-| `download_date` | Date in YYYYMMDD format | `20240115` |
-| `extension` | File type | `.fasta`, `.gtf`, `.gff`, `.aa` |
+| `genome_source_identifier` | "genome" joined with source database + assembly ID | `genome_ncbi_GCF_000001405.40` |
+| `downloaded_date` | downloaded_YYYYMMDD format | `downloaded_20240115` |
+| `extension` | File type | `.fasta`, `.gff3`, `.aa` |
 
 **Extension by file type**:
 - `.fasta` - Genome sequence (nucleotide)
-- `.gtf` or `.gff` - Gene annotation
+- `.gff3` - Gene annotation
 - `.aa` - Proteome (amino acid sequences)
 
 **Examples**:
 ```
-Homo_sapiens-genome-GCF_000001405.40-20240115.fasta
-Homo_sapiens-genome-GCF_000001405.40-20240115.gtf
-Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 ```
 
 ### Sequence Header Convention
@@ -192,7 +203,7 @@ research_notebook/research_ai/subproject-genomesDB/
 |-----------|-----|
 | User says "add genomes to GIGANTIC" | "Do you have your genome, GTF, and proteome files ready? Are they named with the GIGANTIC convention?" |
 | User asks about downloading | "STEP_1 doesn't download automatically. Do you need help preparing your source files with the correct naming convention?" |
-| Files not named correctly | "GIGANTIC requires files named as: genus_species-genome-source_id-date.extension. Would you like help renaming your files?" |
+| Files not named correctly | "GIGANTIC requires files named as: genus_species-genome_source_identifier-downloaded_date.extension. Would you like help renaming your files?" |
 | Headers not formatted | "GIGANTIC requires headers as: >genus_species-gene_id-transcript_id-protein_id. Do your FASTA files follow this format?" |
 | Manifest wrong format | "The manifest needs 4 columns: genus_species, genome_path, gtf_path, proteome_path. Can you verify your manifest format?" |
 
@@ -205,7 +216,7 @@ research_notebook/research_ai/subproject-genomesDB/
 | "Source file not found" | Path in manifest doesn't exist | Verify path with `ls /path/from/manifest` |
 | "Manifest format error" | Wrong columns or delimiter | Must be 4 tab-separated columns |
 | "Permission denied" | Can't read source or write output | Check file permissions with `ls -la` |
-| "Wrong file naming" | Files not following convention | Rename to `genus_species-genome-source_id-date.ext` |
+| "Wrong file naming" | Files not following convention | Rename to `genus_species-genome_source_identifier-downloaded_date.ext` |
 | "Wrong header format" | FASTA headers incorrect | Reformat to `>genus_species-gene_id-transcript_id-protein_id` |
 | Symlinks broken | Hard copy failed or paths wrong | Re-run workflow or run script 002 manually |
 
@@ -220,7 +231,7 @@ research_notebook/research_ai/subproject-genomesDB/
 1. **Check file naming**:
    ```
    # Current: my_genome.fasta
-   # Required: Homo_sapiens-genome-GCF_000001405.40-20240115.fasta
+   # Required: Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta
    ```
 
 2. **Check FASTA headers**:
@@ -229,10 +240,10 @@ research_notebook/research_ai/subproject-genomesDB/
    # Required: >Homo_sapiens-ENSG00000139618-ENST00000380152-NP_001234
    ```
 
-3. **Create 4-column manifest**:
+3. **Create 4-column manifest** (paths point to project-level `INPUT_user/genomic_resources/` subdirectories):
    ```tsv
    genus_species	genome_path	gtf_path	proteome_path
-   Homo_sapiens	/path/to/genome.fasta	/path/to/annotation.gtf	/path/to/proteome.aa
+   Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
    ```
 
 4. **Copy workflow template**:

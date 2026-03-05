@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=16gb
+#SBATCH --mem=8gb
 #SBATCH --time=2:00:00
 #SBATCH --output=slurm_logs/comparison-%j.log
 

@@ -59,7 +59,7 @@ params.gene_family = config.gene_family?.name ?: null
 params.step2_ags_fastas_dir = config.input?.step2_ags_fastas_dir ?: '../../output_to_input/STEP_2-homolog_discovery/ags_fastas'
 
 // Project database name (for file naming)
-params.project_database = config.project?.database ?: 'species67_T1-species67'
+params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
 
 // MAFFT parameters
 params.mafft_maxiterate = config.phylogenetics?.mafft?.maxiterate ?: 1000

@@ -9,17 +9,17 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 
 ## Quick Start
 
-1. Place your source files somewhere accessible (e.g., `../user_research/`)
+1. Place your source files in the project-level `INPUT_user/genomic_resources/` subdirectories (genomes/, proteomes/, annotations/) or somewhere else accessible (e.g., `../user_research/`)
 
 2. **Ensure files follow GIGANTIC naming convention**:
    ```
-   genus_species-genome-source_genome_project_identifier-download_date.extension
+   genus_species-genome_source_identifier-downloaded_date.extension
    ```
    Examples:
    ```
-   Homo_sapiens-genome-GCF_000001405.40-20240115.fasta  # genome
-   Homo_sapiens-genome-GCF_000001405.40-20240115.gff3   # annotation
-   Homo_sapiens-genome-GCF_000001405.40-20240115.aa     # proteome
+   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta  # genome
+   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3   # annotation
+   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa     # proteome
    ```
 
 3. **Ensure FASTA headers follow convention**:
@@ -34,8 +34,13 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 4. Create `INPUT_user/source_manifest.tsv` with **4 columns**:
    ```tsv
    genus_species	genome_path	gff_path	proteome_path
-   Homo_sapiens	/path/to/genome.fasta	/path/to/annotations.gff3	/path/to/proteome.aa
+   Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
    ```
+   Paths reference the project-level `INPUT_user/genomic_resources/` subdirectories:
+   - `genomic_resources/genomes/` for `.fasta` files
+   - `genomic_resources/proteomes/` for `.aa` files
+   - `genomic_resources/annotations/` for `.gff3`/`.gtf` files
+
    Use "NA" for any data type not available for a species.
    (See `INPUT_user/source_manifest_example.tsv` for detailed format)
 

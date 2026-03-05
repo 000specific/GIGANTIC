@@ -124,23 +124,38 @@ Examples:
 - `gigantic_project-early_animal_phylogenomics`
 - `gigantic_project-mollusc_neural_genes`
 
-### 3. Work within your copied project
+### 3. Add your species list and genomic data
+
+**This is the first thing you do.** Place your species list and genomic resource files in `INPUT_user/`:
+
+```bash
+# Edit your species list (one Genus_species per line)
+nano INPUT_user/species_list.txt
+
+# Place your proteome, genome, and GFF files in INPUT_user/
+# See INPUT_user/README.md for file naming conventions
+```
+
+### 4. Work within your copied project
 
 Your copied project is completely self-contained. Read `AI_GUIDE-project.md` to get started - we recommend working with an AI assistant (Claude, ChatGPT, etc.) who can read this guide and help you through the workflows.
 
 ```
 gigantic_project-your_project_name/
-├── AI_GUIDE-project.md                # Start here - high-level project guidance
+├── AI_GUIDE-project.md                # AI assistant guidance
+├── INPUT_user/                        # YOUR DATA GOES HERE FIRST
+│   ├── species_list.txt               # Your species list
+│   └── [genomic resource files]       # Proteomes, genomes, GFFs
 ├── research_notebook/                 # Your research documentation
-│   ├── research_user/                 # Your personal workspace (notes, literature, drafts)
+│   ├── research_user/                 # Your open sandbox (no structure, no rules)
 │   └── research_ai/                   # AI session documentation (logs, validation)
 └── subprojects/                       # GIGANTIC analysis modules
-    ├── phylonames/                    # [1] Start here - species naming system
-    ├── genomesDB/                     # [2] Proteome database setup
+    ├── phylonames/                    # [1] Run first - species naming system
+    ├── genomesDB/                     # [2] Ingest and standardize your data
     └── ...                            # Additional subprojects
 ```
 
-### 4. Run the demo (optional)
+### 5. Run the demo (optional)
 
 ```bash
 cd GIGANTIC/demo
@@ -232,7 +247,7 @@ Together, AI assistance + local HPC computing + modular design makes sophisticat
 GIGANTIC explores what research software looks like when AI assistance is assumed rather than optional. This shapes several design choices:
 
 - **AI_GUIDE files**: Each subproject and workflow includes documentation written specifically for AI assistants to read - structured to help them help you
-- **Research notebook separation**: `research_user/` (your notes, your way) vs `research_ai/` (structured AI session records) - because AI-assisted work is research too
+- **Research notebook separation**: `research_user/` (your open sandbox - no rules) vs `research_ai/` (structured AI session records) - because AI-assisted work is research too
 - **Context-aware naming**: Files like `AI_GUIDE-phylonames.md` let you direct your AI assistant to exactly the right documentation
 - **Per-subproject environments**: Each subproject contains its own `conda_environment-[subproject].yml` file - everything you need is right there in the subproject. The AI immediately sees it when examining the directory. No hunting through centralized folders.
 

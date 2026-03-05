@@ -198,7 +198,7 @@ def main():
     parser.add_argument(
         '--project-db',
         type=str,
-        default='species67_T1-species37',
+        default='speciesN_T1-species37',
         help='Project database identifier (for logging)'
     )
     

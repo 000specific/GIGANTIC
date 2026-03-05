@@ -29,7 +29,7 @@ diamond:
 
 Create `INPUT_user/proteome_manifest.tsv` (see `proteome_manifest_example.tsv` for format).
 
-Or, if `INPUT_gigantic/proteome_manifest.tsv` exists at the project root, it will be automatically copied at runtime.
+The proteome manifest is a workflow-specific input - create it directly in this workflow's `INPUT_user/` directory.
 
 ### 3. Run
 

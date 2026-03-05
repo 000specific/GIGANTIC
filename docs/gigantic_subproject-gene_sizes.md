@@ -73,7 +73,7 @@ Not all species in a GIGANTIC project will have gene structure annotations. The 
 | **SKIPPED_NO_DATA** | No input file provided | User hasn't created TSV for this species |
 | **SKIPPED_INCOMPLETE** | File exists but failed validation | Wrong columns, invalid coordinates, malformed CDS |
 
-The pipeline exits with an error only if **zero** species have valid data. Output directories are named with the count of processed species (e.g., `species43_gigantic_gene_metrics/`).
+The pipeline exits with an error only if **zero** species have valid data. Output directories are named with the count of processed species (e.g., `speciesN_gigantic_gene_metrics/`).
 
 ---
 
@@ -209,7 +209,7 @@ Collects all per-species genome summaries into a wide-format table:
     └── ...
 ```
 
-Where N = number of processed species (e.g., `species43_gigantic_gene_metrics/`).
+Where N = number of processed species (e.g., `speciesN_gigantic_gene_metrics/`).
 
 ---
 

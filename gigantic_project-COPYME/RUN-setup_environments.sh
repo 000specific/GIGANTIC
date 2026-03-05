@@ -3,12 +3,16 @@
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC Environment Setup Script
+# GIGANTIC Environment Setup Script (OPTIONAL)
 ################################################################################
 #
 # PURPOSE:
-# Create all conda environments needed for GIGANTIC subprojects.
-# Run this ONCE after copying gigantic_project-COPYME to start a new project.
+# Pre-create conda environments for GIGANTIC subprojects.
+#
+# NOTE: This script is OPTIONAL. Each subproject's RUN-workflow.sh will
+# automatically create its conda environment on first run if it doesn't
+# exist yet (on-demand creation). Use this script only if you want to
+# pre-create all environments upfront.
 #
 # USAGE:
 #   bash RUN-setup_environments.sh [OPTIONS]
@@ -195,7 +199,7 @@ if [ $created_count -gt 0 ] || [ $skipped_count -gt 0 ]; then
     echo "  conda activate ai_gigantic_phylonames"
     echo ""
     echo "Then run a workflow:"
-    echo "  cd subprojects/phylonames/BLOCK_generate_phylonames/workflow-COPYME-generate_phylonames/"
+    echo "  cd subprojects/phylonames/STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/"
     echo "  bash RUN-workflow.sh"
 fi
 

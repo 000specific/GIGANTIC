@@ -14,8 +14,10 @@
 #   bash RUN-workflow.sh
 #
 # BEFORE RUNNING:
-# 1. Place your source files somewhere accessible (e.g., user_research/)
-# 2. Create INPUT_user/source_manifest.tsv listing your source data paths
+# 1. Place your genomic resource files in INPUT_user/ at the project root
+#    (see INPUT_user/README.md for naming conventions)
+# 2. Create INPUT_user/source_manifest.tsv in this workflow directory
+#    listing paths to your files in the project-level INPUT_user/
 #    (see INPUT_user/source_manifest_example.tsv for format)
 # 3. Edit ingest_sources_config.yaml with your project settings
 #
@@ -42,28 +44,88 @@ echo ""
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
+# Path to project-level INPUT_user (relative to this workflow)
+INPUT_USER_PROJECT="../../../../../../INPUT_user"
+
 # ============================================================================
-# Activate GIGANTIC Environment
+# Resolve species list: workflow INPUT_user/ overrides project-level default
 # ============================================================================
+# Priority order:
+#   1. Workflow INPUT_user/species_list.txt  (user override for this workflow)
+#   2. Project INPUT_user/species_set/species_list.txt  (project-wide default)
+# ============================================================================
+if [ -f "INPUT_user/species_list.txt" ]; then
+    WORKFLOW_SPECIES_COUNT=$(grep -v "^#" "INPUT_user/species_list.txt" | grep -v "^$" | wc -l)
+    if [ "$WORKFLOW_SPECIES_COUNT" -gt 0 ]; then
+        echo "Using workflow-level species list (user override)..."
+        echo "  ${WORKFLOW_SPECIES_COUNT} species in INPUT_user/species_list.txt"
+        echo ""
+    fi
+elif [ -f "${INPUT_USER_PROJECT}/species_set/species_list.txt" ]; then
+    PROJECT_SPECIES_COUNT=$(grep -v "^#" "${INPUT_USER_PROJECT}/species_set/species_list.txt" | grep -v "^$" | wc -l)
+    if [ "$PROJECT_SPECIES_COUNT" -gt 0 ]; then
+        echo "Using project-level species list (default)..."
+        cp "${INPUT_USER_PROJECT}/species_set/species_list.txt" "INPUT_user/species_list.txt"
+        echo "  Copied ${PROJECT_SPECIES_COUNT} species from project INPUT_user/species_set/"
+        echo ""
+    fi
+fi
+
+# ============================================================================
+# Activate GIGANTIC Environment (on-demand creation)
+# ============================================================================
+# The environment is created automatically on first run from the yml spec
+# in conda_environments/. You can also pre-create all environments at once:
+#   cd ../../../../../../ && bash RUN-setup_environments.sh
+# ============================================================================
+
+ENV_NAME="ai_gigantic_genomesdb"
+ENV_YML="../../../../../../conda_environments/${ENV_NAME}.yml"
+
 module load conda 2>/dev/null || true
 
-if conda activate ai_gigantic_genomesdb 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_genomesdb"
-else
-    if ! command -v nextflow &> /dev/null; then
-        echo "WARNING: Environment 'ai_gigantic_genomesdb' not found!"
-        echo ""
-        module load nextflow 2>/dev/null || true
-        if ! command -v nextflow &> /dev/null; then
-            echo "ERROR: NextFlow not found!"
-            echo ""
-            echo "Please run the environment setup script first:"
-            echo "  cd ../../../../  # Go to project root"
-            echo "  bash RUN-setup_environments.sh"
-            exit 1
-        fi
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
+    echo "On HPC (HiPerGator): module load conda"
+    exit 1
+fi
+
+# Create environment on-demand if it does not exist
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Environment '${ENV_NAME}' not found. Creating on-demand..."
+    echo ""
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
+        exit 1
     fi
-    echo "Using NextFlow from PATH"
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    echo ""
+    echo "Environment '${ENV_NAME}' created successfully."
+    echo ""
+fi
+
+# Activate the environment
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+# Ensure NextFlow is available (conda env or system module)
+if ! command -v nextflow &> /dev/null; then
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available!"
+        echo "Options: conda install -n ${ENV_NAME} -c bioconda nextflow, or module load nextflow"
+        exit 1
+    fi
+    echo "Using NextFlow from system module"
+else
+    echo "NextFlow available"
 fi
 echo ""
 

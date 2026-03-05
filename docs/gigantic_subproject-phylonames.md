@@ -116,73 +116,149 @@ phylum=$(echo "$phyloname" | cut -d'_' -f2)
 
 ## The Phylonames Pipeline
 
-The pipeline consists of six sequential processes that download NCBI taxonomy data, generate phylonames for all organisms, extract a project-specific mapping, optionally apply user overrides, and produce a taxonomy summary.
+The phylonames pipeline uses a **2-STEP architecture** with a deliberate review pause between steps. STEP 1 generates phylonames from NCBI taxonomy. The user then reviews the results and decides whether to run STEP 2, which applies custom phyloname overrides for species that need them.
 
 ### Pipeline Overview
 
 ```
-Process 1: Download NCBI taxonomy dump (or use cached version)
-    |
-Process 2: Generate phylonames for ALL organisms in NCBI (~2M entries)
-    |
-Process 3: Extract mapping for YOUR species list
-    |
-Process 4: Apply user-provided phyloname overrides (optional)
-    |
-Process 5: Generate taxonomy summary (Markdown + HTML)
-    |
-Process 6: Write run log to research notebook
+STEP_1-generate_and_evaluate (5 scripts):
+    Script 001: Download NCBI taxonomy dump (or use cached version)
+        |
+    Script 002: Generate phylonames for ALL organisms in NCBI (~2M entries)
+        |
+    Script 003: Extract mapping for YOUR species list
+        |
+    Script 004: Generate taxonomy summary (Markdown + HTML)
+        |
+    Script 005: Write run log to research notebook
+        |
+    ============================================
+    REVIEW PAUSE: User examines STEP 1 output
+    - Check for numbered clades (Kingdom6555, etc.)
+    - Identify NOTINNCBI species
+    - Decide if any overrides are needed
+    ============================================
+        |
+STEP_2-apply_user_phylonames (3 scripts):   [OPTIONAL]
+    Script 001: Apply user-provided phyloname overrides
+        |
+    Script 002: Generate taxonomy summary (Markdown + HTML)
+        |
+    Script 003: Write run log to research notebook
 ```
 
 ### Running the Pipeline
 
+**STEP 1: Generate and Evaluate**
+
 ```bash
 # 1. Edit your species list (one Genus_species per line)
-nano INPUT_gigantic/species_list.txt
+nano STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/INPUT_user/species_list.txt
 
 # 2. Edit configuration
-nano subprojects/phylonames/BLOCK_generate_phylonames/workflow-COPYME-generate_phylonames/phylonames_config.yaml
+nano STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/phylonames_config.yaml
 
 # 3. Run
-cd subprojects/phylonames/BLOCK_generate_phylonames/workflow-COPYME-generate_phylonames/
+cd STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/
 bash RUN-workflow.sh          # Local
 sbatch RUN-workflow.sbatch    # SLURM
 ```
 
 **Runtime**: First run ~15 minutes (downloads NCBI taxonomy). Subsequent runs ~1 minute (reuses cached database).
 
+**Review the Output**
+
+After STEP 1 completes, examine the taxonomy summary and mapping file:
+
+```bash
+# View the HTML taxonomy summary
+# Located at: OUTPUT_pipeline/4-output/taxonomy_summary.html
+
+# Check for numbered clades in your species set
+grep -P '(Kingdom|Phylum|Class|Order|Family)\d+' OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
+
+# Check for NOTINNCBI species
+grep "NOTINNCBI" OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
+```
+
+If all phylonames look correct, you can stop here. STEP 1 output is the final result.
+
+**STEP 2: Apply User Phylonames** (optional)
+
+If any species need custom phylonames (to replace numbered clades, NOTINNCBI placeholders, or apply alternative taxonomy):
+
+```bash
+# 1. Create your user phylonames file
+nano STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames.tsv
+
+# 2. Edit configuration (set project name, mark_unofficial preference)
+nano STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/phylonames_config.yaml
+
+# 3. Run
+cd STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/
+bash RUN-workflow.sh          # Local
+sbatch RUN-workflow.sbatch    # SLURM
+```
+
 ### Configuration
 
-Key settings in `phylonames_config.yaml`:
+**STEP 1 configuration** (`STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/phylonames_config.yaml`):
 
 ```yaml
 project:
   name: "my_project"              # Used in output file naming
   species_list: "INPUT_user/species_list.txt"
-  user_phylonames: ""             # Path to override file, or empty to skip
-  mark_unofficial: true           # Append UNOFFICIAL to user-provided clades
 
 ncbi_taxonomy:
   force_download: false           # Set true to re-download even if cached
 ```
 
+STEP 1 configuration is intentionally simple -- it only needs a project name, a species list, and NCBI download settings. There are no user phyloname settings here because overrides happen in STEP 2.
+
+**STEP 2 configuration** (`STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/phylonames_config.yaml`):
+
+```yaml
+project:
+  name: "my_project"              # MUST match STEP 1 project name
+  step1_mapping: "../../output_to_input/STEP_1-generate_and_evaluate/maps"
+  user_phylonames: "INPUT_user/user_phylonames.tsv"
+  mark_unofficial: true           # Append UNOFFICIAL to user-provided clades
+```
+
+Key STEP 2 settings:
+- `step1_mapping`: Path to STEP 1 output (reads from inter-STEP `output_to_input/`)
+- `user_phylonames`: Path to your override file with custom phylonames
+- `mark_unofficial`: Whether to mark user-provided clades that differ from NCBI
+
 ### Output Files
+
+**STEP 1 outputs** (in `STEP_1-generate_and_evaluate/workflow-*/OUTPUT_pipeline/`):
 
 | Directory | File | Description |
 |-----------|------|-------------|
+| `1-output/` | NCBI taxonomy database | Downloaded and extracted taxonomy dump |
 | `2-output/` | `phylonames` | Full phylonames for all NCBI organisms |
 | `2-output/` | `phylonames_taxonid` | Extended format with NCBI taxon IDs |
 | `2-output/` | `map-phyloname_X_ncbi_taxonomy_info.tsv` | Complete mapping with all NCBI fields |
 | `2-output/` | `map-numbered_clades_X_defining_clades.tsv` | Reference for all numbered clade assignments |
-| `3-output/` | `{project}_map-genus_species_X_phylonames.tsv` | **Project mapping** (this is what downstream subprojects use) |
-| `4-output/` | Final mapping with user overrides applied (if configured) |
-| `5-output/` | Taxonomy summary in Markdown and HTML |
+| `3-output/` | `{project}_map-genus_species_X_phylonames.tsv` | **Project mapping** (this is what downstream subprojects use if no STEP 2) |
+| `4-output/` | Taxonomy summary in Markdown and HTML |
+
+**STEP 2 outputs** (in `STEP_2-apply_user_phylonames/workflow-*/OUTPUT_pipeline/`):
+
+| Directory | File | Description |
+|-----------|------|-------------|
+| `1-output/` | `{project}_map-genus_species_X_phylonames.tsv` | **Final mapping** with user overrides applied |
+| `1-output/` | `unofficial_clades_report.tsv` | Documents all clades marked UNOFFICIAL |
+| `2-output/` | Taxonomy summary in Markdown and HTML (reflects overrides) |
 
 ### Verification
 
-After a successful run:
+After STEP 1:
 
 ```bash
+cd STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/
+
 # Check species count matches your input
 wc -l OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
 
@@ -193,7 +269,22 @@ grep "Homo_sapiens" OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.ts
 grep -P '\d+\t' OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv
 
 # View HTML taxonomy summary in browser
-# Located at: OUTPUT_pipeline/5-output/taxonomy_summary.html
+# Located at: OUTPUT_pipeline/4-output/taxonomy_summary.html
+```
+
+After STEP 2:
+
+```bash
+cd STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/
+
+# Verify overrides were applied
+grep "USER" OUTPUT_pipeline/1-output/*_map-genus_species_X_phylonames.tsv
+
+# Check which clades were marked UNOFFICIAL
+cat OUTPUT_pipeline/1-output/unofficial_clades_report.tsv
+
+# View updated HTML taxonomy summary
+# Located at: OUTPUT_pipeline/2-output/taxonomy_summary.html
 ```
 
 ---
@@ -250,25 +341,28 @@ When a single unknown higher-level clade actually contains multiple lower-level 
 ```
 Reality:                        GIGANTIC representation:
 Unknown Order                   Order7890  (Bolinopsidae)
-├── Bolinopsidae                Order12456 (Leucotheidae)
-└── Leucotheidae                These look like separate Orders
++-- Bolinopsidae                Order12456 (Leucotheidae)
++-- Leucotheidae                These look like separate Orders
 ```
 
-**Impact on downstream analyses**: Origin-Conservation-Loss (OCL) analyses and species tree topology generation may treat these as separate clades, potentially inflating the number of evolutionary origins or losses. If your species set spans such a split, consider using user-provided phylonames (Process 4) to assign a consistent clade name.
+**Impact on downstream analyses**: Origin-Conservation-Loss (OCL) analyses and species tree topology generation may treat these as separate clades, potentially inflating the number of evolutionary origins or losses. If your species set spans such a split, consider using user-provided phylonames in STEP 2 to assign a consistent clade name.
 
 ---
 
 ## User-Provided Phylonames
 
+User-provided phylonames are configured and applied in **STEP 2** of the pipeline, after reviewing STEP 1 output.
+
 ### When to Use
 
-- NCBI lacks classification at Kingdom or Phylum level for your species
+- NCBI lacks classification at Kingdom or Phylum level for your species (numbered clades)
+- Species are not in NCBI taxonomy at all (NOTINNCBI placeholders)
 - Recent literature supports a different taxonomic placement than NCBI
 - You want to apply a specific phylogenetic hypothesis to your analysis
 
 ### Input Format
 
-Tab-separated file with two columns:
+Tab-separated file with two columns, placed at `STEP_2-apply_user_phylonames/workflow-*/INPUT_user/user_phylonames.tsv`:
 
 ```
 genus_species	phyloname
@@ -278,7 +372,7 @@ Salpingoeca_rosetta	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae
 
 ### The UNOFFICIAL Marking System
 
-When `mark_unofficial: true` (default), any clade in positions 0-4 (Kingdom through Family) that differs from the NCBI-derived value is appended with `UNOFFICIAL`:
+When `mark_unofficial: true` (default in STEP 2 config), any clade in positions 0-4 (Kingdom through Family) that differs from the NCBI-derived value is appended with `UNOFFICIAL`:
 
 ```
 User provides:    Holozoa_Choanozoa_Choanoflagellata_...
@@ -291,7 +385,7 @@ Result:           HolozoaUNOFFICIAL_ChoanozoaUNOFFICIAL_Choanoflagellata_...
 
 Genus and species positions (5, 6+) are never marked UNOFFICIAL.
 
-**Configuration**:
+**Configuration** (in STEP 2 `phylonames_config.yaml`):
 ```yaml
 project:
   mark_unofficial: true    # Append UNOFFICIAL to differing clades
@@ -327,11 +421,17 @@ Metazoa_Mollusca_Cephalopoda_Octopoda_Octopodidae_Octopus_bimaculoides___37653-n
 
 ## Mapping Files
 
-The `phylonames/output_to_input/maps/` directory contains the project mapping file, which is the canonical species reference for all downstream subprojects:
+The `phylonames/output_to_input/` directory contains the project mapping files organized by STEP, which serve as the canonical species reference for all downstream subprojects:
 
 ```
-{project_name}_map-genus_species_X_phylonames.tsv
+phylonames/output_to_input/
++-- STEP_1-generate_and_evaluate/maps/
+|   +-- {project_name}_map-genus_species_X_phylonames.tsv
++-- STEP_2-apply_user_phylonames/maps/
+    +-- {project_name}_map-genus_species_X_phylonames.tsv   (if STEP 2 was run)
 ```
+
+Downstream subprojects should read from STEP 2 if it exists, otherwise from STEP 1.
 
 **Format** (tab-separated):
 ```
@@ -339,7 +439,7 @@ genus_species	phyloname	phyloname_taxonid
 Octopus_bimaculoides	Metazoa_Mollusca_Cephalopoda_Octopoda_Octopodidae_Octopus_bimaculoides	Metazoa_Mollusca_Cephalopoda_Octopoda_Octopodidae_Octopus_bimaculoides___37653
 ```
 
-If user phylonames were applied, two additional columns are present:
+If user phylonames were applied (STEP 2), two additional columns are present:
 
 ```
 genus_species	phyloname	phyloname_taxonid	source	original_ncbi_phyloname
@@ -365,7 +465,7 @@ All GIGANTIC subprojects use phylonames:
 | **annotations_hmms** | Linking functional annotations to species |
 | **orthogroups_X_ocl** | Species tracking in origin-conservation-loss analyses |
 
-The mapping file in `phylonames/output_to_input/maps/` is the authoritative source for all subprojects.
+The mapping file in `phylonames/output_to_input/` is the authoritative source for all subprojects.
 
 ---
 
@@ -373,12 +473,13 @@ The mapping file in `phylonames/output_to_input/maps/` is the authoritative sour
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `Species not found in master mapping` | Species name not in NCBI taxonomy | Check spelling, verify NCBI Taxonomy ID exists, consider using user-provided phylonames |
+| `Species not found in master mapping` | Species name not in NCBI taxonomy | Check spelling, verify NCBI Taxonomy ID exists; species will receive NOTINNCBI placeholder -- use STEP 2 to provide proper phylonames |
 | `No database directory found` | NCBI download failed or not yet run | Check internet connectivity, run with `force_download: true` |
 | `Permission denied` on download | Write permissions on output directory | Check directory ownership and permissions |
 | `rankedlineage.dmp not found` | Corrupt or incomplete NCBI download | Delete the database directory and re-run |
-| Numbered clades in your species | NCBI taxonomy is incomplete for some species | Expected behavior - review `map-numbered_clades_X_defining_clades.tsv` for details |
+| Numbered clades in your species | NCBI taxonomy is incomplete for some species | Expected behavior -- review `map-numbered_clades_X_defining_clades.tsv` for details, use STEP 2 to override |
 | Too many UNOFFICIAL clades | User phylonames differ significantly from NCBI | Verify your taxonomic framework is correct at each level |
+| STEP 2 cannot find STEP 1 output | STEP 1 was not run or `step1_mapping` path is wrong | Run STEP 1 first, verify `step1_mapping` in STEP 2 config points to correct location |
 
 ---
 
@@ -403,12 +504,14 @@ A `database-ncbi_taxonomy_latest` symlink always points to the most recent downl
 
 | Question | Answer |
 |----------|--------|
-| Where is the species list? | `INPUT_gigantic/species_list.txt` |
-| Where is the project mapping? | `phylonames/output_to_input/maps/{project}_map-genus_species_X_phylonames.tsv` |
-| How do I add user phylonames? | Set `project.user_phylonames` in config YAML to path of override file |
-| How do I check for numbered clades? | `grep -P '(Kingdom|Phylum|Class|Order|Family)\d+' your_mapping.tsv` |
-| How do I re-download NCBI taxonomy? | Set `ncbi_taxonomy.force_download: true` in config |
-| Where is the HTML summary? | `OUTPUT_pipeline/5-output/taxonomy_summary.html` |
+| Where is the species list? | `STEP_1-generate_and_evaluate/workflow-*/INPUT_user/species_list.txt` |
+| Where is the project mapping (STEP 1)? | `phylonames/output_to_input/STEP_1-generate_and_evaluate/maps/{project}_map-genus_species_X_phylonames.tsv` |
+| Where is the project mapping (STEP 2)? | `phylonames/output_to_input/STEP_2-apply_user_phylonames/maps/{project}_map-genus_species_X_phylonames.tsv` |
+| How do I add user phylonames? | Create override file in STEP 2's `INPUT_user/user_phylonames.tsv`, set `user_phylonames` in STEP 2 config |
+| How do I check for numbered clades? | `grep -P '(Kingdom\|Phylum\|Class\|Order\|Family)\d+' your_mapping.tsv` |
+| How do I re-download NCBI taxonomy? | Set `ncbi_taxonomy.force_download: true` in STEP 1 config |
+| Where is the HTML summary (STEP 1)? | `STEP_1-generate_and_evaluate/workflow-*/OUTPUT_pipeline/4-output/taxonomy_summary.html` |
+| Where is the HTML summary (STEP 2)? | `STEP_2-apply_user_phylonames/workflow-*/OUTPUT_pipeline/2-output/taxonomy_summary.html` |
 | What conda environment is needed? | `ai_gigantic_phylonames` |
 
 ---
@@ -424,4 +527,4 @@ The phylonames pipeline uses only Python 3 standard library and Bash - no additi
 
 ---
 
-*For AI assistant guidance, see `AI_GUIDE-phylonames.md` and workflow-level `AI_GUIDE-phylonames_workflow.md`*
+*For AI assistant guidance, see `AI_GUIDE-phylonames.md` and STEP-level `AI_GUIDE-generate_and_evaluate.md` / `AI_GUIDE-apply_user_phylonames.md`*

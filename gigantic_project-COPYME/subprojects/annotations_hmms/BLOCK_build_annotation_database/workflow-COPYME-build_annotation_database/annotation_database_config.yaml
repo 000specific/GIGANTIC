@@ -14,7 +14,7 @@ go_ontology_url: "http://purl.obolibrary.org/obo/go/go-basic.obo"
 go_ontology_cache_days: 30
 
 # Species set name (matches genomesDB species set)
-# Replace SET_NAME_HERE with your species set name (e.g., "species71", "species67")
+# Replace SET_NAME_HERE with your species set name (e.g., "species71", "speciesN")
 species_set_name: "SET_NAME_HERE"
 
 # Proteomes directory (FASTA files for GIGANTIC species)

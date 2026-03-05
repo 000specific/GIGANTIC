@@ -26,7 +26,7 @@
 #SBATCH --qos=YOUR_QOS
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=16gb
+#SBATCH --mem=30gb
 #SBATCH --time=4:00:00
 #SBATCH --output=slurm_logs/gene_sizes-%j.log
 

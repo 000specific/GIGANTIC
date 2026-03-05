@@ -99,7 +99,7 @@ cat OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "Manifest not found" | No proteome_manifest.tsv | Create in INPUT_user/ or INPUT_gigantic/ |
+| "Manifest not found" | No proteome_manifest.tsv | Create in INPUT_user/ |
 | "Proteome file does not exist" | Path in manifest is wrong | Check proteome_path column, ensure files exist |
 | "DIAMOND database not found" | Config path incorrect | Edit diamond_ncbi_nr_config.yaml database path |
 | "diamond: command not found" | DIAMOND not in environment | Activate conda env or install DIAMOND |

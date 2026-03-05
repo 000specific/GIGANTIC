@@ -1,6 +1,0 @@
-# Ignore symlinks and generated files
-# Only track upload_manifest.tsv and README.md
-*
-!.gitignore
-!upload_manifest.tsv
-!README.md

@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=8gb
+#SBATCH --mem=15gb
 #SBATCH --time=2:00:00
 #SBATCH --output=slurm_logs/trees_species-%j.log
 

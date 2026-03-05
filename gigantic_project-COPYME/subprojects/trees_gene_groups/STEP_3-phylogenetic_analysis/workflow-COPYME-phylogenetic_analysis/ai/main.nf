@@ -60,7 +60,7 @@ params.step2_homolog_sequences_dir = config.input?.step2_homolog_sequences_dir ?
 params.rgs_manifest = "${projectDir}/../INPUT_user/rgs_manifest.tsv"
 
 // Project database name (for file naming)
-params.project_database = config.project?.database ?: 'species67_T1-species67'
+params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
 
 // MAFFT parameters
 params.mafft_maxiterate = config.phylogenetics?.mafft?.maxiterate ?: 1000

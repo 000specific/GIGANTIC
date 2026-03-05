@@ -168,10 +168,10 @@ You learn this structure once and can navigate any subproject.
 
 ## Data Flow
 
-### Project-Wide Inputs: `INPUT_gigantic/`
+### Project-Wide Inputs: `INPUT_user/`
 
 ```
-INPUT_gigantic/species_list.txt     # Edit HERE - single source of truth
+INPUT_user/species_list.txt     # Edit HERE - single source of truth
         |
         v (copied by RUN script at runtime)
 workflow-*/INPUT_user/species_list.txt  # Archived copy for this specific run
@@ -419,17 +419,15 @@ Each project includes a research notebook with two sections:
 
 ```
 research_notebook/
-├── research_user/     # YOUR space - organize however you want
-│   ├── notes/         #   Personal documentation
-│   ├── literature/    #   Papers and references
-│   └── [anything]     #   Complete freedom
+├── research_user/     # YOUR open sandbox - no structure, no rules
+│                      #   Use for anything: notes, literature, drafts, analyses
 │
 └── research_ai/       # AI documentation - structured
     ├── project/sessions/           # AI session records
     └── subproject-[name]/sessions/ # Per-subproject AI docs
 ```
 
-Your personal workspace has no rules. AI documentation is systematically recorded.
+Your personal workspace is a completely open sandbox - no required structure, organize however you want (or don't). AI documentation is systematically recorded.
 
 ---
 
@@ -479,7 +477,7 @@ Homo_sapiens,Mus_musculus,Drosophila_melanogaster
 | Question | Answer |
 |----------|--------|
 | Where do I start? | `subprojects/phylonames/` - run this first |
-| Where's my species list? | `INPUT_gigantic/species_list.txt` |
+| Where's my species list? | `INPUT_user/species_list.txt` |
 | How do I run a workflow? | `bash RUN-workflow.sh` (local) or `sbatch RUN-workflow.sbatch` (SLURM) |
 | Where are my results? | `OUTPUT_pipeline/` in the workflow directory |
 | How do subprojects share data? | Via `output_to_input/` symlinks |

@@ -120,23 +120,26 @@ workflow-COPYME-ingest_source_data/
 
 ### Step 1: Prepare Source Data
 
-Users must have data files accessible somewhere (examples):
-- `../user_research/species71/output_to_input/` - Personal research data
-- `/shared/lab/genomes/` - Lab shared resources
+Users must have data files in the project-level `INPUT_user/genomic_resources/` subdirectories or somewhere else accessible:
+- `../../../../../../INPUT_user/genomic_resources/genomes/` - Project-level genome files (.fasta)
+- `../../../../../../INPUT_user/genomic_resources/proteomes/` - Project-level proteome files (.aa)
+- `../../../../../../INPUT_user/genomic_resources/annotations/` - Project-level annotation files (.gff3/.gtf)
+- `../../../../../../INPUT_user/genomic_resources/maps/` - Identifier mapping files (.tsv)
+- `../user_research/` - Personal research data (alternative)
 - Any accessible path on the system
 
 ### Step 2: Ensure Files Follow GIGANTIC Naming Convention
 
 **File names must follow**:
 ```
-genus_species-genome-source_genome_project_identifier-download_date.extension
+genus_species-genome_source_identifier-downloaded_date.extension
 ```
 
 Examples:
 ```
-Homo_sapiens-genome-GCF_000001405.40-20240115.fasta   # genome
-Homo_sapiens-genome-GCF_000001405.40-20240115.gff3    # annotation
-Homo_sapiens-genome-GCF_000001405.40-20240115.aa      # proteome
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta   # genome
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3    # annotation
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa      # proteome
 ```
 
 **FASTA headers must follow**:
@@ -152,8 +155,20 @@ Create `INPUT_user/source_manifest.tsv` with **4 columns**:
 
 ```tsv
 genus_species	genome_path	gff_path	proteome_path
-Homo_sapiens	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.fasta	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.gff3	/data/Homo_sapiens-genome-GCF_000001405.40-20240115.aa
-Mus_musculus	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.fasta	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.gff3	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.aa
+Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+Mus_musculus	../../../../../../INPUT_user/genomic_resources/genomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Mus_musculus-genome_ncbi_GCF_000001635.27-downloaded_20240115.aa
+```
+
+**Project-level INPUT_user structure** (where source data lives):
+```
+INPUT_user/
+├── species_set/
+│   └── species_list.txt              # Master species list for the project
+└── genomic_resources/
+    ├── genomes/                       # .fasta files
+    ├── proteomes/                     # .aa files
+    ├── annotations/                   # .gff3/.gtf files
+    └── maps/                          # identifier mapping .tsv files
 ```
 
 **Format requirements**:
@@ -161,6 +176,7 @@ Mus_musculus	../user_research/Mus_musculus-genome-GCF_000001635.27-20240115.fast
 - Header row: `genus_species`, `genome_path`, `gff_path`, `proteome_path`
 - One species per line
 - Paths can be absolute or relative to workflow directory
+- Relative paths to project-level `INPUT_user/genomic_resources/` subdirectories are recommended
 - Use "NA" for missing data types
 
 ### Step 4: Set Project Name

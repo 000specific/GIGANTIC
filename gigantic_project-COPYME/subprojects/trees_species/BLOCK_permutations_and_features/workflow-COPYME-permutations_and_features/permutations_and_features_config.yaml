@@ -6,7 +6,7 @@
 # Species Set
 # ============================================================================
 # Identifier for this species set (used in output directory and file naming)
-# Examples: "species67", "species71", "species43"
+# Examples: "speciesN", "species71", "speciesN"
 species_set_name: "species71"
 
 # ============================================================================

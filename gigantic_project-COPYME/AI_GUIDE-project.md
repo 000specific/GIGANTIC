@@ -46,7 +46,7 @@ All paths are relative to `gigantic_project-[project_name]/` (the copied project
 gigantic_project-[project_name]/
 │
 ├── AI_GUIDE-project.md              # THIS FILE - project-level AI guidance
-├── RUN-setup_environments.sh        # ONE-TIME: Creates all conda environments
+├── RUN-setup_environments.sh        # OPTIONAL: Pre-creates all conda environments (on-demand by default)
 ├── RUN-record_project.sh            # Extract Claude sessions for entire project
 │
 ├── ai/                              # AI TOOLS
@@ -57,15 +57,20 @@ gigantic_project-[project_name]/
 │   ├── README.md                    # Environment documentation
 │   └── ai_gigantic_[subproject].yml # One file per subproject
 │
-├── INPUT_gigantic/                  # PROJECT-WIDE INPUTS
-│   │                                # Users edit files here ONCE
-│   │                                # RUN scripts copy to workflow INPUT_user/ for archival
-│   ├── species_list.txt             # Canonical species list for the project
-│   └── README.md
+├── INPUT_user/                      # USER-PROVIDED GENOMIC RESOURCES
+│   │                                # RUN scripts copy relevant files to workflow INPUT_user/ for archival
+│   ├── README.md                    # "Start Here" - formatting instructions
+│   ├── species_set/
+│   │   └── species_list.txt         # Canonical species list for the project
+│   └── genomic_resources/
+│       ├── genomes/                 # Genome assembly .fasta files
+│       ├── proteomes/               # Proteome amino acid .aa files
+│       ├── annotations/             # GFF3/GTF annotation files
+│       └── maps/                    # Identifier mapping .tsv files
 │
 ├── research_notebook/               # RESEARCH DOCUMENTATION
-│   ├── research_user/               # User's personal workspace (no structure required)
-│   │                                # Notes, literature, drafts - organize however you want
+│   ├── research_user/               # User's open sandbox (no structure, no rules)
+│   │                                # Use for anything - notes, literature, drafts, analyses
 │   └── research_ai/                 # AI-generated documentation
 │       ├── project/                 # Project-level AI sessions
 │       │   ├── sessions/            # Conversation logs and summaries
@@ -87,7 +92,7 @@ gigantic_project-[project_name]/
         ├── RUN-update_upload_to_server.sh      # Updates server sharing symlinks
         │
         ├── user_research/               # Subproject-specific personal workspace
-        │                                # Alternative to research_notebook/research_user/
+        │                                # Alternative to project-level research_notebook/research_user/
         │
         ├── output_to_input/             # OUTPUTS FOR OTHER SUBPROJECTS
         │   │                            # Single canonical location per subproject
@@ -111,7 +116,7 @@ gigantic_project-[project_name]/
         │   ├── [workflow]_config.yaml       # User configuration
         │   │
         │   ├── INPUT_user/                  # WORKFLOW INPUTS
-        │   │   │                            # Copied from INPUT_gigantic/ at runtime
+        │   │   │                            # Copied from project INPUT_user/ at runtime
         │   │   └── [input files]            # Archived with this workflow run
         │   │
         │   ├── OUTPUT_pipeline/             # WORKFLOW OUTPUTS
@@ -133,15 +138,24 @@ gigantic_project-[project_name]/
 
 ## Key Patterns
 
-### INPUT_gigantic → INPUT_user Flow
+### Project INPUT_user → Workflow INPUT_user Flow
 
 ```
-INPUT_gigantic/species_list.txt     # User edits HERE (single source of truth)
-        ↓ (copied by RUN script)
-workflow-*/INPUT_user/species_list.txt  # Archived copy for this run
+INPUT_user/                              # User places species list + genomic files HERE
+├── species_set/
+│   └── species_list.txt                 # Project-wide DEFAULT species list
+└── genomic_resources/
+    ├── genomes/                         # Genome assembly .fasta files
+    ├── proteomes/                       # Proteome .aa files
+    ├── annotations/                     # GFF3/GTF annotation files
+    └── maps/                            # Identifier mapping .tsv files
+
+Species list resolution (by RUN-workflow.sh):
+  1. workflow-*/INPUT_user/species_list.txt   ← checked FIRST (user override)
+  2. INPUT_user/species_set/species_list.txt  ← used as DEFAULT (copied to workflow)
 ```
 
-**Why**: One place to edit, but each workflow run has its own archived copy.
+**Why**: One place for all user-provided genomic resources, organized by type. The species list uses an override pattern: the project-level list is the default, but any workflow can override it with its own list. Each workflow run ends up with a copy in its INPUT_user/ for archival. Genomic files are referenced by manifests in workflow-level INPUT_user directories.
 
 ### Core Design Principle: Scripts Own the Data, NextFlow Manages Execution
 
@@ -198,7 +212,7 @@ subprojects/orthogroups/
 subprojects/genomesDB/
 ├── STEP_2-standardize_and_evaluate/workflow-RUN_01-*/OUTPUT_pipeline/...     # ACTUAL FILE
 │       ↓ (symlinked by RUN-workflow.sh)
-└── output_to_input/STEP_2-standardize_and_evaluate/species67_proteomes/      # SYMLINK
+└── output_to_input/STEP_2-standardize_and_evaluate/speciesN_proteomes/      # SYMLINK
 
 # Flat subproject (e.g., phylonames):
 subprojects/phylonames/
@@ -238,6 +252,8 @@ Every workflow has exactly two runner files with standardized names:
 The workflow directory name provides context (e.g., `workflow-COPYME-generate_phylonames/RUN-workflow.sh`). The RUN files themselves are always named `RUN-workflow.*` for consistency across all subprojects.
 
 **Conda lifecycle**: All environment activation and deactivation is handled within `RUN-workflow.sh`. The `.sbatch` file is a thin wrapper (~25 lines) containing only SLURM resource directives and `bash RUN-workflow.sh` - it never manages conda.
+
+**SLURM resource allocation**: HiPerGator allocates 7.5 GB RAM per CPU. All `.sbatch` files follow the rule `--mem = --cpus-per-task × 7.5 GB`. Under-allocating resources (e.g., 2 CPUs / 8 GB) can cause NextFlow to hang indefinitely during JVM startup on compute nodes, even though the same workflow runs fine locally. If a SLURM job appears stuck at "Running NextFlow pipeline..." with no processes starting, the most likely cause is insufficient resource allocation. Increase CPUs and memory before investigating other causes. On other HPC systems, check your cluster's RAM-per-CPU ratio and adjust accordingly.
 
 ### Long-Running Jobs
 
@@ -508,7 +524,7 @@ pwd
 ### Step 3: Check Configuration
 
 Look at these files:
-- `INPUT_gigantic/species_list.txt` - do they have species listed?
+- `INPUT_user/species_set/species_list.txt` - do they have species listed?
 - `[workflow]_config.yaml` - is project name set?
 - `RUN-*.sbatch` - is account/qos configured? (SLURM only)
 
@@ -538,7 +554,7 @@ Users may not be bioinformatics experts. Give specific commands, not general adv
 → `subprojects/phylonames/`. Run this first.
 
 **"Where do I put my species list?"**
-→ `INPUT_gigantic/species_list.txt` (project root)
+→ `INPUT_user/species_set/species_list.txt` (project-wide default). To override for a specific workflow, place a `species_list.txt` in that workflow's `INPUT_user/` directory.
 
 **"How do I run a workflow?"**
 → `bash RUN-*.sh` (local) or `sbatch RUN-*.sbatch` (SLURM)
@@ -559,23 +575,28 @@ Users may not be bioinformatics experts. Give specific commands, not general adv
 
 ## Conda Environments
 
-GIGANTIC uses centralized conda environment management:
+GIGANTIC uses **on-demand** conda environment management. Each subproject's `RUN-workflow.sh` automatically creates its conda environment on first run if it doesn't exist yet.
 
 ```bash
-# ONE-TIME SETUP (run once after copying project):
-bash RUN-setup_environments.sh
+# ON-DEMAND (automatic): Just run a workflow - its env is created if missing
+cd subprojects/phylonames/.../workflow-RUN_1-generate_phylonames/
+bash RUN-workflow.sh  # Creates ai_gigantic_phylonames env if needed
 
-# Environments are then activated automatically by RUN scripts
+# BULK (optional): Pre-create ALL environments at once
+bash RUN-setup_environments.sh
 ```
 
 **Environment files location**: `conda_environments/ai_gigantic_[subproject].yml`
 
 **Naming convention**: All environments begin with `ai_gigantic_` (e.g., `ai_gigantic_phylonames`)
 
-**Why centralized**:
-- Single setup command creates all environments
-- Consistent naming across subprojects
-- RUN scripts handle activation automatically
+**NextFlow availability**: Each `RUN-workflow.sh` tries NextFlow from the conda env first. If not available there, it falls back to `module load nextflow` (for HPC systems like HiPerGator). On some HPC systems, NextFlow from conda may not install correctly due to Java conflicts - the module fallback handles this transparently.
+
+**Design rationale**:
+- On-demand creation means users only install what they need
+- No upfront setup step required - just run a workflow
+- `RUN-setup_environments.sh` remains available for bulk creation
+- Consistent `ai_gigantic_` naming makes GIGANTIC envs easy to identify in `conda env list`
 
 ---
 

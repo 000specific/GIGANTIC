@@ -45,14 +45,14 @@ Three data types are supported. **Proteomes are mandatory**; genomes and gene an
 All source files follow a standardized naming convention encoding species, data type, source, and provenance:
 
 ```
-genus_species-genome-source_genome_project_identifier-download_date.extension
+genus_species-genome_source_identifier-downloaded_date.extension
 ```
 
 **Examples:**
 ```
-Homo_sapiens-genome-GCF_000001405.40-20240115.fasta    (genome)
-Homo_sapiens-genome-GCF_000001405.40-20240115.gtf      (annotation)
-Homo_sapiens-genome-GCF_000001405.40-20240115.aa       (proteome)
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta    (genome)
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3    (annotation)
+Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa      (proteome)
 ```
 
 ### Source FASTA Header Convention
@@ -114,7 +114,7 @@ Transforms source data into GIGANTIC's standardized format: applies phylonames t
 
 **File renaming:**
 ```
-Source:  Homo_sapiens-genome-GCF_000001405.40-20240115.aa
+Source:  Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 Output:  Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa
 ```
 
@@ -283,9 +283,9 @@ Validates the final species selection and assembles curated output directories w
 ### Self-Documenting Output Directories
 
 ```
-species67_gigantic_T1_proteomes/        (67 standardized proteome files)
-species67_gigantic_T1_blastp/           (67 per-species BLAST databases)
-species67_gigantic_gene_annotations/    (subset of species with GFF/GTF)
+speciesN_gigantic_T1_proteomes/        (N standardized proteome files)
+speciesN_gigantic_T1_blastp/           (N per-species BLAST databases)
+speciesN_gigantic_gene_annotations/    (subset of species with GFF/GTF)
 ```
 
 The species count in the directory name makes the database immediately self-documenting. Gene annotations are included for the subset of species that have gene structure data available.

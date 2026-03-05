@@ -5,7 +5,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=8gb
+#SBATCH --mem=15gb
 #SBATCH --time=4:00:00
 #SBATCH --output=slurm_logs/one_direction_homologs-%j.log
 

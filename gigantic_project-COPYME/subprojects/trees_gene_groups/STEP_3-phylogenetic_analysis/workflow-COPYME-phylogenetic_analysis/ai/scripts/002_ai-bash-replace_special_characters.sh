@@ -7,7 +7,7 @@ HOMOLOG_ID=$1
 
 if [ -z "$HOMOLOG_ID" ]; then
     echo "Usage: $0 HOMOLOG_ID"
-    echo "Example: $0 AGS-species67_T1-species37-innexin_pannexin"
+    echo "Example: $0 AGS-speciesN_T1-species37-innexin_pannexin"
     exit 1
 fi
 

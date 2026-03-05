@@ -118,7 +118,7 @@ input:
   step2_ags_fastas_dir: "../../output_to_input/STEP_2-homolog_discovery/ags_fastas"
 
 project:
-  database: "species67_T1-species67"
+  database: "speciesN_T1-speciesN"
 
 tree_methods:
   fasttree: true       # Enable/disable as needed

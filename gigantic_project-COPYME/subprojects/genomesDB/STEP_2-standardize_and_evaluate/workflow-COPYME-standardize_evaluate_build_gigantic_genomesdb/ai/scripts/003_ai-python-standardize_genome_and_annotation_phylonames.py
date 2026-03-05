@@ -6,9 +6,9 @@
 003_ai-python-standardize_genome_and_annotation_phylonames.py
 
 Standardize genome and gene annotation files by creating phyloname-based symlinks:
-    - Genomes:          Genus_species-genome-source-date.fasta  ->  phyloname-genome.fasta
-    - Gene annotations: Genus_species-genome-source-date.gff3   ->  phyloname-genome.gff3
-                        Genus_species-genome-source-date.gtf    ->  phyloname-genome.gtf
+    - Genomes:          Genus_species-genome_source_id-downloaded_date.fasta  ->  phyloname-genome.fasta
+    - Gene annotations: Genus_species-genome_source_id-downloaded_date.gff3   ->  phyloname-genome.gff3
+                        Genus_species-genome_source_id-downloaded_date.gtf    ->  phyloname-genome.gtf
 
 Unlike script 001 (proteomes), the file contents are NOT modified -- only the
 filenames are standardized. Symlinks are created pointing to the original files
@@ -18,9 +18,9 @@ Inputs:
     - Phylonames mapping TSV from phylonames subproject output_to_input/maps/
       (columns: genus_species, phyloname, phyloname_taxonid, source, original_ncbi_phyloname)
     - Directory of source genome .fasta files from STEP_1
-      (named: Genus_species-genome-source_id-download_date.fasta)
+      (named: Genus_species-genome_source_id-downloaded_date.fasta)
     - Directory of source gene annotation .gff3/.gtf files from STEP_1
-      (named: Genus_species-genome-source_id-download_date.gff3 or .gtf)
+      (named: Genus_species-genome_source_id-downloaded_date.gff3 or .gtf)
 
 Outputs:
     - Symlinked genome files in OUTPUT_pipeline/3-output/gigantic_genomes/
@@ -107,7 +107,7 @@ def load_phylonames_mapping( mapping_file_path: Path, logger: logging.Logger ) -
     if not mapping_file_path.exists():
         logger.error( f"CRITICAL ERROR: Phylonames mapping file not found: {mapping_file_path}" )
         logger.error( "The phylonames subproject must be run before STEP_2." )
-        logger.error( "Expected location: phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv" )
+        logger.error( "Expected location: phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv" )
         sys.exit( 1 )
 
     genus_species___phyloname_tuples = {}
@@ -154,9 +154,11 @@ def extract_genus_species_from_filename( filename: str, logger: logging.Logger )
     Extract genus_species from a genome or annotation filename.
 
     Filenames follow the pattern:
-        Genus_species-genome-source_id-download_date.extension
+        Genus_species-genome_source_id-downloaded_date.extension
 
-    The genus_species is everything before the first '-genome-' segment.
+    The genus_species is everything before the first dash. Genus_species
+    contains only underscores (never dashes), so the first dash reliably
+    separates genus_species from the genome source block.
 
     Args:
         filename: The genome or annotation filename (not full path)
@@ -169,13 +171,13 @@ def extract_genus_species_from_filename( filename: str, logger: logging.Logger )
         SystemExit if filename cannot be parsed
     """
 
-    if '-genome-' not in filename:
+    if '-' not in filename:
         logger.error( f"CRITICAL ERROR: Cannot parse genus_species from filename: {filename}" )
-        logger.error( "Expected pattern: Genus_species-genome-source_id-download_date.extension" )
-        logger.error( "The filename must contain '-genome-' as a separator." )
+        logger.error( "Expected pattern: Genus_species-genome_source_id-downloaded_date.extension" )
+        logger.error( "The filename must contain dashes as field separators." )
         sys.exit( 1 )
 
-    genus_species = filename.split( '-genome-' )[ 0 ]
+    genus_species = filename.split( '-' )[ 0 ]
 
     return genus_species
 
@@ -373,7 +375,7 @@ def main():
 Examples:
     # Basic usage with default output location
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
-        --phylonames-mapping ../../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv \\
+        --phylonames-mapping ../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv \\
         --input-genomes ../../output_to_input/STEP_1-sources/genomes \\
         --input-gene-annotations ../../output_to_input/STEP_1-sources/gene_annotations
 

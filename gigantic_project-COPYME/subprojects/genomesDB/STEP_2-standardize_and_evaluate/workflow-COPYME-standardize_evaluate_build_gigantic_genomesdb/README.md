@@ -16,7 +16,7 @@ STEP_2 workflow template for standardizing genomic data with GIGANTIC phylonames
 ## What This Workflow Does
 
 1. **Proteome Standardization** (Script 001)
-   - Renames proteome files: `Genus_species-genome-*.aa` → `phyloname-proteome.aa`
+   - Renames proteome files: `Genus_species-genome_*.aa` → `phyloname-proteome.aa`
    - Transforms FASTA headers: includes gene/transcript/protein IDs and phyloname
 
 2. **Proteome Cleaning** (Script 002)

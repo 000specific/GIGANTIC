@@ -20,7 +20,7 @@ Output Files:
 Usage:
     python3 007_ai-python-list_rgs_blast_files.py \\
         --output-dir output \\
-        --blast-databases-dir ../../pipelines/database/species67-T1-blastp \\
+        --blast-databases-dir ../../pipelines/database/speciesN-T1-blastp \\
         --model-species human fly worm
 """
 

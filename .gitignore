@@ -9,22 +9,37 @@ OUTPUT_pipeline/
 # Test/production run directories (contain large data, not templates)
 workflow-RUN_*/
 
+# SLURM log directories (generated during cluster runs)
+slurm_logs/
+
 # User research directories (personal data, not for git)
 user_research/
 
-# Species data directories (large proteome collections)
-species*/
+# Species data directories (large proteome collections, e.g. species43/, species67/, species71/)
+species[0-9]*/
 
-# output_to_input contents (symlinks to run data, created during workflow runs)
+# output_to_input contents (workflow-generated data shared between subprojects)
 **/output_to_input/*
 !**/output_to_input/.gitkeep
 !**/output_to_input/README.md
 
-# Large data files
+# upload_to_server contents (workflow-generated data for server sharing)
+**/upload_to_server/*
+!**/upload_to_server/.gitkeep
+!**/upload_to_server/README.md
+!**/upload_to_server/upload_manifest.tsv
+
+# Large identifier map files (can be 100MB+)
+*-map-genome_identifiers.tsv
+*-map-sequence_identifiers.tsv
+
+# Large genomic data files
 *.aa
 *.fa
 *.fasta
 *.fna
+*.gff3
+*.gtf
 *.pdb
 *.psq
 *.psa
@@ -51,7 +66,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Logs (tracked in research_notebook/research_ai/subproject-*/logs/)
+# Logs
 *.log
 
 # Environment files with secrets

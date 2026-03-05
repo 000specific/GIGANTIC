@@ -110,7 +110,7 @@ inputs:
   cgs_mapping_file: "../../../../genomesDB/output_to_input/gigantic_T1_blastp_header_map"
 
 project:
-  database: "species67_T1-species67"
+  database: "speciesN_T1-speciesN"
 
 blast:
   evalue: "1e-3"

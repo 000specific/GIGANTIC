@@ -6,7 +6,7 @@
 001_ai-python-standardize_proteome_phylonames.py
 
 Standardize proteome files by:
-1. Renaming files from genus_species-genome-source-date.aa to phyloname-T1-proteome.aa
+1. Renaming files from genus_species-genome_source_id-downloaded_date.aa to phyloname-T1-proteome.aa
 2. Updating FASTA headers from:
        >genus_species-source_gene_id-source_transcript_id-source_protein_id
    to:
@@ -16,7 +16,7 @@ Inputs:
     - Phylonames mapping TSV from phylonames subproject output_to_input/maps/
       (columns: genus_species, phyloname, phyloname_taxonid, source, original_ncbi_phyloname)
     - Directory of source proteome .aa files from STEP_1
-      (named: genus_species-genome-source_id-download_date.aa)
+      (named: genus_species-genome_source_id-downloaded_date.aa)
 
 Outputs:
     - Standardized proteome files in OUTPUT_pipeline/1-output/gigantic_proteomes/
@@ -101,7 +101,7 @@ def load_phylonames_mapping( mapping_file_path: Path, logger: logging.Logger ) -
     if not mapping_file_path.exists():
         logger.error( f"CRITICAL ERROR: Phylonames mapping file not found: {mapping_file_path}" )
         logger.error( "The phylonames subproject must be run before STEP_2." )
-        logger.error( "Expected location: phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv" )
+        logger.error( "Expected location: phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv" )
         sys.exit( 1 )
 
     genus_species___phyloname_tuples = {}
@@ -148,9 +148,11 @@ def extract_genus_species_from_filename( filename: str, logger: logging.Logger )
     Extract genus_species from a proteome filename.
 
     Filenames follow the pattern:
-        genus_species-genome-source_id-download_date.aa
+        genus_species-genome_source_id-downloaded_date.aa
 
-    The genus_species is everything before the first '-genome-' segment.
+    The genus_species is everything before the first dash. Genus_species
+    contains only underscores (never dashes), so the first dash reliably
+    separates genus_species from the genome source block.
 
     Args:
         filename: The proteome filename (not full path)
@@ -163,13 +165,13 @@ def extract_genus_species_from_filename( filename: str, logger: logging.Logger )
         SystemExit if filename cannot be parsed
     """
 
-    if '-genome-' not in filename:
+    if '-' not in filename:
         logger.error( f"CRITICAL ERROR: Cannot parse genus_species from filename: {filename}" )
-        logger.error( "Expected pattern: genus_species-genome-source_id-download_date.aa" )
-        logger.error( "The filename must contain '-genome-' as a separator." )
+        logger.error( "Expected pattern: genus_species-genome_source_id-downloaded_date.aa" )
+        logger.error( "The filename must contain dashes as field separators." )
         sys.exit( 1 )
 
-    genus_species = filename.split( '-genome-' )[ 0 ]
+    genus_species = filename.split( '-' )[ 0 ]
 
     return genus_species
 
@@ -468,7 +470,7 @@ def main():
 Examples:
     # Basic usage with default output location
     python3 001_ai-python-standardize_proteome_phylonames.py \\
-        --phylonames-mapping ../../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv \\
+        --phylonames-mapping ../../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv \\
         --input-proteomes ../../STEP_1-sources/user_research/species71/output_to_input/T1_proteomes
 
     # Custom output directory

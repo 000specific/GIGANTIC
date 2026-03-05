@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=100
-#SBATCH --mem=700gb
+#SBATCH --mem=750gb
 #SBATCH --time=100:00:00
 #SBATCH --account=YOUR_ACCOUNT
 #SBATCH --qos=YOUR_QOS

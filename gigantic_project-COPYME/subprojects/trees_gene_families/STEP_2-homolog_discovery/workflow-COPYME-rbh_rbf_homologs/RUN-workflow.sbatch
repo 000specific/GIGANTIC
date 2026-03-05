@@ -29,7 +29,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=100
-#SBATCH --mem=700gb
+#SBATCH --mem=750gb
 #SBATCH --time=48:00:00
 #SBATCH --output=slurm_logs/step2_workflow-%j.log
 

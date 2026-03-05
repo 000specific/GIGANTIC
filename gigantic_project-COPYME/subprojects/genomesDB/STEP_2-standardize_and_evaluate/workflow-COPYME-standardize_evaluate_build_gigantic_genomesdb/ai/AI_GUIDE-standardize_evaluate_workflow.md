@@ -54,7 +54,7 @@ This workflow applies GIGANTIC phyloname conventions to data from STEP_1 and cal
    - Check: `../../output_to_input/STEP_1-sources/T1_proteomes/` has proteome files
 
 2. **phylonames subproject** must be complete
-   - Check: `../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/species71_map-genus_species_X_phylonames.tsv` exists
+   - Check: `../../phylonames/output_to_input/maps/species71_map-genus_species_X_phylonames.tsv` exists
 
 3. **Conda environment** (for script 003):
    - Environment: `ai_gigantic_genomesdb`
@@ -85,7 +85,7 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 
 | Input | Source |
 |-------|--------|
-| Phylonames mapping | `../../phylonames/output_to_input/BLOCK_generate_phylonames/maps/` |
+| Phylonames mapping | `../../phylonames/output_to_input/maps/` |
 | T1 proteomes | `../../output_to_input/STEP_1-sources/T1_proteomes/` |
 | Genomes | `../../output_to_input/STEP_1-sources/genomes/` |
 | Gene annotations | `../../output_to_input/STEP_1-sources/gene_annotations/` |
@@ -152,7 +152,7 @@ output_to_input/STEP_1-sources/
 │
 └── gene_annotations/     ──► Script 003 ──► 3-output/gigantic_gene_annotations/
 
-phylonames/output_to_input/BLOCK_generate_phylonames/maps/
+phylonames/output_to_input/maps/
 └── species71_map*.tsv    ──► Scripts 001, 003 (need phylonames)
 
 All quality data ──► Script 006 ──► 6-output/quality_summary + species_manifest

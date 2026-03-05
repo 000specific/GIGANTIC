@@ -18,19 +18,18 @@
 # ============================================================================
 #
 # All files must follow:
-#   genus_species-genome-source_genome_project_identifier-download_date.extension
+#   genus_species-genome_source_identifier-downloaded_date.extension
 #
 # Components:
-#   genus_species    - e.g., Homo_sapiens
-#   genome           - literal string "genome"
-#   source_id        - e.g., ncbi_GCF_000001405.40 (NCBI), figshare_12345 (other)
-#   download_date    - downloaded_YYYYMMDD format, e.g., downloaded_20240115
+#   genus_species         - e.g., Homo_sapiens
+#   genome_source_identifier - "genome" joined with source database + assembly ID (e.g., genome_ncbi_GCF_000001405.40, genome_figshare_12345)
+#   downloaded_date       - downloaded_YYYYMMDD format, e.g., downloaded_20240115
 #   extension        - .fasta (genome), .gff3/.gtf (annotation), .aa (proteome)
 #
 # Examples:
-#   Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.fasta
-#   Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.gff3
-#   Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.aa
+#   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta
+#   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3
+#   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 #
 # ============================================================================
 # SEQUENCE HEADER CONVENTION (REQUIRED for proteome .aa files)
@@ -61,12 +60,9 @@ genus_species	genome_path	gff_path	proteome_path
 # EXAMPLE DATA (uncomment and edit with your data)
 # ============================================================================
 #
-# All three data types available:
-# Homo_sapiens	/data/genomes/Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.fasta	/data/genomes/Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.gff3	/data/genomes/Homo_sapiens-genome-ncbi_GCF_000001405.40-downloaded_20240115.aa
+# All three data types available (using relative paths to project-level INPUT_user):
+# Homo_sapiens	../../../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 #
-# Using relative paths:
-# Mus_musculus	../user_research/downloads/Mus_musculus-genome-ncbi_GCF_000001635.27-downloaded_20240115.fasta	../user_research/downloads/Mus_musculus-genome-ncbi_GCF_000001635.27-downloaded_20240115.gff3	../user_research/downloads/Mus_musculus-genome-ncbi_GCF_000001635.27-downloaded_20240115.aa
-#
-# Missing genome (proteome and GFF only):
-# Amphiscolops_sp	NA	../user_research/downloads/Amphiscolops_sp-genome-zenodo_12345-downloaded_20240115.gff3	../user_research/downloads/Amphiscolops_sp-genome-zenodo_12345-downloaded_20240115.aa
+# Missing genome (proteome and annotation only):
+# Amphiscolops_sp	NA	../../../../../../INPUT_user/genomic_resources/annotations/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.gff3	../../../../../../INPUT_user/genomic_resources/proteomes/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.aa
 #
