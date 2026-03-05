@@ -607,6 +607,32 @@ process concatenate_final_gene_set {
 // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
 // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/16-output/.
 
+/*
+ * Process 11: Write Run Log
+ * Calls: scripts/017_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/017_ai-python-write_run_log.py \
+        --workflow-name "rbh_rbf_homologs" \
+        --subproject-name "trees_gene_groups" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -778,6 +804,9 @@ workflow {
     // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
     // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/16-output/.
 
+    // Process 11: Write run log
+    write_run_log( concatenate_final_gene_set.out.ags_done.map { true }.collect() )
+
     log.info "\nPipeline submitted. All gene families processing..."
 }
 
@@ -794,6 +823,8 @@ workflow.onComplete {
     println "Duration: ${workflow.duration}"
     println ""
     if ( workflow.success ) {
+        println "Run log written to ai/logs/ in this workflow directory"
+        println ""
         println "Output files in ${params.output_dir}/<gene_family>/:"
         println "   1-output/: BLAST database listing"
         println "   2-output/: Project database BLAST report listing"

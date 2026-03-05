@@ -272,14 +272,18 @@ Step directories are nested ONE level deeper than standard subprojects:
 
 ## Research Notebook Location
 
-All genomesDB AI sessions (from ANY step) save to ONE location:
+genomesDB logging uses two locations:
+
+- **AI sessions** (project-wide): `research_notebook/research_ai/sessions/`
+- **Workflow run logs** (per-workflow): `workflow-*/ai/logs/`
+
 ```
-research_notebook/research_ai/subproject-genomesDB/
-├── logs/
-└── sessions/
+research_notebook/research_ai/sessions/    # All AI sessions (project-wide, not per-subproject)
+workflow-*/ai/logs/                         # Run logs specific to each workflow
+workflow-*/ai/validation/                   # Validation outputs specific to each workflow
 ```
 
-This consolidates documentation regardless of which step generated it.
+Sessions are consolidated project-wide. Run logs stay with the workflow that generated them.
 
 ---
 

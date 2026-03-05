@@ -165,6 +165,32 @@ process compile_cross_species_summary {
     """
 }
 
+/*
+ * Process 5: Write Run Log
+ * Calls: scripts/005_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \
+        --workflow-name "analyze_gene_sizes" \
+        --subproject-name "gene_sizes" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -219,6 +245,9 @@ workflow {
         species_count,
         gigantic_species_count
     )
+
+    // Step 5: Write run log
+    write_run_log( compile_cross_species_summary.out.summary.map { true } )
 }
 
 // ============================================================================
@@ -234,6 +263,8 @@ workflow.onComplete {
     println "Duration: ${workflow.duration}"
     println ""
     if (workflow.success) {
+        println "Run log written to ai/logs/ in this workflow directory"
+        println ""
         println "Output files in ${params.output_dir}/:"
         println "  1-output/: Species processing status and processable species list"
         println "  2-output/: Per-species gene metrics"

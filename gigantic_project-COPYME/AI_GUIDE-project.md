@@ -71,14 +71,9 @@ gigantic_project-[project_name]/
 ├── research_notebook/               # RESEARCH DOCUMENTATION
 │   ├── research_user/               # User's open sandbox (no structure, no rules)
 │   │                                # Use for anything - notes, literature, drafts, analyses
-│   └── research_ai/                 # AI-generated documentation
-│       ├── project/                 # Project-level AI sessions
-│       │   ├── sessions/            # Conversation logs and summaries
-│       │   ├── validation/          # QC scripts
-│       │   ├── logs/                # Script execution logs
-│       │   └── debugging/           # Troubleshooting scripts
-│       └── subproject-[name]/       # Per-subproject AI documentation
-│           └── [same structure]
+│   └── research_ai/                 # AI session provenance (project-wide)
+│       └── sessions/                # All AI session extractions (flat, project-wide)
+│                                    # Sessions can span subprojects, so kept together
 │
 └── subprojects/                     # ANALYSIS MODULES
     │
@@ -127,7 +122,9 @@ gigantic_project-[project_name]/
         │       ├── AI_GUIDE-*_workflow.md   # Workflow-level AI guidance
         │       ├── main.nf                  # NextFlow pipeline
         │       ├── nextflow.config          # NextFlow settings
-        │       └── scripts/                 # Python/Bash scripts
+        │       ├── scripts/                 # Python/Bash scripts
+        │       ├── logs/                    # Workflow run logs (written by write_run_log)
+        │       └── validation/              # Validation outputs
         │
         └── workflow-RUN_XX-[name]/          # WORKFLOW RUN INSTANCES (numbered)
             │                                # Copy from COPYME, increment XX for each run
@@ -398,14 +395,18 @@ bash RUN-clean_and_record_subproject.sh --record-sessions
 bash RUN-clean_and_record_subproject.sh --all  # cleanup + recording
 ```
 
-**Output locations**:
+**Output location**:
 ```
 research_notebook/research_ai/
-├── project/sessions/
-│   ├── session_*.md                 # Extracted compaction summaries
-│   └── SESSION_EXTRACTION_LOG.md    # Activity log
-└── subproject-[name]/sessions/
-    └── ...                          # Same structure per subproject
+└── sessions/                        # Single flat directory (project-wide)
+    ├── session_*.md                 # Extracted compaction summaries
+    └── SESSION_EXTRACTION_LOG.md    # Activity log
+```
+
+**Workflow-level logs** (run logs, validation) are separate and live inside each workflow's `ai/` directory:
+```
+workflow-COPYME-*/ai/logs/           # Timestamped run logs
+workflow-COPYME-*/ai/validation/     # Validation outputs
 ```
 
 **Why This Matters**:

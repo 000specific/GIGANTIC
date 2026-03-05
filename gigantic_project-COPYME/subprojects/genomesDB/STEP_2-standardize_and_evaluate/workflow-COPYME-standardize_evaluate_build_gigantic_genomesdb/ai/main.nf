@@ -30,6 +30,7 @@ params.busco_lineages = "INPUT_user/busco_lineages.txt"
 params.output_dir = "OUTPUT_pipeline"
 params.busco_parallel = 4
 params.busco_cpus_per_job = 4
+params.project_name = "my_project"
 
 // ============================================================================
 // PROCESSES
@@ -213,6 +214,32 @@ process summarize_quality {
     """
 }
 
+/*
+ * Process 7: Write Run Log
+ * Calls: scripts/007_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \
+        --workflow-name "standardize_evaluate_build_gigantic_genomesdb" \
+        --subproject-name "genomesDB" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -241,6 +268,9 @@ workflow {
         run_busco_evaluation.out.summary,
         standardize_proteome_phylonames.out.manifest
     )
+
+    // Write run log (FINAL STEP)
+    write_run_log( summarize_quality.out.summary )
 
     // NOTE: Symlinks from output_to_input/ to OUTPUT_pipeline/6-output/
     // are created by RUN-workflow.sh after pipeline completes.
@@ -272,6 +302,7 @@ workflow.onComplete {
         println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
         println ""
         println "Next: Run STEP_4 to create final species set in output_to_input/"
+        println "Run log written to ai/logs/ in this workflow directory"
     }
     println "========================================================================"
 }

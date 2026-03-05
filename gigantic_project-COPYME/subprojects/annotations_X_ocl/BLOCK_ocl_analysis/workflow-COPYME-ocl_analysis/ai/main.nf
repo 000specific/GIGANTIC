@@ -219,6 +219,36 @@ process validate_results {
 }
 
 // ============================================================================
+// PROCESS 006: WRITE RUN LOG
+// ============================================================================
+
+/*
+ * Process 6: Write Run Log
+ * Calls: scripts/006_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/006_ai-python-write_run_log.py \
+        --workflow-name "ocl_analysis" \
+        --subproject-name "annotations_X_ocl" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
+// ============================================================================
 // WORKFLOW
 // ============================================================================
 
@@ -229,6 +259,9 @@ workflow {
     quantify_conservation_loss( determine_origins.out.structure_id )
     comprehensive_ocl_analysis( quantify_conservation_loss.out.structure_id )
     validate_results( comprehensive_ocl_analysis.out.structure_id )
+
+    // Write run log (FINAL STEP)
+    write_run_log( validate_results.out.structure_id.collect() )
 }
 
 // ============================================================================
@@ -245,6 +278,7 @@ workflow.onComplete {
     Run Label   : ${config.run_label}
     Database    : ${config.annotation_database}
     Results     : ${output_dir}
+    Run log written to ai/logs/ in this workflow directory
     ==============================================================================
     """.stripIndent()
 }

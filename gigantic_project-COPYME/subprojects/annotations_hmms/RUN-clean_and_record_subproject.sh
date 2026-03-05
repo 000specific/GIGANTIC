@@ -30,7 +30,7 @@
 #
 # SESSION RECORDING:
 #   Extracts Claude Code context compaction summaries from ~/.claude/projects/
-#   and saves them to research_notebook/research_ai/project/sessions/
+#   and saves them to research_notebook/research_ai/sessions/
 #   This provides research provenance for AI-assisted work.
 #   Safe to run multiple times - overwrites with complete current state.
 #
@@ -189,7 +189,7 @@ record_sessions() {
     fi
 
     # Output locations - log file lives inside sessions folder
-    sessions_dir="$PROJECT_ROOT/research_notebook/research_ai/project/sessions"
+    sessions_dir="$PROJECT_ROOT/research_notebook/research_ai/sessions"
     log_file="$sessions_dir/SESSION_EXTRACTION_LOG.md"
 
     echo "  Output directory: $sessions_dir"

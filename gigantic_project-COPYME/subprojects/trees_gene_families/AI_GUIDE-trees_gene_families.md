@@ -235,11 +235,14 @@ All three STEPs use this single environment.
 
 ## Research Notebook Location
 
-All trees_gene_families AI sessions save to:
+AI sessions save to the project-wide sessions directory:
 ```
-research_notebook/research_ai/subproject-trees_gene_families/
-├── logs/
-└── sessions/
+research_notebook/research_ai/sessions/
+```
+
+Workflow run logs save to each workflow's own `ai/logs/` directory:
+```
+workflow-*/ai/logs/
 ```
 
 ---

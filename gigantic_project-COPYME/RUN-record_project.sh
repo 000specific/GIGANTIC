@@ -23,9 +23,8 @@
 #   --help             Show this help message
 #
 # OUTPUT:
-#   research_notebook/research_ai/project/sessions/           (project-level)
-#   research_notebook/research_ai/subproject-*/sessions/      (per-subproject)
-#   research_notebook/research_ai/project/SESSION_EXTRACTION_LOG.md
+#   research_notebook/research_ai/sessions/                   (all sessions, flat)
+#   research_notebook/research_ai/sessions/SESSION_EXTRACTION_LOG.md
 #
 # NOTES:
 #   - Run from GIGANTIC project root directory
@@ -263,7 +262,7 @@ PYEND
 echo "Recording project-level sessions..."
 echo ""
 
-extract_sessions "$SCRIPT_DIR" "$SCRIPT_DIR/research_notebook/research_ai/project" "project"
+extract_sessions "$SCRIPT_DIR" "$SCRIPT_DIR/research_notebook/research_ai" "project"
 
 ################################################################################
 # Record subproject sessions (unless --project-only)
@@ -284,8 +283,8 @@ if ! $PROJECT_ONLY; then
                     continue
                 fi
 
-                # Output to subproject-specific research_ai directory
-                output_base="$SCRIPT_DIR/research_notebook/research_ai/subproject-$subproject_name"
+                # Output to flat project-wide sessions directory
+                output_base="$SCRIPT_DIR/research_notebook/research_ai"
 
                 extract_sessions "$subproject_dir" "$output_base" "subproject-$subproject_name"
             fi
@@ -314,8 +313,8 @@ if ! $PROJECT_ONLY; then
                     if [ -d "$workflow_dir" ]; then
                         workflow_name=$(basename "$workflow_dir")
 
-                        # Output to subproject directory (workflows share subproject sessions folder)
-                        output_base="$SCRIPT_DIR/research_notebook/research_ai/subproject-$subproject_name"
+                        # Output to flat project-wide sessions directory
+                        output_base="$SCRIPT_DIR/research_notebook/research_ai"
 
                         extract_sessions "$workflow_dir" "$output_base" "$subproject_name/$workflow_name"
                     fi
@@ -336,14 +335,10 @@ if $DRY_RUN; then
 else
     echo -e "${GREEN}SESSION RECORDING COMPLETE${NC}"
     echo ""
-    echo "Each location has its own SESSION_EXTRACTION_LOG.md"
+    echo "All sessions saved to a single flat directory."
     echo ""
-    echo "View project sessions and log:"
-    echo "  ls research_notebook/research_ai/project/sessions/"
-    echo "  cat research_notebook/research_ai/project/sessions/SESSION_EXTRACTION_LOG.md"
-    echo ""
-    echo "View subproject sessions and logs:"
-    echo "  ls research_notebook/research_ai/subproject-*/sessions/"
-    echo "  cat research_notebook/research_ai/subproject-*/sessions/SESSION_EXTRACTION_LOG.md"
+    echo "View sessions and log:"
+    echo "  ls research_notebook/research_ai/sessions/"
+    echo "  cat research_notebook/research_ai/sessions/SESSION_EXTRACTION_LOG.md"
 fi
 echo "========================================================================"

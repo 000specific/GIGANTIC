@@ -127,10 +127,7 @@ From this step directory, project root is at `../../../`:
 
 ## Research Notebook Location
 
-All STEP_4 logs save to the genomesDB subproject location:
-```
-research_notebook/research_ai/subproject-genomesDB/
-```
+Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions are extracted project-wide to `research_notebook/research_ai/sessions/`.
 
 ---
 

@@ -81,10 +81,7 @@ Where N = count of selected species (e.g., species71).
 
 ## Research Notebook
 
-All logs and sessions saved to:
-```
-research_notebook/research_ai/subproject-genomesDB/
-```
+Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions are extracted project-wide to `research_notebook/research_ai/sessions/`.
 
 ---
 

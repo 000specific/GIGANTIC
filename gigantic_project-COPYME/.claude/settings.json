@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/ai/tools/002_ai-python-hook_precompact_capture_transcript.py"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -43,8 +43,8 @@ subproject/
 │   └── BLOCK_X/ or STEP_X/     # Subdirectories per BLOCK/STEP
 └── upload_to_server/            # External access
 
-# AI documentation stored centrally in:
-# research_notebook/research_ai/subproject-[name]/
+# AI sessions: research_notebook/research_ai/sessions/ (project-wide)
+# Workflow logs: workflow-*/ai/logs/ and workflow-*/ai/validation/
 ```
 
 ## Python Code Style

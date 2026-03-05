@@ -221,6 +221,32 @@ process generate_clade_species_mappings {
     """
 }
 
+/*
+ * Process 10: Write Run Log
+ * Calls: scripts/010_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/010_ai-python-write_run_log.py \
+        --workflow-name "permutations_and_features" \
+        --subproject-name "trees_species" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -255,6 +281,9 @@ workflow {
 
     // Step 9: Generate clade-species mappings
     generate_clade_species_mappings( visualize_species_trees.out.done )
+
+    // Step 10: Write run log
+    write_run_log( generate_clade_species_mappings.out.done )
 }
 
 // ============================================================================
@@ -270,6 +299,8 @@ workflow.onComplete {
     println "Duration: ${workflow.duration}"
     println ""
     if (workflow.success) {
+        println "Run log written to ai/logs/ in this workflow directory"
+        println ""
         println "Output files in OUTPUT_pipeline/:"
         println "  1-output/: Tree components and phylogenetic paths"
         println "  2-output/: Topology permutations (Newick files)"

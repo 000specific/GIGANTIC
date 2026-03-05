@@ -411,6 +411,32 @@ process analyze_phylogenetic_patterns {
     """
 }
 
+/*
+ * Process 17: Write Run Log
+ * Calls: scripts/017_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/017_ai-python-write_run_log.py \
+        --workflow-name "build_annotation_database" \
+        --subproject-name "annotations_hmms" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // Workflow
 // ============================================================================
@@ -450,4 +476,17 @@ workflow {
     detect_annotation_outliers( compile_annotation_statistics.out.statistics )
     generate_visualization_data( compile_annotation_statistics.out.statistics )
     analyze_phylogenetic_patterns( compile_annotation_statistics.out.statistics )
+
+    // Write run log (FINAL STEP)
+    // Wait for all 8 parallel analysis processes to complete
+    all_analyses_done = analyze_cross_tool_consistency.out.consistency
+        .mix( analyze_annotation_quality.out.quality )
+        .mix( analyze_protein_complexity.out.complexity )
+        .mix( analyze_functional_categories.out.categories )
+        .mix( analyze_domain_architecture.out.architecture )
+        .mix( detect_annotation_outliers.out.outliers )
+        .mix( generate_visualization_data.out.heatmap )
+        .mix( analyze_phylogenetic_patterns.out.patterns )
+        .collect()
+    write_run_log( all_analyses_done )
 }

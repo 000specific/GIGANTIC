@@ -22,6 +22,7 @@ params.proteomes_dir = "../../output_to_input/STEP_2-standardize_and_evaluate/gi
 params.output_dir = "OUTPUT_pipeline"
 params.database_name = "gigantic-T1-blastp"
 params.parallel_jobs = 4
+params.project_name = "my_project"
 
 // ============================================================================
 // PROCESSES
@@ -83,6 +84,32 @@ process build_blast_databases {
     """
 }
 
+/*
+ * Process 3: Write Run Log
+ * Calls: scripts/003_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \
+        --workflow-name "build_gigantic_genomesDB" \
+        --subproject-name "genomesDB" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -93,6 +120,9 @@ workflow {
 
     // Step 2: Build BLAST databases (depends on step 1)
     build_blast_databases(filter_species_manifest.out.filtered_manifest)
+
+    // Write run log (FINAL STEP)
+    write_run_log( build_blast_databases.out.blastdb_dir )
 }
 
 // ============================================================================
@@ -116,6 +146,7 @@ workflow.onComplete {
         println ""
         println "To use with blastp:"
         println "  blastp -db OUTPUT_pipeline/2-output/${params.database_name}/PHYLONAME-proteome.aa -query sequences.fasta"
+        println "Run log written to ai/logs/ in this workflow directory"
     }
     println "========================================================================"
 }

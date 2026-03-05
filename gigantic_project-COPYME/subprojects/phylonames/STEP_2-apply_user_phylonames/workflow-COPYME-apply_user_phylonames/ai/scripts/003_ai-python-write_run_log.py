@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.5 | 2026 February 12 | Purpose: Write workflow run log to research_notebook
+# AI: Claude Code | Opus 4.5 | 2026 February 12 | Purpose: Write workflow run log to ai/logs/
 # Human: Eric Edsinger
 
 """
-Write Workflow Run Log to Research Notebook
+Write Workflow Run Log
 
 This script creates a timestamped log file documenting each workflow run for
 transparency and reproducibility. The log is written to:
-    research_notebook/research_ai/subproject-phylonames/logs/
+    ai/logs/ (within this workflow directory)
 
-This serves as an AI lab notebook - capturing what the workflow did, when,
-with what inputs, and what it produced.
+This captures what the workflow did, when, with what inputs, and what it produced.
 
 Usage:
     python3 005_ai-python-write_run_log.py \\
@@ -29,16 +28,15 @@ from datetime import datetime
 from pathlib import Path
 
 
-def get_research_notebook_path( workflow_dir: Path ) -> Path:
+def get_workflow_log_path( script_dir: Path ) -> Path:
     """
-    Calculate path to research_notebook from workflow directory.
+    Get the workflow's ai/logs/ directory for run logs.
 
-    Workflow is at: subprojects/phylonames/workflow-.../
-    Research notebook is at: research_notebook/research_ai/subproject-phylonames/logs/
+    Script is at: workflow-*/ai/scripts/NNN_ai-...py
+    Logs go to:   workflow-*/ai/logs/
     """
-    # Navigate up to project root then into research_notebook
-    project_root = workflow_dir.parent.parent.parent
-    log_dir = project_root / "research_notebook" / "research_ai" / "subproject-phylonames" / "logs"
+    # script_dir is ai/scripts/, parent is ai/, logs is ai/logs/
+    log_dir = script_dir.parent / "logs"
     return log_dir
 
 
@@ -97,12 +95,11 @@ def write_run_log(
     timestamp_str = timestamp.strftime( "%Y%m%d_%H%M%S" )
     timestamp_human = timestamp.strftime( "%Y-%m-%d %H:%M:%S" )
 
-    # Determine workflow directory (this script is in ai/scripts/)
+    # Determine log directory (this script is in ai/scripts/, logs go to ai/logs/)
     script_dir = Path( __file__ ).parent
-    workflow_dir = script_dir.parent.parent
 
     # Get log directory
-    log_dir = get_research_notebook_path( workflow_dir )
+    log_dir = get_workflow_log_path( script_dir )
 
     # Ensure directory exists
     log_dir.mkdir( parents = True, exist_ok = True )

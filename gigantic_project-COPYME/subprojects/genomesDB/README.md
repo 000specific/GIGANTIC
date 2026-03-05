@@ -258,12 +258,12 @@ bash RUN-clean_and_record_subproject.sh --all
 
 ## Research Notebook Integration
 
-All AI session recordings for genomesDB (regardless of which step they're from) are saved to:
+AI sessions are extracted project-wide to:
 ```
-research_notebook/research_ai/subproject-genomesDB/sessions/
+research_notebook/research_ai/sessions/
 ```
 
-This consolidates all genomesDB-related AI documentation in one location.
+Workflow run logs are saved to each workflow's own `ai/logs/` directory.
 
 ---
 

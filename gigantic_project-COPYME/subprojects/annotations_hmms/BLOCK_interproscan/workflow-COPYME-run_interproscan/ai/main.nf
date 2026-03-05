@@ -101,6 +101,32 @@ process combine_interproscan_results {
     """
 }
 
+/*
+ * Process 5: Write Run Log
+ * Calls: scripts/005_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \
+        --workflow-name "run_interproscan" \
+        --subproject-name "annotations_hmms" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // Workflow
 // ============================================================================
@@ -132,4 +158,7 @@ workflow {
     // groupTuple() collects all InterProScan result files for each phyloname
     // into a single tuple: [phyloname, [result_1.tsv, result_2.tsv, ...]]
     combine_interproscan_results( run_interproscan.out.interproscan_results.groupTuple() )
+
+    // Write run log (FINAL STEP)
+    write_run_log( combine_interproscan_results.out.combined_results.collect() )
 }

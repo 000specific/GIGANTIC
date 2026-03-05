@@ -16,7 +16,7 @@ The script:
 1. Finds Claude's project directory based on current working directory
 2. Reads all JSONL session files
 3. Extracts compaction summaries (isCompactSummary = true)
-4. Writes markdown to research_notebook/research_ai/project/sessions/
+4. Writes markdown to research_notebook/research_ai/sessions/
 5. Appends extraction record to SESSION_EXTRACTION_LOG.md
 
 Requirements:
@@ -229,8 +229,8 @@ def main():
         sys.exit( 0 )
 
     # Determine output directory
-    output_directory = Path( working_directory ) / 'research_notebook' / 'research_ai' / 'project' / 'sessions'
-    log_file_path = Path( working_directory ) / 'research_notebook' / 'research_ai' / 'project' / 'SESSION_EXTRACTION_LOG.md'
+    output_directory = Path( working_directory ) / 'research_notebook' / 'research_ai' / 'sessions'
+    log_file_path = Path( working_directory ) / 'research_notebook' / 'research_ai' / 'sessions' / 'SESSION_EXTRACTION_LOG.md'
 
     print( f'Output directory: {output_directory}' )
     print( '' )

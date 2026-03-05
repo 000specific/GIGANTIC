@@ -24,6 +24,7 @@ params.step3_blastp = "../../output_to_input/STEP_3-databases/gigantic-T1-blastp
 params.step2_genome_annotations = "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
 params.selected_species = "INPUT_user/selected_species.txt"
 params.output_dir = "OUTPUT_pipeline"
+params.project_name = "my_project"
 
 // ============================================================================
 // PROCESSES
@@ -96,6 +97,32 @@ process copy_selected_files {
     """
 }
 
+/*
+ * Process 3: Write Run Log
+ * Calls: scripts/003_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \
+        --workflow-name "create_final_species_set" \
+        --subproject-name "genomesDB" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -110,6 +137,9 @@ workflow {
         validate_species_selection.out.species_count,
         validate_species_selection.out.species_with_annotations
     )
+
+    // Write run log (FINAL STEP)
+    write_run_log( copy_selected_files.out.manifest )
 }
 
 // ============================================================================
@@ -133,6 +163,7 @@ workflow.onComplete {
         println "  speciesN_gigantic_T1_proteomes/       -> OUTPUT_pipeline/2-output/"
         println "  speciesN_gigantic_T1_blastp/           -> OUTPUT_pipeline/2-output/"
         println "  speciesN_gigantic_genome_annotations/    -> OUTPUT_pipeline/2-output/"
+        println "Run log written to ai/logs/ in this workflow directory"
     }
     println "========================================================================"
 }

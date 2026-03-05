@@ -249,9 +249,9 @@ ls -la output_to_input/maps/
 
 ## Run Logging (AI Lab Notebook)
 
-Each workflow run automatically creates a timestamped log in:
+Each workflow run automatically creates a timestamped log in its own `ai/logs/` directory:
 ```
-research_notebook/research_ai/subproject-phylonames/logs/
+workflow-*/ai/logs/
 ```
 
 **Log filename format**: `run_YYYYMMDD_HHMMSS-phylonames_success.log`

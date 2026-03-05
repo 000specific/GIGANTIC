@@ -112,6 +112,32 @@ process validate_rgs {
 // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
 // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/1-output/.
 
+/*
+ * Process 2: Write Run Log
+ * Calls: scripts/002_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/002_ai-python-write_run_log.py \
+        --workflow-name "validate_rgs" \
+        --subproject-name "trees_gene_groups" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // Workflow
 // ============================================================================
@@ -147,4 +173,25 @@ workflow {
 
     // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
     // pipeline completes. Real files only live in OUTPUT_pipeline/<gene_family>/1-output/.
+
+    // Process 2: Write run log
+    write_run_log( validate_rgs.out.validated_rgs.map { true }.collect() )
+}
+
+// ============================================================================
+// COMPLETION HANDLER
+// ============================================================================
+
+workflow.onComplete {
+    println ""
+    println "========================================================================"
+    println "GIGANTIC trees_gene_groups STEP_1 Pipeline Complete!"
+    println "========================================================================"
+    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
+    println "Duration: ${workflow.duration}"
+    println ""
+    if ( workflow.success ) {
+        println "Run log written to ai/logs/ in this workflow directory"
+    }
+    println "========================================================================"
 }

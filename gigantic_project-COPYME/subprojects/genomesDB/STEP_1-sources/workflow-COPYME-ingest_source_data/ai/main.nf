@@ -90,6 +90,32 @@ process ingest_source_data {
     """
 }
 
+/*
+ * Process 3: Write Run Log
+ * Calls: scripts/004_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/004_ai-python-write_run_log.py \
+        --workflow-name "ingest_source_data" \
+        --subproject-name "genomesDB" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -100,6 +126,9 @@ workflow {
 
     // Step 2: Ingest source data (waits for validation)
     ingest_source_data( validate_source_manifest.out.validation_complete )
+
+    // Write run log (FINAL STEP)
+    write_run_log( ingest_source_data.out.ingestion_complete )
 
     // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh
     // AFTER this pipeline completes successfully.
@@ -123,6 +152,7 @@ workflow.onComplete {
         println "  2-output/  Ingested data (T1_proteomes, genomes, genome_annotations)"
         println ""
         println "Symlinks for STEP_2 will be created by RUN-workflow.sh"
+        println "Run log written to ai/logs/ in this workflow directory"
     }
     println "========================================================================"
 }

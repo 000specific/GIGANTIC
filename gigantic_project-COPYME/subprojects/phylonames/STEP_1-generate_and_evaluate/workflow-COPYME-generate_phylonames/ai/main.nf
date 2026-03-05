@@ -174,7 +174,7 @@ process generate_taxonomy_summary {
  * Process 5: Write Run Log to Research Notebook
  * Calls: scripts/005_ai-python-write_run_log.py
  *
- * Creates a timestamped log in research_notebook/research_ai/subproject-phylonames/logs/
+ * Creates a timestamped log in ai/logs/ within this workflow directory
  * for transparency and reproducibility - like an AI lab notebook.
  * This is the FINAL step in the workflow.
  */
@@ -255,7 +255,7 @@ workflow.onComplete {
         println ""
         println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
         println "Taxonomy summary copied to upload_to_server/taxonomy_summaries/"
-        println "Run log written to research_notebook/research_ai/subproject-phylonames/logs/"
+        println "Run log written to ai/logs/ in this workflow directory"
         println ""
         println "NEXT STEP: Review the taxonomy summary for:"
         println "  - NOTINNCBI species (not found in NCBI taxonomy)"

@@ -229,9 +229,9 @@ phylonames/
                 └── 003_ai-python-write_run_log.py
 ```
 
-**AI Documentation**: Each workflow run creates a timestamped log in:
+**AI Documentation**: Each workflow run creates a timestamped log in its own `ai/logs/` directory:
 ```
-research_notebook/research_ai/subproject-phylonames/logs/
+workflow-*/ai/logs/
 ```
 
 This serves as an **AI lab notebook** - documenting what the workflow did, when, with what inputs, and what it produced. This ensures transparency and reproducibility of AI-assisted research.

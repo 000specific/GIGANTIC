@@ -213,6 +213,33 @@ process compile_statistics {
 }
 
 
+/*
+ * Process 7: Write Run Log
+ * Calls: scripts/007_ai-python-write_run_log.py
+ *
+ * Creates a timestamped log in ai/logs/ within this workflow directory
+ * for transparency and reproducibility.
+ */
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \
+        --workflow-name "diamond_ncbi_nr" \
+        --subproject-name "one_direction_homologs" \
+        --project-name "${params.project_name}" \
+        --status success
+    """
+}
+
+
 // ============================================================================
 // Workflow
 // ============================================================================
@@ -252,6 +279,9 @@ workflow {
 
     // Step 6: Compile master statistics
     compile_statistics( identify_top_hits.out.statistics.collect() )
+
+    // Step 7: Write run log
+    write_run_log( compile_statistics.out.master_statistics.map { true } )
 }
 
 
@@ -263,6 +293,8 @@ workflow.onComplete {
     println "========================================================================"
     if ( workflow.success ) {
         println "Pipeline completed successfully!"
+        println ""
+        println "Run log written to ai/logs/ in this workflow directory"
         println ""
         println "Research outputs (per-step documentation):"
         println "  Step 1: ${params.output_dir}/1-output/  (validated manifest + log)"

@@ -34,7 +34,7 @@ Usage:
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping PATH_TO_MAPPING.tsv \\
         --input-genomes PATH_TO_GENOMES_DIR \\
-        --input-gene-annotations PATH_TO_GENE_ANNOTATIONS_DIR \\
+        --input-genome-annotations PATH_TO_GENE_ANNOTATIONS_DIR \\
         --output-dir OUTPUT_PIPELINE/3-output
 """
 
@@ -377,13 +377,13 @@ Examples:
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping ../../../phylonames/output_to_input/maps/my_project_map-genus_species_X_phylonames.tsv \\
         --input-genomes ../../output_to_input/STEP_1-sources/genomes \\
-        --input-gene-annotations ../../output_to_input/STEP_1-sources/genome_annotations
+        --input-genome-annotations ../../output_to_input/STEP_1-sources/genome_annotations
 
     # Custom output directory
     python3 003_ai-python-standardize_genome_and_annotation_phylonames.py \\
         --phylonames-mapping /path/to/mapping.tsv \\
         --input-genomes /path/to/genomes \\
-        --input-gene-annotations /path/to/genome_annotations \\
+        --input-genome-annotations /path/to/genome_annotations \\
         --output-dir /path/to/output
         """
     )
@@ -403,7 +403,7 @@ Examples:
     )
 
     parser.add_argument(
-        '--input-gene-annotations',
+        '--input-genome-annotations',
         type = str,
         required = True,
         help = 'Path to directory containing source genome annotation .gff3/.gtf files from STEP_1'

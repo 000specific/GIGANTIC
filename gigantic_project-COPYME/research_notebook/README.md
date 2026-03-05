@@ -56,13 +56,9 @@ GIGANTIC gives you two options for personal research files:
 
 ### `research_ai/`
 
-**Consolidated AI documentation** - organized like lab notebook sections:
-- `project/` - project-level sessions
-- `subproject-phylonames/` - phylonames work
-- `subproject-genomesDB/` - genomesDB work
-- ...and so on for each subproject
+**AI session provenance** - a single flat `sessions/` directory for all AI session extractions across the entire project. Sessions can span subprojects, so they're kept together rather than split.
 
-Each section contains: sessions, validation, logs, debugging.
+Workflow-specific logs and validation now live inside each workflow directory (`workflow-COPYME-*/logs/` and `workflow-COPYME-*/validation/`).
 
 See `research_ai/README.md` for complete details.
 
