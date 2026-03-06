@@ -1,0 +1,41 @@
+# GIGANTIC OrthoHMM Environment
+# ==============================
+#
+# Environment for the orthogroups/BLOCK_orthohmm subproject.
+# OrthoHMM: orthogroup identification using profile HMMs.
+#
+# INSTALLATION:
+#   module load conda
+#   mamba env create -f conda_environments/ai_gigantic_orthogroups_orthohmm.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate ai_gigantic_orthogroups_orthohmm
+
+name: ai_gigantic_orthogroups_orthohmm
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  # Pin Python <3.12 because OrthoHMM uses distutils (removed in 3.12+)
+  - python>=3.11,<3.12
+  - setuptools
+  - nextflow>=23.0
+
+  # HMMER suite (required by OrthoHMM for profile HMM searches)
+  - hmmer
+
+  # MCL clustering algorithm (required by OrthoHMM for graph-based clustering)
+  - mcl
+
+  # Diamond aligner (required by OrthoHMM for initial sequence comparison)
+  - diamond
+
+  # OrthoHMM via pip (not available in conda)
+  - pip
+  - pip:
+    - orthohmm

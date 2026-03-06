@@ -68,17 +68,23 @@ def count_sequences_in_fasta( fasta_path: Path ) -> int:
 
 def extract_genus_species_from_filename( filename: str ) -> str:
     """
-    Extract Genus_species from GIGANTIC proteome filename.
+    Extract Genus_species from GIGANTIC cleaned proteome filename.
 
-    Filename format: phyloname___ncbi_taxonomy_id-genome_assembly_id-download_date-data_type.aa
+    Filename format: phyloname-T1-proteome.aa
     Phyloname format: Kingdom_Phylum_Class_Order_Family_Genus_species
 
-    Example input: Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606-ncbi_GCF_000001.aa
+    Example input: Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa
     Example output: Homo_sapiens
     """
 
-    # Split on ___ to get phyloname portion
-    parts_filename = filename.split( '___' )
+    # Split on -T1-proteome to get phyloname portion
+    parts_filename = filename.split( '-T1-proteome' )
+
+    if len( parts_filename ) < 2:
+        print( f"CRITICAL ERROR: Filename does not follow GIGANTIC cleaned proteome format: {filename}" )
+        print( "Expected format: phyloname-T1-proteome.aa" )
+        sys.exit( 1 )
+
     phyloname = parts_filename[ 0 ]
 
     # Split phyloname on underscore
@@ -90,8 +96,9 @@ def extract_genus_species_from_filename( filename: str ) -> str:
         species = '_'.join( parts_phyloname[ 6: ] )
         genus_species = genus + '_' + species
     else:
-        # Fallback: use last two parts
-        genus_species = '_'.join( parts_phyloname[ -2: ] )
+        print( f"CRITICAL ERROR: Cannot extract Genus_species from filename: {filename}" )
+        print( f"Phyloname has {len( parts_phyloname )} fields, need at least 7." )
+        sys.exit( 1 )
 
     return genus_species
 

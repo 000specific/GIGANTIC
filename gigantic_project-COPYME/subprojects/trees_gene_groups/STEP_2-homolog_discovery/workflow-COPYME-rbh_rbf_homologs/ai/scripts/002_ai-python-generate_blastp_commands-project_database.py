@@ -71,31 +71,39 @@ def setup_logging( log_file_path: Path ) -> logging.Logger:
 def extract_species_from_database_path( database_path: str ) -> str:
     """
     Extract genus and species name from database file path.
-    
-    The path format is expected to be:
-    Taxon_Group_Family_Genus_species___accession-source-details.aa
-    
+
+    The path format is the GIGANTIC cleaned proteome format:
+    phyloname-T1-proteome.aa
+
     Args:
         database_path: Path to BLAST database file
-        
+
     Returns:
         Species name in format "Genus_species"
     """
-    # Extract phyloname (everything before '___')
-    phyloname = database_path.split( '___' )[ 0 ]
-    
+    # Extract phyloname (everything before '-T1-proteome')
+    parts_path = database_path.split( '-T1-proteome' )
+
+    if len( parts_path ) < 2:
+        print( f"CRITICAL ERROR: Database path does not follow GIGANTIC cleaned proteome format: {database_path}" )
+        print( "Expected format: phyloname-T1-proteome.aa" )
+        sys.exit( 1 )
+
+    phyloname = parts_path[ 0 ]
+
     # Split by underscore
     parts = phyloname.split( '_' )
-    
+
     # Extract genus (position 5) and species (position 6 onward)
     if len( parts ) >= 7:
         genus = parts[ 5 ]
         species = '_'.join( parts[ 6: ] )
         genus_species = f"{genus}_{species}"
     else:
-        # Fallback: use last two components
-        genus_species = '_'.join( parts[ -2: ] )
-    
+        print( f"CRITICAL ERROR: Cannot extract Genus_species from database path: {database_path}" )
+        print( f"Phyloname has {len( parts )} fields, need at least 7." )
+        sys.exit( 1 )
+
     return genus_species
 
 

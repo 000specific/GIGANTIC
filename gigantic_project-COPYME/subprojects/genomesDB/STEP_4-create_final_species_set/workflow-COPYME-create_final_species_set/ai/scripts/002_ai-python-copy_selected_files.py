@@ -82,9 +82,10 @@ def load_species_count( species_count_file: Path ) -> int:
 def find_proteome_file( proteomes_dir: Path, genus_species: str ) -> Path:
     """Find proteome file for a given species."""
     # Search for file containing the genus_species in the phyloname portion
+    # Format: phyloname-T1-proteome.aa
     for proteome_file in proteomes_dir.glob( '*.aa' ):
         filename = proteome_file.stem
-        parts_filename = filename.split( '___' )
+        parts_filename = filename.split( '-T1-proteome' )
         if len( parts_filename ) >= 1:
             phyloname = parts_filename[ 0 ]
             parts_phyloname = phyloname.split( '_' )
@@ -99,19 +100,13 @@ def find_proteome_file( proteomes_dir: Path, genus_species: str ) -> Path:
 
 def find_blastp_files( blastp_dir: Path, genus_species: str ) -> list:
     """Find all BLAST database files for a given species."""
-    # BLAST databases have multiple extensions: .phr, .pin, .psq, etc.
+    # BLAST databases have multiple extensions: .pdb, .phr, .pin, .psq, etc.
+    # Filenames: phyloname-T1-proteome.aa and phyloname-T1-proteome.aa.pdb etc.
     db_files = []
     for db_file in blastp_dir.glob( '*' ):
         if db_file.is_file():
-            # Get base name without BLAST extension
             filename = db_file.name
-            # Check if this file belongs to the species
-            base_name = db_file.stem
-            # Handle multi-extension files like .aa.phr
-            if '.' in base_name:
-                base_name = base_name.split( '.' )[ 0 ]
-
-            parts_filename = base_name.split( '___' )
+            parts_filename = filename.split( '-T1-proteome' )
             if len( parts_filename ) >= 1:
                 phyloname = parts_filename[ 0 ]
                 parts_phyloname = phyloname.split( '_' )

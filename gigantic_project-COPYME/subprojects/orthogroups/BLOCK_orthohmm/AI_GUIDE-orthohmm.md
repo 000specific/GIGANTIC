@@ -17,7 +17,7 @@ OrthoHMM identifies orthogroups using profile Hidden Markov Models (HMMER) for s
 
 **Header requirement**: OrthoHMM requires short sequence headers in `Genus_species-N` format. The pipeline handles header conversion (script 002) and restoration (script 004).
 
-## Pipeline Scripts (6 steps)
+## Pipeline Scripts (7 steps)
 
 | # | Script | Purpose |
 |---|--------|---------|
@@ -27,6 +27,7 @@ OrthoHMM identifies orthogroups using profile Hidden Markov Models (HMMER) for s
 | 004 | `004_ai-python-restore_gigantic_identifiers.py` | Restore full GIGANTIC identifiers |
 | 005 | `005_ai-python-generate_summary_statistics.py` | Summary statistics |
 | 006 | `006_ai-python-qc_analysis_per_species.py` | Per-species QC analysis |
+| 007 | `007_ai-python-write_run_log.py` | Write timestamped run log |
 
 ## Header Conversion
 

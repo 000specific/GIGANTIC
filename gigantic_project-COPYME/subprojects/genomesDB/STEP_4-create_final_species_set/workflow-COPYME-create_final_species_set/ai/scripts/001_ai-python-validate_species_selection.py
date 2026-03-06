@@ -65,10 +65,10 @@ def get_species_from_proteomes( proteomes_dir: Path ) -> set:
         return species_names
 
     for proteome_file in proteomes_dir.glob( '*.aa' ):
-        # Extract genus_species from GIGANTIC filename
-        # Format: phyloname___taxid-assembly-date-type.aa
+        # Extract genus_species from GIGANTIC cleaned proteome filename
+        # Format: phyloname-T1-proteome.aa
         filename = proteome_file.stem
-        parts_filename = filename.split( '___' )
+        parts_filename = filename.split( '-T1-proteome' )
         if len( parts_filename ) >= 1:
             phyloname = parts_filename[ 0 ]
             parts_phyloname = phyloname.split( '_' )
@@ -88,11 +88,13 @@ def get_species_from_blastp( blastp_dir: Path ) -> set:
     if not blastp_dir.exists():
         return species_names
 
-    # Look for .phr files (BLAST protein header files)
-    for db_file in blastp_dir.glob( '*.phr' ):
+    # Look for .pdb files (BLAST+ protein database files)
+    # Filenames: phyloname-T1-proteome.aa.pdb
+    for db_file in blastp_dir.glob( '*.pdb' ):
         # Extract genus_species from GIGANTIC filename
-        filename = db_file.stem
-        parts_filename = filename.split( '___' )
+        # Remove .aa.pdb suffix to get phyloname-T1-proteome
+        filename = db_file.name
+        parts_filename = filename.split( '-T1-proteome' )
         if len( parts_filename ) >= 1:
             phyloname = parts_filename[ 0 ]
             parts_phyloname = phyloname.split( '_' )

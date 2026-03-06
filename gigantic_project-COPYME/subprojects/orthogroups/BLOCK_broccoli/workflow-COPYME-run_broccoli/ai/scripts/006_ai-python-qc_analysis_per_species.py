@@ -68,13 +68,14 @@ def extract_genus_species_from_gigantic_header( header: str ) -> str:
     # g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_Class_Order_Family_Genus_species
     # or just the phyloname portion
 
-    # Try to find phyloname by looking for -n_ prefix
-    if '-n_' in header:
-        parts_header = header.split( '-n_' )
-        phyloname = parts_header[ -1 ]
-    else:
-        # Assume the header IS the phyloname or contains it
-        phyloname = header
+    # All GIGANTIC-imported sequences must have -n_ prefix containing the phyloname
+    if '-n_' not in header:
+        print( f"CRITICAL ERROR: Header missing required '-n_' phyloname prefix: {header}" )
+        print( "This sequence was not imported through the GIGANTIC genomesDB pipeline." )
+        sys.exit( 1 )
+
+    parts_header = header.split( '-n_' )
+    phyloname = parts_header[ -1 ]
 
     # Split phyloname on underscore
     parts_phyloname = phyloname.split( '_' )
@@ -84,11 +85,9 @@ def extract_genus_species_from_gigantic_header( header: str ) -> str:
         genus = parts_phyloname[ 5 ]
         species = '_'.join( parts_phyloname[ 6: ] )
         genus_species = genus + '_' + species
-    elif len( parts_phyloname ) >= 2:
-        # Fallback: use last two parts
-        genus_species = '_'.join( parts_phyloname[ -2: ] )
     else:
-        genus_species = phyloname
+        print( f"CRITICAL ERROR: Phyloname has {len( parts_phyloname )} fields, need at least 7: {phyloname}" )
+        sys.exit( 1 )
 
     return genus_species
 

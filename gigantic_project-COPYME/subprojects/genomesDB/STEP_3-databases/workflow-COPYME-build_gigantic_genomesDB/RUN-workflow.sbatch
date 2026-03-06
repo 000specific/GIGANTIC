@@ -26,7 +26,6 @@
 # BEFORE RUNNING:
 # 1. Edit the SBATCH directives above (account, qos) for your cluster
 # 2. Ensure STEP_2 is complete (provides standardized proteomes)
-# 3. User should have edited species_selection_manifest.tsv (Include=YES/NO)
 #
 # FOR LOCAL MACHINES:
 #   bash RUN-workflow.sh

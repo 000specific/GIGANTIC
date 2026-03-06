@@ -13,7 +13,7 @@
  *   003: Standardize genome and annotation phylonames
  *   004: Calculate genome assembly statistics
  *   005: Run BUSCO proteome evaluation
- *   006: Summarize quality and generate species manifest
+ *   006: Summarize quality
  */
 
 nextflow.enable.dsl = 2
@@ -30,8 +30,6 @@ params.busco_lineages = "INPUT_user/busco_lineages.txt"
 params.output_dir = "OUTPUT_pipeline"
 params.busco_parallel = 4
 params.busco_cpus_per_job = 4
-params.project_name = "my_project"
-
 // ============================================================================
 // PROCESSES
 // ============================================================================
@@ -175,22 +173,21 @@ process run_busco_evaluation {
         --input-proteomes ${cleaned_proteomes} \\
         --output-dir 5-output \\
         --parallel ${params.busco_parallel} \\
-        --cpus-per-job ${params.busco_cpus_per_job}
+        --cpus-per-job ${params.busco_cpus_per_job} \\
+        --cleanup-databases
     """
 }
 
 /*
- * Process 6: Summarize Quality and Generate Species Manifest
- * Calls: scripts/006_ai-python-summarize_quality_and_generate_species_manifest.py
+ * Process 6: Summarize Quality
+ * Calls: scripts/006_ai-python-summarize_quality.py
+ *
+ * Species selection is handled by STEP_4, not here.
  */
 process summarize_quality {
     label 'local'
 
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
-
-    // NOTE: The species manifest is copied to output_to_input/ by RUN-workflow.sh
-    // after NextFlow completes (not by NextFlow itself - per GIGANTIC convention).
-    // Users edit the copy in output_to_input/ to select species for STEP_4.
 
     input:
         path assembly_stats
@@ -199,14 +196,13 @@ process summarize_quality {
 
     output:
         path "6-output/6_ai-comprehensive_quality_summary.tsv", emit: summary
-        path "6-output/6_ai-species_selection_manifest.tsv", emit: manifest
         path "6-output/6_ai-log-summarize_quality.log", emit: log
 
     script:
     """
     mkdir -p 6-output
 
-    python3 ${projectDir}/scripts/006_ai-python-summarize_quality_and_generate_species_manifest.py \\
+    python3 ${projectDir}/scripts/006_ai-python-summarize_quality.py \\
         --assembly-stats ${assembly_stats} \\
         --busco-summary ${busco_summary} \\
         --proteome-manifest ${proteome_manifest} \\
@@ -296,7 +292,7 @@ workflow.onComplete {
         println "  3-output/: Standardized genomes and annotations (symlinks)"
         println "  4-output/: Genome assembly statistics"
         println "  5-output/: BUSCO proteome completeness evaluation"
-        println "  6-output/: Quality summary and species manifest"
+        println "  6-output/: Quality summary"
         println ""
         println ""
         println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"

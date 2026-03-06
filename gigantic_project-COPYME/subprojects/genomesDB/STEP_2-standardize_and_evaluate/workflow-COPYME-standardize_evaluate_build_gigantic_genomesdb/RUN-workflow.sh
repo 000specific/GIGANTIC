@@ -88,45 +88,6 @@ fi
 echo ""
 
 # ============================================================================
-# Validate Prerequisites
-# ============================================================================
-
-echo "Validating prerequisites..."
-echo ""
-
-# Check config file exists
-if [ ! -f "START_HERE-user_config.yaml" ]; then
-    echo "ERROR: Configuration file not found!"
-    echo "Expected: START_HERE-user_config.yaml"
-    exit 1
-fi
-echo "  [OK] Configuration file found"
-
-# Check BUSCO configuration
-# Read busco.enabled from config (defaults to true if not found)
-BUSCO_ENABLED=$(grep -A1 "^busco:" START_HERE-user_config.yaml | grep "enabled:" | awk '{print $2}' | tr -d '[:space:]')
-if [ -z "${BUSCO_ENABLED}" ]; then
-    BUSCO_ENABLED="true"
-fi
-
-if [ "${BUSCO_ENABLED}" = "true" ]; then
-    if [ ! -f "INPUT_user/busco_lineages.txt" ]; then
-        echo "ERROR: BUSCO is enabled but lineage manifest not found!"
-        echo "Expected: INPUT_user/busco_lineages.txt"
-        echo ""
-        echo "Either:"
-        echo "  1. Create INPUT_user/busco_lineages.txt with BUSCO lineage assignments"
-        echo "  2. Set busco.enabled: false in START_HERE-user_config.yaml to skip BUSCO"
-        exit 1
-    fi
-    echo "  [OK] BUSCO lineage manifest found"
-else
-    echo "  [INFO] BUSCO evaluation disabled in config (busco.enabled: false)"
-fi
-
-echo ""
-
-# ============================================================================
 # Run NextFlow Pipeline
 # ============================================================================
 
@@ -147,11 +108,7 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Copy species manifest to output_to_input directory
-# ============================================================================
-# The species selection manifest is COPIED (not symlinked) to output_to_input/
-# because users need to edit this file directly to select species for STEP_4.
-# A real file is easier to edit than a symlink.
+# Create symlinks for output_to_input directory
 # ============================================================================
 
 echo ""
@@ -165,15 +122,9 @@ SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_2-standardize_and_evaluate"
 mkdir -p "${SUBPROJECT_SHARED_DIR}"
 
 # Remove any stale files/symlinks from previous runs
-rm -f "${SUBPROJECT_SHARED_DIR}/species_selection_manifest.tsv"
 rm -f "${SUBPROJECT_SHARED_DIR}/gigantic_proteomes_cleaned"
 rm -f "${SUBPROJECT_SHARED_DIR}/gigantic_genome_annotations"
 rm -f "${SUBPROJECT_SHARED_DIR}/gigantic_genomes"
-
-# Copy manifest (real file, not symlink - users edit this directly)
-cp "OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv" \
-    "${SUBPROJECT_SHARED_DIR}/species_selection_manifest.tsv"
-echo "  species_selection_manifest.tsv -> copied"
 
 # Symlink cleaned proteomes for STEP_3 and STEP_4 access
 ln -sf "../../STEP_2-standardize_and_evaluate/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned" \
@@ -197,10 +148,7 @@ echo ""
 echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 6-output/"
 echo ""
-echo "Species manifest (edit this to select species for STEP_4):"
-echo "  ../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv"
-echo ""
-echo "Next: Review quality summary, edit species manifest, then run STEP_4"
+echo "Next: Review quality summary, then run STEP_3 and STEP_4"
 echo "========================================================================"
 echo "Completed: $(date)"
 

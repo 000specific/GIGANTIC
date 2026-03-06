@@ -26,7 +26,6 @@ nextflow.enable.dsl = 2
 // PARAMETERS (from config.yaml via nextflow.config)
 // ============================================================================
 
-params.project_name = "my_project"
 params.source_manifest = "INPUT_user/source_manifest.tsv"
 params.output_dir = "OUTPUT_pipeline"
 params.overwrite_existing = false

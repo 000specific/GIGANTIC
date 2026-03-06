@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Apply user-provided phylonames with UNOFFICIAL marking (STEP 2)
+# AI: Claude Code | Opus 4.6 | 2026 March 05 | Purpose: Apply user-provided phylonames with UNOFFICIAL marking (STEP 2)
 # Human: Eric Edsinger
 
 """
@@ -50,12 +50,22 @@ Only Holozoa and Choanozoa get marked UNOFFICIAL because they replaced the
 numbered clades. Choanoflagellata, Craspedida, and Salpingoecidae remain
 unmarked because they match the NCBI-derived values.
 
-DISABLING UNOFFICIAL MARKING:
-If you prefer clean phylonames without the UNOFFICIAL suffix, set
-mark_unofficial: false in the config. This is useful when:
-- Your phylonames are from an authoritative source you trust
-- You're working within a group that has agreed on taxonomy
-- You want cleaner output for visualization/publication
+PER-SPECIES UNOFFICIAL CONTROL:
+Each entry in the user phylonames file has a required third column that
+controls UNOFFICIAL marking for that specific species:
+- ADD_UNOFFICIAL: Mark differing clades with UNOFFICIAL (standard behavior)
+- SUPPRESS_UNOFFICIAL: Use the phyloname as-is, no UNOFFICIAL marking
+
+This allows fine-grained control. For example, when NCBI has no taxonomy
+data at all for a species (NOTINNCBI), every user-provided clade would
+differ and get marked UNOFFICIAL. Using SUPPRESS_UNOFFICIAL for that
+species produces a clean phyloname while other species still get the
+standard UNOFFICIAL marking.
+
+GLOBAL DISABLING:
+If you prefer ALL phylonames without the UNOFFICIAL suffix, set
+mark_unofficial: false in the config. This overrides the per-species
+column and suppresses UNOFFICIAL for every species.
 
 IMPORTANT CAVEAT - WHEN NUMBERED CLADES REMAIN:
 Even after applying user phylonames, you may still see numbered clades like
@@ -105,8 +115,9 @@ Step 2: LOAD PROJECT MAPPING
     - Contains genus_species -> phyloname mappings for your species
 
 Step 3: LOAD USER-PROVIDED PHYLONAMES
-    - Read user's custom phyloname file (TSV format)
-    - Each line: genus_species<TAB>custom_phyloname
+    - Read user's custom phyloname file (TSV format, 3 columns)
+    - Each line: genus_species<TAB>custom_phyloname<TAB>unofficial_action
+    - unofficial_action: ADD_UNOFFICIAL or SUPPRESS_UNOFFICIAL (per-species control)
     - User phylonames completely replace NCBI-generated phylonames
 
 Step 4: DETECT UNOFFICIAL CLADES
@@ -130,8 +141,9 @@ PROJECT MAPPING (from Script 003):
     Homo_sapiens<TAB>Metazoa_Chordata_Mammalia_...<TAB>Metazoa_Chordata_..___9606
 
 USER PHYLONAMES FILE (optional):
-    genus_species<TAB>custom_phyloname
-    Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+    genus_species<TAB>custom_phyloname<TAB>unofficial_action
+    Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_...<TAB>ADD_UNOFFICIAL
+    Hoilungia_hongkongensis_H13<TAB>Metazoa_Placozoa_Uniplacotomia_...<TAB>SUPPRESS_UNOFFICIAL
 
 ================================================================================
 OUTPUT FILES:
@@ -227,24 +239,29 @@ def load_project_mapping( project_mapping_path: Path ) -> Dict[ str, Tuple[ str,
 # ================================================================================
 # Load user-provided custom phylonames that override NCBI defaults.
 
-def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
+def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, Tuple[ str, str ] ]:
     """
-    Load user-provided custom phylonames.
+    Load user-provided custom phylonames with per-species UNOFFICIAL control.
 
     These phylonames will OVERRIDE the NCBI-generated phylonames for
     species where the user has provided a custom assignment.
 
-    File format (TSV):
-        genus_species<TAB>custom_phyloname
+    File format (TSV, 3 required columns):
+        genus_species<TAB>custom_phyloname<TAB>unofficial_action
+
+    The unofficial_action column controls UNOFFICIAL marking per species:
+        ADD_UNOFFICIAL       - Mark differing clades with UNOFFICIAL (standard)
+        SUPPRESS_UNOFFICIAL  - Use phyloname as-is, no UNOFFICIAL marking
 
     Example:
-        Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+        Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_...<TAB>ADD_UNOFFICIAL
+        Hoilungia_hongkongensis_H13<TAB>Metazoa_Placozoa_...<TAB>SUPPRESS_UNOFFICIAL
 
     Args:
         user_phylonames_path: Path to user phylonames TSV
 
     Returns:
-        Dictionary: genus_species -> custom_phyloname
+        Dictionary: genus_species -> (custom_phyloname, unofficial_action)
     """
 
     print( "=" * 70 )
@@ -252,10 +269,15 @@ def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
     print( "=" * 70 )
     print( f"  Source: {user_phylonames_path}" )
 
+    valid_unofficial_actions = { 'ADD_UNOFFICIAL', 'SUPPRESS_UNOFFICIAL' }
+
     genus_species___custom_phylonames = {}
 
-    # genus_species	custom_phyloname
-    # Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_...
+    suppress_count = 0
+    add_count = 0
+
+    # genus_species	custom_phyloname	unofficial_action
+    # Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_...	ADD_UNOFFICIAL
     with open( user_phylonames_path, 'r', encoding = 'utf-8' ) as input_file:
         line_number = 0
 
@@ -269,13 +291,22 @@ def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
 
             parts = line.split( '\t' )
 
-            # Validate format: must have exactly 2 columns
-            if len( parts ) != 2:
-                print( f"  WARNING: Line {line_number} has {len( parts )} columns (expected 2), skipping" )
-                continue
+            # Validate format: must have exactly 3 columns
+            if len( parts ) != 3:
+                print( f"  ERROR: Line {line_number} has {len( parts )} columns (expected 3: genus_species, phyloname, unofficial_action)" )
+                print( f"         Content: {line}" )
+                sys.exit( 1 )
 
             genus_species = parts[ 0 ]
             custom_phyloname = parts[ 1 ]
+            unofficial_action = parts[ 2 ]
+
+            # Validate unofficial_action
+            if unofficial_action not in valid_unofficial_actions:
+                print( f"  ERROR: Line {line_number} has invalid unofficial_action: '{unofficial_action}'" )
+                print( f"         Must be one of: {', '.join( sorted( valid_unofficial_actions ) )}" )
+                print( f"         Species: {genus_species}" )
+                sys.exit( 1 )
 
             # Validate phyloname has expected structure
             parts_phyloname = custom_phyloname.split( '_' )
@@ -283,9 +314,16 @@ def load_user_phylonames( user_phylonames_path: Path ) -> Dict[ str, str ]:
                 print( f"  WARNING: Line {line_number} phyloname has < 7 parts, skipping: {genus_species}" )
                 continue
 
-            genus_species___custom_phylonames[ genus_species ] = custom_phyloname
+            genus_species___custom_phylonames[ genus_species ] = ( custom_phyloname, unofficial_action )
+
+            if unofficial_action == 'SUPPRESS_UNOFFICIAL':
+                suppress_count += 1
+            else:
+                add_count += 1
 
     print( f"  Loaded {len( genus_species___custom_phylonames )} user-provided phylonames" )
+    print( f"    ADD_UNOFFICIAL: {add_count}" )
+    print( f"    SUPPRESS_UNOFFICIAL: {suppress_count}" )
     print( "" )
 
     return genus_species___custom_phylonames
@@ -391,7 +429,7 @@ def mark_unofficial_clades(
 
 def generate_final_mapping(
     genus_species___project_phylonames: Dict[ str, Tuple[ str, str ] ],
-    genus_species___user_phylonames: Dict[ str, str ],
+    genus_species___user_phylonames: Dict[ str, Tuple[ str, str ] ],
     output_dir: Path,
     mark_unofficial: bool = True
 ) -> Dict[ str, Tuple[ str, str, str, str ] ]:
@@ -399,19 +437,21 @@ def generate_final_mapping(
     Generate the final mapping by merging project and user phylonames.
 
     For each species in the project:
-    - If user provided a custom phyloname: use it (with UNOFFICIAL marking if enabled)
+    - If user provided a custom phyloname: use it (with UNOFFICIAL marking
+      controlled by per-species unofficial_action and global mark_unofficial)
     - Otherwise: use the NCBI-generated phyloname
 
-    This function also:
-    - Generates the taxon_id version of the final phyloname
-    - Tracks data source (NCBI vs USER)
-    - Records original phyloname for reference
+    UNOFFICIAL marking logic:
+    - If global mark_unofficial is False: no species gets UNOFFICIAL (overrides per-species)
+    - If global mark_unofficial is True (default): per-species unofficial_action controls:
+      - ADD_UNOFFICIAL: Mark differing clades with UNOFFICIAL
+      - SUPPRESS_UNOFFICIAL: Use phyloname as-is
 
     Args:
         genus_species___project_phylonames: From Script 003
-        genus_species___user_phylonames: User-provided overrides
+        genus_species___user_phylonames: User-provided overrides with unofficial_action
         output_dir: Directory for output files
-        mark_unofficial: If True (default), add UNOFFICIAL suffix to user-provided clades
+        mark_unofficial: If True (default), respect per-species unofficial_action
 
     Returns:
         Dictionary: genus_species -> (final_phyloname, phyloname_taxonid, source, original_phyloname)
@@ -420,7 +460,7 @@ def generate_final_mapping(
     print( "=" * 70 )
     print( "STEP 3: Generating final mapping" )
     print( "=" * 70 )
-    print( f"  UNOFFICIAL marking: {'ENABLED (default)' if mark_unofficial else 'DISABLED'}" )
+    print( f"  Global UNOFFICIAL marking: {'ENABLED (per-species control active)' if mark_unofficial else 'DISABLED (all suppressed)'}" )
     print( "" )
 
     # Ensure output directory exists
@@ -429,6 +469,7 @@ def generate_final_mapping(
     # Track statistics
     ncbi_count = 0
     user_count = 0
+    suppress_unofficial_count = 0
     unofficial_clades_all = []
 
     # Final mapping structure
@@ -440,14 +481,22 @@ def generate_final_mapping(
         # Check if user provided a custom phyloname
         if genus_species in genus_species___user_phylonames:
             # Use user-provided phyloname
-            user_phyloname = genus_species___user_phylonames[ genus_species ]
+            user_phyloname, unofficial_action = genus_species___user_phylonames[ genus_species ]
+
+            # Determine whether to mark UNOFFICIAL for this species
+            # Global mark_unofficial=False overrides everything (suppress all)
+            # Otherwise, per-species unofficial_action controls behavior
+            species_mark_unofficial = mark_unofficial and ( unofficial_action == 'ADD_UNOFFICIAL' )
+
+            if unofficial_action == 'SUPPRESS_UNOFFICIAL':
+                suppress_unofficial_count += 1
+                print( f"  SUPPRESS_UNOFFICIAL: {genus_species}" )
 
             # Mark clades as unofficial ONLY where they differ from NCBI
-            # This preserves official NCBI clades while marking user overrides
             marked_phyloname, unofficial_clades = mark_unofficial_clades(
                 user_phyloname = user_phyloname,
                 ncbi_phyloname = ncbi_phyloname,
-                mark_unofficial = mark_unofficial
+                mark_unofficial = species_mark_unofficial
             )
 
             # Extract taxon_id from original NCBI phyloname_taxonid
@@ -483,6 +532,8 @@ def generate_final_mapping(
 
     print( f"  Species with NCBI phylonames: {ncbi_count}" )
     print( f"  Species with USER phylonames: {user_count}" )
+    print( f"    - ADD_UNOFFICIAL: {user_count - suppress_unofficial_count}" )
+    print( f"    - SUPPRESS_UNOFFICIAL: {suppress_unofficial_count}" )
     print( f"  Total unofficial clades marked: {len( unofficial_clades_all )}" )
     print( "" )
 
@@ -566,9 +617,16 @@ Examples:
       --master-mapping map-phyloname_X_ncbi_taxonomy_info.tsv
 
 File formats:
-  User phylonames file (TSV):
-    genus_species<TAB>custom_phyloname
-    Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+  User phylonames file (TSV, 3 required columns):
+    genus_species<TAB>custom_phyloname<TAB>unofficial_action
+
+  unofficial_action values:
+    ADD_UNOFFICIAL       - Mark differing clades with UNOFFICIAL (standard)
+    SUPPRESS_UNOFFICIAL  - Use phyloname as-is, no UNOFFICIAL marking
+
+  Example:
+    Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_...<TAB>ADD_UNOFFICIAL
+    Hoilungia_hongkongensis_H13<TAB>Metazoa_Placozoa_...<TAB>SUPPRESS_UNOFFICIAL
         """
     )
 
@@ -657,8 +715,9 @@ File formats:
     genus_species___user_phylonames = load_user_phylonames( user_phylonames_path )
 
     # Step 3: Generate final mapping
-    # ALL user-provided clades are marked UNOFFICIAL (unless disabled)
-    # This reflects that user assignment is a decision point distinct from NCBI
+    # Per-species unofficial_action controls UNOFFICIAL marking
+    # ADD_UNOFFICIAL: clades differing from NCBI get UNOFFICIAL suffix
+    # SUPPRESS_UNOFFICIAL: phyloname used as-is (user explicitly requested)
     genus_species___final = generate_final_mapping(
         genus_species___project_phylonames = genus_species___project_phylonames,
         genus_species___user_phylonames = genus_species___user_phylonames,

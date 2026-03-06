@@ -129,27 +129,7 @@ fi
 echo ""
 
 # ============================================================================
-# Check for source manifest
-# ============================================================================
-if [ ! -f "INPUT_user/source_manifest.tsv" ]; then
-    echo "ERROR: Source manifest not found!"
-    echo ""
-    echo "Please create INPUT_user/source_manifest.tsv with your source data paths."
-    echo "See INPUT_user/source_manifest_example.tsv for format."
-    exit 1
-fi
-
-SPECIES_COUNT=$(grep -v "^#" INPUT_user/source_manifest.tsv | grep -v "^$" | grep -v "^genus_species" | wc -l)
-echo "Species in manifest: ${SPECIES_COUNT}"
-echo ""
-
-if [ "$SPECIES_COUNT" -eq 0 ]; then
-    echo "ERROR: No species found in manifest!"
-    exit 1
-fi
-
-# ============================================================================
-# Run NextFlow pipeline (steps 1-2: validate and ingest)
+# Run NextFlow Pipeline
 # ============================================================================
 echo "Running NextFlow pipeline..."
 echo ""

@@ -21,7 +21,7 @@ Output:
 
 Usage:
     python3 001_ai-python-validate_proteomes.py \\
-        --proteomes-dir ../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes
+        --proteomes-dir ../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes
 """
 
 import argparse
@@ -68,17 +68,17 @@ def count_sequences_in_fasta( fasta_path: Path ) -> int:
 
 def extract_genus_species_from_filename( filename: str ) -> str:
     """
-    Extract Genus_species from GIGANTIC proteome filename.
+    Extract Genus_species from GIGANTIC cleaned proteome filename.
 
-    Filename format: phyloname___ncbi_taxonomy_id-genome_assembly_id-download_date-data_type.aa
+    Filename format: phyloname-T1-proteome.aa
     Phyloname format: Kingdom_Phylum_Class_Order_Family_Genus_species
 
-    Example input: Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606-ncbi_GCF_000001.aa
+    Example input: Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa
     Example output: Homo_sapiens
     """
 
-    # Split on ___ to get phyloname portion
-    parts_filename = filename.split( '___' )
+    # Split on -T1-proteome to get phyloname portion
+    parts_filename = filename.split( '-T1-proteome' )
     phyloname = parts_filename[ 0 ]
 
     # Split phyloname on underscore
@@ -90,8 +90,10 @@ def extract_genus_species_from_filename( filename: str ) -> str:
         species = '_'.join( parts_phyloname[ 6: ] )
         genus_species = genus + '_' + species
     else:
-        # Fallback: use last two parts
-        genus_species = '_'.join( parts_phyloname[ -2: ] )
+        print( f"CRITICAL ERROR: Cannot extract Genus_species from filename: {filename}" )
+        print( "Filename does not follow GIGANTIC cleaned proteome format: phyloname-T1-proteome.aa" )
+        print( "Phyloname must have at least 7 underscore-separated fields: Kingdom_Phylum_Class_Order_Family_Genus_species" )
+        sys.exit( 1 )
 
     return genus_species
 
@@ -114,22 +116,15 @@ def validate_and_list_proteomes( proteomes_directory: Path, output_directory: Pa
         logger.error( f"CRITICAL ERROR: Path is not a directory: {proteomes_directory}" )
         sys.exit( 1 )
 
-    # Find all proteome files with valid extensions
-    valid_extensions = [ '.aa', '.pep', '.fasta', '.fa' ]
-    proteome_files = []
-
-    for extension in valid_extensions:
-        proteome_files.extend( list( proteomes_directory.glob( f'*{extension}' ) ) )
-
-    # Remove duplicates and sort
-    proteome_files = sorted( set( proteome_files ) )
+    # Find all GIGANTIC proteome files (.aa extension only - GIGANTIC standard)
+    proteome_files = sorted( proteomes_directory.glob( '*.aa' ) )
 
     logger.info( f"Found {len( proteome_files )} proteome files" )
 
     if len( proteome_files ) == 0:
-        logger.error( "CRITICAL ERROR: No proteome files found!" )
+        logger.error( "CRITICAL ERROR: No proteome files (.aa) found!" )
         logger.error( f"Searched directory: {proteomes_directory}" )
-        logger.error( f"Valid extensions: {valid_extensions}" )
+        logger.error( "GIGANTIC proteomes use .aa extension (amino acid FASTA)." )
         sys.exit( 1 )
 
     # Process each proteome file

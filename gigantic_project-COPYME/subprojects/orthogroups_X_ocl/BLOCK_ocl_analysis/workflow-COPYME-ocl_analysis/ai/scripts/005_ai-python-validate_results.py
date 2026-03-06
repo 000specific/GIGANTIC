@@ -199,19 +199,18 @@ def extract_species_from_gigantic_id( gigantic_id ):
     """
     Extract species name from GIGANTIC identifier.
 
-    GIGANTIC IDs use phyloname format with -n_ prefix for sequence number:
-    Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___12345-...-n_00001
-
-    Extract everything before the -n_ suffix (the phyloname + NCBI ID + assembly info).
-    Then extract Genus_species from phyloname positions [5:].
+    GIGANTIC header format: g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_Class_Order_Family_Genus_species
+    The phyloname follows the -n_ prefix and contains the full taxonomic hierarchy.
     """
-    # Remove sequence number suffix (-n_NNNNN)
-    parts_id = gigantic_id.split( '-n_' )
-    base_id = parts_id[ 0 ]
+    # All GIGANTIC-imported sequences must have -n_ prefix containing the phyloname
+    if '-n_' not in gigantic_id:
+        print( f"CRITICAL ERROR: GIGANTIC ID missing required '-n_' phyloname prefix: {gigantic_id}" )
+        print( "This sequence was not imported through the GIGANTIC genomesDB pipeline." )
+        sys.exit( 1 )
 
-    # Extract phyloname (everything before ___ncbi_taxonomy_id)
-    parts_base = base_id.split( '___' )
-    phyloname = parts_base[ 0 ]
+    # Phyloname is the LAST part after splitting on -n_
+    parts_id = gigantic_id.split( '-n_' )
+    phyloname = parts_id[ -1 ]
 
     # Extract Genus_species from phyloname
     parts_phyloname = phyloname.split( '_' )
@@ -220,7 +219,8 @@ def extract_species_from_gigantic_id( gigantic_id ):
         species = '_'.join( parts_phyloname[ 6: ] )
         return genus + '_' + species
 
-    return phyloname
+    print( f"CRITICAL ERROR: Phyloname has {len( parts_phyloname )} fields, need at least 7: {phyloname}" )
+    sys.exit( 1 )
 
 
 def load_phylogenetic_paths():

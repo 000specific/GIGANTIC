@@ -20,7 +20,7 @@
 #     - orthohmm_orthogroups/ (FASTA files per orthogroup)
 #
 # Prerequisites:
-#   - conda activate ai_gigantic_orthogroups
+#   - conda activate ai_gigantic_orthogroups_orthohmm
 #   - Script 002 must have completed
 #
 # Usage:
@@ -99,12 +99,13 @@ if [ ! -d "${INPUT_DIR}" ]; then
     exit 1
 fi
 
-# Count input files
-PROTEOME_COUNT=$(ls -1 "${INPUT_DIR}"/*.aa 2>/dev/null | wc -l)
+# Count input files (.pep extension - OrthoHMM requires .fa, .faa, .fas, .fasta, .pep, or .prot)
+PROTEOME_COUNT=$(ls -1 "${INPUT_DIR}"/*.pep 2>/dev/null | wc -l)
 
 if [ "${PROTEOME_COUNT}" -eq 0 ]; then
-    log_message "CRITICAL ERROR: No proteome files (.aa) found in input directory!"
+    log_message "CRITICAL ERROR: No proteome files (.pep) found in input directory!"
     log_message "Directory: ${INPUT_DIR}"
+    log_message "OrthoHMM requires extensions: .fa, .faa, .fas, .fasta, .pep, or .prot"
     exit 1
 fi
 
@@ -121,8 +122,8 @@ mkdir -p "${OUTPUT_DIR}"
 # Check if orthohmm is available
 if ! command -v orthohmm &> /dev/null; then
     log_message "CRITICAL ERROR: orthohmm command not found!"
-    log_message "Ensure conda environment ai_gigantic_orthogroups is activated."
-    log_message "Run: conda activate ai_gigantic_orthogroups"
+    log_message "Ensure conda environment ai_gigantic_orthogroups_orthohmm is activated."
+    log_message "Run: conda activate ai_gigantic_orthogroups_orthohmm"
     exit 1
 fi
 
@@ -161,23 +162,33 @@ if [ ! -f "${OUTPUT_DIR}/orthohmm_orthogroups.txt" ]; then
     exit 1
 fi
 
-ORTHOGROUP_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_orthogroups.txt")
+# Count orthogroups (exclude empty lines and comment lines)
+ORTHOGROUP_COUNT=$(grep -c -v '^\s*$' "${OUTPUT_DIR}/orthohmm_orthogroups.txt" || echo "0")
 log_message "Orthogroups identified: ${ORTHOGROUP_COUNT}"
 
-# Check for gene count file
-if [ -f "${OUTPUT_DIR}/orthohmm_gene_count.txt" ]; then
-    log_message "Gene count file: present"
-else
-    log_message "WARNING: orthohmm_gene_count.txt not produced by OrthoHMM"
+if [ "${ORTHOGROUP_COUNT}" -eq 0 ]; then
+    log_message "CRITICAL ERROR: Zero orthogroups detected!"
+    log_message "OrthoHMM produced orthohmm_orthogroups.txt but it contains no orthogroups."
+    log_message "Check input proteomes and OrthoHMM log above for errors."
+    exit 1
 fi
 
-# Check for single-copy orthogroups
-if [ -f "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" ]; then
-    SINGLE_COPY_COUNT=$(wc -l < "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt")
-    log_message "Single-copy orthogroups: ${SINGLE_COPY_COUNT}"
-else
-    log_message "WARNING: orthohmm_single_copy_orthogroups.txt not produced by OrthoHMM"
+# Check for gene count file (required output)
+if [ ! -f "${OUTPUT_DIR}/orthohmm_gene_count.txt" ]; then
+    log_message "CRITICAL ERROR: orthohmm_gene_count.txt not produced by OrthoHMM!"
+    log_message "OrthoHMM must produce this file. Check OrthoHMM log for errors."
+    exit 1
 fi
+log_message "Gene count file: present"
+
+# Check for single-copy orthogroups (required output)
+if [ ! -f "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" ]; then
+    log_message "CRITICAL ERROR: orthohmm_single_copy_orthogroups.txt not produced by OrthoHMM!"
+    log_message "OrthoHMM must produce this file. Check OrthoHMM log for errors."
+    exit 1
+fi
+SINGLE_COPY_COUNT=$(grep -c -v '^\s*$' "${OUTPUT_DIR}/orthohmm_single_copy_orthogroups.txt" || echo "0")
+log_message "Single-copy orthogroups: ${SINGLE_COPY_COUNT}"
 
 # =============================================================================
 # COMPLETION

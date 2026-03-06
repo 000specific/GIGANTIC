@@ -57,8 +57,7 @@ echo ""
 
 # Run Nextflow pipeline
 nextflow run ai/main.nf \
-    -c ai/nextflow.config \
-    -resume
+    -c ai/nextflow.config
 
 EXIT_CODE=$?
 

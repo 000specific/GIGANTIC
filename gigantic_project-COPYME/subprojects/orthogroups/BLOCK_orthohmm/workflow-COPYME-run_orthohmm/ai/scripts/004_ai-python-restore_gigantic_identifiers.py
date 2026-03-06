@@ -140,7 +140,10 @@ def main():
     logger.info( f"Loaded {len( short_ids___original_headers )} header mappings" )
 
     # Process orthogroups file
-    # Input format: OG_ID: gene1 gene2 gene3 ...
+    # OrthoHMM output format (orthohmm_orthogroups.txt):
+    #   OG0000001: Genus_species-1 Genus_species-2 Genus_species-3
+    # Colon-separated OG ID, then space-separated short gene IDs.
+    # Also handles tab-separated format as a fallback.
     # Output format: OG_ID\toriginal_header1\toriginal_header2 ...
 
     orthogroups_output_path = output_directory / '4_ai-orthogroups_gigantic_ids.tsv'
@@ -200,21 +203,20 @@ def main():
     gene_count_input = orthohmm_directory / 'orthohmm_gene_count.txt'
     gene_count_output_path = output_directory / '4_ai-gene_count_gigantic_ids.tsv'
 
-    if gene_count_input.exists():
-        logger.info( "Processing gene count file..." )
+    if not gene_count_input.exists():
+        logger.error( f"CRITICAL ERROR: Gene count file not found: {gene_count_input}" )
+        logger.error( "OrthoHMM must produce orthohmm_gene_count.txt." )
+        logger.error( "Check script 003 log for OrthoHMM errors." )
+        sys.exit( 1 )
 
-        with open( gene_count_input, 'r' ) as input_gene_count:
-            with open( gene_count_output_path, 'w' ) as output_gene_count:
-                for line in input_gene_count:
-                    output_gene_count.write( line )
+    logger.info( "Processing gene count file..." )
 
-        logger.info( f"Wrote gene counts to: {gene_count_output_path}" )
-    else:
-        logger.info( "No gene count file found (orthohmm_gene_count.txt)" )
-        # Create empty gene count file with header only
+    with open( gene_count_input, 'r' ) as input_gene_count:
         with open( gene_count_output_path, 'w' ) as output_gene_count:
-            output_gene_count.write( '# No gene count data available from OrthoHMM\n' )
-        logger.info( "Created placeholder gene count file" )
+            for line in input_gene_count:
+                output_gene_count.write( line )
+
+    logger.info( f"Wrote gene counts to: {gene_count_output_path}" )
 
     logger.info( "Script 004 completed successfully" )
 

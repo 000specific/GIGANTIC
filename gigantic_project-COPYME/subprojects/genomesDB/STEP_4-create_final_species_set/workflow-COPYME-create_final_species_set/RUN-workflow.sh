@@ -90,62 +90,6 @@ fi
 echo ""
 
 # ============================================================================
-# Validate Prerequisites
-# ============================================================================
-
-echo "Validating prerequisites..."
-echo ""
-
-# Check config file exists
-if [ ! -f "START_HERE-user_config.yaml" ]; then
-    echo "ERROR: Configuration file not found!"
-    echo "Expected: START_HERE-user_config.yaml"
-    exit 1
-fi
-echo "  [OK] Configuration file found"
-
-# Check if selected_species.txt exists - if not, create default from STEP_2
-if [ ! -f "INPUT_user/selected_species.txt" ]; then
-    echo "  [INFO] No selected_species.txt found - will use all species from STEP_2"
-fi
-
-# Check STEP_2 proteomes directory exists (via output_to_input)
-PROTEOMES_DIR="../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
-if [ ! -d "${PROTEOMES_DIR}" ] && [ ! -L "${PROTEOMES_DIR}" ]; then
-    echo "ERROR: STEP_2 cleaned proteomes not found!"
-    echo ""
-    echo "Expected location:"
-    echo "  ${PROTEOMES_DIR}"
-    echo ""
-    echo "Please ensure STEP_2 is complete and its RUN-workflow.sh created the output_to_input symlinks."
-    exit 1
-fi
-echo "  [OK] STEP_2 proteomes found"
-
-# Check STEP_3 BLAST databases directory exists (via output_to_input)
-BLASTP_DIR="../../output_to_input/STEP_3-databases/gigantic-T1-blastp"
-if [ ! -d "${BLASTP_DIR}" ] && [ ! -L "${BLASTP_DIR}" ]; then
-    echo "ERROR: STEP_3 BLAST databases not found!"
-    echo ""
-    echo "Expected location:"
-    echo "  ${BLASTP_DIR}"
-    echo ""
-    echo "Please ensure STEP_3 is complete and its RUN-workflow.sh created the output_to_input symlinks."
-    exit 1
-fi
-echo "  [OK] STEP_3 BLAST databases found"
-
-# Check STEP_2 genome annotations (optional)
-ANNOTATIONS_DIR="../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
-if [ -d "${ANNOTATIONS_DIR}" ] || [ -L "${ANNOTATIONS_DIR}" ]; then
-    echo "  [OK] STEP_2 genome annotations found"
-else
-    echo "  [INFO] No genome annotations found (optional - not all projects have GFF/GTF files)"
-fi
-
-echo ""
-
-# ============================================================================
 # Run NextFlow Pipeline
 # ============================================================================
 

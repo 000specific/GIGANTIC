@@ -292,8 +292,8 @@ def extract_genus_species_from_phyloname( phyloname: str ) -> str:
     parts_phyloname = phyloname.split( '_' )
 
     if len( parts_phyloname ) < 7:
-        # Not a standard phyloname - return as-is for matching
-        return phyloname
+        print( f"CRITICAL ERROR: Phyloname has {len( parts_phyloname )} fields, need at least 7: {phyloname}" )
+        sys.exit( 1 )
 
     genus = parts_phyloname[ 5 ]
     species = '_'.join( parts_phyloname[ 6: ] )

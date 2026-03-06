@@ -1,21 +1,20 @@
 # STEP_3 Workflow: Build GIGANTIC GenomesDB BLAST Databases
 
-**AI**: Claude Code | Opus 4.5 | 2026 February 26
+**AI**: Claude Code | Opus 4.6 | 2026 March 06
 **Human**: Eric Edsinger
 
 ---
 
 ## Purpose
 
-Build per-genome BLAST protein databases from standardized proteomes. Each species gets its own individual BLAST database, enabling flexible searches against specific genomes.
+Build per-genome BLAST protein databases from ALL standardized proteomes in STEP_2. Each species gets its own individual BLAST database, enabling flexible searches against specific genomes. No filtering -- all species from STEP_2 get databases built.
 
 ---
 
 ## Prerequisites
 
 1. **STEP_2 complete**: Standardized proteomes in `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`
-2. **Species manifest edited**: User has reviewed and set `Include=YES/NO` in the species selection manifest
-3. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `ai_gigantic_genomesdb` conda environment)
+2. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `ai_gigantic_genomesdb` conda environment)
 
 ---
 
@@ -37,8 +36,8 @@ sbatch RUN-workflow.sbatch
 
 | Step | Script | Purpose |
 |------|--------|---------|
-| 1 | `001_ai-python-filter_species_manifest.py` | Filter species to Include=YES only |
-| 2 | `002_ai-python-build_per_genome_blastdbs.py` | Build per-genome BLAST databases |
+| 1 | `001_ai-python-build_per_genome_blastdbs.py` | Build per-genome BLAST databases for all proteomes |
+| 2 | `002_ai-python-write_run_log.py` | Write run log to ai/logs/ |
 
 ---
 
@@ -46,8 +45,7 @@ sbatch RUN-workflow.sbatch
 
 | Input | Source | Description |
 |-------|--------|-------------|
-| Species manifest | `output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv` | User-edited manifest with Include=YES/NO |
-| Proteomes | `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` | Standardized T1 proteomes |
+| Proteomes | `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` | All .aa proteome files from STEP_2 |
 
 ---
 
@@ -55,9 +53,8 @@ sbatch RUN-workflow.sbatch
 
 | Output | Location | Description |
 |--------|----------|-------------|
-| Filtered manifest | `OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv` | Species with Include=YES |
-| BLAST databases | `OUTPUT_pipeline/2-output/gigantic-T1-blastp/` | Per-genome BLAST databases |
-| makeblastdb commands | `OUTPUT_pipeline/2-output/2_ai-makeblastdb_commands.sh` | Log of all makeblastdb commands |
+| BLAST databases | `OUTPUT_pipeline/1-output/gigantic-T1-blastp/` | Per-genome BLAST databases |
+| makeblastdb commands | `OUTPUT_pipeline/1-output/1_ai-makeblastdb_commands.sh` | Log of all makeblastdb commands |
 
 **Shared with other subprojects via**: `output_to_input/STEP_3-databases/gigantic-T1-blastp/`
 
@@ -68,13 +65,13 @@ sbatch RUN-workflow.sbatch
 ```bash
 # Search against a single species database
 blastp \
-    -db OUTPUT_pipeline/2-output/gigantic-T1-blastp/PHYLONAME-proteome.aa \
+    -db OUTPUT_pipeline/1-output/gigantic-T1-blastp/PHYLONAME-proteome.aa \
     -query your_sequences.fasta \
     -out results.txt
 
 # Example with specific species
 blastp \
-    -db OUTPUT_pipeline/2-output/gigantic-T1-blastp/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-proteome.aa \
+    -db OUTPUT_pipeline/1-output/gigantic-T1-blastp/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-proteome.aa \
     -query query.fasta \
     -out human_blast_results.txt
 ```
@@ -88,20 +85,18 @@ workflow-COPYME-build_gigantic_genomesDB/
 ├── RUN-workflow.sh              # Local execution script
 ├── RUN-workflow.sbatch          # SLURM submission script
 ├── README.md                    # This file
-├── START_HERE-user_config.yaml        # Workflow configuration
+├── START_HERE-user_config.yaml  # Workflow configuration
 ├── OUTPUT_pipeline/
-│   ├── 1-output/                # Script 001 outputs
-│   │   └── 1_ai-filtered_species_manifest.tsv
-│   └── 2-output/                # Script 002 outputs
+│   └── 1-output/                # Script 001 outputs
 │       ├── gigantic-T1-blastp/  # Per-genome BLAST databases
-│       └── 2_ai-makeblastdb_commands.sh
+│       └── 1_ai-makeblastdb_commands.sh
 └── ai/
-    ├── AI_GUIDE-databases_workflow.md
     ├── main.nf
     ├── nextflow.config
+    ├── logs/                    # Run logs from write_run_log
     └── scripts/
-        ├── 001_ai-python-filter_species_manifest.py
-        └── 002_ai-python-build_per_genome_blastdbs.py
+        ├── 001_ai-python-build_per_genome_blastdbs.py
+        └── 002_ai-python-write_run_log.py
 ```
 
 ---

@@ -44,7 +44,7 @@ Each tool project is fully self-contained: it validates inputs, runs its tool, s
 | **Speed** | Fast | Moderate | Moderate |
 | **Sensitivity** | Good for close relatives | Better for divergent sequences | Phylogeny-aware |
 | **Header handling** | Preserves original (-X flag) | Needs short headers (convert + restore) | Needs short headers (convert + restore) |
-| **Script count** | 6 (no header conversion) | 6 (with header conversion + restoration) | 6 (with header conversion + restoration) |
+| **Script count** | 7 (no header conversion) | 7 (with header conversion + restoration) | 7 (with header conversion + restoration) |
 | **Extra output** | Species tree, gene trees | HMM profiles, single-copy orthologs | Chimeric protein detection |
 | **When to use** | Standard comparative genomics | Divergent species | Gene-fusion detection |
 
@@ -128,12 +128,12 @@ This standardization enables:
 ## Data Flow
 
 ```
-genomesDB/output_to_input/gigantic_proteomes/
+genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
               │
     ┌─────────┼──────────┬───────────┐
     ▼         ▼          ▼           │
 BLOCK_orthofinder/ BLOCK_orthohmm/ BLOCK_broccoli/ │
-(6 scripts)       (6 scripts)     (6 scripts)     │
+(7 scripts)       (7 scripts)     (7 scripts)     │
     │                │               │            │
     ▼                ▼               ▼            │
 output_to_input/  output_to_input/ output_to_input/│
@@ -155,7 +155,7 @@ All outputs are consolidated under a single `orthogroups/output_to_input/` direc
 
 ## Prerequisites
 
-1. **genomesDB complete**: `genomesDB/output_to_input/gigantic_proteomes/` populated
+1. **genomesDB STEP_4 complete**: `genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` populated
 2. **Conda environment**: `ai_gigantic_orthogroups` (with OrthoFinder, OrthoHMM, Broccoli, Diamond)
 3. **Nextflow**: `module load nextflow`
 
@@ -183,7 +183,7 @@ All outputs are consolidated under a single `orthogroups/output_to_input/` direc
 | `RUN-workflow.sbatch` | Submit to SLURM | **Yes** - edit account/qos |
 | `ai/main.nf` | Nextflow pipeline | No |
 | `ai/nextflow.config` | Nextflow settings | Rarely - resource adjustments |
-| `ai/scripts/001-006*.py` | Pipeline scripts (001-006 for tool projects, 001-002 for comparison) | No |
+| `ai/scripts/001-007*` | Pipeline scripts (001-007 for tool projects, 001-002 for comparison) | No |
 
 ---
 

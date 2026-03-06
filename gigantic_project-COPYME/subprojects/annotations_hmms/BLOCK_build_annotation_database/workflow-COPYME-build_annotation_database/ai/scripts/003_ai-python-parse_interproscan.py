@@ -295,7 +295,7 @@ def load_proteome_protein_identifiers( proteomes_directory: Path, logger: loggin
     from FASTA headers. Returns a dictionary mapping phylonames to sets of
     protein identifiers.
 
-    Proteome files follow GIGANTIC naming: {phyloname}___taxid-assembly-date-type.aa
+    Proteome files follow GIGANTIC cleaned naming: {phyloname}-T1-proteome.aa
     FASTA headers: >protein_id description...
 
     Returns:
@@ -322,9 +322,13 @@ def load_proteome_protein_identifiers( proteomes_directory: Path, logger: loggin
     phylonames___protein_identifiers = {}
 
     for proteome_file in proteome_files:
-        # Extract phyloname from filename: {phyloname}___taxid-assembly.aa
+        # Extract phyloname from filename: {phyloname}-T1-proteome.aa
         filename_without_extension = proteome_file.stem
-        parts_filename = filename_without_extension.split( '___' )
+        parts_filename = filename_without_extension.split( '-T1-proteome' )
+        if len( parts_filename ) < 2:
+            logger.error( f"CRITICAL ERROR: Filename does not follow GIGANTIC cleaned proteome format: {proteome_file.name}" )
+            logger.error( "Expected format: phyloname-T1-proteome.aa" )
+            sys.exit( 1 )
         phyloname = parts_filename[ 0 ]
 
         # Read FASTA headers to get protein IDs

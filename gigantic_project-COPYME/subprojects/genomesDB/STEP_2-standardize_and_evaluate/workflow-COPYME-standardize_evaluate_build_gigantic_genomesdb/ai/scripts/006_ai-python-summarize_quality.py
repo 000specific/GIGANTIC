@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.5 | 2026 February 26 | Purpose: Summarize genome quality metrics and generate species selection manifest
+# AI: Claude Code | Opus 4.6 | 2026 March 06 | Purpose: Summarize genome quality metrics into comprehensive quality summary
 # Human: Eric Edsinger
 
 """
-006_ai-python-summarize_quality_and_generate_species_manifest.py
+006_ai-python-summarize_quality.py
 
-Combine genome assembly statistics (Script 003) and BUSCO results (Script 004)
-into a comprehensive quality summary table. Also generates a species selection
-manifest that users can edit to include/exclude species for downstream analyses.
+Combine genome assembly statistics (Script 004) and BUSCO results (Script 005)
+into a comprehensive quality summary table.
 
-This script produces:
-1. A consolidated quality summary TSV combining N50 stats and BUSCO scores
-2. A species selection manifest (all species included by default)
-
-RUN-workflow.sh copies the manifest to output_to_input/ after this script completes.
-Users edit the copy in output_to_input/ to select species for STEP_4.
+Species selection is handled by STEP_4, not here.
 
 Inputs:
     - Genome assembly statistics from Script 004 (OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv)
@@ -23,11 +17,10 @@ Inputs:
 
 Outputs:
     - Comprehensive quality summary: OUTPUT_pipeline/6-output/6_ai-comprehensive_quality_summary.tsv
-    - Species selection manifest: OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv
     - Processing log: OUTPUT_pipeline/6-output/6_ai-log-summarize_quality.log
 
 Usage:
-    python3 006_ai-python-summarize_quality_and_generate_species_manifest.py \\
+    python3 006_ai-python-summarize_quality.py \\
         --assembly-stats OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv \\
         --busco-summary OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv \\
         --proteome-manifest OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv \\
@@ -325,47 +318,6 @@ def write_comprehensive_summary(
     logger.info( f"Summary written with {len( phylonames___species_info )} species" )
 
 
-def write_species_selection_manifest(
-    manifest_path: Path,
-    phylonames___species_info: dict,
-    logger: logging.Logger
-) -> None:
-    """
-    Write species selection manifest with all species included by default.
-
-    Users can edit this file to exclude species they don't want.
-    Format is simple: phyloname, genus_species, include (YES/NO)
-
-    Args:
-        manifest_path: Output path for manifest TSV
-        phylonames___species_info: Species info from proteome manifest
-        logger: Logger instance
-    """
-
-    logger.info( f"Writing species selection manifest to: {manifest_path}" )
-
-    with open( manifest_path, 'w' ) as output_manifest:
-        # Write header with instructions
-        output_manifest.write( '# Species Selection Manifest for GIGANTIC genomesDB\n' )
-        output_manifest.write( '# Edit the Include column to YES or NO to select species for downstream analyses\n' )
-        output_manifest.write( '# Lines starting with # are comments and will be ignored\n' )
-        output_manifest.write( '#\n' )
-
-        # Write column header
-        output = 'Phyloname (GIGANTIC phyloname)\tGenus_Species (binomial name)\tInclude (YES to include or NO to exclude)\n'
-        output_manifest.write( output )
-
-        # Write all species with Include=YES by default
-        for phyloname in sorted( phylonames___species_info.keys() ):
-            species_info = phylonames___species_info[ phyloname ]
-            genus_species = species_info.get( 'genus_species', 'NA' )
-
-            output = f'{phyloname}\t{genus_species}\tYES\n'
-            output_manifest.write( output )
-
-    logger.info( f"Manifest written with {len( phylonames___species_info )} species (all included by default)" )
-
-
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -380,11 +332,11 @@ def main():
     # ========================================================================
 
     parser = argparse.ArgumentParser(
-        description = 'Summarize genome quality metrics and generate species selection manifest.',
+        description = 'Summarize genome quality metrics into comprehensive quality summary.',
         formatter_class = argparse.RawDescriptionHelpFormatter,
         epilog = """
 Examples:
-    python3 006_ai-python-summarize_quality_and_generate_species_manifest.py \\
+    python3 006_ai-python-summarize_quality.py \\
         --assembly-stats OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv \\
         --busco-summary OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv \\
         --proteome-manifest OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv \\
@@ -433,7 +385,6 @@ Examples:
 
     output_summary_path = output_base_directory / '6_ai-comprehensive_quality_summary.tsv'
     output_log_path = output_base_directory / '6_ai-log-summarize_quality.log'
-    output_manifest_path = output_base_directory / '6_ai-species_selection_manifest.tsv'
 
     # Create output directory
     output_base_directory.mkdir( parents = True, exist_ok = True )
@@ -445,15 +396,14 @@ Examples:
     logger = setup_logging( output_log_path )
 
     logger.info( "=" * 80 )
-    logger.info( "GIGANTIC Quality Summary and Species Selection Manifest" )
-    logger.info( "Script: 006_ai-python-summarize_quality_and_generate_species_manifest.py" )
+    logger.info( "GIGANTIC Quality Summary" )
+    logger.info( "Script: 006_ai-python-summarize_quality.py" )
     logger.info( "=" * 80 )
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
     logger.info( f"Assembly stats input: {input_assembly_stats_path}" )
     logger.info( f"BUSCO summary input: {input_busco_summary_path}" )
     logger.info( f"Proteome manifest input: {input_proteome_manifest_path}" )
     logger.info( f"Quality summary output: {output_summary_path}" )
-    logger.info( f"Species manifest output: {output_manifest_path}" )
     logger.info( "" )
 
     # ========================================================================
@@ -477,6 +427,50 @@ Examples:
     logger.info( "" )
 
     # ========================================================================
+    # DIAGNOSTIC: VERIFY KEY MATCHING
+    # ========================================================================
+
+    logger.info( "=" * 80 )
+    logger.info( "DIAGNOSTIC: KEY MATCHING BETWEEN DATA SOURCES" )
+    logger.info( "=" * 80 )
+    logger.info( "" )
+
+    species_with_busco_match = 0
+    species_without_busco_match = 0
+    unmatched_busco_phylonames = []
+
+    for phyloname in phylonames___species_info.keys():
+        if phyloname in phylonames___busco_stats:
+            species_with_busco_match += 1
+        else:
+            species_without_busco_match += 1
+
+    for busco_phyloname in phylonames___busco_stats.keys():
+        if busco_phyloname not in phylonames___species_info:
+            unmatched_busco_phylonames.append( busco_phyloname )
+
+    logger.info( f"Species in proteome manifest: {len( phylonames___species_info )}" )
+    logger.info( f"Species with BUSCO data match: {species_with_busco_match}" )
+    logger.info( f"Species WITHOUT BUSCO data match: {species_without_busco_match}" )
+
+    if unmatched_busco_phylonames:
+        logger.warning( f"BUSCO phylonames not found in proteome manifest: {len( unmatched_busco_phylonames )}" )
+        for unmatched_phyloname in sorted( unmatched_busco_phylonames )[ :5 ]:
+            logger.warning( f"  Unmatched BUSCO key: '{unmatched_phyloname}'" )
+        if len( unmatched_busco_phylonames ) > 5:
+            logger.warning( f"  ... and {len( unmatched_busco_phylonames ) - 5} more" )
+
+    if species_without_busco_match > 0 and len( phylonames___busco_stats ) > 0:
+        logger.warning( "Some species have no BUSCO data match - check phyloname consistency between scripts 001 and 005" )
+
+        example_species_key = list( phylonames___species_info.keys() )[ 0 ]
+        example_busco_key = list( phylonames___busco_stats.keys() )[ 0 ] if phylonames___busco_stats else 'N/A'
+        logger.info( f"  Example proteome manifest key: '{example_species_key}'" )
+        logger.info( f"  Example BUSCO summary key:     '{example_busco_key}'" )
+
+    logger.info( "" )
+
+    # ========================================================================
     # WRITE OUTPUTS
     # ========================================================================
 
@@ -492,14 +486,6 @@ Examples:
         phylonames___assembly_stats = phylonames___assembly_stats,
         phylonames___busco_stats = phylonames___busco_stats,
         lineage_names = lineage_names,
-        logger = logger
-    )
-
-    # Write species selection manifest
-    # NOTE: RUN-workflow.sh copies this to output_to_input/ after pipeline completes
-    write_species_selection_manifest(
-        manifest_path = output_manifest_path,
-        phylonames___species_info = phylonames___species_info,
         logger = logger
     )
 
@@ -522,7 +508,6 @@ Examples:
     logger.info( f"BUSCO lineages: {len( lineage_names )} ({', '.join( lineage_names ) if lineage_names else 'none'})" )
     logger.info( "" )
     logger.info( f"Quality summary: {output_summary_path}" )
-    logger.info( f"Species manifest: {output_manifest_path}" )
     logger.info( f"Log: {output_log_path}" )
     logger.info( "" )
     logger.info( f"End time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
@@ -533,7 +518,6 @@ Examples:
     print( "" )
     print( f"Done! Summarized quality for {total_species} species." )
     print( f"Quality summary: {output_summary_path}" )
-    print( f"Species selection manifest: {output_manifest_path}" )
 
 
 # ============================================================================

@@ -1,31 +1,26 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.5 | 2026 February 26 | Purpose: Build per-genome BLAST databases for each selected species
+# AI: Claude Code | Opus 4.6 | 2026 March 06 00:00 | Purpose: Build per-genome BLAST databases for all species from STEP_2
 # Human: Eric Edsinger
 
 """
-002_ai-python-build_per_genome_blastdbs.py
+001_ai-python-build_per_genome_blastdbs.py
 
-Build individual BLAST protein databases for each species marked Include=YES.
+Build individual BLAST protein databases for ALL species from STEP_2.
 Each species gets its own BLAST database (not a single concatenated database).
 
 Inputs:
-    - Filtered species manifest from Script 001
-    - Cleaned proteomes from STEP_2's output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/
+    - Cleaned proteomes directory from STEP_2's output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/
+    - All .aa files in the directory are processed (no filtering)
 
 Outputs:
-    - Per-genome BLAST databases in OUTPUT_pipeline/2-output/blastdb/
-    - FASTA files copied alongside BLAST databases
+    - Per-genome BLAST databases in 1-output/gigantic-T1-blastp/
     - makeblastdb command log
     # NOTE: RUN-workflow.sh creates symlinks in output_to_input/ after pipeline completes
 
 Usage:
-    python3 002_ai-python-build_per_genome_blastdbs.py \\
-        --filtered-manifest OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv \\
+    python3 001_ai-python-build_per_genome_blastdbs.py \\
         --proteomes-dir PATH_TO_PROTEOMES \\
-        --output-dir OUTPUT_pipeline/2-output
-
-    # Run on SLURM:
-    sbatch SLURM-002-build_blastdbs.sbatch
+        --output-dir 1-output
 """
 
 import argparse
@@ -97,7 +92,6 @@ def build_single_blastdb(
     logger = logging.getLogger( logger_name )
 
     proteome_filename = proteome_path.name
-    phyloname = proteome_filename.replace( '-proteome.aa', '' )
 
     # Copy FASTA to blastdb directory
     dest_fasta = blastdb_dir / proteome_filename
@@ -106,7 +100,7 @@ def build_single_blastdb(
         shutil.copy2( proteome_path, dest_fasta )
     except Exception as error:
         return {
-            'phyloname': phyloname,
+            'proteome_filename': proteome_filename,
             'success': False,
             'error': f"Failed to copy FASTA: {error}"
         }
@@ -134,7 +128,7 @@ def build_single_blastdb(
         )
 
         return {
-            'phyloname': phyloname,
+            'proteome_filename': proteome_filename,
             'success': True,
             'fasta_path': str( dest_fasta ),
             'command': ' '.join( makeblastdb_command ),
@@ -143,7 +137,7 @@ def build_single_blastdb(
 
     except subprocess.CalledProcessError as error:
         return {
-            'phyloname': phyloname,
+            'proteome_filename': proteome_filename,
             'success': False,
             'error': f"makeblastdb failed: {error.stderr}",
             'command': ' '.join( makeblastdb_command )
@@ -151,7 +145,7 @@ def build_single_blastdb(
 
     except FileNotFoundError:
         return {
-            'phyloname': phyloname,
+            'proteome_filename': proteome_filename,
             'success': False,
             'error': "makeblastdb not found. Is BLAST+ installed and in PATH?"
         }
@@ -163,7 +157,7 @@ def build_single_blastdb(
 
 def main():
     """
-    Main function: build per-genome BLAST databases.
+    Main function: build per-genome BLAST databases for all species.
     """
 
     # ========================================================================
@@ -171,29 +165,22 @@ def main():
     # ========================================================================
 
     parser = argparse.ArgumentParser(
-        description = 'Build per-genome BLAST protein databases for selected species.',
+        description = 'Build per-genome BLAST protein databases for all species from STEP_2.',
         formatter_class = argparse.RawDescriptionHelpFormatter
-    )
-
-    parser.add_argument(
-        '--filtered-manifest',
-        type = str,
-        default = 'OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv',
-        help = 'Path to filtered manifest from Script 001 (default: OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv)'
     )
 
     parser.add_argument(
         '--proteomes-dir',
         type = str,
-        default = '../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned',
-        help = 'Path to cleaned proteomes from STEP_2 (default: ../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned)'
+        required = True,
+        help = 'Path to cleaned proteomes from STEP_2'
     )
 
     parser.add_argument(
         '--output-dir',
         type = str,
-        default = 'OUTPUT_pipeline/2-output',
-        help = 'Base output directory (default: OUTPUT_pipeline/2-output)'
+        default = '1-output',
+        help = 'Base output directory (default: 1-output)'
     )
 
     parser.add_argument(
@@ -216,15 +203,13 @@ def main():
     # PATH SETUP
     # ========================================================================
 
-    filtered_manifest_path = Path( arguments.filtered_manifest )
     proteomes_directory = Path( arguments.proteomes_dir )
     output_base_directory = Path( arguments.output_dir )
     database_name = arguments.database_name
 
-    # Use database name (e.g., gigantic-T1-blastp) for directory name
     blastdb_directory = output_base_directory / database_name
-    output_commands_path = output_base_directory / '2_ai-makeblastdb_commands.sh'
-    output_log_path = output_base_directory / '2_ai-log-build_per_genome_blastdbs.log'
+    output_commands_path = output_base_directory / '1_ai-makeblastdb_commands.sh'
+    output_log_path = output_base_directory / '1_ai-log-build_per_genome_blastdbs.log'
 
     # Create output directories
     blastdb_directory.mkdir( parents = True, exist_ok = True )
@@ -238,10 +223,9 @@ def main():
 
     logger.info( "=" * 80 )
     logger.info( "GIGANTIC genomesDB STEP_3 - Build Per-Genome BLAST Databases" )
-    logger.info( "Script: 002_ai-python-build_per_genome_blastdbs.py" )
+    logger.info( "Script: 001_ai-python-build_per_genome_blastdbs.py" )
     logger.info( "=" * 80 )
     logger.info( f"Start time: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
-    logger.info( f"Filtered manifest: {filtered_manifest_path}" )
     logger.info( f"Proteomes directory: {proteomes_directory}" )
     logger.info( f"Database name: {database_name}" )
     logger.info( f"BLAST database directory: {blastdb_directory}" )
@@ -252,11 +236,6 @@ def main():
     # INPUT VALIDATION
     # ========================================================================
 
-    if not filtered_manifest_path.exists():
-        logger.error( f"CRITICAL ERROR: Filtered manifest not found: {filtered_manifest_path}" )
-        logger.error( "Run Script 001 first to create the filtered manifest." )
-        sys.exit( 1 )
-
     if not proteomes_directory.exists():
         logger.error( f"CRITICAL ERROR: Proteomes directory not found: {proteomes_directory}" )
         logger.error( "STEP_2 must be run before STEP_3." )
@@ -264,45 +243,17 @@ def main():
         sys.exit( 1 )
 
     # ========================================================================
-    # READ FILTERED MANIFEST
+    # FIND ALL PROTEOME FILES
     # ========================================================================
 
-    phylonames_to_include = []
-    phyloname_column_index = -1
+    proteome_files = sorted( proteomes_directory.glob( '*.aa' ) )
 
-    with open( filtered_manifest_path, 'r' ) as input_manifest:
-        # Parse header to find Phyloname column
-        header_line = input_manifest.readline().strip()
-        parts_header = header_line.split( '\t' )
-
-        for index, column_header in enumerate( parts_header ):
-            if 'Phyloname' in column_header and 'Taxonid' not in column_header:
-                phyloname_column_index = index
-                break
-
-        if phyloname_column_index == -1:
-            logger.error( "CRITICAL ERROR: No 'Phyloname' column found in manifest!" )
-            logger.error( f"Columns found: {parts_header}" )
-            sys.exit( 1 )
-
-        # Read all phylonames (all entries in filtered manifest have Include=YES)
-        for line in input_manifest:
-            line = line.strip()
-            if not line or line.startswith( '#' ):
-                continue
-
-            parts = line.split( '\t' )
-            if len( parts ) > phyloname_column_index:
-                phyloname = parts[ phyloname_column_index ]
-                phylonames_to_include.append( phyloname )
-
-    if len( phylonames_to_include ) == 0:
-        logger.error( "CRITICAL ERROR: No species found in filtered manifest!" )
-        logger.error( f"Manifest: {filtered_manifest_path}" )
-        logger.error( "Ensure Script 001 produced a manifest with species entries." )
+    if len( proteome_files ) == 0:
+        logger.error( f"CRITICAL ERROR: No .aa proteome files found in: {proteomes_directory}" )
+        logger.error( "STEP_2 must produce cleaned proteome files with .aa extension." )
         sys.exit( 1 )
 
-    logger.info( f"Found {len( phylonames_to_include )} species to build BLAST databases" )
+    logger.info( f"Found {len( proteome_files )} proteome files to build BLAST databases" )
     logger.info( "" )
 
     # ========================================================================
@@ -312,60 +263,39 @@ def main():
     logger.info( "Building per-genome BLAST databases..." )
     logger.info( "" )
 
-    # Prepare jobs
-    jobs_to_run = []
     makeblastdb_commands = []
-
-    for phyloname in phylonames_to_include:
-        proteome_filename = phyloname + '-proteome.aa'
-        proteome_path = proteomes_directory / proteome_filename
-
-        if not proteome_path.exists():
-            logger.error( f"CRITICAL ERROR: Proteome file not found: {proteome_path}" )
-            logger.error( f"Expected for phyloname: {phyloname}" )
-            logger.error( "Check that STEP_2 completed successfully." )
-            sys.exit( 1 )
-
-        jobs_to_run.append( {
-            'proteome_path': proteome_path,
-            'phyloname': phyloname
-        } )
-
-    # Run makeblastdb in parallel
     successful_count = 0
     failed_count = 0
-    results_list = []
 
     with ProcessPoolExecutor( max_workers = arguments.parallel ) as executor:
-        future_to_job = {}
+        future_to_proteome = {}
 
-        for job in jobs_to_run:
+        for proteome_file in proteome_files:
             future = executor.submit(
                 build_single_blastdb,
-                proteome_path = job[ 'proteome_path' ],
+                proteome_path = proteome_file,
                 blastdb_dir = blastdb_directory,
                 logger_name = 'build_per_genome_blastdbs'
             )
-            future_to_job[ future ] = job
+            future_to_proteome[ future ] = proteome_file
 
-        for future in as_completed( future_to_job ):
-            job = future_to_job[ future ]
+        for future in as_completed( future_to_proteome ):
+            proteome_file = future_to_proteome[ future ]
 
             try:
                 result = future.result()
-                results_list.append( result )
 
                 if result[ 'success' ]:
                     successful_count += 1
-                    logger.info( f"  SUCCESS: {result[ 'phyloname' ]}" )
+                    logger.info( f"  SUCCESS: {result[ 'proteome_filename' ]}" )
                     makeblastdb_commands.append( result.get( 'command', '' ) )
                 else:
                     failed_count += 1
-                    logger.error( f"  FAILED: {result[ 'phyloname' ]} - {result.get( 'error', 'Unknown error' )}" )
+                    logger.error( f"  FAILED: {result[ 'proteome_filename' ]} - {result.get( 'error', 'Unknown error' )}" )
 
             except Exception as error:
                 failed_count += 1
-                logger.error( f"  FAILED: {job[ 'phyloname' ]} - Exception: {error}" )
+                logger.error( f"  FAILED: {proteome_file.name} - Exception: {error}" )
 
     # ========================================================================
     # WRITE MAKEBLASTDB COMMANDS LOG
@@ -387,7 +317,7 @@ def main():
     logger.info( "=" * 80 )
     logger.info( "SUMMARY" )
     logger.info( "=" * 80 )
-    logger.info( f"Species processed: {len( phylonames_to_include )}" )
+    logger.info( f"Proteome files found: {len( proteome_files )}" )
     logger.info( f"Successful builds: {successful_count}" )
     logger.info( f"Failed builds: {failed_count}" )
     logger.info( f"BLAST database directory: {blastdb_directory}" )

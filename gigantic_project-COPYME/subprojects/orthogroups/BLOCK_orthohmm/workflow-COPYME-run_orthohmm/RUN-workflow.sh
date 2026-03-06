@@ -1,24 +1,49 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Run OrthoHMM Nextflow pipeline
+# AI: Claude Code | Opus 4.6 | 2026 March 06 | Purpose: Run OrthoHMM Nextflow pipeline
 # Human: Eric Edsinger
 
-# =============================================================================
-# RUN-workflow.sh
-# =============================================================================
-# Runs the OrthoHMM orthogroup detection Nextflow pipeline.
+################################################################################
+# GIGANTIC Orthogroups - BLOCK OrthoHMM Pipeline
+################################################################################
 #
-# Usage:
+# PURPOSE:
+# Run the OrthoHMM orthogroup detection workflow using NextFlow.
+#
+# USAGE:
 #   bash RUN-workflow.sh
 #
+# BEFORE RUNNING:
+# 1. Edit START_HERE-user_config.yaml with your project settings
+# 2. Ensure genomesDB STEP_4 is complete (provides cleaned proteomes)
+# 3. Ensure conda environment ai_gigantic_orthogroups_orthohmm is created
+#
 # FOR SLURM CLUSTERS:
+# Use the SLURM version instead:
 #   sbatch RUN-workflow.sbatch
-# =============================================================================
+#
+# WHAT THIS DOES:
+# 1. Validates proteomes from genomesDB STEP_4 output
+# 2. Converts FASTA headers to short IDs for OrthoHMM compatibility
+# 3. Runs OrthoHMM clustering (diamond + HMM-based orthogroup detection)
+# 4. Restores full GIGANTIC identifiers in results
+# 5. Generates summary statistics
+# 6. Per-species QC analysis
+# 7. Writes run log
+#
+# OUTPUT:
+# Results in OUTPUT_pipeline/1-output through 6-output/
+# Symlinks created in ../../output_to_input/BLOCK_orthohmm/
+#
+################################################################################
 
 set -e
 
 echo "========================================================================"
-echo "Starting OrthoHMM Orthogroup Detection Pipeline"
+echo "GIGANTIC Orthogroups - OrthoHMM Pipeline"
 echo "========================================================================"
+echo ""
+echo "Started: $(date)"
+echo ""
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -28,13 +53,27 @@ cd "${SCRIPT_DIR}"
 # Activate GIGANTIC Environment
 # ============================================================================
 
+# Load conda module (required on HPC systems like HiPerGator)
 module load conda 2>/dev/null || true
 
-if conda activate ai_gigantic_orthogroups 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_orthogroups"
+# Activate the orthohmm environment
+if conda activate ai_gigantic_orthogroups_orthohmm 2>/dev/null; then
+    echo "Activated conda environment: ai_gigantic_orthogroups_orthohmm"
 else
+    # Check if required tools are available in PATH
+    MISSING_TOOLS=""
     if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_orthogroups' not found!"
+        MISSING_TOOLS="${MISSING_TOOLS} nextflow"
+    fi
+    if ! command -v orthohmm &> /dev/null; then
+        MISSING_TOOLS="${MISSING_TOOLS} orthohmm"
+    fi
+    if ! command -v diamond &> /dev/null; then
+        MISSING_TOOLS="${MISSING_TOOLS} diamond"
+    fi
+
+    if [ -n "${MISSING_TOOLS}" ]; then
+        echo "ERROR: Environment 'ai_gigantic_orthogroups_orthohmm' not found and required tools missing:${MISSING_TOOLS}"
         echo ""
         echo "Please run the environment setup script first:"
         echo ""
@@ -42,24 +81,31 @@ else
         echo "  bash RUN-setup_environments.sh"
         echo ""
         echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_orthogroups.yml"
+        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_orthogroups_orthohmm.yml"
         echo ""
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    echo "Using tools from PATH (environment not activated)"
 fi
 echo ""
 
-# Run Nextflow pipeline
+# ============================================================================
+# Run NextFlow Pipeline
+# ============================================================================
+
+echo "Running NextFlow pipeline..."
+echo ""
+
 nextflow run ai/main.nf \
-    -c ai/nextflow.config \
-    -resume
+    -c ai/nextflow.config
 
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
     echo "========================================================================"
     echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
+    echo "Check the logs above for error details."
     echo "========================================================================"
     exit $EXIT_CODE
 fi
@@ -76,8 +122,9 @@ fi
 # ============================================================================
 
 echo ""
-echo "Creating symlinks for downstream subprojects..."
+echo "Publishing outputs to output_to_input/..."
 
+# Determine the workflow directory name dynamically (supports COPYME and RUN_XX instances)
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
 # --- Subproject-root output_to_input (single canonical location) ---
@@ -107,6 +154,8 @@ echo "  OUTPUT_pipeline/1-output/ through 6-output/"
 echo ""
 echo "Downstream symlinks:"
 echo "  output_to_input/BLOCK_orthohmm/  (subproject root)"
+echo ""
+echo "Next: Review results, then run BLOCK_comparison for cross-tool analysis"
 echo "========================================================================"
 echo "Completed: $(date)"
 

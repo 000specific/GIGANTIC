@@ -24,8 +24,6 @@ params.step3_blastp = "../../output_to_input/STEP_3-databases/gigantic-T1-blastp
 params.step2_genome_annotations = "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
 params.selected_species = "INPUT_user/selected_species.txt"
 params.output_dir = "OUTPUT_pipeline"
-params.project_name = "my_project"
-
 // ============================================================================
 // PROCESSES
 // ============================================================================

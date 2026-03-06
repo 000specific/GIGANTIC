@@ -103,7 +103,7 @@ def main():
 
     # Read proteome list
     # Proteome_Filename (proteome file name)	Full_Path (absolute path to proteome file)	Genus_Species (extracted from phyloname)	Sequence_Count (number of protein sequences in file)
-    # Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606-ncbi_GCF_000001.aa	/path/to/file.aa	Homo_sapiens	20000
+    # Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa	/path/to/file.aa	Homo_sapiens	20000
 
     proteome_records = []
 

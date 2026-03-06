@@ -58,23 +58,24 @@ def extract_genus_species_from_gigantic_header( header: str ) -> str:
     """
     Extract Genus_species from a full GIGANTIC protein header.
 
-    GIGANTIC headers contain the phyloname which includes Kingdom_Phylum_Class_Order_Family_Genus_species.
-    The header format varies but the phyloname portion contains the taxonomic hierarchy.
+    GIGANTIC headers follow the format:
+        g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_Class_Order_Family_Genus_species
 
-    This function extracts the species name by parsing the phyloname component.
+    The -n_ prefix marks the phyloname portion. All GIGANTIC-imported sequences
+    must have this prefix. If missing, the sequence is not a valid GIGANTIC import
+    and the pipeline must fail.
     """
 
-    # GIGANTIC headers may have format like:
-    # g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_Class_Order_Family_Genus_species
-    # or just the phyloname portion
+    # All GIGANTIC headers contain -n_ prefix before the phyloname
+    if '-n_' not in header:
+        print( f"CRITICAL ERROR: Header missing required '-n_' phyloname prefix: {header}" )
+        print( "All GIGANTIC-imported sequences must have format:" )
+        print( "  g_GENEID-t_TRANSID-p_PROTID-n_Kingdom_Phylum_Class_Order_Family_Genus_species" )
+        print( "This sequence was not imported through the GIGANTIC genomesDB pipeline." )
+        sys.exit( 1 )
 
-    # Try to find phyloname by looking for -n_ prefix
-    if '-n_' in header:
-        parts_header = header.split( '-n_' )
-        phyloname = parts_header[ -1 ]
-    else:
-        # Assume the header IS the phyloname or contains it
-        phyloname = header
+    parts_header = header.split( '-n_' )
+    phyloname = parts_header[ -1 ]
 
     # Split phyloname on underscore
     parts_phyloname = phyloname.split( '_' )
@@ -84,11 +85,11 @@ def extract_genus_species_from_gigantic_header( header: str ) -> str:
         genus = parts_phyloname[ 5 ]
         species = '_'.join( parts_phyloname[ 6: ] )
         genus_species = genus + '_' + species
-    elif len( parts_phyloname ) >= 2:
-        # Fallback: use last two parts
-        genus_species = '_'.join( parts_phyloname[ -2: ] )
     else:
-        genus_species = phyloname
+        print( f"CRITICAL ERROR: Phyloname has fewer than 7 fields: {phyloname}" )
+        print( f"From header: {header}" )
+        print( "Expected format: Kingdom_Phylum_Class_Order_Family_Genus_species" )
+        sys.exit( 1 )
 
     return genus_species
 

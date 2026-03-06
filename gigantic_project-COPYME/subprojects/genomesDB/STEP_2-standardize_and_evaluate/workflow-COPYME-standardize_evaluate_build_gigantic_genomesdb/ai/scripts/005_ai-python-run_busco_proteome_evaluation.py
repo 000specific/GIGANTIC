@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.5 | 2026 February 26 | Purpose: Run BUSCO proteome completeness evaluation for all species
+# AI: Claude Code | Opus 4.6 | 2026 March 05 16:00 | Purpose: Run BUSCO proteome completeness evaluation for all species
 # Human: Eric Edsinger
 
 """
@@ -132,21 +132,104 @@ def extract_phyloname_from_proteome_filename( filename: str ) -> str:
     """
     Extract phyloname from a standardized proteome filename.
 
-    Filename format: phyloname-proteome.aa
+    Filename format: phyloname-T1-proteome.aa
+    Phylonames use underscores exclusively, so splitting on '-' and taking
+    index 0 cleanly separates the phyloname from the -T1-proteome.aa suffix.
 
     Args:
-        filename: The proteome filename
+        filename: The proteome filename (e.g., Metazoa_..._Homo_sapiens-T1-proteome.aa)
 
     Returns:
-        The phyloname string
+        The phyloname string (e.g., Metazoa_..._Homo_sapiens)
     """
 
-    if not filename.endswith( '-proteome.aa' ):
-        raise ValueError( f"Unexpected filename format: {filename}" )
-
-    phyloname = filename.replace( '-proteome.aa', '' )
+    parts_filename = filename.split( '-' )
+    phyloname = parts_filename[ 0 ]
 
     return phyloname
+
+
+# ============================================================================
+# BUSCO DATABASE MANAGEMENT
+# ============================================================================
+
+def download_busco_databases( lineages: list, download_path: Path, logger: logging.Logger ) -> None:
+    """
+    Pre-download BUSCO lineage databases before running evaluations.
+
+    Downloads each lineage sequentially to avoid race conditions from
+    parallel BUSCO jobs all trying to download simultaneously. Once
+    downloaded, BUSCO runs use --offline to prevent re-download attempts.
+
+    Args:
+        lineages: List of BUSCO lineage names to download
+        download_path: Directory to store downloaded databases
+        logger: Logger instance
+    """
+
+    download_path.mkdir( parents = True, exist_ok = True )
+
+    logger.info( f"Pre-downloading BUSCO databases to: {download_path}" )
+    logger.info( f"Lineages to download: {', '.join( lineages )}" )
+    logger.info( "" )
+
+    for lineage in lineages:
+        logger.info( f"Downloading {lineage}..." )
+
+        download_command = [
+            'busco',
+            '--download', lineage,
+            '--download_path', str( download_path )
+        ]
+
+        try:
+            process = subprocess.run(
+                download_command,
+                capture_output = True,
+                text = True,
+                timeout = 600
+            )
+
+            if process.returncode == 0:
+                logger.info( f"  {lineage}: Downloaded successfully" )
+            else:
+                stderr_single_line = process.stderr.replace( '\n', ' | ' ).strip() if process.stderr else "Unknown error"
+                logger.error( f"  {lineage}: Download FAILED - {stderr_single_line[:300]}" )
+                logger.error( f"CRITICAL ERROR: Could not download BUSCO database '{lineage}'" )
+                logger.error( "Check internet connectivity and BUSCO server availability." )
+                logger.error( f"BUSCO data URL: https://busco-data.ezlab.org/" )
+                sys.exit( 1 )
+
+        except subprocess.TimeoutExpired:
+            logger.error( f"  {lineage}: Download timed out (>10 minutes)" )
+            logger.error( "CRITICAL ERROR: BUSCO database download timed out." )
+            sys.exit( 1 )
+        except Exception as exception:
+            logger.error( f"  {lineage}: Download exception - {str( exception )}" )
+            sys.exit( 1 )
+
+    logger.info( "" )
+    logger.info( "All BUSCO databases downloaded successfully" )
+    logger.info( "" )
+
+
+def cleanup_busco_databases( download_path: Path, logger: logging.Logger ) -> None:
+    """
+    Remove downloaded BUSCO lineage databases after all evaluations complete.
+
+    Args:
+        download_path: Directory containing downloaded databases
+        logger: Logger instance
+    """
+
+    import shutil
+
+    if download_path.exists():
+        logger.info( f"Cleaning up BUSCO databases: {download_path}" )
+        shutil.rmtree( download_path )
+        logger.info( "BUSCO databases removed" )
+    else:
+        logger.info( f"No BUSCO databases to clean up at: {download_path}" )
 
 
 # ============================================================================
@@ -159,10 +242,14 @@ def run_busco_single(
     lineage: str,
     output_base_dir: Path,
     cpus_per_job: int,
+    busco_download_path: Path,
     logger_name: str
 ) -> dict:
     """
     Run BUSCO on a single proteome for a single lineage.
+
+    Uses --offline and --download_path to point to pre-downloaded databases,
+    preventing each parallel job from attempting its own download.
 
     Args:
         proteome_path: Path to the proteome FASTA file
@@ -170,6 +257,7 @@ def run_busco_single(
         lineage: BUSCO lineage database name
         output_base_dir: Base output directory for BUSCO results
         cpus_per_job: Number of CPUs to use for this BUSCO job
+        busco_download_path: Path to pre-downloaded BUSCO databases
         logger_name: Name for subprocess logger
 
     Returns:
@@ -183,14 +271,6 @@ def run_busco_single(
     # BUSCO run name (used for output subdirectory)
     run_name = f"busco_{lineage}"
 
-    # Build BUSCO command
-    # -m protein: proteome mode
-    # -l lineage: BUSCO lineage database
-    # -i input: input proteome file
-    # -o output: output directory name
-    # --out_path: parent directory for output
-    # -c cpus: CPUs per job (parallelization at species level)
-
     busco_command = [
         'busco',
         '-m', 'protein',
@@ -199,6 +279,8 @@ def run_busco_single(
         '-o', run_name,
         '--out_path', str( species_output_dir ),
         '-c', str( cpus_per_job ),
+        '--download_path', str( busco_download_path ),
+        '--offline',
         '--force',
         '--quiet'
     ]
@@ -375,7 +457,8 @@ def write_summary_table( summary_path: Path, results: list, lineages: list, logg
                         row_parts.append( 'SUCCESS' )
                     else:
                         row_parts.extend( [ 'NA', 'NA', 'NA', 'NA', 'NA', 'NA' ] )
-                        row_parts.append( f"ERROR: {result[ 'error_message' ]}" )
+                        sanitized_error = result[ 'error_message' ].replace( '\n', ' | ' ).replace( '\t', ' ' ).replace( '\r', '' ) if result[ 'error_message' ] else 'Unknown error'
+                        row_parts.append( f"ERROR: {sanitized_error[:300]}" )
                 else:
                     row_parts.extend( [ 'NA', 'NA', 'NA', 'NA', 'NA', 'NA', 'NOT_RUN' ] )
 
@@ -449,6 +532,20 @@ Lineage manifest format (one lineage per line):
         help = 'Number of CPUs per BUSCO job (default: 1)'
     )
 
+    parser.add_argument(
+        '--busco-download-path',
+        type = str,
+        default = None,
+        help = 'Directory for BUSCO database downloads. Defaults to OUTPUT_DIR/busco_databases/'
+    )
+
+    parser.add_argument(
+        '--cleanup-databases',
+        action = 'store_true',
+        default = False,
+        help = 'Remove downloaded BUSCO databases after all evaluations complete'
+    )
+
     arguments = parser.parse_args()
 
     # ========================================================================
@@ -461,6 +558,11 @@ Lineage manifest format (one lineage per line):
 
     output_summary_path = output_base_directory / '5_ai-busco_summary.tsv'
     output_log_path = output_base_directory / '5_ai-log-run_busco_proteome_evaluation.log'
+
+    if arguments.busco_download_path:
+        busco_download_path = Path( arguments.busco_download_path ).resolve()
+    else:
+        busco_download_path = ( output_base_directory / 'busco_databases' ).resolve()
 
     # Create output directory
     output_base_directory.mkdir( parents = True, exist_ok = True )
@@ -482,6 +584,8 @@ Lineage manifest format (one lineage per line):
     logger.info( f"Parallel jobs: {arguments.parallel}" )
     logger.info( f"CPUs per job: {arguments.cpus_per_job}" )
     logger.info( f"Total CPUs used: {arguments.parallel * arguments.cpus_per_job}" )
+    logger.info( f"BUSCO database download path: {busco_download_path}" )
+    logger.info( f"Cleanup databases after completion: {arguments.cleanup_databases}" )
     logger.info( "" )
 
     # ========================================================================
@@ -536,6 +640,17 @@ Lineage manifest format (one lineage per line):
     logger.info( "" )
 
     # ========================================================================
+    # PRE-DOWNLOAD BUSCO DATABASES
+    # ========================================================================
+
+    logger.info( "=" * 80 )
+    logger.info( "PRE-DOWNLOADING BUSCO DATABASES" )
+    logger.info( "=" * 80 )
+    logger.info( "" )
+
+    download_busco_databases( lineages, busco_download_path, logger )
+
+    # ========================================================================
     # RUN BUSCO FOR ALL PROTEOMES AND LINEAGES
     # ========================================================================
 
@@ -559,6 +674,7 @@ Lineage manifest format (one lineage per line):
                 'lineage': lineage,
                 'output_base_dir': output_base_directory,
                 'cpus_per_job': arguments.cpus_per_job,
+                'busco_download_path': busco_download_path,
                 'logger_name': 'busco_subprocess'
             } )
 
@@ -579,6 +695,7 @@ Lineage manifest format (one lineage per line):
                 lineage = job[ 'lineage' ],
                 output_base_dir = job[ 'output_base_dir' ],
                 cpus_per_job = job[ 'cpus_per_job' ],
+                busco_download_path = job[ 'busco_download_path' ],
                 logger_name = job[ 'logger_name' ]
             )
             future_to_job[ future ] = job
@@ -627,6 +744,18 @@ Lineage manifest format (one lineage per line):
 
     write_summary_table( output_summary_path, all_results, lineages, logger )
     logger.info( "" )
+
+    # ========================================================================
+    # CLEANUP BUSCO DATABASES (OPTIONAL)
+    # ========================================================================
+
+    if arguments.cleanup_databases:
+        logger.info( "=" * 80 )
+        logger.info( "CLEANING UP BUSCO DATABASES" )
+        logger.info( "=" * 80 )
+        logger.info( "" )
+        cleanup_busco_databases( busco_download_path, logger )
+        logger.info( "" )
 
     # ========================================================================
     # FINAL SUMMARY

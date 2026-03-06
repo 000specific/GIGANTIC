@@ -77,7 +77,9 @@ def convert_proteome_headers(
     current_header = None
     current_sequence_lines = []
 
-    output_file = output_directory / f'{genus_species}.aa'
+    # OrthoHMM requires .fa, .faa, .fas, .fasta, .pep, or .prot extensions
+    # Use .pep (peptide FASTA extension)
+    output_file = output_directory / f'{genus_species}.pep'
 
     with open( proteome_path, 'r' ) as input_fasta:
         with open( output_file, 'w' ) as output_fasta:
@@ -187,11 +189,12 @@ def main():
 
     # Read proteome list
     # Proteome_Filename (proteome file name)	Full_Path (absolute path to proteome file)	Genus_Species (extracted from phyloname)	Sequence_Count (number of protein sequences in file)
-    # Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606-ncbi_GCF_000001.aa	/full/path/to/file.aa	Homo_sapiens	20000
+    # Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa	/full/path/to/file.aa	Homo_sapiens	20000
 
     all_mapping_records = []
     proteome_count = 0
     total_sequences = 0
+    genus_species_seen = set()
 
     logger.info( f"Reading proteome list from: {proteome_list_path}" )
 
@@ -212,6 +215,15 @@ def main():
             sequence_count = int( parts[ 3 ] )
 
             proteome_path = Path( full_path )
+
+            # Check for Genus_species collision (would silently overwrite output files)
+            if genus_species in genus_species_seen:
+                logger.error( f"CRITICAL ERROR: Duplicate Genus_species detected: {genus_species}" )
+                logger.error( f"File: {filename}" )
+                logger.error( "Each species must have a unique Genus_species name." )
+                logger.error( "Short-header proteome files would be overwritten silently." )
+                sys.exit( 1 )
+            genus_species_seen.add( genus_species )
 
             # Validate file exists
             if not proteome_path.exists():
