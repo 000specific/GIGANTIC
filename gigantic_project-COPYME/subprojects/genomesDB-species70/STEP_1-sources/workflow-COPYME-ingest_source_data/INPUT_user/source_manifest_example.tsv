@@ -1,0 +1,68 @@
+# GIGANTIC Source Data Manifest
+# AI: Claude Code | Opus 4.5 | 2026 February 13
+# Human: Eric Edsinger
+#
+# This manifest lists source data files to ingest into GIGANTIC.
+#
+# ============================================================================
+# FORMAT: 4 tab-separated columns (TSV)
+# ============================================================================
+#
+#   genus_species    - Species identifier (Genus_species format)
+#   genome_path      - Path to genome FASTA file (or NA if not available)
+#   genome_annotation_path         - Path to GFF3/GTF annotation file (or NA if not available)
+#   proteome_path    - Path to proteome amino acid file (or NA if not available)
+#
+# ============================================================================
+# FILE NAMING CONVENTION (REQUIRED)
+# ============================================================================
+#
+# All files must follow:
+#   genus_species-genome_source_identifier-downloaded_date.extension
+#
+# Components:
+#   genus_species         - e.g., Homo_sapiens
+#   genome_source_identifier - "genome" joined with source database + assembly ID (e.g., genome_ncbi_GCF_000001405.40, genome_figshare_12345)
+#   downloaded_date       - downloaded_YYYYMMDD format, e.g., downloaded_20240115
+#   extension        - .fasta (genome), .gff3/.gtf (annotation), .aa (proteome)
+#
+# Examples:
+#   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta
+#   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3
+#   Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+#
+# ============================================================================
+# SEQUENCE HEADER CONVENTION (REQUIRED for proteome .aa files)
+# ============================================================================
+#
+# FASTA headers must follow:
+#   >genus_species-source_gene_id-source_transcript_id-source_protein_id
+#
+# Examples:
+#   >Homo_sapiens-ENSG00000139618-ENST00000380152-ENSP00000369497
+#   >Mus_musculus-MGI:87853-NM_007393-NP_031419
+#   >Drosophila_melanogaster-FBgn0000003-FBtr0071763-FBpp0071429
+#
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+#   - Lines starting with # are comments (ignored)
+#   - Paths can be absolute or relative to this workflow directory
+#   - Use "NA" for data types not available for a species
+#   - Species names must use underscores (Genus_species), not spaces
+#
+# ============================================================================
+# HEADER ROW (required, must be exactly these 4 column names)
+# ============================================================================
+genus_species	genome_path	genome_annotation_path	proteome_path
+# ============================================================================
+# EXAMPLE DATA (uncomment and edit with your data)
+# ============================================================================
+#
+# All three data types available (using relative paths to project-level INPUT_user):
+# Homo_sapiens	../../../../INPUT_user/genomic_resources/genomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta	../../../../INPUT_user/genomic_resources/annotations/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
+#
+# Missing genome (proteome and annotation only):
+# Amphiscolops_sp	NA	../../../../INPUT_user/genomic_resources/annotations/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.gff3	../../../../INPUT_user/genomic_resources/proteomes/Amphiscolops_sp-genome_zenodo_12345-downloaded_20240115.aa
+#

@@ -1,0 +1,65 @@
+# STEP_3-databases - Build GIGANTIC GenomesDB
+
+**AI**: Claude Code | Opus 4.5 | 2026 February 12
+**Human**: Eric Edsinger
+
+---
+
+## Purpose
+
+STEP_3 of the genomesDB pipeline. Builds BLAST databases and search indices from standardized proteomes.
+
+**Part of**: genomesDB subproject (see `../README.md`)
+
+---
+
+## Workflow
+
+```bash
+cd workflow-COPYME-build_gigantic_genomesDB/
+
+# Local:
+bash RUN-workflow.sh
+
+# SLURM:
+sbatch RUN-workflow.sbatch
+```
+
+---
+
+## Inputs
+
+Standardized proteomes from STEP_2-standardize_and_evaluate.
+
+**Location**: `workflow-COPYME-build_gigantic_genomesDB/INPUT_user/`
+**From**: `../output_to_input/STEP_2-standardize_and_evaluate/`
+
+---
+
+## Outputs
+
+- BLAST databases (blastp)
+- Species manifests
+- Proteome indices
+
+**Shared with other subprojects via**: `../output_to_input/` (genomesDB root)
+
+---
+
+## Research Notebook
+
+Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions are extracted project-wide to `research_notebook/research_ai/sessions/`.
+
+---
+
+## Dependencies
+
+- STEP_2-standardize_and_evaluate must complete first
+- BLAST+ tools (available in `ai_gigantic_genomesdb` conda environment)
+
+---
+
+## Notes
+
+- BLAST databases require substantial disk space
+- The complete STEP_3 pipeline may take several hours for large species sets

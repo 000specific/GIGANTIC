@@ -15,6 +15,25 @@ InterProScan 5 is a comprehensive protein domain and function annotation tool th
 
 **Key feature**: Single tool run produces annotations from 19+ databases simultaneously, plus GO terms. The database builder parses these into separate per-database files.
 
+**Installation**: InterProScan is NOT recommended to install via conda. Use the official download from EBI instead. Run `bash DOWNLOAD_SOFTWARE-interproscan.sh` at the BLOCK level to download and install InterProScan into `software/interproscan/`. This shared installation is used by all workflow runs (RUN_1, RUN_2, etc.).
+
+## Directory Structure
+
+```
+BLOCK_interproscan/
+├── DOWNLOAD_SOFTWARE-interproscan.sh      # Downloads InterProScan from EBI (run once)
+├── software/interproscan/                 # Shared installation (created by download script)
+├── AI_GUIDE-interproscan.md               # This file
+├── workflow-COPYME-run_interproscan/      # Template for new runs
+└── workflow-RUN_1-run_interproscan/       # Species70, Pfam + GO annotations
+```
+
+## Active Workflow Runs
+
+| Run | Species Set | Applications | Notes |
+|-----|-------------|-------------|-------|
+| RUN_1 | genomesDB-species70 (70 proteomes) | Pfam + GO terms | 25 CPUs, 187 GB RAM, SLURM account=moroz |
+
 ## Pipeline Scripts (4 steps)
 
 | # | Script | Purpose |
@@ -48,17 +67,33 @@ protein_id  md5  length  analysis_db  signature_id  signature_desc  start  stop 
 
 The database builder (BLOCK_build_annotation_database) parses column 4 (analysis_db) to split results into 19 separate database files.
 
+## Installation
+
+InterProScan should NOT be installed via conda (per EBI recommendation). Instead:
+
+```bash
+cd BLOCK_interproscan/
+bash DOWNLOAD_SOFTWARE-interproscan.sh
+```
+
+This downloads InterProScan from EBI FTP, extracts it to `software/interproscan-{version}/`, creates a stable symlink at `software/interproscan`, and runs initial database indexing. The version can be updated by editing `INTERPROSCAN_VERSION` in the download script.
+
+**Prerequisites**: Java 11+ must be available (provided by the `ai_gigantic_interproscan` conda environment via `openjdk`).
+
 ## Configuration
 
-Edit `workflow-COPYME-run_interproscan/START_HERE-user_config.yaml`:
-- `interproscan_install_path`: Path to InterProScan installation
+Edit `workflow-*/START_HERE-user_config.yaml`:
+- `interproscan_install_path`: Path to InterProScan installation (default: `../software/interproscan`)
 - `chunk_size`: Sequences per chunk (default: 1000)
-- `cpus_per_job`: Threads per InterProScan run (default: 16)
+- `cpus_per_job`: Threads per InterProScan run
+- `applications`: Which InterProScan databases to run (`"all"` or comma-separated list like `"Pfam"`, `"Pfam,Gene3D"`)
+
+The `-goterms` flag is always enabled in script 003, so GO annotations are included regardless of which applications are selected.
 
 ## Resource Requirements
 
 InterProScan is CPU-heavy and memory-intensive:
-- **CPU**: 8+ cores recommended
-- **Memory**: 128 GB recommended
-- **Time**: 96 hours for large species sets
-- **Disk**: InterProScan databases require ~100 GB
+- **CPU**: 8+ cores recommended (25 used in RUN_1)
+- **Memory**: 128+ GB recommended (187 GB used in RUN_1)
+- **Time**: 96 hours for large species sets (less with Pfam-only)
+- **Disk**: InterProScan databases require ~100 GB (full install ~15 GB download)

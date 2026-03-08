@@ -30,6 +30,8 @@ dependencies:
   # Core requirements
   - python>=3.11
   - nextflow>=23.0
+  - openjdk>=11
 
   # InterProScan is standalone Java - not installed via conda
+  # openjdk provides the Java runtime that InterProScan requires
   # Only Python standard library needed for validation and chunking scripts

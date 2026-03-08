@@ -1,0 +1,53 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC genomesDB STEP_3 - Databases Configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 06
+# Human: Eric Edsinger
+#
+# Edit this file to configure the BLAST database building workflow.
+# All paths are relative to this workflow directory.
+
+# =============================================================================
+# PROJECT
+# =============================================================================
+
+project:
+  name: "my_project"
+
+# =============================================================================
+# INPUT PATHS
+# =============================================================================
+
+inputs:
+  # Cleaned proteomes from STEP_2 (via subproject output_to_input/)
+  # All .aa files in this directory will get BLAST databases built
+  proteomes_dir: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
+
+# =============================================================================
+# OUTPUT SETTINGS
+# =============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# BLAST DATABASE SETTINGS
+# =============================================================================
+
+blast:
+  # Name for the BLAST database directory
+  # Creates: OUTPUT_pipeline/1-output/gigantic-T1-blastp/
+  database_name: "gigantic-T1-blastp"
+
+  # Number of parallel makeblastdb jobs
+  # Recommendation: 4-8 for typical workloads
+  parallel_jobs: 4
