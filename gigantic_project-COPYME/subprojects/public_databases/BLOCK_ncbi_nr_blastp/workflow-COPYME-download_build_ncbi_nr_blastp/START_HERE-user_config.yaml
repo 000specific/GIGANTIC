@@ -1,0 +1,53 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 March 09 | Purpose: NCBI nr BLAST protein database configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# NCBI nr BLAST Protein Database Configuration
+# =============================================================================
+
+# --------------------------------------------------------------------------
+# Project Settings
+# --------------------------------------------------------------------------
+project:
+  # Your project name (used in output filenames and logs)
+  name: "my_project"
+
+# --------------------------------------------------------------------------
+# NCBI nr Download Settings
+# --------------------------------------------------------------------------
+ncbi_nr:
+  # NCBI nr protein FASTA URL (compressed)
+  # This is the complete non-redundant protein sequences database
+  url: "https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
+
+# --------------------------------------------------------------------------
+# makeblastdb Settings
+# --------------------------------------------------------------------------
+makeblastdb:
+  # Number of threads for makeblastdb
+  threads: 15
+
+# --------------------------------------------------------------------------
+# Output Settings
+# --------------------------------------------------------------------------
+output:
+  # Base directory for pipeline output (relative to this workflow directory)
+  base_dir: "OUTPUT_pipeline"
+
+# --------------------------------------------------------------------------
+# Conda Environment
+# --------------------------------------------------------------------------
+conda:
+  # Conda environment name (must have BLAST+ and Nextflow installed)
+  environment: "ai_gigantic_public_databases"

@@ -1,0 +1,25 @@
+# AI: Claude Code | Opus 4.6 | 2026 March 09 | Purpose: Conda environment for public database download and construction
+# Human: Eric Edsinger
+#
+# Environment for the public_databases subproject.
+# Provides tools for downloading, building, and validating public reference databases.
+#
+# Usage:
+#   mamba env create -f ai_gigantic_public_databases.yml
+#   conda activate ai_gigantic_public_databases
+#
+# Note: RUN-workflow.sh handles environment activation automatically.
+
+name: ai_gigantic_public_databases
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.9
+  - nextflow>=23.0
+  - diamond>=2.1
+  - blast>=2.14
+  - wget

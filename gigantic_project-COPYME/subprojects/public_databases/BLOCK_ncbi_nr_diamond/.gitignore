@@ -1,0 +1,6 @@
+# NCBI nr database files (large, downloaded from NCBI)
+workflow-RUN_*/OUTPUT_pipeline/
+workflow-RUN_*/work/
+workflow-RUN_*/.nextflow/
+workflow-RUN_*/.nextflow.log*
+workflow-RUN_*/slurm_logs/

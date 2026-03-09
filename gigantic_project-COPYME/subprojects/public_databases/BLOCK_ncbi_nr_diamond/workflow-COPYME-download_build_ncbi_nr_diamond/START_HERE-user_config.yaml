@@ -1,0 +1,124 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC NCBI nr DIAMOND Database Workflow Configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 09
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration file controls how the NCBI nr DIAMOND workflow runs.
+# Most users only need to review the default settings below.
+#
+# After editing, run: bash RUN-workflow.sh
+#
+# This workflow downloads the NCBI nr (non-redundant) protein FASTA database
+# and builds a DIAMOND search database for fast protein similarity searches.
+#
+# ============================================================================
+
+# ============================================================================
+# PROJECT SETTINGS (EDIT THESE)
+# ============================================================================
+
+project:
+  # Your project name (used in output file naming and run logs)
+  # Example: "ctenophore_study", "mollusc_comparative", "my_project"
+  name: "my_project"
+
+# ============================================================================
+# NCBI nr DATABASE SETTINGS
+# ============================================================================
+
+ncbi_nr:
+  # NCBI FTP URL for the nr protein database (gzipped FASTA)
+  # This is the standard NCBI location - usually no need to change
+  download_url: "https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory for generated files
+  # The workflow will create subdirectories here (1-output, 2-output, etc.)
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# DIAMOND SETTINGS
+# ============================================================================
+
+diamond:
+  # Number of threads for DIAMOND database build
+  # More threads = faster build. Match your SLURM --cpus-per-task setting.
+  # Default: 15 (good balance of speed and resource usage)
+  threads: 15
+
+  # Memory hint for SLURM resource allocation
+  # DIAMOND makedb for nr requires ~100 GB RAM
+  # This value is informational - actual SLURM allocation is in RUN-workflow.sbatch
+  memory_hint: "100 GB"
+
+# ============================================================================
+# CONDA ENVIRONMENT SETTINGS
+# ============================================================================
+
+conda:
+  # Conda environment name containing DIAMOND and other dependencies
+  # Created automatically on first run if not present
+  environment: "ai_gigantic_public_databases"
+
+# ============================================================================
+# LOGGING SETTINGS
+# ============================================================================
+
+logging:
+  # Log file location
+  log_dir: "OUTPUT_pipeline/logs"
+
+  # Logging level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+
+  # Include timestamps in log messages
+  include_timestamps: true
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# DISK SPACE REQUIREMENTS:
+#
+# The NCBI nr database is large. Ensure you have sufficient disk space:
+#   - nr.gz (compressed FASTA): ~100 GB
+#   - nr.dmnd (DIAMOND database): ~150 GB
+#   - Total required: ~300 GB free space (including temporary files)
+#
+# RUNTIME ESTIMATES:
+#
+#   - Download: 2-12 hours depending on network speed
+#   - DIAMOND makedb: 1-4 hours depending on CPU count and memory
+#   - Total: 3-16 hours typical
+#
+# DIAMOND DATABASE USAGE:
+#
+# After building, use the database with:
+#   diamond blastp -d OUTPUT_pipeline/2-output/nr.dmnd -q query.fasta -o results.tsv
+#
+# The database is also symlinked to output_to_input/ for other GIGANTIC
+# subprojects to reference.
+#
+# RESUMING FAILED DOWNLOADS:
+#
+# If the download fails or is interrupted, simply re-run the workflow.
+# wget uses the -c flag to resume partial downloads automatically.
+#
