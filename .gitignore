@@ -9,6 +9,9 @@ OUTPUT_pipeline/
 # Test/production run directories (contain large data, not templates)
 workflow-RUN_*/
 
+# Gene family instance directories (copies of gene_family_COPYME, contain large data)
+gene_family-*/
+
 # SLURM log directories (generated during cluster runs)
 slurm_logs/
 

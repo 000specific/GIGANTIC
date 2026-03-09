@@ -56,18 +56,18 @@ inputs:
 
   # BLAST protein databases directory (REQUIRED)
   # Path to directory containing per-species .aa BLAST database files
-  # From genomesDB subproject: ../../genomesDB/output_to_input/gigantic_T1_blastp/
-  blast_databases_dir: "../../../../genomesDB/output_to_input/gigantic_T1_blastp"
+  # From genomesDB subproject: ../../../genomesDB/output_to_input/gigantic_T1_blastp/
+  blast_databases_dir: "../../../../../../genomesDB/output_to_input/gigantic_T1_blastp"
 
   # RGS genomes directory (REQUIRED)
   # Directory containing genome .aa files for RGS species
   # Usually the same as blast_databases_dir
-  rgs_genomes_dir: "../../../../genomesDB/output_to_input/gigantic_T1_blastp"
+  rgs_genomes_dir: "../../../../../../genomesDB/output_to_input/gigantic_T1_blastp"
 
   # CGS identifier mapping file (REQUIRED)
   # Maps short identifiers (first 50 chars) to full GIGANTIC phyloname identifiers
   # From genomesDB subproject
-  cgs_mapping_file: "../../../../genomesDB/output_to_input/gigantic_T1_blastp_header_map"
+  cgs_mapping_file: "../../../../../../genomesDB/output_to_input/gigantic_T1_blastp_header_map"
 
 # ============================================================================
 # PROJECT SETTINGS

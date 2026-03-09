@@ -23,9 +23,9 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | trees_gene_families concepts, three-step structure | This file |
-| STEP_1 RGS preparation | `STEP_1-rgs_preparation/AI_GUIDE-rgs_preparation.md` |
-| STEP_2 homolog discovery | `STEP_2-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
-| STEP_3 phylogenetic analysis | `STEP_3-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
+| STEP_1 RGS preparation | `gene_family_COPYME/STEP_1-rgs_preparation/AI_GUIDE-rgs_preparation.md` |
+| STEP_2 homolog discovery | `gene_family_COPYME/STEP_2-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
+| STEP_3 phylogenetic analysis | `gene_family_COPYME/STEP_3-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
 
 ---
 
@@ -55,18 +55,22 @@
 
 **Filenames always use lowercase**: `rgs-`, `bgs-`, `cgs-`, `ags-`
 
-### One Gene Family Per Run
+### One Gene Family Per Directory
 
-Each workflow copy processes **one gene family at a time**:
+Each gene family is a **self-contained unit** with its own copy of all three steps:
 
 ```bash
-# Example: Processing innexin/pannexin gene family
-cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
-cd workflow-RUN_01-rbh_rbf_homologs
-# Edit config with gene family name, then run
+# 1. Copy the gene family template
+cp -r gene_family_COPYME gene_family-innexin_pannexin
+
+# 2. Inside, create workflow RUN copies for each step
+cd gene_family-innexin_pannexin/STEP_2-homolog_discovery/
+cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
+cd workflow-RUN_1-rbh_rbf_homologs
+# Edit START_HERE-user_config.yaml, then run
 ```
 
-To process multiple gene families, create multiple RUN copies.
+To analyze multiple gene families, create multiple `gene_family-[name]` copies from the template.
 
 ### RGS File Format
 
@@ -85,7 +89,7 @@ Where N is the total sequence count in the file.
 
 ### STEP_1-rgs_preparation
 
-**Directory**: `STEP_1-rgs_preparation/`
+**Directory**: `gene_family_COPYME/STEP_1-rgs_preparation/`
 **Workflow template**: `workflow-COPYME-validate_rgs`
 **Run scripts**: `RUN-workflow.sh` (local), `RUN-workflow.sbatch` (SLURM)
 
@@ -99,7 +103,7 @@ Where N is the total sequence count in the file.
 
 ### STEP_2-homolog_discovery
 
-**Directory**: `STEP_2-homolog_discovery/`
+**Directory**: `gene_family_COPYME/STEP_2-homolog_discovery/`
 **Workflow template**: `workflow-COPYME-rbh_rbf_homologs`
 **Run scripts**: `RUN-workflow.sh` (local), `RUN-workflow.sbatch` (SLURM)
 
@@ -117,7 +121,7 @@ Where N is the total sequence count in the file.
 
 ### STEP_3-phylogenetic_analysis
 
-**Directory**: `STEP_3-phylogenetic_analysis/`
+**Directory**: `gene_family_COPYME/STEP_3-phylogenetic_analysis/`
 **Workflow template**: `workflow-COPYME-phylogenetic_analysis`
 **Run scripts**: `RUN-workflow.sh` (local), `RUN-workflow.sbatch` (SLURM)
 
@@ -141,7 +145,7 @@ trees_gene_families/
 ├── RUN-clean_and_record_subproject.sh # Cleanup + session recording
 ├── RUN-update_upload_to_server.sh     # Update server symlinks
 │
-├── user_research/                     # Personal workspace
+├── research_notebook/                 # Personal workspace
 ├── upload_to_server/                  # Server sharing
 │
 ├── output_to_input/                   # FINAL OUTPUTS for downstream (single location)
@@ -149,20 +153,21 @@ trees_gene_families/
 │   ├── STEP_2-homolog_discovery/ags_fastas/  # AGS homolog sequences by gene family
 │   └── STEP_3-phylogenetic_analysis/trees/   # Phylogenetic trees by gene family
 │
-├── STEP_1-rgs_preparation/
-│   ├── AI_GUIDE-rgs_preparation.md
-│   ├── README.md
-│   └── workflow-COPYME-validate_rgs/
+├── gene_family_COPYME/                # TEMPLATE (copy this for each gene family)
+│   ├── STEP_1-rgs_preparation/
+│   │   └── workflow-COPYME-validate_rgs/
+│   ├── STEP_2-homolog_discovery/
+│   │   └── workflow-COPYME-rbh_rbf_homologs/
+│   └── STEP_3-phylogenetic_analysis/
+│       └── workflow-COPYME-phylogenetic_analysis/
 │
-├── STEP_2-homolog_discovery/
-│   ├── AI_GUIDE-homolog_discovery.md
-│   ├── README.md
-│   └── workflow-COPYME-rbh_rbf_homologs/
-│
-└── STEP_3-phylogenetic_analysis/
-    ├── AI_GUIDE-phylogenetic_analysis.md
-    ├── README.md
-    └── workflow-COPYME-phylogenetic_analysis/
+└── gene_family-innexin_pannexin/      # USER COPY (example)
+    ├── STEP_1-rgs_preparation/
+    │   └── workflow-RUN_1-validate_rgs/
+    ├── STEP_2-homolog_discovery/
+    │   └── workflow-RUN_1-rbh_rbf_homologs/
+    └── STEP_3-phylogenetic_analysis/
+        └── workflow-RUN_1-phylogenetic_analysis/
 ```
 
 ---
@@ -211,14 +216,15 @@ output_to_input/STEP_3-phylogenetic_analysis/trees/
 
 ## Path Depth Adjustment
 
-Step directories are nested ONE level deeper than standard subprojects:
+Gene family directories are nested TWO levels deeper than standard subprojects (gene_family_COPYME + STEP):
 
 | Location | Relative path to project root |
 |----------|-------------------------------|
 | `trees_gene_families/` | `../../` |
-| `trees_gene_families/STEP_N-*/` | `../../../` |
-| `trees_gene_families/STEP_N-*/workflow-COPYME-*/` | `../../../../` |
-| `trees_gene_families/STEP_N-*/workflow-COPYME-*/ai/` | `../../../../../` |
+| `trees_gene_families/gene_family_COPYME/` | `../../../` |
+| `trees_gene_families/gene_family_COPYME/STEP_N-*/` | `../../../../` |
+| `trees_gene_families/gene_family_COPYME/STEP_N-*/workflow-COPYME-*/` | `../../../../../` |
+| `trees_gene_families/gene_family_COPYME/STEP_N-*/workflow-COPYME-*/ai/` | `../../../../../../` |
 
 ---
 
@@ -281,12 +287,12 @@ ls output_to_input/STEP_3-phylogenetic_analysis/trees/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | Gene family name, RGS file path | **YES** |
-| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, species DB | **YES** |
-| `STEP_2-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
-| `STEP_2-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
-| `STEP_3-*/workflow-*/START_HERE-user_config.yaml` | Tree methods, alignment settings | **YES** |
-| `RUN-*.sbatch` files | SLURM account/qos | **YES** (SLURM users) |
+| `gene_family_COPYME/STEP_1-*/workflow-*/START_HERE-user_config.yaml` | Gene family name, RGS file path | **YES** |
+| `gene_family_COPYME/STEP_2-*/workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, species DB | **YES** |
+| `gene_family_COPYME/STEP_2-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
+| `gene_family_COPYME/STEP_2-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
+| `gene_family_COPYME/STEP_3-*/workflow-*/START_HERE-user_config.yaml` | Tree methods, alignment settings | **YES** |
+| `gene_family-*/STEP_N-*/workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
 
 ---
 
@@ -298,7 +304,7 @@ ls output_to_input/STEP_3-phylogenetic_analysis/trees/
 | Before STEP_1 | "What gene family? Do you have a curated RGS FASTA file?" |
 | Before STEP_2 | "Which species should be included? Do you have a species keeper list?" |
 | Before STEP_3 | "Which tree method? FastTree (fast, default), IQ-TREE (publication), VeryFastTree (large datasets), or PhyloBayes (Bayesian)?" |
-| Multiple gene families | "How many gene families? You'll need one workflow copy per family." |
+| Multiple gene families | "How many gene families? You'll need one gene_family-[name] directory per family." |
 | Error occurred | "Which step failed? What error message?" |
 
 ---

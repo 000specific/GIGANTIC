@@ -36,7 +36,7 @@ import org.yaml.snakeyaml.Yaml
 
 def load_config() {
     def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
+    def config_file = file( "${projectDir}/../../START_HERE-user_config.yaml" )
     if ( !config_file.exists() ) {
         error "Configuration file not found: ${config_file}"
     }
@@ -56,7 +56,7 @@ params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
 params.gene_family = config.gene_family?.name ?: null
 
 // Input: AGS sequences from STEP_2
-params.step2_ags_fastas_dir = config.input?.step2_ags_fastas_dir ?: '../../output_to_input/STEP_2-homolog_discovery/ags_fastas'
+params.step2_ags_fastas_dir = config.input?.step2_ags_fastas_dir ?: '../../../output_to_input/STEP_2-homolog_discovery/ags_fastas'
 
 // Project database name (for file naming)
 params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
@@ -98,7 +98,7 @@ params.run_phylobayes = config.tree_methods?.phylobayes ?: false
 process prepare_alignment_input {
     tag "${gene_family}"
     label 'local'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         val gene_family
@@ -109,7 +109,7 @@ process prepare_alignment_input {
 
     script:
     def project_db = params.project_database
-    def step2_dir = file( "${projectDir}/../${params.step2_ags_fastas_dir}" ).toAbsolutePath()
+    def step2_dir = file( "${projectDir}/../../${params.step2_ags_fastas_dir}" ).toAbsolutePath()
     """
     mkdir -p 1-output
 
@@ -134,7 +134,7 @@ process prepare_alignment_input {
 process clean_sequences {
     tag "${gene_family}"
     label 'local'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val( gene_family ), path( ags_fasta )
@@ -161,7 +161,7 @@ process clean_sequences {
 process run_mafft_alignment {
     tag "${gene_family}"
     label 'mafft'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val( gene_family ), path( cleaned_fasta )
@@ -190,7 +190,7 @@ process run_mafft_alignment {
 process run_clipkit_trimming {
     tag "${gene_family}"
     label 'clipkit'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val( gene_family ), path( alignment )
@@ -219,7 +219,7 @@ process run_clipkit_trimming {
 process run_fasttree {
     tag "${gene_family}"
     label 'fasttree'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     when:
         params.run_fasttree
@@ -250,7 +250,7 @@ process run_fasttree {
 process run_iqtree {
     tag "${gene_family}"
     label 'iqtree'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     when:
         params.run_iqtree
@@ -289,7 +289,7 @@ process run_iqtree {
 process run_veryfasttree {
     tag "${gene_family}"
     label 'veryfasttree'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     when:
         params.run_veryfasttree
@@ -325,7 +325,7 @@ process run_veryfasttree {
 process run_phylobayes {
     tag "${gene_family}"
     label 'phylobayes'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     when:
         params.run_phylobayes
@@ -397,7 +397,7 @@ for identifier in identifiers___sequences:
 process visualize_trees_human_friendly {
     tag "${gene_family}"
     label 'visualization'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val( gene_family ), path( tree_files )
@@ -437,7 +437,7 @@ process visualize_trees_human_friendly {
 process visualize_trees_computer_vision {
     tag "${gene_family}"
     label 'visualization'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val( gene_family ), path( tree_files )

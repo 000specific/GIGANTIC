@@ -22,7 +22,7 @@
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/1-output/ through 16-output/
-# AGS files symlinked to ../../output_to_input/STEP_2-homolog_discovery/ (by RUN-workflow.sh)
+# AGS files symlinked to ../../../output_to_input/STEP_2-homolog_discovery/ (by RUN-workflow.sh)
 #
 ################################################################################
 
@@ -111,7 +111,7 @@ fi
 # ============================================================================
 # Real files live in OUTPUT_pipeline/1-output/ through 16-output/ (created by
 # NextFlow above). Symlinks are created at the subproject-root output_to_input/:
-#   ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/
+#   ../../../output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -125,14 +125,14 @@ GENE_FAMILY=$(grep -A1 "^gene_family:" START_HERE-user_config.yaml | grep "name:
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
 # --- Subproject-root output_to_input ---
-SUBPROJECT_SHARED_DIR="../../output_to_input/STEP_2-homolog_discovery"
+SUBPROJECT_SHARED_DIR="../../../output_to_input/STEP_2-homolog_discovery"
 mkdir -p "${SUBPROJECT_SHARED_DIR}/ags_fastas/${GENE_FAMILY}"
 find "${SUBPROJECT_SHARED_DIR}/ags_fastas/${GENE_FAMILY}" -type l -delete 2>/dev/null
 
 for ags_file in OUTPUT_pipeline/16-output/16_ai-AGS-*.aa; do
     if [ -f "$ags_file" ]; then
         filename=$(basename "$ags_file")
-        ln -sf "../../../STEP_2-homolog_discovery/${WORKFLOW_DIR_NAME}/${ags_file}" \
+        ln -sf "../../../../STEP_2-homolog_discovery/${WORKFLOW_DIR_NAME}/${ags_file}" \
             "${SUBPROJECT_SHARED_DIR}/ags_fastas/${GENE_FAMILY}/${filename}"
     fi
 done
@@ -147,7 +147,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 16-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../output_to_input/STEP_2-homolog_discovery/ags_fastas/${GENE_FAMILY}/"
+echo "  ../../../output_to_input/STEP_2-homolog_discovery/ags_fastas/${GENE_FAMILY}/"
 echo ""
 echo "Next: Run STEP_3 phylogenetic analysis with AGS files"
 echo "========================================================================"

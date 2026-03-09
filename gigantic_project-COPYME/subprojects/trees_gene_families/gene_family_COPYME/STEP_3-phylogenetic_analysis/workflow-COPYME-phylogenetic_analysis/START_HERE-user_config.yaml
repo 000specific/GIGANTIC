@@ -39,7 +39,7 @@ gene_family:
 input:
   # Path to STEP_2 AGS sequences (relative to this workflow directory)
   # Default: looks in subproject-root output_to_input/STEP_2-homolog_discovery
-  step2_ags_fastas_dir: "../../output_to_input/STEP_2-homolog_discovery/ags_fastas"
+  step2_ags_fastas_dir: "../../../output_to_input/STEP_2-homolog_discovery/ags_fastas"
 
 # ============================================================
 # PROJECT SETTINGS

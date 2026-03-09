@@ -32,7 +32,7 @@ import org.yaml.snakeyaml.Yaml
 
 def load_config() {
     def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
+    def config_file = file( "${projectDir}/../../START_HERE-user_config.yaml" )
     if ( !config_file.exists() ) {
         error "Configuration file not found: ${config_file}"
     }
@@ -57,7 +57,7 @@ params.rgs_file = config.gene_family?.rgs_file ?: null
 process validate_rgs {
     tag "${gene_family}"
     label 'local'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val( gene_family ), path( rgs_fasta )
