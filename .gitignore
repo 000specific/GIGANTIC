@@ -12,8 +12,10 @@ workflow-RUN_*/
 # SLURM log directories (generated during cluster runs)
 slurm_logs/
 
-# User research directories (personal data, not for git)
-user_research/
+# Research notebook contents (personal data, not for git)
+**/research_notebook/*
+!**/research_notebook/.gitkeep
+!**/research_notebook/README.md
 
 # Species data directories (large proteome collections, e.g. species43/, species67/, species71/)
 species[0-9]*/
