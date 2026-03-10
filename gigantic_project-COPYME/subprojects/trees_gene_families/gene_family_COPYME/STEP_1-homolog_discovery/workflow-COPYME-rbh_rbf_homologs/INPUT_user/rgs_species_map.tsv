@@ -1,0 +1,8 @@
+# RGS short name to GIGANTIC Genus_species mapping
+# Format: short_name<TAB>Genus_species
+# Add mappings for any short names used in RGS FASTA headers
+human	Homo_sapiens
+mouse	Mus_musculus
+fly	Drosophila_melanogaster
+worm	Caenorhabditis_elegans
+hydra	Hydra_vulgaris

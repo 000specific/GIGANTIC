@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 09 | Purpose: Set up STEP_2 workflow directories and submit burst jobs
+# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: Set up STEP_2 phylogenetic analysis workflow directories and submit burst jobs
 # Human: Eric Edsinger
 
 ################################################################################
@@ -7,11 +7,14 @@
 ################################################################################
 #
 # PURPOSE:
-# For each gene_family-[name]/ directory:
-#   1. Create workflow-RUN_1-rbh_rbf_homologs from COPYME
-#   2. Create INPUT_user/ with species_keeper_list.tsv and RGS file
-#   3. Update START_HERE-user_config.yaml with gene family name
-#   4. Submit SLURM job for STEP_2 homolog discovery
+# For each gene_family-[name]/ directory with completed STEP_1:
+#   1. Create workflow-RUN_1-phylogenetic_analysis from COPYME
+#   2. Configure START_HERE-user_config.yaml with gene family name
+#   3. Submit SLURM job for STEP_2 phylogenetic analysis
+#
+# PREREQUISITES:
+#   - STEP_1 (homolog discovery) must have completed successfully
+#   - AGS FASTA files must exist in output_to_input/STEP_1-homolog_discovery/
 #
 # USAGE:
 #   bash RUN-setup_and_submit_step2_burst.sh [OPTIONS]
@@ -38,15 +41,14 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # Paths
-RGS_SOURCE_DIR="${SCRIPT_DIR}/research_notebook/rgs_from_before/rgs_for_trees"
 CONDA_ENV="ai_gigantic_trees_gene_families"
 
-# SLURM settings for STEP_2 (BLAST-heavy)
+# SLURM settings for STEP_2 (phylogenetic analysis - alignment + tree building)
 SLURM_ACCOUNT="moroz"
 SLURM_QOS="moroz-b"
-SLURM_MEM="112gb"
+SLURM_MEM="64gb"
 SLURM_TIME="24:00:00"
-SLURM_CPUS="15"
+SLURM_CPUS="8"
 
 # Options
 DRY_RUN=false
@@ -96,97 +98,39 @@ fi
 # Create slurm_logs directory
 mkdir -p "${SCRIPT_DIR}/slurm_logs"
 
-# ============================================================================
-# Generate species keeper list from genomesDB-species70
-# ============================================================================
-GENOMESDB_BLASTP="${SCRIPT_DIR}/../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
-SPECIES_KEEPER_LIST="/tmp/gigantic_species70_keeper_list.tsv"
-
-if [ ! -d "${GENOMESDB_BLASTP}" ]; then
-    echo -e "${RED}ERROR: genomesDB-species70 BLAST databases not found!${NC}"
-    echo "Expected at: ${GENOMESDB_BLASTP}"
-    echo "Run the genomesDB-species70 subproject first."
-    exit 1
-fi
-
-# Extract Genus_species from proteome filenames
-ls "${GENOMESDB_BLASTP}"/*.aa 2>/dev/null | while read f; do
-    basename "$f" | sed 's/-T1-proteome\.aa$//' | awk -F'_' '{print $(NF-1)"_"$NF}'
-done | sort -u > "${SPECIES_KEEPER_LIST}"
-
-species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
-echo "Species keeper list: ${species_count} species from genomesDB-species70"
-echo ""
-
-# ============================================================================
-# Gene family mapping (same as STEP_1)
-# ============================================================================
-declare -A GENE_FAMILY_RGS
-GENE_FAMILY_RGS=(
-    ["aquaporin_channels"]="rgs_channel-human-aquaporin_channels.aa"
-    ["innexin_pannexin_channels"]="rgs_channel-human-innexin_pannexin_channels.aa"
-    ["nitric_oxide_synthases"]="rgs_enzyme-human-nitric_oxide_synthases.aa"
-    ["fgf_ligands"]="rgs_ligand-human-fgf_ligands.aa"
-    ["gh_growth_hormone_ligands"]="rgs_ligand-human-gh_growth_hormone_ligands.aa"
-    ["neuropeptide_ligands"]="rgs_ligand-human-neuropeptide_ligands.aa"
-    ["tgfb_ligands"]="rgs_ligand-human-tgfb_ligands.aa"
-    ["vegf_ligands"]="rgs_ligand-human-vegf_ligands.aa"
-    ["wnt_ligands"]="rgs_ligand-human-wnt_ligands.aa"
-    ["chrn_cholinergic_nicotinic_subunit_receptors"]="rgs_receptor-human-chrn_cholinergic_nicotinic_subunit_receptors.aa"
-    ["glra_glycine_receptors"]="rgs_receptor-human-glra_glycine_receptors.aa"
-    ["glutamate_ionotropic_receptors"]="rgs_receptor-human-glutamate_ionotropic_receptors.aa"
-    ["gpcr_g_protein_coupled_receptors"]="rgs_receptor-human-gpcr_g_protein_coupled_receptors.aa"
-    ["gucy1_soluble_guanylate_cyclase_receptors"]="rgs_receptor-human-gucy1_soluable_guanylate_cyclase_receptors.aa"
-    ["gucy2_transmembrane_guanylate_cyclase_receptors"]="rgs_receptor-human-gucy2_transmembrane_guanylate_cyclase_receptors.aa"
-    ["htr3_hydroxytryptamine_nAChR_receptors"]="rgs_receptor-human-htr3_hydroxytryptamine_nAChR_receptors.aa"
-    ["htr3_hydroxytryptamine_receptors"]="rgs_receptor-human-htr3_hydroxytryptamine_receptors"
-    ["mapr_membrane_associated_progesterone_receptors"]="rgs_receptor-human-mapr_membrane_associated_progesterone_receptors.aa"
-    ["paqr_progestin_adipoq_receptors"]="rgs_receptor-human-paqr_progestin_adipoq_receptors.aa"
-    ["snare_receptors"]="rgs_receptor-human-snare_receptors.aa"
-    ["histones"]="rgs_structure-human-histones.aa"
-    ["fox_forkhead_box_tfs"]="rgs_tf-human-fox_forkhead_box_tfs.aa"
-    ["homeobox_tfs"]="rgs_tf-human-homeoboxe_tfs.aa"
-    ["nhr_nuclear_hormone_receptor_tfs"]="rgs_tf-human-nhr_nuclear_hormone_receptor_tfs.aa"
-    ["sry_box_tfs"]="rgs_tf-sry_box_tfs.aa"
-    ["abc_transporters"]="rgs_transporter-human-abc_transporters.aa"
-    ["p_type_atpase_transporters"]="rgs_transporter-human-p_type_atpase_transporters.aa"
-    ["rtp_receptor_transporter_protein_transporters"]="rgs_transporter-human-rtp_receptor_transporter_protein_transporters.aa"
-    ["stard_star_related_lipid_transfer_domain_containing_transporters"]="rgs_transporter-human-stard_star_related_lipid_transfer_domain_containing_transporters.aa"
-)
-
 # Track counts
 setup_count=0
 submit_count=0
 skip_count=0
 error_count=0
+no_step1_count=0
 
-for gene_family in $(echo "${!GENE_FAMILY_RGS[@]}" | tr ' ' '\n' | sort); do
-    rgs_filename="${GENE_FAMILY_RGS[$gene_family]}"
+# Find all gene_family-* directories
+for FAMILY_DIR in "${SCRIPT_DIR}"/gene_family-*/; do
+    [ -d "$FAMILY_DIR" ] || continue
 
-    FAMILY_DIR="${SCRIPT_DIR}/gene_family-${gene_family}"
-    STEP2_COPYME="${FAMILY_DIR}/STEP_2-homolog_discovery/workflow-COPYME-rbh_rbf_homologs"
-    STEP2_WORKFLOW="${FAMILY_DIR}/STEP_2-homolog_discovery/workflow-RUN_1-rbh_rbf_homologs"
-    RGS_SOURCE="${RGS_SOURCE_DIR}/${rgs_filename}"
+    gene_family=$(basename "$FAMILY_DIR" | sed 's/^gene_family-//')
+
+    STEP2_COPYME="${FAMILY_DIR}/STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis"
+    STEP2_WORKFLOW="${FAMILY_DIR}/STEP_2-phylogenetic_analysis/workflow-RUN_1-phylogenetic_analysis"
 
     echo "----------------------------------------"
     echo "Gene family: ${gene_family}"
 
-    # Verify gene_family directory exists
-    if [ ! -d "${FAMILY_DIR}" ]; then
-        echo -e "  ${RED}ERROR: gene_family directory not found (run STEP_1 setup first)${NC}"
+    # Check STEP_2 COPYME template exists
+    if [ ! -d "${STEP2_COPYME}" ]; then
+        echo -e "  ${RED}ERROR: STEP_2 COPYME template not found${NC}"
         error_count=$((error_count + 1))
         continue
     fi
 
-    # Verify RGS file exists
-    if [ ! -f "${RGS_SOURCE}" ]; then
-        echo -e "  ${RED}ERROR: RGS file not found: ${rgs_filename}${NC}"
-        error_count=$((error_count + 1))
+    # Check STEP_1 completed (AGS file exists in output_to_input)
+    AGS_DIR="${FAMILY_DIR}/output_to_input/STEP_1-homolog_discovery/ags_fastas/${gene_family}"
+    if [ ! -d "${AGS_DIR}" ]; then
+        echo -e "  ${YELLOW}STEP_1 not completed yet (no output_to_input), skipping${NC}"
+        no_step1_count=$((no_step1_count + 1))
         continue
     fi
-
-    seq_count=$(grep -c '^>' "${RGS_SOURCE}")
-    echo "  RGS: ${rgs_filename} (${seq_count} sequences)"
 
     # ========================================================================
     # SETUP PHASE
@@ -197,24 +141,14 @@ for gene_family in $(echo "${!GENE_FAMILY_RGS[@]}" | tr ' ' '\n' | sort); do
             skip_count=$((skip_count + 1))
         else
             if $DRY_RUN; then
-                echo -e "  ${BLUE}[DRY RUN] Would create workflow-RUN_1-rbh_rbf_homologs${NC}"
+                echo -e "  ${BLUE}[DRY RUN] Would create workflow-RUN_1-phylogenetic_analysis${NC}"
             else
                 # 1. Copy COPYME to RUN_1
                 cp -r "${STEP2_COPYME}" "${STEP2_WORKFLOW}"
 
-                # 2. Create INPUT_user and populate
-                mkdir -p "${STEP2_WORKFLOW}/INPUT_user"
-
-                # Copy RGS file
-                cp "${RGS_SOURCE}" "${STEP2_WORKFLOW}/INPUT_user/${rgs_filename}"
-
-                # Copy species keeper list
-                cp "${SPECIES_KEEPER_LIST}" "${STEP2_WORKFLOW}/INPUT_user/species_keeper_list.tsv"
-
-                # 3. Update config YAML - gene family name and RGS path
+                # 2. Update config YAML - gene family name
                 CONFIG_FILE="${STEP2_WORKFLOW}/START_HERE-user_config.yaml"
                 sed -i "s|name: \"innexin_pannexin\"|name: \"${gene_family}\"|" "${CONFIG_FILE}"
-                sed -i "s|rgs_file: \"INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa\"|rgs_file: \"INPUT_user/${rgs_filename}\"|" "${CONFIG_FILE}"
 
                 echo -e "  ${GREEN}Created and configured STEP_2 workflow${NC}"
                 setup_count=$((setup_count + 1))
@@ -259,7 +193,6 @@ if $DRY_RUN; then
 else
     echo -e "${GREEN}SUMMARY${NC}"
 fi
-echo "Gene families: ${#GENE_FAMILY_RGS[@]}"
 if ! $SUBMIT_ONLY; then
     echo "Set up: ${setup_count}"
     echo "Skipped (already exist): ${skip_count}"
@@ -267,6 +200,7 @@ fi
 if ! $SETUP_ONLY; then
     echo "Jobs submitted: ${submit_count}"
 fi
+echo "Waiting for STEP_1: ${no_step1_count}"
 echo "Errors: ${error_count}"
 echo "SLURM resources per job: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
 echo "========================================================================"
