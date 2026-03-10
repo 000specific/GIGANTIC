@@ -9,18 +9,37 @@
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.6 | 2026 March 03 | Purpose: metapredict pipeline configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: MetaPredict pipeline configuration
 # Human: Eric Edsinger
 
 # =============================================================================
-# metapredict Pipeline Configuration
+# MetaPredict Pipeline Configuration
 # =============================================================================
 
-# Input proteomes directory (from genomesDB output_to_input)
-proteomes_dir: "../../genomesDB/output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes"
+# Project name (used in run log naming)
+project_name: "my_project"
 
 # Comma-separated prediction types to run ("disorder", "idrs", "plddt")
 prediction_types: "disorder,idrs,plddt"
 
-# Conda environment name
-conda_environment: "ai_gigantic_metapredict"
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
+# Adjust based on your system's available resources.
+
+cpus: 25
+memory_gb: 187
+time_hours: 96
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"

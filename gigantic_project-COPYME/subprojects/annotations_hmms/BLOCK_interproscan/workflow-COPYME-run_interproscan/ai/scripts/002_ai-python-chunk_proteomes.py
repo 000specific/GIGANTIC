@@ -103,7 +103,11 @@ def chunk_fasta_file( input_fasta_path: Path, output_directory: Path, phyloname:
                 current_sequence_count_in_chunk += 1
 
             # Write the line to the current chunk file
+            # Strip asterisk characters from sequence lines - InterProScan rejects them
+            # (asterisks appear as stop codon markers in some proteome files)
             if current_chunk_file is not None:
+                if not line.startswith( '>' ):
+                    line = line.replace( '*', 'X' )
                 current_chunk_file.write( line )
 
     # Close the last chunk file

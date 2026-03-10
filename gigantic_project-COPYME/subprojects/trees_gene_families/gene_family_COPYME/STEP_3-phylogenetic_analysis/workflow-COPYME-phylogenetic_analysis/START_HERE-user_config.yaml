@@ -115,34 +115,31 @@ phylogenetics:
     every: 1             # Save every N generations
 
 # ============================================================
-# SLURM CLUSTER SETTINGS (if running via SLURM)
-# ============================================================
-
-slurm:
-  account: "moroz"
-  qos: "moroz"
-
-  # MAFFT alignment resources
-  mafft:
-    cpus: 100
-    memory: "700 GB"
-    time: "100:00:00"
-
-  # IQ-TREE resources (only used when iqtree: true)
-  iqtree:
-    cpus: 100
-    memory: "700 GB"
-    time: "100:00:00"
-
-  # PhyloBayes resources (only used when phylobayes: true)
-  phylobayes:
-    cpus: 4
-    memory: "32 GB"
-    time: "336:00:00"    # 2 weeks (PhyloBayes is very slow)
-
-# ============================================================
 # OUTPUT CONFIGURATION
 # ============================================================
 
 output:
   base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
+# STEP_3 is resource-intensive - MAFFT alignment and tree-building.
+# Set these to the maximum your SLURM job needs (NextFlow manages per-process resources).
+
+cpus: 100
+memory_gb: 700
+time_hours: 100
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"

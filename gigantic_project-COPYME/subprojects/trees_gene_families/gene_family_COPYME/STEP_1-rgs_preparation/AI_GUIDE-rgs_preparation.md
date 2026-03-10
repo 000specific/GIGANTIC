@@ -42,20 +42,30 @@
 ### Filename Convention
 
 ```
-rgsN-gene_family-source-date.aa
+rgs_{category}-{species_short_names}-{gene_family_details}.aa
 ```
 
-Example: `rgs3-innexin_pannexin-uniprot-2025november01.aa`
+Example: `rgs_channel-human_worm_fly-innexin_pannexin_channels.aa`
 
-Where N = total number of sequences in the file.
+Where:
+- `{category}` = functional category (channel, receptor, ligand, enzyme, transporter, tf, structure)
+- `{species_short_names}` = reference species separated by underscores
+- `{gene_family_details}` = descriptive gene family name
 
 ### Header Convention
 
 ```
->rgsN-species-source-identifier
+>rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
 ```
 
-Example: `>rgs3-human-uniprot-Q9NQ92`
+Example: `>rgs_innexins-human-PANX1-hgnc_gg305_Pannexin-NP_001229977.1`
+
+Where:
+- `{family}` = gene family identifier (e.g., innexins, gpcrs, homeobox_tfs)
+- `{species}` = species short name (e.g., human, fly, worm)
+- `{gene_symbol}` = official gene symbol (e.g., PANX1, AQP1, HOXA1)
+- `{source_details}` = source database and gene group info
+- `{sequence_identifier}` = accession or unique ID
 
 ### Species Map
 
@@ -131,7 +141,7 @@ STEP_1-rgs_preparation/
 | Error | Cause | Solution |
 |-------|-------|----------|
 | "RGS file not found" | Wrong path in START_HERE-user_config.yaml | Check rgs_file path |
-| "Invalid header format" | Headers don't match rgsN-species-source-id pattern | Fix headers or update validation |
+| "Invalid header format" | Headers don't match `>rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}` pattern | Fix headers to use 5 dash-separated fields |
 | "Duplicate sequences" | Same sequence ID appears twice | Remove duplicates from RGS file |
 | Validation fails | RGS file has formatting issues | Check validation report for details |
 

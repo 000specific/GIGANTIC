@@ -37,7 +37,9 @@ gene_family:
   name: "innexin_pannexin"
 
   # Path to the RGS FASTA file for this gene family
-  rgs_file: "INPUT_user/rgs3-innexin_pannexin-uniprot-2025november01.aa"
+  # Filename format: rgs_{category}-{species}-{gene_family_details}.aa
+  # Header format: >rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
+  rgs_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
 
 # ============================================================================
 # INPUT PATHS (EDIT THESE)
@@ -57,17 +59,17 @@ inputs:
   # BLAST protein databases directory (REQUIRED)
   # Path to directory containing per-species .aa BLAST database files
   # From genomesDB subproject: ../../../genomesDB/output_to_input/gigantic_T1_blastp/
-  blast_databases_dir: "../../../../../../genomesDB/output_to_input/gigantic_T1_blastp"
+  blast_databases_dir: "../../../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
   # RGS genomes directory (REQUIRED)
   # Directory containing genome .aa files for RGS species
   # Usually the same as blast_databases_dir
-  rgs_genomes_dir: "../../../../../../genomesDB/output_to_input/gigantic_T1_blastp"
+  rgs_genomes_dir: "../../../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
   # CGS identifier mapping file (REQUIRED)
   # Maps short identifiers (first 50 chars) to full GIGANTIC phyloname identifiers
   # From genomesDB subproject
-  cgs_mapping_file: "../../../../../../genomesDB/output_to_input/gigantic_T1_blastp_header_map"
+  cgs_mapping_file: "../../../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp_header_map"
 
 # ============================================================================
 # PROJECT SETTINGS
@@ -97,6 +99,28 @@ blast:
 
 output:
   base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
+# STEP_2 is BLAST-heavy - needs significant CPU and memory.
+
+cpus: 50
+memory_gb: 187
+time_hours: 96
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
 
 # ============================================================================
 # NOTES

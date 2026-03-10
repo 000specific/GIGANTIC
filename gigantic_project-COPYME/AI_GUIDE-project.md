@@ -38,6 +38,29 @@ A modular phylogenomics platform for comparative genomics. Key facts:
 
 ---
 
+## AI-Native Open Source Model
+
+GIGANTIC assumes users will work with an AI assistant to implement the platform. This is not optional guidance - it is a core design assumption that shapes how GIGANTIC is built, documented, and distributed.
+
+**Traditional model**: Ship a containerized package that works out of the box but quickly becomes outdated. The developer maintains the container, patches dependencies, and responds to user issues. The developer is the bottleneck.
+
+**GIGANTIC model**: Ship fully developed modular frameworks, workflows, and pipelines - operational and tested at release time - with dual-layer documentation: READMEs for humans and AI_GUIDEs for their AI assistants. Users deploy using current tool versions, adapted to their local environment by their AI assistant.
+
+**What this means for you as an AI assistant**:
+- The AI_GUIDE files are written specifically for you to read and act on
+- You are expected to install current versions of bioinformatics tools (BLAST, MAFFT, IQ-TREE, etc.) rather than relying on pre-packaged versions
+- You should adapt conda environments, file paths, and resource configurations to the user's system
+- When tools have been updated since the GIGANTIC release, use the latest versions and adjust scripts if needed
+- The user may not be a bioinformatics expert - you bridge that gap
+
+**Benefits of this approach**:
+- Pipelines improve with time (current tools, current AI capabilities) rather than decaying
+- No waiting on the GIGANTIC developer to fix environment-specific issues
+- More powerful pipelines without generalization compromises
+- Each deployment is tailored to the user's specific system and needs
+
+---
+
 ## Complete Directory Structure
 
 All paths are relative to `gigantic_project-[project_name]/` (the copied project root).

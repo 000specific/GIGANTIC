@@ -4,18 +4,19 @@
 # Environment for the annotations_hmms SignalP BLOCK.
 # SignalP 6 predicts signal peptides and cleavage sites using deep learning.
 #
-# NOTE: SignalP 6 requires a license from DTU:
+# NOTE: SignalP 6 requires a license from DTU Health Tech:
 #   https://services.healthtech.dtu.dk/services/SignalP-6.0/
-# After downloading, install with: pip install signalp-6-package/
 #
-# INSTALLATION:
-#   From project root:
-#   bash RUN-setup_environments.sh
+# INSTALLATION (two steps):
+#   1. Create conda environment:
+#      mamba env create -f conda_environments/ai_gigantic_signalp.yml
 #
-#   Or manually:
-#   mamba env create -f conda_environments/ai_gigantic_signalp.yml
-#   conda activate ai_gigantic_signalp
-#   pip install /path/to/signalp-6-package/  # Manual step
+#   2. Install SignalP 6 into the environment:
+#      cd subprojects/annotations_hmms/BLOCK_signalp/
+#      bash DOWNLOAD_SOFTWARE-signalp.sh
+#      (Requires signalp-6.0h.fast.tar.gz in BLOCK_signalp/software/)
+#
+# Reference: https://rcs.ucalgary.ca/SignalP
 #
 # ACTIVATION:
 #   module load conda  # (HiPerGator/HPC only)
@@ -25,13 +26,19 @@ name: ai_gigantic_signalp
 
 channels:
   - conda-forge
-  - bioconda
   - defaults
 
 dependencies:
-  # Core requirements
-  - python>=3.11
+  # Python (SignalP 6 tested with 3.9-3.11)
+  - python>=3.9,<3.12
   - nextflow>=23.0
 
-  # pip for SignalP installation (manual download from DTU)
+  # SignalP 6 dependencies (must be present before pip install)
   - pip
+  - numpy
+  - pillow
+  - matplotlib
+  - tqdm
+
+  # PyTorch CPU (required by SignalP 6 deep learning models)
+  - pytorch::pytorch=1.13

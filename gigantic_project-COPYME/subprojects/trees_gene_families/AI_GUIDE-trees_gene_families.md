@@ -74,14 +74,17 @@ To analyze multiple gene families, create multiple `gene_family-[name]` copies f
 
 ### RGS File Format
 
-RGS files are user-curated FASTA files with specific header conventions:
+RGS files are user-curated FASTA files with specific header and filename conventions:
 
+**Filename**: `rgs_{category}-{species_short_names}-{gene_family_details}.aa`
+
+**Header**: 5 dash-separated fields:
 ```
->rgsN-species-source-identifier
+>rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
 MAEIPDETIQQFM...
 ```
 
-Where N is the total sequence count in the file.
+Example: `>rgs_innexins-human-PANX1-hgnc_gg305_Pannexin-NP_001229977.1`
 
 ---
 

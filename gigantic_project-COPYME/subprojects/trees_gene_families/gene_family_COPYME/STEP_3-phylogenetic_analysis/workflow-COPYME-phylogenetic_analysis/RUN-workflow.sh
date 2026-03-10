@@ -1,37 +1,22 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: Run STEP_3 phylogenetic analysis workflow locally
+# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: Run STEP_3 phylogenetic analysis Nextflow pipeline
 # Human: Eric Edsinger
 
-################################################################################
-# GIGANTIC trees_gene_families STEP_3 - Phylogenetic Analysis (Local)
-################################################################################
+# =============================================================================
+# RUN-workflow.sh
+# =============================================================================
+# Runs the STEP_3 phylogenetic analysis Nextflow pipeline.
+# Supports both local and SLURM execution via START_HERE-user_config.yaml.
 #
-# PURPOSE:
-# Run the STEP_3 phylogenetic analysis workflow for ONE gene family.
-# Each workflow copy processes a single gene family.
+# Usage:
+#   bash RUN-workflow.sh
 #
-# USAGE:
-#   1. Copy the template:
-#      cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
-#   2. Edit START_HERE-user_config.yaml (set gene_family name, choose tree methods)
-#   3. Ensure STEP_2 has completed for this gene family
-#   4. Run: bash RUN-workflow.sh
-#
-# FOR SLURM CLUSTERS:
-#   sbatch RUN-workflow.sbatch
-#
-# OUTPUT:
-# Results in OUTPUT_pipeline/1-output/ through 7-output/
-# Trees and alignments symlinked to ../../../output_to_input/STEP_3-phylogenetic_analysis/ (by RUN-workflow.sh)
-#
-################################################################################
+# Set execution_mode in START_HERE-user_config.yaml:
+#   "local" - runs directly on this machine
+#   "slurm" - submits as a SLURM job with resources from config
+# =============================================================================
 
-echo "========================================================================"
-echo "GIGANTIC trees_gene_families STEP_3 - Phylogenetic Analysis (Local)"
-echo "========================================================================"
-echo ""
-echo "Started: $(date)"
-echo ""
+set -e
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -41,59 +26,129 @@ cd "${SCRIPT_DIR}"
 # Activate Environment
 # ============================================================================
 
-# Load conda module (required on HPC systems like HiPerGator)
 module load conda 2>/dev/null || true
 
-# Activate the environment with NextFlow
 if conda activate ai_gigantic_trees_gene_families 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_trees_gene_families"
 else
-    # Check if nextflow is already available in PATH
+    echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
+    echo ""
+    echo "Please run the environment setup script first:"
+    echo "  cd ../../../../  # Go to project root"
+    echo "  bash RUN-setup_environments.sh"
+    echo ""
+    echo "Or create this environment manually:"
+    echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
+    echo ""
+    exit 1
+fi
+
+# Ensure NextFlow is available (conda env or system module)
+if ! command -v nextflow &> /dev/null; then
+    echo "NextFlow not found in conda env. Trying system module..."
+    module load nextflow 2>/dev/null || true
     if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: NextFlow not found!"
         echo ""
-        echo "Please ensure NextFlow is installed and available in your PATH."
-        echo "Or activate a conda environment that includes NextFlow."
+        echo "ERROR: NextFlow not available!"
         echo ""
+        echo "Options to resolve:"
+        echo "  1. Install nextflow in conda env: conda install -n ai_gigantic_trees_gene_families -c bioconda nextflow"
+        echo "  2. Load system module: module load nextflow"
+        echo "  3. Install globally: https://www.nextflow.io/docs/latest/install.html"
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    echo "Using NextFlow from system module"
+else
+    echo "NextFlow available"
 fi
 echo ""
 
 # ============================================================================
-# Validate Prerequisites
+# Read execution mode from START_HERE-user_config.yaml
+# ============================================================================
+# Uses grep to parse flat YAML keys (no Python dependency required).
+
+read_config() {
+    # Read a flat YAML key from START_HERE-user_config.yaml (no Python dependency)
+    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+    echo "${value:-$2}"
+}
+
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+
+# ============================================================================
+# SLURM submission (if execution_mode is "slurm" and not already inside a job)
 # ============================================================================
 
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    echo "Execution mode: SLURM (submitting job)"
+    echo ""
+
+    # Read resources and SLURM settings from config
+    SLURM_CPUS=$(read_config "cpus" "100")
+    SLURM_MEM=$(read_config "memory_gb" "700")
+    SLURM_TIME=$(read_config "time_hours" "100")
+    SLURM_ACCOUNT=$(read_config "slurm_account" "")
+    SLURM_QOS=$(read_config "slurm_qos" "")
+
+    mkdir -p slurm_logs
+
+    SBATCH_ARGS="--job-name=phylogenetic_analysis"
+    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/phylogenetic_analysis-%j.log"
+
+    if [ -n "${SLURM_ACCOUNT}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+    fi
+    if [ -n "${SLURM_QOS}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+    fi
+
+    echo "Submitting with: sbatch ${SBATCH_ARGS}"
+    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+    echo ""
+    echo "Job submitted. Check slurm_logs/ for output."
+    conda deactivate 2>/dev/null || true
+    exit 0
+fi
+
+# ============================================================================
+# Run Nextflow pipeline (local execution or inside SLURM job)
+# ============================================================================
+
+if [ -n "${SLURM_JOB_ID}" ]; then
+    echo "Running inside SLURM job ${SLURM_JOB_ID}"
+else
+    echo "Execution mode: local"
+fi
+
+# Validate prerequisites
 echo "Validating prerequisites..."
 echo ""
 
-# Check config file exists
 if [ ! -f "START_HERE-user_config.yaml" ]; then
     echo "ERROR: Configuration file not found!"
     echo "Expected: START_HERE-user_config.yaml"
     exit 1
 fi
 echo "  [OK] Configuration file found"
-
 echo ""
 
-# ============================================================================
-# Run NextFlow Pipeline
-# ============================================================================
+echo "========================================================================"
+echo "Starting STEP_3 Phylogenetic Analysis Pipeline"
+echo "========================================================================"
 
-echo "Running NextFlow pipeline..."
-echo ""
-
-nextflow run ai/main.nf
+nextflow run ai/main.nf \
+    -c ai/nextflow.config
 
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
-    echo ""
     echo "========================================================================"
     echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
-    echo "Check the logs above for error details."
     echo "========================================================================"
     exit $EXIT_CODE
 fi

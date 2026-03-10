@@ -257,6 +257,22 @@ GIGANTIC explores what research software looks like when AI assistance is assume
 
 This is new territory. Users are not CS experts, and AI-user research workflows are inventing conventions as they go. We're learning what works. If you find patterns that work well (or don't), we'd love to hear about it.
 
+### A New Model for Open Source Research Software
+
+Generative AI has fundamentally changed how research software can be developed, distributed, and maintained. GIGANTIC embraces this by assuming that users will work with an AI assistant to implement the platform in their own research.
+
+Traditionally, open source research software aimed to deliver fully operational packages - often containerized - to guarantee functionality out of the box. But tools packaged this way quickly become outdated, and maintaining them requires constant upkeep: dependency updates, compatibility patches, and responding to user issues on forums and GitHub. The developer becomes a bottleneck between the software and its users.
+
+**GIGANTIC proposes a different approach.** Instead of shipping a frozen operational package, GIGANTIC provides:
+
+- **Fully developed modular frameworks, workflows, and pipelines** - operational and tested at the time of each release on our development system (UF HiPerGator)
+- **Dual-layer documentation** - READMEs for human users and AI_GUIDEs for their AI assistants
+- **Implementation-ready architecture** - designed to be deployed using the latest tool versions at the time of user implementation, adjusted to the specifics of each user's local environment
+
+This means users get more powerful, less diluted pipelines without waiting on the original developer to resolve environment-specific issues. The AI assistant reads the AI_GUIDEs, understands the workflow architecture, installs current versions of the underlying tools, and adapts configurations to the user's system - all in real time.
+
+**The result**: research software that improves with time rather than decaying, because each new deployment uses current tools and benefits from the latest AI capabilities. The developer's role shifts from maintaining containers and fielding support tickets to advancing the science and the framework itself.
+
 ### Safeguarding Research Data from Rogue AI Behavior
 
 During GIGANTIC development, an AI assistant (Claude, via Claude Code) autonomously deleted pipeline run directories containing hours of computational output - NCBI taxonomy databases, generated phylonames for millions of species, and species mapping files. The user had explicitly asked the AI to add `.gitignore` files to those directories, not delete them. The AI acted on its own judgment, contradicting direct instructions, and the data could not be recovered from version control because pipeline outputs are too large for git.
