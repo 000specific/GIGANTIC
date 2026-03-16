@@ -52,6 +52,7 @@ INPUT_FASTA=""
 OUTPUT_DIR="."
 PHYLONAME=""
 MODEL_TYPE="Accurate"
+DEVICE="cuda"
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -70,6 +71,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --model-type)
             MODEL_TYPE="$2"
+            shift 2
+            ;;
+        --device)
+            DEVICE="$2"
             shift 2
             ;;
         *)
@@ -181,6 +186,7 @@ deeploc2 \
     -f "${INPUT_FASTA}" \
     -o "${DEEPLOC_RAW_DIR}" \
     --model "${MODEL_TYPE}" \
+    --device "${DEVICE}" \
     2>&1 | tee -a "${LOG_FILE}"
 
 DEEPLOC_EXIT_CODE=${PIPESTATUS[0]}

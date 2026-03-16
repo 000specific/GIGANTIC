@@ -11,11 +11,11 @@ extracts species names from the file paths, and generates BLASTP commands
 to search the Reference Gene Set (RGS) against each database.
 
 Input:
-    - output/1-output/1_ai-list-projectdb-blastdbs: List of BLAST database file paths
+    - 1-output/1_ai-list-projectdb-blastdbs: List of BLAST database file paths
     - RGS FASTA file (command-line argument or from config)
 
 Output:
-    - output/3-output/3_ai-blastp-project_database.sh: Shell script with BLASTP commands (combined with script 003)
+    - 3-output/3_ai-blastp-project_database.sh: Shell script with BLASTP commands (combined with script 003)
 
 Log:
     - Logs to file and console
@@ -81,8 +81,9 @@ def extract_species_from_database_path( database_path: str ) -> str:
     Returns:
         Species name in format "Genus_species"
     """
-    # Extract phyloname (everything before '-T1-proteome')
-    parts_path = database_path.split( '-T1-proteome' )
+    # Extract filename from full path, then extract phyloname (everything before '-T1-proteome')
+    filename = Path( database_path ).name
+    parts_path = filename.split( '-T1-proteome' )
 
     if len( parts_path ) < 2:
         print( f"CRITICAL ERROR: Database path does not follow GIGANTIC cleaned proteome format: {database_path}" )
@@ -234,7 +235,7 @@ def main():
     parser.add_argument(
         '--database-list',
         type=Path,
-        default=Path( 'output/1-list-projectdb-blastdbs' ),
+        default=Path( '1-list-projectdb-blastdbs' ),
         help='File containing list of BLAST database paths'
     )
     

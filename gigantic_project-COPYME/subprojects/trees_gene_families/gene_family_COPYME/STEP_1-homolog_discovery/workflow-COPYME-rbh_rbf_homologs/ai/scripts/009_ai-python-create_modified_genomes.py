@@ -23,20 +23,20 @@ Workflow Context:
     
 Input Files:
     - input/rgs.aa - RGS sequences (from Block 1)
-    - output/8-output/8_ai-map-rgs-to-genome-identifiers.txt - RGS→genome mappings
+    - 8-output/8_ai-map-rgs-to-genome-identifiers.txt - RGS→genome mappings
     - RBH species genome files (paths from script 007)
     
 Output Files:
-    - output/9-{genome_name}.aa-rgs - Modified genome for each RBH species
-    - output/9-list-modified-genomes.txt - List of modified genome paths
+    - 9-{genome_name}.aa-rgs - Modified genome for each RBH species
+    - 9-list-modified-genomes.txt - List of modified genome paths
 
 Usage:
     python3 009_ai-python-create_modified_genomes.py \\
         --rgs-fasta input/rgs.aa \\
-        --mapping-file output/8-map-rgs-to-genome-identifiers.txt \\
-        --genome-list output/7-list-model-organism-fastas.txt \\
-        --output-dir output \\
-        --log-file output/9-log-create-modified-genomes.log
+        --mapping-file 8-map-rgs-to-genome-identifiers.txt \\
+        --genome-list 7-list-model-organism-fastas.txt \\
+        --output-dir . \\
+        --log-file 9-log-create-modified-genomes.log
 """
 
 import argparse

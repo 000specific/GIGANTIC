@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# GIGANTIC BLOCK 3 - Script 008: Visualize Trees (Computer Vision-Friendly)
+# GIGANTIC STEP_2 - Script 007: Visualize Trees (Computer Vision-Friendly)
 # AI Coding: Claude Code | Sonnet 4.5 | 2025 November 06 14:30 | Purpose: Visualize phylogenetic trees from Newick files to SVG and PDF formats
 # Human: Eric Edsinger
 
@@ -51,14 +51,14 @@ Notes:
     - Use clade IDs to identify rooting points for re-rooting trees
 
 Input Files:
-    - FastTree Newick file: output/5-AGS-speciesN_T1-species37-innexin_pannexin.fasttree
-    - IQ-TREE Newick file: output/6-AGS-speciesN_T1-species37-innexin_pannexin.treefile
+    - FastTree Newick file: 5-AGS-speciesN_T1-species37-innexin_pannexin.fasttree
+    - IQ-TREE Newick file: 6-AGS-speciesN_T1-species37-innexin_pannexin.treefile
 
 Output Files:
-    - output/8-AGS-speciesN_T1-species37-innexin_pannexin-fasttree-computer_vision_friendly.svg
-    - output/8-AGS-speciesN_T1-species37-innexin_pannexin-fasttree-computer_vision_friendly.pdf
-    - output/8-AGS-speciesN_T1-species37-innexin_pannexin-iqtree-computer_vision_friendly.svg
-    - output/8-AGS-speciesN_T1-species37-innexin_pannexin-iqtree-computer_vision_friendly.pdf
+    - 8-AGS-speciesN_T1-species37-innexin_pannexin-fasttree-computer_vision_friendly.svg
+    - 8-AGS-speciesN_T1-species37-innexin_pannexin-fasttree-computer_vision_friendly.pdf
+    - 8-AGS-speciesN_T1-species37-innexin_pannexin-iqtree-computer_vision_friendly.svg
+    - 8-AGS-speciesN_T1-species37-innexin_pannexin-iqtree-computer_vision_friendly.pdf
 
 Log File:
     - 8_ai-log-visualize_trees.log
@@ -606,25 +606,24 @@ def render_tree_to_files(
     """
     output_svg_path = output_prefix.with_suffix( '.svg' )
     output_pdf_path = output_prefix.with_suffix( '.pdf' )
-    
+
+    # Render SVG (primary output format)
     logger.info( f"Rendering tree to SVG: {output_svg_path}" )
     tree.render( str( output_svg_path ), tree_style=tree_style )
-    
-    logger.info( f"Rendering tree to PDF: {output_pdf_path}" )
-    tree.render( str( output_pdf_path ), tree_style=tree_style )
-    
-    # Verify output files were created
+
+    # Verify SVG was created
     if output_svg_path.exists():
         svg_size = output_svg_path.stat().st_size
         logger.info( f"SVG created successfully: {svg_size:,} bytes" )
     else:
         logger.warning( f"SVG file not found after rendering: {output_svg_path}" )
-    
-    if output_pdf_path.exists():
-        pdf_size = output_pdf_path.stat().st_size
-        logger.info( f"PDF created successfully: {pdf_size:,} bytes" )
-    else:
-        logger.warning( f"PDF file not found after rendering: {output_pdf_path}" )
+
+    # PDF rendering is skipped - ete3/Qt segfaults when rendering PDF after SVG
+    # on headless SLURM compute nodes (QPaintDevice cleanup conflict).
+    # SVG is vector-quality and can be converted to PDF offline if needed:
+    #   cairosvg input.svg -o output.pdf
+    #   OR: inkscape input.svg --export-type=pdf
+    logger.info( f"PDF rendering skipped (Qt headless compatibility). SVG is primary output." )
     
     return output_svg_path, output_pdf_path
 
@@ -710,7 +709,7 @@ def main():
     # Define paths
     # Use current working directory (where NextFlow runs the script)
     script_directory = Path.cwd()
-    output_directory = script_directory / "output"
+    output_directory = script_directory
     
     # Log file
     log_file_path = Path( "8_ai-log-visualize_trees.log" )

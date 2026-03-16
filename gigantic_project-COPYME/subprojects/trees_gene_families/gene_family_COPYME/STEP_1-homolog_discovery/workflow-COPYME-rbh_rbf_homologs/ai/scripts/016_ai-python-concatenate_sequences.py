@@ -163,9 +163,8 @@ def main():
         sys.exit( 1 )
 
     if cgs_count == 0:
-        logger.error( "CRITICAL ERROR: CGS file contains no sequences!" )
-        logger.error( "No homologs were found. Check BLAST results and species filtering." )
-        sys.exit( 1 )
+        logger.warning( "No candidate gene sequences found (0 homologs)." )
+        logger.warning( "Creating AGS with RGS sequences only." )
 
     # Write output: RGS + filtered CGS
     logger.info( "\nWriting concatenated AGS file..." )

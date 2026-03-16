@@ -37,8 +37,10 @@ STEP_1 workflow template for discovering homologs via Reciprocal Best Hit (RBH) 
 
 6. **Finalization** (Processes 8-10)
    - Filters by species keeper list (script 014)
-   - Remaps CGS identifiers to GIGANTIC phylonames (script 015)
    - Concatenates RGS + CGS into final AGS (script 016)
+   - Writes pipeline run log (script 017)
+
+**Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step is needed.
 
 ---
 
@@ -86,8 +88,8 @@ bash RUN-workflow.sh
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-workflow.sbatch to set --account and --qos
-sbatch RUN-workflow.sbatch
+# Set execution_mode: "slurm" and slurm_account/slurm_qos in START_HERE-user_config.yaml
+bash RUN-workflow.sh
 ```
 
 ---
@@ -105,8 +107,7 @@ sbatch RUN-workflow.sbatch
 ```
 workflow-COPYME-rbh_rbf_homologs/
 ├── README.md                              # This file
-├── RUN-workflow.sh               # Local runner (calls NextFlow)
-├── RUN-workflow.sbatch           # SLURM wrapper
+├── RUN-workflow.sh               # Runner (handles both local and SLURM via config)
 ├── START_HERE-user_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   ├── <rgs_file>.aa                      # RGS FASTA for this gene family
@@ -133,7 +134,7 @@ workflow-COPYME-rbh_rbf_homologs/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
     └── scripts/
-        ├── 001_ai-python-setup_block_directories.py
+        ├── 001_ai-python-validate_rgs.py
         ├── 002_ai-python-generate_blastp_commands-project_database.py
         ├── 004_ai-python-extract_gene_set_sequences.py
         ├── 005_ai-python-generate_blastp_commands-rgs_genomes.py
@@ -145,8 +146,8 @@ workflow-COPYME-rbh_rbf_homologs/
         ├── 012_ai-bash-execute_reciprocal_blast.sh
         ├── 013_ai-python-extract_reciprocal_best_hits.py
         ├── 014_ai-python-filter_species_for_tree_building.py
-        ├── 015_ai-python-remap_cgs_identifiers_to_gigantic.py
-        └── 016_ai-python-concatenate_sequences.py
+        ├── 016_ai-python-concatenate_sequences.py
+        └── 017_ai-python-write_run_log.py
 ```
 
 ---
@@ -167,8 +168,7 @@ workflow-COPYME-rbh_rbf_homologs/
 | Reciprocal report | `12-output/12_ai-reciprocal-blast-report.txt` | Reciprocal BLAST results |
 | CGS sequences | `13-output/13_ai-cgs-*.aa` | Candidate gene sequences |
 | Filtered sequences | `14-output/14_ai-cgs-*-filtered.aa` | Species-filtered sequences |
-| Remapped sequences | `15-output/15_ai-cgs-*-remapped.aa` | GIGANTIC phyloname identifiers |
-| **Final AGS** | `16-output/16_ai-ags-*-homologs.aa` | **Final All Gene Set** |
+| **Final AGS** | `16-output/16_ai-ags-*.aa` | **Final All Gene Set** |
 
 ---
 

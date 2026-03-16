@@ -84,10 +84,12 @@ if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
     echo "Execution mode: SLURM (submitting job)"
     echo ""
 
-    # Read resources and SLURM settings from config
-    SLURM_CPUS=$(read_config "cpus" "100")
-    SLURM_MEM=$(read_config "memory_gb" "700")
-    SLURM_TIME=$(read_config "time_hours" "100")
+    # Read SLURM settings from config
+    # The workflow SLURM job needs enough resources for the largest tool process
+    # and enough time for all processes combined (slurm_time_hours = total + 10%)
+    SLURM_CPUS=$(read_config "slurm_cpus" "50")
+    SLURM_MEM=$(read_config "slurm_memory_gb" "350")
+    SLURM_TIME=$(read_config "slurm_time_hours" "198")
     SLURM_ACCOUNT=$(read_config "slurm_account" "")
     SLURM_QOS=$(read_config "slurm_qos" "")
 
@@ -157,8 +159,17 @@ fi
 # Create symlinks for output_to_input (subproject root)
 # ============================================================================
 # Real files live in OUTPUT_pipeline/N-output/ (created by NextFlow above).
-# Symlinks are created at the subproject-root output_to_input/:
-#   ../../../output_to_input/STEP_2-phylogenetic_analysis/trees/<gene_family>/
+# Symlinks are organized by gene family at the subproject-root output_to_input/:
+#   ../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+#
+# Structure:
+#   output_to_input/
+#   ├── nitric_oxide_synthases/
+#   │   ├── STEP_1-homolog_discovery/      <- created by STEP_1
+#   │   └── STEP_2-phylogenetic_analysis/  <- created here
+#   └── innexin_pannexin/
+#       ├── STEP_1-homolog_discovery/
+#       └── STEP_2-phylogenetic_analysis/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -168,20 +179,21 @@ echo ""
 echo "Creating symlinks for downstream workflows..."
 
 # Extract gene family name from config
-GENE_FAMILY=$(grep -A1 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | sed 's/.*: *"\([^"]*\)".*/\1/')
+GENE_FAMILY=$(grep -A5 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+GENE_FAMILY_DIR="$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")"
 
 # --- Subproject-root output_to_input ---
-SUBPROJECT_SHARED_DIR="../../../output_to_input/STEP_2-phylogenetic_analysis"
-mkdir -p "${SUBPROJECT_SHARED_DIR}/trees/${GENE_FAMILY}"
-find "${SUBPROJECT_SHARED_DIR}/trees/${GENE_FAMILY}" -type l -delete 2>/dev/null
+SYMLINK_DIR="../../../output_to_input/${GENE_FAMILY}/STEP_2-phylogenetic_analysis"
+mkdir -p "${SYMLINK_DIR}"
+find "${SYMLINK_DIR}" -type l -delete 2>/dev/null
 
 # Symlink alignment files
 for mafft_file in OUTPUT_pipeline/3-output/*.mafft; do
     if [ -f "$mafft_file" ]; then
         filename=$(basename "$mafft_file")
-        ln -sf "../../../../STEP_2-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${mafft_file}" \
-            "${SUBPROJECT_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
+        ln -sf "../../../${GENE_FAMILY_DIR}/STEP_2-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${mafft_file}" \
+            "${SYMLINK_DIR}/${filename}"
     fi
 done
 
@@ -189,21 +201,25 @@ done
 for trimmed_file in OUTPUT_pipeline/4-output/*.clipkit-smartgap; do
     if [ -f "$trimmed_file" ]; then
         filename=$(basename "$trimmed_file")
-        ln -sf "../../../../STEP_2-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${trimmed_file}" \
-            "${SUBPROJECT_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
+        ln -sf "../../../${GENE_FAMILY_DIR}/STEP_2-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${trimmed_file}" \
+            "${SYMLINK_DIR}/${filename}"
     fi
 done
 
-# Symlink tree files (fasttree and/or iqtree)
-for tree_file in OUTPUT_pipeline/5-output/*.fasttree OUTPUT_pipeline/5-output/*.treefile; do
-    if [ -f "$tree_file" ]; then
-        filename=$(basename "$tree_file")
-        ln -sf "../../../../STEP_2-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${tree_file}" \
-            "${SUBPROJECT_SHARED_DIR}/trees/${GENE_FAMILY}/${filename}"
+# Symlink tree files (from 5_a-output, 5_b-output, 5_c-output, 5_d-output)
+for tree_dir in OUTPUT_pipeline/5_a-output OUTPUT_pipeline/5_b-output OUTPUT_pipeline/5_c-output OUTPUT_pipeline/5_d-output; do
+    if [ -d "$tree_dir" ]; then
+        for tree_file in "$tree_dir"/*.fasttree "$tree_dir"/*.treefile "$tree_dir"/*.veryfasttree "$tree_dir"/*.phylobayes.nwk; do
+            if [ -f "$tree_file" ]; then
+                filename=$(basename "$tree_file")
+                ln -sf "../../../${GENE_FAMILY_DIR}/STEP_2-phylogenetic_analysis/${WORKFLOW_DIR_NAME}/${tree_file}" \
+                    "${SYMLINK_DIR}/${filename}"
+            fi
+        done
     fi
 done
 
-echo "  output_to_input/STEP_2-phylogenetic_analysis/ -> symlinks created"
+echo "  output_to_input/${GENE_FAMILY}/STEP_2-phylogenetic_analysis/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -213,7 +229,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 7-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../../output_to_input/STEP_2-phylogenetic_analysis/trees/${GENE_FAMILY}/"
+echo "  ../../../output_to_input/${GENE_FAMILY}/STEP_2-phylogenetic_analysis/"
 echo "========================================================================"
 echo "Completed: $(date)"
 

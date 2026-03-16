@@ -11,7 +11,7 @@ eval "$(conda shell.bash hook)"
 conda activate blast
 
 # Create output directory
-mkdir -p output/12-output
+mkdir -p 12-output
 
 # Execute reciprocal BLASTP
 echo 'Starting reciprocal BLAST search...'

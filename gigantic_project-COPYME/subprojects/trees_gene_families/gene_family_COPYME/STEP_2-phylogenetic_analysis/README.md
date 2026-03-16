@@ -1,10 +1,10 @@
-# STEP_3: Phylogenetic Analysis
+# STEP_2: Phylogenetic Analysis
 
-Build phylogenetic trees from homolog sequences identified in STEP_2.
+Build phylogenetic trees from homolog sequences identified in STEP_1.
 
 ## Purpose
 
-Takes the All Gene Set (AGS) from STEP_2, aligns sequences with MAFFT, trims with ClipKit, builds trees with one or more methods, and generates visualizations.
+Takes the All Gene Set (AGS) from STEP_1, aligns sequences with MAFFT, trims with ClipKit, builds trees with one or more methods, and generates visualizations.
 
 ## Quick Start
 
@@ -17,7 +17,7 @@ bash RUN-workflow.sh
 
 ## Prerequisites
 
-- STEP_2 must be complete for the same gene family (AGS file in output_to_input/STEP_1-homolog_discovery)
+- STEP_1 must be complete for the same gene family (AGS file in output_to_input/<gene_family>/STEP_1-homolog_discovery/)
 
 ## Tree Methods
 
@@ -33,7 +33,7 @@ Enable/disable methods in `START_HERE-user_config.yaml`.
 ## Output
 
 Trees and visualizations are copied to:
-- `../output_to_input/STEP_2-phylogenetic_analysis/trees/<gene_family>/`
+- `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/`
 
 ## For AI Assistants
 

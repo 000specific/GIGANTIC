@@ -1,10 +1,10 @@
-# STEP_2: Homolog Discovery
+# STEP_1: Homolog Discovery
 
 Find homologous sequences across project species using Reciprocal Best Hit/Family (RBH/RBF) BLAST.
 
 ## Purpose
 
-Takes a Reference Gene Set (RGS) of curated protein sequences and finds homologs across all project species through forward BLAST, reciprocal BLAST confirmation, species filtering, and identifier remapping.
+Takes a Reference Gene Set (RGS) of curated protein sequences and finds homologs across all project species through forward BLAST, reciprocal BLAST confirmation, and species filtering. BLAST v5 databases preserve full GIGANTIC identifiers, so no remapping is needed.
 
 ## Quick Start
 
@@ -22,10 +22,10 @@ bash RUN-workflow.sh
 - RGS FASTA file with curated reference sequences
 - Species keeper list (one Genus_species per line)
 
-## 16-Step Pipeline
+## Pipeline Steps
 
-1. List BLAST databases
-2. Generate forward BLAST commands
+1. Validate RGS FASTA file (fails fast if invalid)
+2. Generate forward BLAST commands against project databases
 3. Execute forward BLAST
 4. Extract blast gene sequences (BGS)
 5. Generate RGS genome BLAST commands
@@ -38,13 +38,15 @@ bash RUN-workflow.sh
 12. Execute reciprocal BLAST
 13. Extract candidate gene sequences (CGS)
 14. Filter by species keeper list
-15. Remap CGS identifiers to GIGANTIC phylonames
-16. Concatenate RGS + CGS into final AGS (All Gene Set)
+15. Concatenate RGS + CGS into final AGS (All Gene Set)
+16. Write run log
+
+**Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step is needed.
 
 ## Output
 
-Final AGS files are copied to:
-- `../output_to_input/STEP_1-homolog_discovery/ags_fastas/<gene_family>/`
+Final AGS files are symlinked to:
+- `../../output_to_input/<gene_family>/STEP_1-homolog_discovery/`
 
 ## For AI Assistants
 

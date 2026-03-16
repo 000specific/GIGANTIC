@@ -1,3 +1,10 @@
+# Software directories (binary models, large downloads, not for git)
+**/software/*
+!**/software/.gitkeep
+
+# Backup/archive run directories (prefixed with x_)
+x_workflow-RUN_*/
+
 # NextFlow execution artifacts
 work/
 .nextflow/

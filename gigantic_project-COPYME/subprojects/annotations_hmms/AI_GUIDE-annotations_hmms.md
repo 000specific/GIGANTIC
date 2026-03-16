@@ -122,7 +122,7 @@ output_to_input/  (consolidated at subproject root)
 |-------|-------|----------|
 | No proteome files found | Proteomes directory empty or wrong path | Check genomesDB output_to_input is populated |
 | InterProScan out of memory | Proteome too large for single run | Reduce chunk_size in config |
-| GPU not available | SLURM partition wrong | Use gpu partition for DeepLoc and tmbed |
+| GPU not available | SLURM partition wrong | Use hpg-turin (L4) or hpg-b200 (B200) partition with --gres=gpu for DeepLoc and tmbed |
 | DeepLoc model not found | Manual installation required | Download from DTU website |
 | SignalP license error | Requires academic license | Register at DTU website |
 | No tool outputs found | Database builder cannot find sibling BLOCKs | Run at least one tool BLOCK first |

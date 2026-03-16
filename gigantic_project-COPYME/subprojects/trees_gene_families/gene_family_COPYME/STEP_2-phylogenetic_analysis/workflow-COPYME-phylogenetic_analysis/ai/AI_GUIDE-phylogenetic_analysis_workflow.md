@@ -30,11 +30,10 @@
 workflow-COPYME-phylogenetic_analysis/
 │
 ├── README.md
-├── RUN-workflow.sh       # Local: bash RUN-workflow.sh
-├── RUN-workflow.sbatch   # SLURM: sbatch RUN-workflow.sbatch
-├── START_HERE-user_config.yaml  # User configuration
+├── RUN-workflow.sh       # Runner: bash RUN-workflow.sh (handles local + SLURM via config)
+├── START_HERE-user_config.yaml  # User configuration (includes execution_mode, SLURM settings)
 │
-├── INPUT_user/                        # (empty - reads from subproject output_to_input/STEP_1-homolog_discovery)
+├── INPUT_user/                        # (empty - reads from subproject output_to_input/<gene_family>/STEP_1-homolog_discovery)
 │
 ├── OUTPUT_pipeline/
 │   ├── 1-output/       # Staged AGS
@@ -55,21 +54,22 @@ workflow-COPYME-phylogenetic_analysis/
     └── scripts/
         ├── 001_ai-bash-prepare_alignment_input.sh
         ├── 002_ai-bash-replace_special_characters.sh
-        ├── 003_ai-sbatch-run_mafft_alignment.sh
+        ├── 003_ai-bash-run_mafft_alignment.sh
         ├── 004_ai-bash-run_clipkit_trimming.sh
         ├── 005_a_ai-bash-run_fasttree.sh
-        ├── 005_b_ai-sbatch-run_iqtree.sh
+        ├── 005_b_ai-bash-run_iqtree.sh
         ├── 005_c_ai-bash-run_veryfasttree.sh
         ├── 005_d_ai-bash-run_phylobayes.sh
         ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-        └── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
+        ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
+        └── 008_ai-python-write_run_log.py
 ```
 
 ### Script Pipeline
 
 | Process | Scripts | Does |
 |---------|---------|------|
-| prepare_alignment_input | 001 | Copies AGS from output_to_input/STEP_1-homolog_discovery |
+| prepare_alignment_input | 001 | Copies AGS from output_to_input/<gene_family>/STEP_1-homolog_discovery |
 | clean_sequences | 002 | Removes leading/trailing dashes from sequences |
 | run_mafft_alignment | 003 | MAFFT multiple sequence alignment |
 | run_clipkit_trimming | 004 | ClipKit smart-gap trimming |
@@ -79,7 +79,8 @@ workflow-COPYME-phylogenetic_analysis/
 | run_phylobayes | 005_d | PhyloBayes Bayesian MCMC (2 chains + convergence) |
 | visualize_trees_human | 006 | Human-friendly tree visualizations (SVG/PDF) |
 | visualize_trees_cv | 007 | Computer-vision-friendly visualizations |
-| *(symlinks by RUN-workflow.sh)* | - | Export trees and alignments to output_to_input/STEP_2-phylogenetic_analysis |
+| write_run_log | 008 | Write pipeline execution summary |
+| *(symlinks by RUN-workflow.sh)* | - | Export trees and alignments to output_to_input/<gene_family>/STEP_2-phylogenetic_analysis |
 
 ### Conditional Tree Building
 
@@ -115,7 +116,7 @@ gene_family:
   name: "innexin_pannexin"
 
 input:
-  step2_ags_fastas_dir: "../../output_to_input/STEP_1-homolog_discovery/ags_fastas"
+  output_to_input_dir: "../../../output_to_input"
 
 project:
   database: "speciesN_T1-speciesN"
@@ -125,6 +126,13 @@ tree_methods:
   iqtree: false
   veryfasttree: false
   phylobayes: false
+
+execution_mode: "local"  # or "slurm"
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+slurm_cpus: 50
+slurm_memory_gb: 350
+slurm_time_hours: 198
 ```
 
 ### Step 3: Run
@@ -134,27 +142,32 @@ tree_methods:
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos first):
+**SLURM** (set execution_mode and SLURM settings in config first):
 ```bash
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh
 ```
 
 ---
 
 ## SLURM Execution Details
 
-| Setting | Value | Notes |
-|---------|-------|-------|
-| `--account` | `YOUR_ACCOUNT` | **Must edit** |
-| `--qos` | `YOUR_QOS` | **Must edit** |
-| `--cpus-per-task` | `100` | For MAFFT and IQ-TREE parallelism |
-| `--mem` | `700gb` | IQ-TREE/PhyloBayes may need large memory |
-| `--time` | `100:00:00` | Depends on tree methods enabled |
+All SLURM settings are configured in `START_HERE-user_config.yaml`:
+
+| Config Key | Default | Notes |
+|------------|---------|-------|
+| `execution_mode` | `"local"` | Set to `"slurm"` for cluster |
+| `slurm_account` | `"your_account"` | **Must edit** |
+| `slurm_qos` | `"your_qos"` | **Must edit** |
+| `slurm_cpus` | `50` | For MAFFT and IQ-TREE parallelism |
+| `slurm_memory_gb` | `350` | IQ-TREE/PhyloBayes may need large memory |
+| `slurm_time_hours` | `198` | Depends on tree methods enabled |
+
+Per-tool resources (cpus, memory_gb, time_hours) are also configurable under the `resources:` section in config.
 
 **Adjust resources based on enabled methods**:
-- FastTree only: 4 CPUs, 16 GB, 4 hours
-- With IQ-TREE: 50+ CPUs, 64 GB, 100 hours
-- With PhyloBayes: 4 CPUs, 32 GB, 336 hours (2 weeks)
+- FastTree only: 25 CPUs, 150 GB, 12 hours
+- With IQ-TREE: 50+ CPUs, 350 GB, 198 hours
+- With PhyloBayes: 50 CPUs, 350 GB, 336 hours (2 weeks)
 
 ---
 
@@ -192,8 +205,8 @@ cat OUTPUT_pipeline/5_b-output/*.treefile | head -1
 # Check visualizations
 ls OUTPUT_pipeline/6-output/ OUTPUT_pipeline/7-output/
 
-# Check output_to_input export
-ls ../../../output_to_input/STEP_2-phylogenetic_analysis/trees/*/
+# Check output_to_input export (use find -L for symlinks)
+ls -l ../../../output_to_input/*/STEP_2-phylogenetic_analysis/
 ```
 
 ---
@@ -202,14 +215,14 @@ ls ../../../output_to_input/STEP_2-phylogenetic_analysis/trees/*/
 
 ### "AGS file not found"
 
-**Cause**: STEP_2 output not in expected location
+**Cause**: STEP_1 output not in expected location
 
 **Diagnose**:
 ```bash
-ls ../../../output_to_input/STEP_1-homolog_discovery/ags_fastas/*/
+find -L ../../../output_to_input/*/STEP_1-homolog_discovery/ -name "*.aa" -type f
 ```
 
-**Fix**: Run STEP_2 first, or update `step2_ags_fastas_dir` in config.
+**Fix**: Run STEP_1 first, or update `output_to_input_dir` in config.
 
 ### MAFFT out of memory
 
@@ -305,6 +318,6 @@ iqtree2 -s trimmed.clipkit -m MFP -bb 1000 -nt AUTO
 
 1. **Verify**: Check tree files exist and are non-empty
 2. **Review visualizations**: Check SVG/PDF files in `6-output/`
-3. **Check output_to_input**: `ls ../../../output_to_input/STEP_2-phylogenetic_analysis/trees/`
+3. **Check output_to_input**: `ls -l ../../../output_to_input/*/STEP_2-phylogenetic_analysis/`
 4. **Compare methods**: If multiple methods ran, compare tree topologies
 5. **Done**: Trees are ready for publication or further analysis

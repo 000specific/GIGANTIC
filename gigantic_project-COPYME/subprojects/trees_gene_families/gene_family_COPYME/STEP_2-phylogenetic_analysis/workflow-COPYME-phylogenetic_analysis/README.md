@@ -7,16 +7,16 @@
 
 ## Purpose
 
-STEP_3 workflow template for phylogenetic analysis with configurable tree-building methods for **one gene family per workflow copy**.
+STEP_2 workflow template for phylogenetic analysis with configurable tree-building methods for **one gene family per workflow copy**.
 
-**Part of**: STEP_3-phylogenetic_analysis (see `../README.md`)
+**Part of**: STEP_2-phylogenetic_analysis (see `../README.md`)
 
 ---
 
 ## What This Workflow Does
 
 1. **Prepare Input** (Process 1)
-   - Stages AGS sequences from subproject output_to_input/STEP_2-homolog_discovery/
+   - Stages AGS sequences from subproject output_to_input/<gene_family>/STEP_1-homolog_discovery/
 
 2. **Clean Sequences** (Process 2)
    - Removes leading/trailing dashes from sequences
@@ -38,7 +38,7 @@ STEP_3 workflow template for phylogenetic analysis with configurable tree-buildi
    - Computer-vision tree visualization (script 007)
 
 7. **Export** (Process 8)
-   - Copies alignment, trimmed alignment, and tree files to subproject output_to_input/STEP_3-phylogenetic_analysis/
+   - Symlinks alignment, trimmed alignment, and tree files to output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
 
 ---
 
@@ -79,15 +79,15 @@ bash RUN-workflow.sh
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-workflow.sbatch to set --account and --qos
-sbatch RUN-workflow.sbatch
+# Set execution_mode: "slurm" and slurm_account/slurm_qos/slurm_cpus/slurm_memory_gb/slurm_time_hours in START_HERE-user_config.yaml
+bash RUN-workflow.sh
 ```
 
 ---
 
 ## Prerequisites
 
-- **STEP_2-homolog_discovery** complete for this gene family (AGS file in `trees_gene_families/output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/`)
+- **STEP_1-homolog_discovery** complete for this gene family (AGS file in `trees_gene_families/output_to_input/<gene_family>/STEP_1-homolog_discovery/`)
 - **Conda environment** `ai_gigantic_trees_gene_families` with `mafft`, `clipkit`, `fasttree`, and optionally `iqtree`, `VeryFastTree`, `phylobayes`
 - **NextFlow** installed and available in PATH
 
@@ -98,8 +98,7 @@ sbatch RUN-workflow.sbatch
 ```
 workflow-COPYME-phylogenetic_analysis/
 ├── README.md                              # This file
-├── RUN-workflow.sh           # Local runner (calls NextFlow)
-├── RUN-workflow.sbatch       # SLURM wrapper
+├── RUN-workflow.sh           # Runner (handles both local and SLURM via config)
 ├── START_HERE-user_config.yaml      # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs (if any)
 ├── OUTPUT_pipeline/                       # Workflow outputs (flat structure)
@@ -119,14 +118,15 @@ workflow-COPYME-phylogenetic_analysis/
     └── scripts/
         ├── 001_ai-bash-prepare_alignment_input.sh
         ├── 002_ai-bash-replace_special_characters.sh
-        ├── 003_ai-sbatch-run_mafft_alignment.sh
+        ├── 003_ai-bash-run_mafft_alignment.sh
         ├── 004_ai-bash-run_clipkit_trimming.sh
         ├── 005_a_ai-bash-run_fasttree.sh
-        ├── 005_b_ai-sbatch-run_iqtree.sh
+        ├── 005_b_ai-bash-run_iqtree.sh
         ├── 005_c_ai-bash-run_veryfasttree.sh
         ├── 005_d_ai-bash-run_phylobayes.sh
         ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-        └── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
+        ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
+        └── 008_ai-python-write_run_log.py
 ```
 
 ---
@@ -135,7 +135,7 @@ workflow-COPYME-phylogenetic_analysis/
 
 | Output | Location | Description |
 |--------|----------|-------------|
-| Staged AGS | `1-output/1_ai-ags-*.aa` | AGS sequences from STEP_2 |
+| Staged AGS | `1-output/1_ai-ags-*.aa` | AGS sequences from STEP_1 |
 | Cleaned sequences | `2-output/2_ai-ags-*.aa` | Sequences with dashes removed |
 | MAFFT alignment | `3-output/3_ai-ags-*.mafft` | Multiple sequence alignment |
 | Trimmed alignment | `4-output/4_ai-ags-*.clipkit-smartgap` | ClipKit-trimmed alignment |
@@ -162,7 +162,7 @@ workflow-COPYME-phylogenetic_analysis/
 ## Data Flow
 
 ```
-trees_gene_families/output_to_input/STEP_2-homolog_discovery/ags_fastas/<gene_family>/
+trees_gene_families/output_to_input/<gene_family>/STEP_1-homolog_discovery/
        │
        ▼
 Process 1: Stage AGS → 1-output/
@@ -185,7 +185,7 @@ Process 4: ClipKit → 4-output/
      Processes 6-7: Visualizations
               │
               ▼
-     Process 8: trees_gene_families/output_to_input/STEP_3-phylogenetic_analysis/
+     Process 8: trees_gene_families/output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
 ```
 
 ---
@@ -194,5 +194,5 @@ Process 4: ClipKit → 4-output/
 
 After this workflow completes, phylogenetic trees are available in:
 ```
-trees_gene_families/output_to_input/STEP_3-phylogenetic_analysis/trees/<gene_family>/
+trees_gene_families/output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
 ```

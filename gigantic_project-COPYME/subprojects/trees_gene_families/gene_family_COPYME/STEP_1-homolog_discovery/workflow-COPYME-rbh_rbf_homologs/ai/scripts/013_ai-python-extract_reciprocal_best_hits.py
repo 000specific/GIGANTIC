@@ -13,13 +13,13 @@ This script performs reciprocal best family analysis by:
 4. Extracting keeper sequences from project databases
 
 Input:
-    - output/1-output/1_ai-list-projectdb-blastdbs: List of database FASTA files
-    - output/12-output/12_ai-reciprocal-blast-report.txt: Reciprocal BLAST report
-    - output/8-output/8_ai-map-rgs-to-genome-identifiers.txt: RGS ID mapping
+    - 1-output/1_ai-list-projectdb-blastdbs: List of database FASTA files
+    - 12-output/12_ai-reciprocal-blast-report.txt: Reciprocal BLAST report
+    - 8-output/8_ai-map-rgs-to-genome-identifiers.txt: RGS ID mapping
 
 Output:
-    - output/13-output/13_ai-cgs-{project_db}-{gene_family}.aa: candidate gene sequences (FASTA)
-    - output/13-output/13_ai-log-dropped-sequences-{gene_family}: Log of dropped sequences (TSV)
+    - 13-output/13_ai-cgs-{project_db}-{gene_family}.aa: candidate gene sequences (FASTA)
+    - 13-output/13_ai-log-dropped-sequences-{gene_family}: Log of dropped sequences (TSV)
 
 Log:
     - 013_ai-log-extract_reciprocal_best_hits.log
@@ -229,35 +229,35 @@ def main():
     parser.add_argument(
         '--database-list',
         type=Path,
-        default=Path( 'output/1-list-projectdb-blastdbs' ),
+        default=Path( '1-list-projectdb-blastdbs' ),
         help='File containing list of database FASTA paths'
     )
     
     parser.add_argument(
         '--blast-report',
         type=Path,
-        default=Path( 'output/12-output/12_ai-reciprocal-blast-report.txt' ),
+        default=Path( '12-output/12_ai-reciprocal-blast-report.txt' ),
         help='Reciprocal BLAST report file (from script 012)'
     )
     
     parser.add_argument(
         '--rgs-mapping',
         type=Path,
-        default=Path( 'output/8-output/8_ai-map-rgs-to-genome-identifiers.txt' ),
+        default=Path( '8-output/8_ai-map-rgs-to-genome-identifiers.txt' ),
         help='RGS identifier mapping file (from script 008)'
     )
     
     parser.add_argument(
         '--output-fasta',
         type=Path,
-        default=Path( 'output/13-output/13_ai-cgs-all-reciprocal_best_hits.aa' ),
+        default=Path( '13-output/13_ai-cgs-all-reciprocal_best_hits.aa' ),
         help='Output FASTA with CGS sequences'
     )
     
     parser.add_argument(
         '--output-filtered',
         type=Path,
-        default=Path( 'output/13-output/13_ai-dropped-sequences' ),
+        default=Path( '13-output/13_ai-dropped-sequences' ),
         help='Log of filtered/dropped sequences'
     )
     

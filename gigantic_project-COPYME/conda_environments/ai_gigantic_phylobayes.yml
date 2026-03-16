@@ -1,0 +1,26 @@
+# GIGANTIC PhyloBayes Environment
+# =========================================
+#
+# Per-tool conda environment for PhyloBayes Bayesian phylogenetic inference.
+# Used by trees_gene_families STEP_2 phylogenetic analysis.
+#
+# PhyloBayes uses site-heterogeneous CAT-GTR models and MCMC sampling.
+# Runs 2 independent chains for convergence assessment.
+# Very slow (days to weeks) - use as Bayesian counterpoint to ML methods.
+#
+# INSTALLATION:
+#   mamba env create -f conda_environments/ai_gigantic_phylobayes.yml
+#
+# ACTIVATION:
+#   conda activate ai_gigantic_phylobayes
+
+name: ai_gigantic_phylobayes
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.11
+  - phylobayes-mpi

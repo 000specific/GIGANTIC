@@ -11,11 +11,11 @@ of files needed for reciprocal BLAST analysis. It focuses on key model organisms
 (human, fly, worm) that will be used for reciprocal best hit analysis.
 
 Input Files (from script 006):
-    - output/6-output/6*genome*.blastp - RGS genome BLAST reports
+    - 6-output/6*genome*.blastp - RGS genome BLAST reports
 
 Output Files:
-    - output/7-output/7_ai-list-rgs-blast-reports.txt - List of RGS BLAST report paths
-    - output/7-output/7_ai-list-model-organism-fastas.txt - Model organism database FASTA paths
+    - 7-output/7_ai-list-rgs-blast-reports.txt - List of RGS BLAST report paths
+    - 7-output/7_ai-list-model-organism-fastas.txt - Model organism database FASTA paths
 
 Usage:
     python3 007_ai-python-list_rgs_blast_files.py \\
@@ -42,28 +42,48 @@ def setup_logging() -> logging.Logger:
     return logging.getLogger( __name__ )
 
 
-def find_rgs_blast_reports( output_directory: Path, logger: logging.Logger ) -> List[Path]:
+def find_rgs_blast_reports( output_directory: Path, input_blast_report_list: Path, logger: logging.Logger ) -> List[Path]:
     """
     Find all RGS genome BLAST reports from script 006.
-    
+
+    First tries to read from the input blast report list (absolute paths from previous step).
+    Falls back to scanning the 6-output subdirectory if no list provided.
+
     Args:
-        output_directory: Directory containing BLAST reports
+        output_directory: Directory containing BLAST reports (fallback scan location)
+        input_blast_report_list: Path to list file with absolute paths to blast reports
         logger: Logger instance
-        
+
     Returns:
         List of paths to RGS BLAST report files
     """
     logger.info( "Searching for RGS genome BLAST reports..." )
-    
-    # Find all files matching pattern: 6_ai*genome*.blastp in 6-output subdirectory
-    script_6_output_dir = output_directory / "6-output"
-    blast_reports = sorted( script_6_output_dir.glob( '6_ai*genome*.blastp' ) ) if script_6_output_dir.exists() else []
-    
+
+    blast_reports = []
+
+    # Read from input list file (contains absolute paths from previous pipeline step)
+    if input_blast_report_list and input_blast_report_list.exists():
+        logger.info( f"Reading blast report list from: {input_blast_report_list}" )
+        with open( input_blast_report_list, 'r' ) as input_list:
+            for line in input_list:
+                line = line.strip()
+                if line:
+                    report_path = Path( line )
+                    if report_path.exists():
+                        blast_reports.append( report_path )
+                    else:
+                        logger.warning( f"  Blast report not found: {report_path}" )
+        blast_reports = sorted( blast_reports )
+    else:
+        # Fallback: scan 6-output subdirectory
+        script_6_output_dir = output_directory / "6-output"
+        blast_reports = sorted( script_6_output_dir.glob( '6_ai*genome*.blastp' ) ) if script_6_output_dir.exists() else []
+
     logger.info( f"Found {len( blast_reports )} RGS genome BLAST reports" )
-    
+
     for report in blast_reports:
         logger.info( f"  - {report.name}" )
-    
+
     return blast_reports
 
 
@@ -160,16 +180,23 @@ def main():
     )
     
     parser.add_argument(
+        '--input-blast-report-list',
+        type=str,
+        default=None,
+        help='Input list file with absolute paths to RGS blast reports (from previous pipeline step)'
+    )
+
+    parser.add_argument(
         '--output-blast-reports',
         type=str,
-        default='output/7-output/7_ai-list-rgs-blast-reports.txt',
+        default='7-output/7_ai-list-rgs-blast-reports.txt',
         help='Output file for BLAST report paths'
     )
     
     parser.add_argument(
         '--output-model-fastas',
         type=str,
-        default='output/7-output/7_ai-list-model-organism-fastas.txt',
+        default='7-output/7_ai-list-model-organism-fastas.txt',
         help='Output file for model organism FASTA paths'
     )
     
@@ -204,8 +231,11 @@ def main():
     # Parse RBH species (split space-separated string)
     rbh_species_list = arguments.rbh_species.split()
     
+    # Resolve input blast report list path
+    input_blast_report_list = Path( arguments.input_blast_report_list ) if arguments.input_blast_report_list else None
+
     # Find RGS BLAST reports
-    blast_reports = find_rgs_blast_reports( output_directory, logger )
+    blast_reports = find_rgs_blast_reports( output_directory, input_blast_report_list, logger )
     
     if not blast_reports:
         logger.error( "CRITICAL ERROR: No RGS genome BLAST reports found!" )

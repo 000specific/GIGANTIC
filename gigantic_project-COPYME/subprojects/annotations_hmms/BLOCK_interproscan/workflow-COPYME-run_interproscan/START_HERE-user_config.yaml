@@ -9,7 +9,7 @@
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: InterProScan pipeline configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 13 | Purpose: InterProScan pipeline configuration
 # Human: Eric Edsinger
 
 # =============================================================================
@@ -25,27 +25,90 @@ interproscan_install_path: "/path/to/interproscan"
 # Number of sequences per chunk for parallel processing
 chunk_size: 1000
 
-# InterProScan analysis applications to run ("all" uses all available databases)
-applications: "all"
-
-# =============================================================================
-# Computational Resources
-# =============================================================================
-# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
-# Adjust based on your system's available resources.
-
-cpus: 25
-memory_gb: 187
-time_hours: 96
+# InterProScan analysis applications to run
+#
+# WORKING applications (tested on HiPerGator, InterProScan 5.72-103.0):
+#   Pfam        - Protein family HMM database (slowest, most comprehensive)
+#   SMART       - Simple Modular Architecture Research Tool
+#   CDD         - Conserved Domain Database (NCBI)
+#   Gene3D      - Structural domain assignments from CATH
+#   FunFam      - CATH functional families
+#   SUPERFAMILY - Structural and functional annotation (SCOP)
+#   PANTHER     - Protein Analysis Through Evolutionary Relationships
+#   NCBIfam     - NCBI protein family models
+#   PRINTS      - Protein fingerprint database
+#   SFLD        - Structure-Function Linkage Database
+#
+# BROKEN applications (Perl Encode.pm conflict with ~/perl5 on HiPerGator):
+#   PIRSF       - pirsf.pl fails with Encode.pm compilation error
+#   PIRSR       - pirsr-preprocess.pl fails with same Perl conflict
+#
+# DEACTIVATED applications (require separate licenses):
+#   Phobius     - Transmembrane and signal peptide predictor
+#   TMHMM       - Transmembrane helix predictor
+#   ProSite     - Protein domains, families, and functional sites
+#
+# Recommended: run all 10 working tools
+applications: "Pfam,SMART,CDD,Gene3D,FunFam,SUPERFAMILY,PANTHER,NCBIfam,PRINTS,SFLD"
 
 # =============================================================================
 # Execution Mode
 # =============================================================================
-# "local" - Run directly on this machine (default)
-# "slurm" - Submit as a SLURM cluster job
+# Choose how the pipeline runs:
+#
+#   "local"       - Run directly on this machine. All chunks process sequentially.
+#                   Good for: Small datasets, testing, machines without SLURM.
+#
+#   "slurm"       - Submit as ONE SLURM job. All chunks process sequentially
+#                   inside that job. Uses your account's dedicated CPUs.
+#                   Good for: Medium datasets when you have available CPUs.
+#
+#   "slurm_burst" - Nextflow submits EACH chunk as its own SLURM job via burst
+#                   QOS. Hundreds of chunks can run in parallel across the cluster.
+#                   Good for: Large datasets (50+ species). DRAMATICALLY faster.
+#                   Note: Runs the Nextflow orchestrator from within a small
+#                   SLURM job so it stays alive for the full duration.
+#
+# Performance comparison (70 species, Pfam only):
+#   local/slurm:       ~35 days (sequential chunks)
+#   slurm_burst:       ~1-2 days (parallel chunks across cluster)
 
 execution_mode: "local"
 
-# SLURM settings (only used when execution_mode is "slurm")
+# =============================================================================
+# SLURM Settings (for "slurm" and "slurm_burst" modes)
+# =============================================================================
+
 slurm_account: "your_account"
 slurm_qos: "your_qos"
+
+# =============================================================================
+# Resources for "local" and "slurm" modes
+# =============================================================================
+# These control the SINGLE job that runs all chunks sequentially.
+# In "local" mode, these are the resources Nextflow can use on this machine.
+# In "slurm" mode, these are the SLURM job resources.
+# Note: InterProScan with Pfam effectively uses only ~1-4 CPUs per chunk,
+# so 4 CPUs is a good default. More CPUs won't speed up individual chunks.
+
+cpus: 4
+memory_gb: 16
+time_hours: 96
+
+# =============================================================================
+# Resources for "slurm_burst" mode
+# =============================================================================
+# In burst mode, EACH chunk gets its own small SLURM job.
+# These control the per-chunk job resources.
+# InterProScan with Pfam uses ~1-4 CPUs effectively, so small jobs are fine.
+
+burst_qos: "your_burst_qos"
+burst_cpus_per_chunk: 4
+burst_memory_gb_per_chunk: 16
+burst_time_hours_per_chunk: 96
+
+# Orchestrator job: small SLURM job that runs Nextflow itself.
+# Needs minimal resources but must stay alive until all chunks finish.
+burst_orchestrator_cpus: 2
+burst_orchestrator_memory_gb: 8
+burst_orchestrator_time_hours: 96

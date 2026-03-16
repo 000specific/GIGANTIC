@@ -18,14 +18,14 @@ Workflow Context:
     Script 008 → Mappings → Script 009 → FASTA list → **Script 010** → Commands → Script 011
     
 Input Files:
-    - output/8-output/8_ai-list-model-organism-fastas-with-rgs-headers.txt - FASTA files to index
+    - 8-output/8_ai-list-model-organism-fastas-with-rgs-headers.txt - FASTA files to index
     
 Output Files:
     - 11-makeblastdb-commands.sh - Executable shell script with makeblastdb commands
 
 Usage:
     python3 010_ai-python-generate_makeblastdb_commands.py \\
-        --fasta-list output/8-list-model-organism-fastas-with-rgs-headers.txt \\
+        --fasta-list 8-list-model-organism-fastas-with-rgs-headers.txt \\
         --output-script 11-makeblastdb-commands.sh \\
         --conda-env blast
 """
@@ -103,7 +103,7 @@ def generate_makeblastdb_commands(
             f"makeblastdb "
             f"-in {fasta_path} "
             f"-dbtype prot "
-            f"-out output/{database_name}"
+            f"-out {database_name}"
         )
         
         commands.append( command )

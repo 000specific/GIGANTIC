@@ -9,37 +9,57 @@
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: DeepLoc pipeline configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 14 | Purpose: DeepLoc 2.1 pipeline configuration
 # Human: Eric Edsinger
 
 # =============================================================================
-# DeepLoc Pipeline Configuration
+# DeepLoc 2.1 Pipeline Configuration
 # =============================================================================
 
 # Project name (used in run log naming)
 project_name: "my_project"
 
 # DeepLoc model type ("Accurate" or "Fast")
-model_type: "Accurate"
+#   "Accurate" - ProtT5-XL model (3B params), higher quality, slower, needs ~32GB GPU memory
+#   "Fast"     - ESM1b model (650M params), slightly less accurate, much faster
+model_type: "Fast"
+
+# Device for computation ("cuda", "cpu", or "mps")
+#   "cuda" - NVIDIA GPU (recommended, requires --gres=gpu in SLURM)
+#   "cpu"  - CPU only (very slow, not recommended for large datasets)
+#   "mps"  - Apple Silicon GPU (Mac only)
+device: "cuda"
+
+# =============================================================================
+# Software Installation
+# =============================================================================
+# DeepLoc 2.1 is installed in: BLOCK_deeploc/software/deeploc2_package/
+# Conda environment: ai_gigantic_deeploc
+# License: BLOCK_deeploc/software/deeploc-2.1_license.txt
 
 # =============================================================================
 # Computational Resources
 # =============================================================================
 # These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
-# Adjust based on your system's available resources.
 
 cpus: 4
 memory_gb: 32
-time_hours: 12
+time_hours: 96
 
 # =============================================================================
 # Execution Mode
 # =============================================================================
 # "local" - Run directly on this machine (default)
-# "slurm" - Submit as a SLURM cluster job
+# "slurm" - Submit as a SLURM cluster job (requires GPU partition)
 
 execution_mode: "local"
 
 # SLURM settings (only used when execution_mode is "slurm")
 slurm_account: "your_account"
 slurm_qos: "your_qos"
+
+# GPU settings for SLURM (HiPerGator)
+# Available GPUs: L4 (hpg-turin partition), B200 (hpg-b200 partition)
+slurm_partition: "hpg-turin"
+slurm_gpu_type: "l4"
+slurm_gpu_count: 1

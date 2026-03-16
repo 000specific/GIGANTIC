@@ -1,0 +1,22 @@
+# GIGANTIC IQ-TREE Environment
+# =========================================
+#
+# Per-tool conda environment for IQ-TREE ML phylogenetic inference.
+# Used by trees_gene_families STEP_2 phylogenetic analysis.
+#
+# INSTALLATION:
+#   mamba env create -f conda_environments/ai_gigantic_iqtree.yml
+#
+# ACTIVATION:
+#   conda activate ai_gigantic_iqtree
+
+name: ai_gigantic_iqtree
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.11
+  - iqtree

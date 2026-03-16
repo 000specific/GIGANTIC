@@ -30,6 +30,8 @@ module load conda 2>/dev/null || true
 
 if conda activate ai_gigantic_deeploc 2>/dev/null; then
     echo "Activated conda environment: ai_gigantic_deeploc"
+    # Ensure conda's libstdc++ is found (needed for PyTorch/DeepLoc2)
+    export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
 else
     echo "WARNING: Environment 'ai_gigantic_deeploc' not found."
     echo ""
@@ -93,11 +95,17 @@ if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
 
     mkdir -p slurm_logs
 
+    SLURM_PARTITION=$(read_config "slurm_partition" "hpg-turin")
+    SLURM_GPU_TYPE=$(read_config "slurm_gpu_type" "l4")
+    SLURM_GPU_COUNT=$(read_config "slurm_gpu_count" "1")
+
     SBATCH_ARGS="--job-name=deeploc"
     SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
     SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
     SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
     SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/deeploc-%j.log"
+    SBATCH_ARGS="${SBATCH_ARGS} --partition=${SLURM_PARTITION}"
+    SBATCH_ARGS="${SBATCH_ARGS} --gres=gpu:${SLURM_GPU_TYPE}:${SLURM_GPU_COUNT}"
 
     if [ -n "${SLURM_ACCOUNT}" ]; then
         SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"

@@ -48,6 +48,7 @@
 # =============================================================================
 
 set -e  # Exit on error
+ulimit -c 0  # Disable core dumps (SUPERFAMILY epa-ng segfaults generate TB of core files)
 
 # =============================================================================
 # CONFIGURATION
@@ -162,9 +163,37 @@ echo "Input sequences in chunk: ${SEQUENCE_COUNT}"
 # Create output directory
 mkdir -p "${OUTPUT_DIR}"
 
-# Create a temporary directory for InterProScan raw output
-INTERPROSCAN_TEMP_DIR="${OUTPUT_DIR}/interproscan_temp_${CHUNK_BASENAME}"
-mkdir -p "${INTERPROSCAN_TEMP_DIR}"
+# =============================================================================
+# SHORT PATH WORKAROUND
+# =============================================================================
+# InterProScan's internal H2 database has a VARCHAR(350) column limit for file
+# paths. Our deeply nested project directory structure produces paths that
+# exceed this limit, causing InterProScan to crash.
+#
+# Workaround: Copy the input chunk to a short temporary directory under
+# /blue/moroz/share/edsinger/, run InterProScan there, then copy results back.
+# =============================================================================
+
+SHORT_BASE_PATH="/blue/moroz/share/edsinger/iprs_tmp"
+SHORT_JOB_ID="$$_$(date +%s)"
+SHORT_WORK_DIR="${SHORT_BASE_PATH}/${SHORT_JOB_ID}"
+
+echo ""
+echo "Using short path workaround for InterProScan VARCHAR(350) limit."
+echo "Short work directory: ${SHORT_WORK_DIR}"
+
+mkdir -p "${SHORT_WORK_DIR}"
+
+# Copy input FASTA to short path with a short filename
+SHORT_INPUT="${SHORT_WORK_DIR}/input.fasta"
+cp "${INPUT_FASTA}" "${SHORT_INPUT}"
+
+# Create a short temp output directory
+SHORT_OUTPUT_DIR="${SHORT_WORK_DIR}/out"
+mkdir -p "${SHORT_OUTPUT_DIR}"
+
+echo "Short input path length: $(echo -n "${SHORT_INPUT}" | wc -c) characters"
+echo "Original input path length: $(echo -n "${INPUT_FASTA}" | wc -c) characters"
 
 # =============================================================================
 # RUN INTERPROSCAN
@@ -186,14 +215,14 @@ echo "Running InterProScan..."
 echo "This may take several hours depending on the number of sequences and databases."
 echo ""
 
-# Build the InterProScan command
+# Build the InterProScan command using SHORT paths
 INTERPROSCAN_COMMAND="${INTERPROSCAN_EXECUTABLE} \
-    -i ${INPUT_FASTA} \
+    -i ${SHORT_INPUT} \
     -goterms \
     -dp \
     -f tsv \
     -cpu ${CPUS} \
-    -d ${INTERPROSCAN_TEMP_DIR}"
+    -d ${SHORT_OUTPUT_DIR}"
 
 # Add applications flag only if not 'all' (InterProScan runs all by default)
 if [ "${APPLICATIONS}" != "all" ]; then
@@ -215,34 +244,39 @@ if [ ${INTERPROSCAN_EXIT_CODE} -ne 0 ]; then
     echo "  - Java heap space: Increase memory allocation or reduce chunk size"
     echo "  - Database not found: Verify InterProScan databases are installed"
     echo "  - License issues: Some component databases may require separate licenses"
+    # Clean up short path directory before exiting
+    rm -rf "${SHORT_WORK_DIR}"
     exit 1
 fi
 
 echo "InterProScan completed successfully."
 
 # =============================================================================
-# LOCATE AND MOVE OUTPUT FILE
+# LOCATE AND COPY OUTPUT FILE BACK
 # =============================================================================
 # InterProScan writes output to the -d directory with a filename based on the
-# input file. We need to find it and rename it to our standard naming.
+# input file. We need to find it and copy it back to the real output location.
 # =============================================================================
 
-# Find the InterProScan TSV output file
-INTERPROSCAN_OUTPUT_FILE=$(find "${INTERPROSCAN_TEMP_DIR}" -name "*.tsv" -type f | head -1)
+# Find the InterProScan TSV output file in the short path
+INTERPROSCAN_OUTPUT_FILE=$(find "${SHORT_OUTPUT_DIR}" -name "*.tsv" -type f | head -1)
 
 if [ -z "${INTERPROSCAN_OUTPUT_FILE}" ] || [ ! -f "${INTERPROSCAN_OUTPUT_FILE}" ]; then
     echo "CRITICAL ERROR: Could not locate InterProScan TSV output file!"
-    echo "Expected results in: ${INTERPROSCAN_TEMP_DIR}"
+    echo "Expected results in: ${SHORT_OUTPUT_DIR}"
     echo "Directory contents:"
-    ls -la "${INTERPROSCAN_TEMP_DIR}"
+    ls -la "${SHORT_OUTPUT_DIR}"
+    # Clean up short path directory before exiting
+    rm -rf "${SHORT_WORK_DIR}"
     exit 1
 fi
 
-# Move to standard output name
-mv "${INTERPROSCAN_OUTPUT_FILE}" "${OUTPUT_TSV}"
+# Copy result back to the real output location
+cp "${INTERPROSCAN_OUTPUT_FILE}" "${OUTPUT_TSV}"
 
-# Clean up temporary directory
-rm -rf "${INTERPROSCAN_TEMP_DIR}"
+# Clean up the short path temporary directory
+rm -rf "${SHORT_WORK_DIR}"
+echo "Cleaned up short path work directory: ${SHORT_WORK_DIR}"
 
 # =============================================================================
 # VALIDATE OUTPUT

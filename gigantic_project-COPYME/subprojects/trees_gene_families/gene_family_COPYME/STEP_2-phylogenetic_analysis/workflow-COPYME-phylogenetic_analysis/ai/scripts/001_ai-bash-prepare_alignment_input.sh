@@ -1,32 +1,31 @@
 #!/bin/bash
-# GIGANTIC BLOCK 3 - Script 001: Prepare Alignment Input
-# AI: Claude Code | Sonnet 4.5 | 2025 November 07 03:45 | Purpose: Prepare input for sequence alignment
+# GIGANTIC STEP_2 - Script 001: Prepare Alignment Input
+# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: Stage AGS sequences from STEP_1 for alignment
 # Human: Eric Edsinger
+#
+# Called by: main.nf process prepare_alignment_input
+# NextFlow manages: conda environment, SLURM resources
+# Arguments:
+#   $1 = Input AGS FASTA file (from STEP_1 output_to_input)
+#   $2 = Output AGS FASTA file path
 
-# Parse arguments
-GENE_FAMILY=$1
-PROJECT_DB=$2
-BLOCK2_OUTPUT=$3
+INPUT_AGS="$1"
+OUTPUT_FILE="$2"
 
-if [ -z "$GENE_FAMILY" ] || [ -z "$PROJECT_DB" ] || [ -z "$BLOCK2_OUTPUT" ]; then
-    echo "Usage: $0 GENE_FAMILY PROJECT_DB BLOCK2_OUTPUT"
-    echo "Example: $0 innexin_pannexin speciesN_T1-species37 ../block_2-homologs/job_1/output"
+if [ -z "$INPUT_AGS" ] || [ -z "$OUTPUT_FILE" ]; then
+    echo "Usage: $0 INPUT_AGS OUTPUT_FILE"
+    echo "Example: $0 path/to/16_ai-ags-species70_T1-species70-innexin_pannexin-homologs.aa 1-output/1_ai-ags-species70_T1-species70-innexin_pannexin.aa"
     exit 1
 fi
 
-# Copy homolog file from Block 2 (script 016 output)
-HOMOLOG_FILE="${BLOCK2_OUTPUT}/16-output/16_ai-AGS-${PROJECT_DB}-${GENE_FAMILY}-homologs.aa"
-OUTPUT_FILE="output/1-AGS-${PROJECT_DB}-${GENE_FAMILY}.aa"
-
-if [ ! -f "$HOMOLOG_FILE" ]; then
-    echo "ERROR: Homolog file not found: $HOMOLOG_FILE"
+if [ ! -f "$INPUT_AGS" ]; then
+    echo "ERROR: Input AGS file not found: $INPUT_AGS"
+    echo "Ensure STEP_1 has completed and output_to_input/STEP_1-homolog_discovery/ags_fastas/ contains results."
     exit 1
 fi
 
-mkdir -p input output
-cp "$HOMOLOG_FILE" input/
-cp "$HOMOLOG_FILE" "$OUTPUT_FILE"
+cp "$INPUT_AGS" "$OUTPUT_FILE"
 
-echo "Prepared alignment input: $OUTPUT_FILE"
-echo "Copied from: $HOMOLOG_FILE"
-
+SEQUENCE_COUNT=$(grep -c '^>' "$OUTPUT_FILE")
+echo "Staged alignment input: $OUTPUT_FILE ($SEQUENCE_COUNT sequences)"
+echo "Source: $INPUT_AGS"

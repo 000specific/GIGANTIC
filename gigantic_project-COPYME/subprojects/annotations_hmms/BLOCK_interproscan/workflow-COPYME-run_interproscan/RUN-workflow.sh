@@ -1,19 +1,19 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: Run InterProScan Nextflow pipeline
+# AI: Claude Code | Opus 4.6 | 2026 March 13 | Purpose: Run InterProScan Nextflow pipeline
 # Human: Eric Edsinger
 
 # =============================================================================
 # RUN-workflow.sh
 # =============================================================================
 # Runs the InterProScan annotation Nextflow pipeline.
-# Supports both local and SLURM execution via START_HERE-user_config.yaml.
+# Supports three execution modes via START_HERE-user_config.yaml:
+#
+#   "local"       - Runs directly on this machine (sequential)
+#   "slurm"       - Submits as one SLURM job (sequential inside job)
+#   "slurm_burst" - Submits each chunk as its own SLURM burst job (parallel)
 #
 # Usage:
 #   bash RUN-workflow.sh
-#
-# Set execution_mode in START_HERE-user_config.yaml:
-#   "local" - runs directly on this machine
-#   "slurm" - submits as a SLURM job with resources from config
 # =============================================================================
 
 set -e
@@ -64,7 +64,7 @@ fi
 echo ""
 
 # ============================================================================
-# Read execution mode from START_HERE-user_config.yaml
+# Read configuration from START_HERE-user_config.yaml
 # ============================================================================
 # Uses grep to parse flat YAML keys (no Python dependency required).
 
@@ -77,60 +77,139 @@ read_config() {
 EXECUTION_MODE=$(read_config "execution_mode" "local")
 
 # ============================================================================
-# SLURM submission (if execution_mode is "slurm" and not already inside a job)
+# MODE: local
 # ============================================================================
+# Run Nextflow directly on this machine. All chunks process sequentially.
 
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    echo "Execution mode: SLURM (submitting job)"
-    echo ""
-
-    # Read resources and SLURM settings from config
-    SLURM_CPUS=$(read_config "cpus" "25")
-    SLURM_MEM=$(read_config "memory_gb" "187")
-    SLURM_TIME=$(read_config "time_hours" "96")
-    SLURM_ACCOUNT=$(read_config "slurm_account" "")
-    SLURM_QOS=$(read_config "slurm_qos" "")
-
-    mkdir -p slurm_logs
-
-    SBATCH_ARGS="--job-name=interproscan"
-    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
-    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
-    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
-    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/interproscan-%j.log"
-
-    if [ -n "${SLURM_ACCOUNT}" ]; then
-        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
-    fi
-    if [ -n "${SLURM_QOS}" ]; then
-        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
-    fi
-
-    echo "Submitting with: sbatch ${SBATCH_ARGS}"
-    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
-
-    echo ""
-    echo "Job submitted. Check slurm_logs/ for output."
-    conda deactivate 2>/dev/null || true
-    exit 0
-fi
-
-# ============================================================================
-# Run Nextflow pipeline (local execution or inside SLURM job)
-# ============================================================================
-
-if [ -n "${SLURM_JOB_ID}" ]; then
-    echo "Running inside SLURM job ${SLURM_JOB_ID}"
-else
+if [ "${EXECUTION_MODE}" == "local" ]; then
     echo "Execution mode: local"
+    echo "========================================================================"
+    echo "Starting InterProScan Annotation Pipeline (local)"
+    echo "========================================================================"
+
+    nextflow run ai/main.nf \
+        -c ai/nextflow.config
+
+# ============================================================================
+# MODE: slurm
+# ============================================================================
+# Submit as one SLURM job. Chunks process sequentially inside the job.
+
+elif [ "${EXECUTION_MODE}" == "slurm" ]; then
+
+    # If already inside a SLURM job, run the pipeline
+    if [ -n "${SLURM_JOB_ID}" ]; then
+        echo "Running inside SLURM job ${SLURM_JOB_ID}"
+        echo "========================================================================"
+        echo "Starting InterProScan Annotation Pipeline (slurm)"
+        echo "========================================================================"
+
+        nextflow run ai/main.nf \
+            -c ai/nextflow.config
+
+    # Otherwise, submit this script as a SLURM job
+    else
+        echo "Execution mode: slurm (submitting job)"
+        echo ""
+
+        SLURM_CPUS=$(read_config "cpus" "4")
+        SLURM_MEM=$(read_config "memory_gb" "16")
+        SLURM_TIME=$(read_config "time_hours" "96")
+        SLURM_ACCOUNT=$(read_config "slurm_account" "")
+        SLURM_QOS=$(read_config "slurm_qos" "")
+
+        mkdir -p slurm_logs
+
+        SBATCH_ARGS="--job-name=interproscan"
+        SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+        SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+        SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+        SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/interproscan-%j.log"
+
+        if [ -n "${SLURM_ACCOUNT}" ]; then
+            SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+        fi
+        if [ -n "${SLURM_QOS}" ]; then
+            SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+        fi
+
+        echo "Submitting with: sbatch ${SBATCH_ARGS}"
+        sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+        echo ""
+        echo "Job submitted. Check slurm_logs/ for output."
+        conda deactivate 2>/dev/null || true
+        exit 0
+    fi
+
+# ============================================================================
+# MODE: slurm_burst
+# ============================================================================
+# Nextflow submits each InterProScan chunk as its own SLURM burst job.
+# Hundreds of chunks can run in parallel across the cluster.
+# The Nextflow orchestrator runs inside a small SLURM job to stay alive.
+
+elif [ "${EXECUTION_MODE}" == "slurm_burst" ]; then
+
+    # If already inside a SLURM job, run Nextflow as the orchestrator
+    if [ -n "${SLURM_JOB_ID}" ]; then
+        echo "Running as burst orchestrator inside SLURM job ${SLURM_JOB_ID}"
+        echo "========================================================================"
+        echo "Starting InterProScan Annotation Pipeline (slurm_burst)"
+        echo "Nextflow will submit each chunk as its own SLURM burst job."
+        echo "========================================================================"
+
+        nextflow run ai/main.nf \
+            -c ai/nextflow.config
+
+    # Otherwise, submit the orchestrator as a small SLURM job
+    else
+        echo "Execution mode: slurm_burst"
+        echo "Submitting orchestrator job (Nextflow will submit chunk jobs to burst QOS)"
+        echo ""
+
+        ORCH_CPUS=$(read_config "burst_orchestrator_cpus" "2")
+        ORCH_MEM=$(read_config "burst_orchestrator_memory_gb" "8")
+        ORCH_TIME=$(read_config "burst_orchestrator_time_hours" "96")
+        SLURM_ACCOUNT=$(read_config "slurm_account" "")
+        SLURM_QOS=$(read_config "slurm_qos" "")
+
+        mkdir -p slurm_logs
+
+        SBATCH_ARGS="--job-name=interproscan_orchestrator"
+        SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${ORCH_CPUS}"
+        SBATCH_ARGS="${SBATCH_ARGS} --mem=${ORCH_MEM}gb"
+        SBATCH_ARGS="${SBATCH_ARGS} --time=${ORCH_TIME}:00:00"
+        SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/interproscan_orchestrator-%j.log"
+
+        if [ -n "${SLURM_ACCOUNT}" ]; then
+            SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+        fi
+        if [ -n "${SLURM_QOS}" ]; then
+            SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+        fi
+
+        echo "Submitting orchestrator: sbatch ${SBATCH_ARGS}"
+        sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+        echo ""
+        echo "Orchestrator job submitted."
+        echo "Nextflow will submit individual chunk jobs to burst QOS."
+        echo "Check slurm_logs/ for orchestrator output."
+        echo "Use 'squeue -u \$(whoami)' to see chunk jobs as they are submitted."
+        conda deactivate 2>/dev/null || true
+        exit 0
+    fi
+
+else
+    echo "ERROR: Unknown execution_mode '${EXECUTION_MODE}'"
+    echo "Valid options: local, slurm, slurm_burst"
+    exit 1
 fi
 
-echo "========================================================================"
-echo "Starting InterProScan Annotation Pipeline"
-echo "========================================================================"
-
-nextflow run ai/main.nf \
-    -c ai/nextflow.config
+# ============================================================================
+# Post-pipeline: check exit code
+# ============================================================================
 
 EXIT_CODE=$?
 

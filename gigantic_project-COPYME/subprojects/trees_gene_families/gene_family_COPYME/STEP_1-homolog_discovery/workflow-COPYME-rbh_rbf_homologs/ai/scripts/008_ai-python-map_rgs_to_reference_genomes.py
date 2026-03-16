@@ -573,7 +573,7 @@ def main():
     create_model_organism_list( model_fastas, args.output_fasta_list, logger )
     
     # Write header truncation mapping (for reference)
-    truncation_map_file = Path( 'output/8-output/8_ai-header_truncation_map.txt' )
+    truncation_map_file = Path( '8-output/8_ai-header_truncation_map.txt' )
     write_header_truncation_map( header_truncation_map, truncation_map_file, logger )
     
     # Summary

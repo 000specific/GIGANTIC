@@ -33,7 +33,7 @@ BLOCKs 1-5 are independent (run in any order, any subset). BLOCK 6 auto-discover
 1. **genomesDB complete**: Proteomes in `genomesDB/output_to_input/gigantic_proteomes/`
 2. **Conda environments**: One per tool (see Quick Start)
 3. **Nextflow**: `module load nextflow`
-4. **Tool installations**: InterProScan (standalone), DeepLoc (DTU license), SignalP (DTU license)
+4. **Tool installations**: InterProScan (standalone, in `BLOCK_interproscan/software/`), DeepLoc 2.1 (DTU license, in `BLOCK_deeploc/software/`), SignalP (DTU license)
 
 ---
 

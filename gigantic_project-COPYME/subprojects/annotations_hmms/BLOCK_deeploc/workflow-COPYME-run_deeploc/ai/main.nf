@@ -52,7 +52,8 @@ process run_deeploc {
         --input-fasta ${proteome_path} \
         --output-dir . \
         --phyloname ${phyloname} \
-        --model-type ${params.model_type}
+        --model-type ${params.model_type} \
+        --device ${params.device}
     """
 }
 

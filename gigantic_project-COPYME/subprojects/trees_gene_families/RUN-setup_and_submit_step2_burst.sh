@@ -23,6 +23,7 @@
 #   --dry-run       Show what would be done without making changes
 #   --setup-only    Set up directories but don't submit jobs
 #   --submit-only   Submit jobs for already-set-up directories
+#   --max-seqs N    Only process gene families with <= N AGS sequences (default: 2000)
 #   --help          Show this help message
 #
 ################################################################################
@@ -47,8 +48,12 @@ CONDA_ENV="ai_gigantic_trees_gene_families"
 SLURM_ACCOUNT="moroz"
 SLURM_QOS="moroz-b"
 SLURM_MEM="64gb"
-SLURM_TIME="24:00:00"
+SLURM_TIME="96:00:00"
 SLURM_CPUS="8"
+
+# Size filter - only process gene families with <= this many AGS sequences
+# Gene families above this threshold need dedicated SLURM with more resources
+MAX_SEQS=2000
 
 # Options
 DRY_RUN=false
@@ -70,6 +75,10 @@ while [[ $# -gt 0 ]]; do
             SUBMIT_ONLY=true
             shift
             ;;
+        --max-seqs)
+            MAX_SEQS="$2"
+            shift 2
+            ;;
         --help|-h)
             head -25 "$0" | grep -E "^#" | sed 's/^# //' | sed 's/^#//'
             exit 0
@@ -88,6 +97,7 @@ echo "========================================================================"
 echo ""
 echo "Started: $(date)"
 echo "SLURM: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
+echo "Max AGS sequences: ${MAX_SEQS} (gene families above this are skipped)"
 echo ""
 
 if $DRY_RUN; then
@@ -104,6 +114,7 @@ submit_count=0
 skip_count=0
 error_count=0
 no_step1_count=0
+too_large_count=0
 
 # Find all gene_family-* directories
 for FAMILY_DIR in "${SCRIPT_DIR}"/gene_family-*/; do
@@ -125,10 +136,20 @@ for FAMILY_DIR in "${SCRIPT_DIR}"/gene_family-*/; do
     fi
 
     # Check STEP_1 completed (AGS file exists in output_to_input)
-    AGS_DIR="${FAMILY_DIR}/output_to_input/STEP_1-homolog_discovery/ags_fastas/${gene_family}"
-    if [ ! -d "${AGS_DIR}" ]; then
-        echo -e "  ${YELLOW}STEP_1 not completed yet (no output_to_input), skipping${NC}"
+    AGS_DIR="${SCRIPT_DIR}/output_to_input/${gene_family}/STEP_1-homolog_discovery"
+    AGS_FILE=$(find -L "${AGS_DIR}" -name "*.aa" 2>/dev/null | head -1)
+    if [ -z "${AGS_FILE}" ]; then
+        echo -e "  ${YELLOW}STEP_1 not completed yet (no AGS file in output_to_input), skipping${NC}"
         no_step1_count=$((no_step1_count + 1))
+        continue
+    fi
+
+    # Check AGS size against MAX_SEQS filter
+    ags_seq_count=$(grep -c '^>' "${AGS_FILE}")
+    echo "  AGS sequences: ${ags_seq_count}"
+    if [ "${ags_seq_count}" -gt "${MAX_SEQS}" ]; then
+        echo -e "  ${YELLOW}Exceeds max-seqs limit (${ags_seq_count} > ${MAX_SEQS}), skipping (use dedicated SLURM)${NC}"
+        too_large_count=$((too_large_count + 1))
         continue
     fi
 
@@ -201,6 +222,7 @@ if ! $SETUP_ONLY; then
     echo "Jobs submitted: ${submit_count}"
 fi
 echo "Waiting for STEP_1: ${no_step1_count}"
+echo "Too large (> ${MAX_SEQS} seqs): ${too_large_count}"
 echo "Errors: ${error_count}"
 echo "SLURM resources per job: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
 echo "========================================================================"

@@ -10,7 +10,7 @@
 # ============================================================================
 
 # GIGANTIC STEP_2 Phylogenetic Analysis Configuration
-# AI: Claude Code | Opus 4.6 | 2026 February 27 | Purpose: User-editable configuration for phylogenetic analysis
+# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: User-editable configuration for phylogenetic analysis
 # Human: Eric Edsinger
 
 # ============================================================
@@ -20,7 +20,7 @@
 # 1. Copy the template:
 #    cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 # 2. Edit this config file (set gene_family name)
-# 3. Ensure STEP_2 has completed (AGS files in trees_gene_families/output_to_input/STEP_1-homolog_discovery/)
+# 3. Ensure STEP_1 has completed (AGS files in trees_gene_families/output_to_input/STEP_1-homolog_discovery/)
 # 4. Choose tree-building methods below (tree_methods section)
 # 5. Run: bash RUN-workflow.sh
 
@@ -29,7 +29,7 @@
 # ============================================================
 
 gene_family:
-  # Name of the gene family being analyzed (must match STEP_2 output)
+  # Name of the gene family being analyzed (must match STEP_1 output)
   name: "innexin_pannexin"
 
 # ============================================================
@@ -37,9 +37,9 @@ gene_family:
 # ============================================================
 
 input:
-  # Path to STEP_2 AGS sequences (relative to this workflow directory)
-  # Default: looks in subproject-root output_to_input/STEP_1-homolog_discovery
-  step2_ags_fastas_dir: "../../../output_to_input/STEP_1-homolog_discovery/ags_fastas"
+  # Path to output_to_input directory (relative to this workflow directory)
+  # AGS files are found at: <output_to_input_dir>/<gene_family>/STEP_1-homolog_discovery/
+  output_to_input_dir: "../../../output_to_input"
 
 # ============================================================
 # PROJECT SETTINGS
@@ -80,7 +80,7 @@ tree_methods:
   phylobayes: false
 
 # ============================================================
-# MAFFT ALIGNMENT PARAMETERS
+# PHYLOGENETIC TOOL PARAMETERS
 # ============================================================
 
 phylogenetics:
@@ -122,15 +122,54 @@ output:
   base_dir: "OUTPUT_pipeline"
 
 # =============================================================================
-# Computational Resources
+# Per-Tool Computational Resources
 # =============================================================================
-# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
-# STEP_2 is resource-intensive - MAFFT alignment and tree-building.
-# Set these to the maximum your SLURM job needs (NextFlow manages per-process resources).
+# NextFlow manages SLURM resources per-process via labels.
+# Each tool has its own CPU, memory, and time allocation.
+# Adjust based on your dataset size and cluster capabilities.
 
-cpus: 100
-memory_gb: 700
-time_hours: 100
+resources:
+  # MAFFT alignment (resource-intensive for large alignments)
+  mafft:
+    cpus: 50
+    memory_gb: 350
+    time_hours: 168       # 7 days
+
+  # ClipKit trimming (lightweight)
+  clipkit:
+    cpus: 4
+    memory_gb: 16
+    time_hours: 4
+
+  # FastTree (relatively fast, single-threaded)
+  fasttree:
+    cpus: 4
+    memory_gb: 16
+    time_hours: 4
+
+  # IQ-TREE (very resource-intensive for model selection + bootstrap)
+  iqtree:
+    cpus: 50
+    memory_gb: 350
+    time_hours: 168       # 7 days
+
+  # VeryFastTree (parallelized, moderate resources)
+  veryfasttree:
+    cpus: 4
+    memory_gb: 16
+    time_hours: 4
+
+  # PhyloBayes (very slow MCMC, long runtime)
+  phylobayes:
+    cpus: 4
+    memory_gb: 32
+    time_hours: 336       # 14 days
+
+  # Visualization (ETE3 rendering)
+  visualization:
+    cpus: 4
+    memory_gb: 16
+    time_hours: 2
 
 # =============================================================================
 # Execution Mode
@@ -143,3 +182,6 @@ execution_mode: "local"
 # SLURM settings (only used when execution_mode is "slurm")
 slurm_account: "your_account"
 slurm_qos: "your_qos"
+slurm_cpus: 50
+slurm_memory_gb: 350
+slurm_time_hours: 198

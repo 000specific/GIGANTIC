@@ -26,16 +26,16 @@
 
 ## What This Step Does
 
-**Purpose**: Build phylogenetic trees from the AGS (All Gene Set) produced by STEP_2.
+**Purpose**: Build phylogenetic trees from the AGS (All Gene Set) produced by STEP_1.
 
 **Process**:
-1. Stage AGS sequences from STEP_2 output
+1. Stage AGS sequences from STEP_1 output
 2. Clean sequences (remove special characters)
 3. Multiple sequence alignment (MAFFT)
 4. Alignment trimming (ClipKit)
 5. Tree building (one or more methods)
 6. Tree visualization (human-friendly and computer-vision)
-7. Export to subproject-root output_to_input/STEP_2-phylogenetic_analysis/
+7. Export to subproject-root output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
 
 ---
 
@@ -63,9 +63,9 @@ Four methods available, configurable in `START_HERE-user_config.yaml`:
 
 | Input | Source | Description |
 |-------|--------|-------------|
-| AGS FASTA | `../../output_to_input/STEP_1-homolog_discovery/ags_fastas/<gene_family>/` | From STEP_2 |
+| AGS FASTA | `../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` | From STEP_1 |
 
-**Note**: The workflow automatically finds the AGS file in the subproject-root output_to_input/STEP_1-homolog_discovery/ directory.
+**Note**: The workflow automatically finds the AGS file in the subproject-root output_to_input/<gene_family>/STEP_1-homolog_discovery/ directory. Uses `find -L` to follow symlinks.
 
 ---
 
@@ -93,7 +93,7 @@ Trees and alignments exported to the subproject-root output_to_input/:
 
 | Level | Path |
 |-------|------|
-| Subproject-root | `../output_to_input/STEP_2-phylogenetic_analysis/trees/<gene_family>/` |
+| Subproject-root | `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (symlinks to OUTPUT_pipeline/) |
 
 ---
 
@@ -104,10 +104,9 @@ STEP_2-phylogenetic_analysis/
 ├── AI_GUIDE-phylogenetic_analysis.md   # THIS FILE
 ├── README.md
 └── workflow-COPYME-phylogenetic_analysis/
-# Note: output goes to ../output_to_input/STEP_2-phylogenetic_analysis/trees/
+# Note: output symlinked to ../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     ├── OUTPUT_pipeline/
@@ -118,14 +117,15 @@ STEP_2-phylogenetic_analysis/
         └── scripts/
             ├── 001_ai-bash-prepare_alignment_input.sh
             ├── 002_ai-bash-replace_special_characters.sh
-            ├── 003_ai-sbatch-run_mafft_alignment.sh
+            ├── 003_ai-bash-run_mafft_alignment.sh
             ├── 004_ai-bash-run_clipkit_trimming.sh
             ├── 005_a_ai-bash-run_fasttree.sh
-            ├── 005_b_ai-sbatch-run_iqtree.sh
+            ├── 005_b_ai-bash-run_iqtree.sh
             ├── 005_c_ai-bash-run_veryfasttree.sh
             ├── 005_d_ai-bash-run_phylobayes.sh
             ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-            └── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
+            ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
+            └── 008_ai-python-write_run_log.py
 ```
 
 ---
@@ -135,8 +135,7 @@ STEP_2-phylogenetic_analysis/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `workflow-*/START_HERE-user_config.yaml` | Gene family, tree methods, alignment settings | **YES** |
-| `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
-| `../output_to_input/STEP_2-phylogenetic_analysis/trees/` | Final trees | No (auto-created) |
+| `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` | Final trees | No (auto-created symlinks) |
 
 ---
 
@@ -157,7 +156,7 @@ STEP_2-phylogenetic_analysis/
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "AGS file not found" | STEP_2 not complete | Run STEP_2 first |
+| "AGS file not found" | STEP_1 not complete | Run STEP_1 first |
 | MAFFT out of memory | Large alignment | Increase memory in config |
 | IQ-TREE timeout | Complex dataset | Increase time limit or use FastTree |
 | PhyloBayes not converging | Too few generations | Increase generations in config |
@@ -168,9 +167,9 @@ STEP_2-phylogenetic_analysis/
 ### Diagnostic Commands
 
 ```bash
-# Check AGS from STEP_2
-ls ../../output_to_input/STEP_1-homolog_discovery/ags_fastas/*/
-grep -c ">" ../../output_to_input/STEP_1-homolog_discovery/ags_fastas/*/*.aa
+# Check AGS from STEP_1 (use find -L to follow symlinks)
+find -L ../../output_to_input/*/STEP_1-homolog_discovery/ -name "*.aa" -type f
+grep -c ">" ../../output_to_input/*/STEP_1-homolog_discovery/*.aa
 
 # Check alignment
 grep -c ">" OUTPUT_pipeline/3-output/*.mafft
@@ -191,8 +190,8 @@ ls OUTPUT_pipeline/6-output/ OUTPUT_pipeline/7-output/
 
 | Situation | Ask |
 |-----------|-----|
-| Starting STEP_2 | "Which tree methods do you want? FastTree (default) is usually sufficient for exploration." |
+| Starting STEP_2 | "Which tree methods? FastTree (default) is usually sufficient for exploration." |
 | Publication analysis | "For publication, I recommend enabling IQ-TREE alongside FastTree for comparison." |
 | Large dataset | "How many sequences in the AGS? If >10,000, VeryFastTree may be faster than FastTree." |
 | Bayesian needed | "PhyloBayes takes days-weeks. Are you sure you need Bayesian analysis?" |
-| SLURM users | "Have you edited the .sbatch file with your cluster account and QOS?" |
+| SLURM users | "Set execution_mode: slurm, slurm_account, slurm_qos, slurm_cpus, slurm_memory_gb, slurm_time_hours in START_HERE-user_config.yaml" |

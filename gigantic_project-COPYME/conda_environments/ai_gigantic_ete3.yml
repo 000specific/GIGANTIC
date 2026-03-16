@@ -1,0 +1,22 @@
+# GIGANTIC ETE3 Environment
+# =========================================
+#
+# Per-tool conda environment for ETE3 phylogenetic tree visualization.
+# Used by trees_gene_families STEP_2 phylogenetic analysis.
+#
+# INSTALLATION:
+#   mamba env create -f conda_environments/ai_gigantic_ete3.yml
+#
+# ACTIVATION:
+#   conda activate ai_gigantic_ete3
+
+name: ai_gigantic_ete3
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.11
+  - ete3

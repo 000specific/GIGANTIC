@@ -47,7 +47,7 @@ CONDA_ENV="ai_gigantic_trees_gene_families"
 SLURM_ACCOUNT="moroz"
 SLURM_QOS="moroz-b"
 SLURM_MEM="112gb"
-SLURM_TIME="24:00:00"
+SLURM_TIME="96:00:00"
 SLURM_CPUS="15"
 
 # Options
@@ -166,7 +166,7 @@ GENE_FAMILIES=(
     "fox_forkhead_box_tfs|rgs_tf-human-fox_forkhead_box_tfs.aa"
     "homeobox_tfs|rgs_tf-human-homeoboxe_tfs.aa"
     "nhr_nuclear_hormone_receptor_tfs|rgs_tf-human-nhr_nuclear_hormone_receptor_tfs.aa"
-    "sry_box_tfs|rgs_tf-sry_box_tfs.aa"
+    "sry_box_tfs|rgs_tf-human-sry_box_tfs.aa"
     "abc_transporters|rgs_transporter-human-abc_transporters.aa"
     "p_type_atpase_transporters|rgs_transporter-human-p_type_atpase_transporters.aa"
     "rtp_receptor_transporter_protein_transporters|rgs_transporter-human-rtp_receptor_transporter_protein_transporters.aa"

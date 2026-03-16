@@ -95,7 +95,7 @@ def extract_rgs_species( rgs_file_path ) {
             def parts = header.split( '-' )
             if ( parts.size() >= 2 ) {
                 def species_short_name = parts[1]
-                if ( species_short_name && species_short_name[0].isLetter() ) {
+                if ( species_short_name && Character.isLetter( species_short_name.charAt( 0 ) ) ) {
                     species_set.add( species_short_name )
                 }
             }
@@ -253,7 +253,9 @@ process blast_rgs_versus_project_database {
     bash 3-blastp-project_database.sh
 
     echo "Cataloging BLAST reports..."
-    ls 3-output/*.blastp 2>/dev/null | sort > 2-output/2_ai-list-projectdb-blast-reports
+    for f in 3-output/*.blastp; do
+        [ -e "\$f" ] && readlink -f "\$f"
+    done | sort > 2-output/2_ai-list-projectdb-blast-reports
 
     REPORT_COUNT=\$(wc -l < 2-output/2_ai-list-projectdb-blast-reports)
     echo "Generated \${REPORT_COUNT} BLAST reports for ${gene_family}"
@@ -344,7 +346,9 @@ process blast_rgs_versus_rgs_genomes {
     bash 006-blastp-rgs_genomes.sh
 
     echo "Cataloging RGS BLAST reports..."
-    ls 6-output/*.blastp 2>/dev/null | sort > 5-output/5_ai-list-rgs-blast-reports
+    for f in 6-output/*.blastp; do
+        [ -e "\$f" ] && readlink -f "\$f"
+    done | sort > 5-output/5_ai-list-rgs-blast-reports
 
     echo "RGS genome BLASTP complete for ${gene_family}"
     """
@@ -385,6 +389,7 @@ process prepare_reciprocal_blast {
         --output-dir . \\
         --blast-databases-dir ${params.blast_databases_dir} \\
         --rbh-species "${rbh_species}" \\
+        --input-blast-report-list ${rgs_blast_report_list} \\
         --output-blast-reports 7-output/7_ai-list-rgs-blast-reports.txt \\
         --output-model-fastas 7-output/7_ai-list-model-organism-fastas.txt
 

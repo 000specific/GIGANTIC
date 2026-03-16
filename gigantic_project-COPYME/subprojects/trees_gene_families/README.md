@@ -36,6 +36,9 @@ trees_gene_families/
 ├── output_to_input/                       # Shared outputs for downstream subprojects
 ├── upload_to_server/                      # Curated data for GIGANTIC server
 ├── research_notebook/                     # Personal notes and exploratory work
+├── slurm_logs/                            # SLURM job logs from burst submissions
+├── RUN-setup_and_submit_step1_burst.sh    # Burst: set up + submit all STEP_1 jobs
+├── RUN-setup_and_submit_step2_burst.sh    # Burst: set up + submit STEP_2 jobs (with size filter)
 ├── AI_GUIDE-trees_gene_families.md
 └── README.md
 ```
@@ -86,8 +89,9 @@ Final outputs appear in `output_to_input/` at the subproject root:
 
 ```
 output_to_input/
-├── STEP_1-homolog_discovery/ags_fastas/<gene_family>/   # Homolog sequences (AGS)
-└── STEP_2-phylogenetic_analysis/trees/<gene_family>/    # Trees and visualizations
+├── <gene_family>/
+│   ├── STEP_1-homolog_discovery/   # Homolog sequences (AGS) - symlinks to workflow outputs
+│   └── STEP_2-phylogenetic_analysis/   # Trees and visualizations - symlinks to workflow outputs
 ```
 
 ## Tree Methods Available (STEP_2)
@@ -98,6 +102,112 @@ output_to_input/
 | IQ-TREE | Slow (hours-days) | Publication-quality, model selection |
 | VeryFastTree | Very fast | Large datasets (>10,000 sequences) |
 | PhyloBayes | Very slow (days-weeks) | Bayesian counterpoint to ML methods |
+
+## Burst Mode: Running Multiple Gene Families on SLURM
+
+When analyzing many gene families, manually copying templates and submitting jobs one at a time is tedious. Two **burst scripts** automate this entire process:
+
+### RUN-setup_and_submit_step1_burst.sh
+
+Automates STEP_1 (homolog discovery) for all gene families at once.
+
+**What it does for each gene family:**
+1. Creates `gene_family-[name]/` from `gene_family_COPYME/` template (if it doesn't exist)
+2. Creates `workflow-RUN_1-rbh_rbf_homologs` from the COPYME workflow
+3. Copies the RGS FASTA file and species keeper list into `INPUT_user/`
+4. Updates `START_HERE-user_config.yaml` with gene family name and RGS file path
+5. Submits a SLURM job
+
+**Gene families are defined in the script** as a list pairing each gene family name with its RGS file. To add or remove gene families, edit the `GENE_FAMILIES` array in the script.
+
+**User-configurable settings** (edit at top of script):
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `SLURM_ACCOUNT` | moroz | SLURM account for billing |
+| `SLURM_QOS` | moroz-b | SLURM quality of service (burst) |
+| `SLURM_MEM` | 112gb | Memory per job (BLAST is memory-intensive) |
+| `SLURM_TIME` | 24:00:00 | Wall time per job |
+| `SLURM_CPUS` | 15 | CPUs per job (parallel BLAST) |
+
+**Usage:**
+```bash
+# Preview what would happen (no changes made)
+bash RUN-setup_and_submit_step1_burst.sh --dry-run
+
+# Set up directories only (don't submit jobs yet)
+bash RUN-setup_and_submit_step1_burst.sh --setup-only
+
+# Submit jobs for already-set-up directories
+bash RUN-setup_and_submit_step1_burst.sh --submit-only
+
+# Full run: set up + submit everything
+bash RUN-setup_and_submit_step1_burst.sh
+```
+
+### RUN-setup_and_submit_step2_burst.sh
+
+Automates STEP_2 (phylogenetic analysis) for gene families that completed STEP_1.
+
+**What it does for each gene family:**
+1. Checks that STEP_1 completed (AGS file exists in `output_to_input/`)
+2. Checks AGS sequence count against the `MAX_SEQS` size filter
+3. Creates `workflow-RUN_1-phylogenetic_analysis` from the COPYME workflow
+4. Updates `START_HERE-user_config.yaml` with gene family name
+5. Submits a SLURM job
+
+**Size filtering**: STEP_2 runtime scales significantly with AGS sequence count (MAFFT alignment and tree building). The `MAX_SEQS` setting (default: 2000) skips gene families that are too large for burst QOS. These larger families need dedicated SLURM jobs with more memory and time.
+
+**User-configurable settings** (edit at top of script):
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `SLURM_ACCOUNT` | moroz | SLURM account for billing |
+| `SLURM_QOS` | moroz-b | SLURM quality of service (burst) |
+| `SLURM_MEM` | 64gb | Memory per job |
+| `SLURM_TIME` | 24:00:00 | Wall time per job |
+| `SLURM_CPUS` | 8 | CPUs per job |
+| `MAX_SEQS` | 2000 | Skip gene families with more AGS sequences than this |
+
+**Usage:**
+```bash
+# Preview what would happen
+bash RUN-setup_and_submit_step2_burst.sh --dry-run
+
+# Set up directories only
+bash RUN-setup_and_submit_step2_burst.sh --setup-only
+
+# Submit jobs for already-set-up directories
+bash RUN-setup_and_submit_step2_burst.sh --submit-only
+
+# Override the size filter (e.g., only families <= 500 sequences)
+bash RUN-setup_and_submit_step2_burst.sh --max-seqs 500
+
+# Full run with default size filter
+bash RUN-setup_and_submit_step2_burst.sh
+```
+
+### Typical Workflow
+
+```bash
+# 1. Run all STEP_1 jobs (no size filter needed - BLAST scales with database, not RGS)
+bash RUN-setup_and_submit_step1_burst.sh
+
+# 2. Wait for STEP_1 to finish, then check AGS sizes
+find -L output_to_input/*/STEP_1-homolog_discovery/ -name "*.aa" | \
+    while read f; do echo "$(grep -c '>' "$f")  $f"; done | sort -n
+
+# 3. Burst small/medium families through STEP_2
+bash RUN-setup_and_submit_step2_burst.sh
+
+# 4. Large families (above MAX_SEQS) need dedicated SLURM with more resources
+#    Set up their workflow directories manually or with --setup-only,
+#    then submit individually with appropriate resource requests
+```
+
+### SLURM Logs
+
+All burst job logs go to `slurm_logs/` at the subproject root:
+- STEP_1: `slurm_logs/step1_<gene_family>-<jobid>.log`
+- STEP_2: `slurm_logs/step2_<gene_family>-<jobid>.log`
 
 ## For AI Assistants
 

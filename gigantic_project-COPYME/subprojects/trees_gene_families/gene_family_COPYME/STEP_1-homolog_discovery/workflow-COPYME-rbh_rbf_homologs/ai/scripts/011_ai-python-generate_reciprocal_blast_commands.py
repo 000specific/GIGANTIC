@@ -19,18 +19,18 @@ Workflow Context:
     Script 010 → makeblastdb → **Script 011** → Reciprocal BLAST → Script 012
     
 Input Files:
-    - output/4-output/4_ai-blastp-hit-regions.fasta - Candidate gene sequences (from script 004)
-    - output/10-output/*-blastdb - BLAST databases (created by script 010)
+    - 4-output/4_ai-blastp-hit-regions.fasta - Candidate gene sequences (from script 004)
+    - 10-output/*-blastdb - BLAST databases (created by script 010)
     
 Output Files:
     - 12-reciprocal-blast-commands.sh - Executable shell script for reciprocal BLAST
 
 Usage:
     python3 011_ai-python-generate_reciprocal_blast_commands.py \\
-        --query-fasta output/10-CGS-hitregions.aa \\
-        --database-prefix output/8-rgs-with-genome-identifiers-blastdb \\
+        --query-fasta 10-CGS-hitregions.aa \\
+        --database-prefix 8-rgs-with-genome-identifiers-blastdb \\
         --output-script 12-reciprocal-blast-commands.sh \\
-        --output-report output/12-reciprocal-blast-report.txt \\
+        --output-report 12-reciprocal-blast-report.txt \\
         --evalue 1e-3 \\
         --threads 30 \\
         --conda-env blast

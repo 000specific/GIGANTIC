@@ -31,6 +31,20 @@ These environments have finalized yml definitions:
 | `ai_gigantic_orthogroups` | orthogroups | Ortholog group identification (OrthoHMM, OrthoFinder, Broccoli) |
 | `ai_gigantic_trees_gene_families` | trees_gene_families | Gene family homolog discovery, alignment, and phylogenetic analysis |
 
+## Per-Tool Environments (trees_gene_families)
+
+STEP_2 phylogenetic analysis uses per-tool conda environments. NextFlow activates the correct environment for each process automatically.
+
+| Environment | Tool | Purpose |
+|-------------|------|---------|
+| `ai_gigantic_mafft` | MAFFT | Multiple sequence alignment |
+| `ai_gigantic_clipkit` | ClipKit | Alignment trimming |
+| `ai_gigantic_fasttree` | FastTree | Approximate ML phylogenetics (default) |
+| `ai_gigantic_iqtree` | IQ-TREE | Publication-quality ML phylogenetics |
+| `ai_gigantic_veryfasttree` | VeryFastTree | Parallelized ML (large datasets) |
+| `ai_gigantic_phylobayes` | PhyloBayes-MPI | Bayesian phylogenetics |
+| `ai_gigantic_ete3` | ETE3 | Phylogenetic tree visualization |
+
 ## Environment Files
 
 | File | Description |
@@ -38,7 +52,14 @@ These environments have finalized yml definitions:
 | `ai_gigantic_phylonames.yml` | Phylonames subproject (Python, NextFlow, wget) |
 | `ai_gigantic_genomesdb.yml` | Genomes database (Python, BLAST+, BUSCO, gfastats, NextFlow) |
 | `ai_gigantic_orthogroups.yml` | Orthogroups (Python, HMMER, MCL, OrthoHMM, NextFlow) |
-| `ai_gigantic_trees_gene_families.yml` | Trees gene families (Python, BLAST+, MAFFT, ClipKit, FastTree, IQ-TREE, VeryFastTree, PhyloBayes, NextFlow) |
+| `ai_gigantic_trees_gene_families.yml` | Trees gene families (Python, BLAST+, NextFlow - workflow orchestration) |
+| `ai_gigantic_mafft.yml` | MAFFT (Python, mafft) |
+| `ai_gigantic_clipkit.yml` | ClipKit (Python, clipkit) |
+| `ai_gigantic_fasttree.yml` | FastTree (Python, fasttree) |
+| `ai_gigantic_iqtree.yml` | IQ-TREE (Python, iqtree) |
+| `ai_gigantic_veryfasttree.yml` | VeryFastTree (Python, veryfasttree) |
+| `ai_gigantic_phylobayes.yml` | PhyloBayes-MPI (Python, phylobayes-mpi) |
+| `ai_gigantic_ete3.yml` | ETE3 (Python, ete3) |
 
 ## Planned Environments
 
@@ -87,7 +108,8 @@ conda activate ai_gigantic_phylonames
 
 ## Notes
 
-- All environments include NextFlow for workflow execution
-- Python 3.9+ is required for all environments
+- Subproject environments include NextFlow for workflow execution
+- Per-tool environments contain only the tool and Python (NextFlow activates them per-process)
+- Python 3.11+ is required for all environments
 - Use `mamba` instead of `conda` for faster installation
 - Environment files are version-controlled for reproducibility

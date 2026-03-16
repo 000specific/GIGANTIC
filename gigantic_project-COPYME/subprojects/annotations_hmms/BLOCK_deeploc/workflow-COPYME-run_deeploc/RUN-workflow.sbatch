@@ -6,12 +6,12 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32gb
-#SBATCH --time=48:00:00
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:a100:1
+#SBATCH --time=96:00:00
+#SBATCH --partition=hpg-turin
+#SBATCH --gres=gpu:l4:1
 #SBATCH --output=slurm_logs/deeploc_annotations-%j.log
 
-# AI: Claude Code | Opus 4.6 | 2026 March 03 | Purpose: SLURM wrapper for DeepLoc pipeline
+# AI: Claude Code | Opus 4.6 | 2026 March 14 | Purpose: SLURM wrapper for DeepLoc pipeline
 # Human: Eric Edsinger
 
 ################################################################################

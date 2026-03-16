@@ -15,7 +15,7 @@ Input:
     - RGS genomes directory (command-line argument)
 
 Output:
-    - output/6-output/6_ai-blastp-rgs_genomes.sh: Shell script with BLASTP commands (combined with script 006)
+    - 6-output/6_ai-blastp-rgs_genomes.sh: Shell script with BLASTP commands (combined with script 006)
 
 Log:
     - Logs to file and console

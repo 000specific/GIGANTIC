@@ -1,0 +1,25 @@
+# GIGANTIC VeryFastTree Environment
+# =========================================
+#
+# Per-tool conda environment for VeryFastTree parallelized ML phylogenetics.
+# Used by trees_gene_families STEP_2 phylogenetic analysis.
+#
+# VeryFastTree is a drop-in FastTree replacement optimized for parallelization.
+# Best suited for datasets with >10,000 sequences where threading provides speedup.
+#
+# INSTALLATION:
+#   mamba env create -f conda_environments/ai_gigantic_veryfasttree.yml
+#
+# ACTIVATION:
+#   conda activate ai_gigantic_veryfasttree
+
+name: ai_gigantic_veryfasttree
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.11
+  - veryfasttree

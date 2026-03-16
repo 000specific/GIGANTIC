@@ -32,9 +32,8 @@ The 16-step pipeline is organized into 10 NextFlow processes for efficiency:
 workflow-COPYME-rbh_rbf_homologs/
 │
 ├── README.md
-├── RUN-workflow.sh         # Local: bash RUN-workflow.sh
-├── RUN-workflow.sbatch     # SLURM: sbatch RUN-workflow.sbatch
-├── START_HERE-user_config.yaml    # User configuration
+├── RUN-workflow.sh         # Runner: bash RUN-workflow.sh (handles local + SLURM via config)
+├── START_HERE-user_config.yaml    # User configuration (includes execution_mode, SLURM settings)
 │
 ├── INPUT_user/
 │   ├── species_keeper_list.tsv     # One Genus_species per line (required)
@@ -49,7 +48,7 @@ workflow-COPYME-rbh_rbf_homologs/
     ├── main.nf
     ├── nextflow.config
     └── scripts/
-        ├── 001_ai-python-setup_block_directories.py
+        ├── 001_ai-python-validate_rgs.py
         ├── 002_ai-python-generate_blastp_commands-project_database.py
         ├── 004_ai-python-extract_gene_set_sequences.py
         ├── 005_ai-python-generate_blastp_commands-rgs_genomes.py
@@ -58,17 +57,18 @@ workflow-COPYME-rbh_rbf_homologs/
         ├── 009_ai-python-create_modified_genomes.py
         ├── 010_ai-python-generate_makeblastdb_commands.py
         ├── 011_ai-python-generate_reciprocal_blast_commands.py
+        ├── 012_ai-bash-execute_reciprocal_blast.sh
         ├── 013_ai-python-extract_reciprocal_best_hits.py
         ├── 014_ai-python-filter_species_for_tree_building.py
-        ├── 015_ai-python-remap_cgs_identifiers_to_gigantic.py
-        └── 016_ai-python-concatenate_sequences.py
+        ├── 016_ai-python-concatenate_sequences.py
+        └── 017_ai-python-write_run_log.py
 ```
 
 ### Script Pipeline (16 Steps)
 
 | Step | Script | NextFlow Process | Does |
 |------|--------|-----------------|------|
-| 001 | 001_ai-python | setup_and_list_databases | List BLAST databases |
+| 001 | 001_ai-python | validate_rgs | Validate RGS FASTA file |
 | 002 | 002_ai-python | generate_and_run_forward_blast | Generate forward BLAST commands |
 | 003 | (bash) | generate_and_run_forward_blast | Execute forward BLAST |
 | 004 | 004_ai-python | extract_bgs_sequences | Extract BGS (fullseqs + hitregions) |
@@ -82,8 +82,8 @@ workflow-COPYME-rbh_rbf_homologs/
 | 012 | (bash) | run_reciprocal_blast | Execute reciprocal BLAST |
 | 013 | 013_ai-python | extract_cgs_sequences | Extract CGS sequences |
 | 014 | 014_ai-python | filter_species | Filter by keeper list |
-| 015 | 015_ai-python | remap_identifiers | Remap to GIGANTIC phylonames |
 | 016 | 016_ai-python | create_ags_and_export | Create final AGS |
+| 017 | 017_ai-python | write_run_log | Write pipeline execution summary |
 
 ---
 
@@ -139,22 +139,32 @@ echo "Drosophila_melanogaster" >> INPUT_user/species_keeper_list.tsv
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos first):
+**SLURM** (set execution_mode and SLURM settings in config first):
 ```bash
-sbatch RUN-workflow.sbatch
+# In START_HERE-user_config.yaml, set:
+#   execution_mode: "slurm"
+#   slurm_account: "your_account"
+#   slurm_qos: "your_qos"
+#   cpus: 50
+#   memory_gb: 187
+#   time_hours: 96
+bash RUN-workflow.sh
 ```
 
 ---
 
 ## SLURM Execution Details
 
-| Setting | Value | Notes |
-|---------|-------|-------|
-| `--account` | `YOUR_ACCOUNT` | **Must edit** |
-| `--qos` | `YOUR_QOS` | **Must edit** |
-| `--cpus-per-task` | `50` | Matches BLAST threads |
-| `--mem` | `100gb` | BLAST can be memory-intensive |
-| `--time` | `48:00:00` | Depends on species count |
+All SLURM settings are configured in `START_HERE-user_config.yaml`:
+
+| Config Key | Default | Notes |
+|------------|---------|-------|
+| `execution_mode` | `"local"` | Set to `"slurm"` for cluster |
+| `slurm_account` | `"your_account"` | **Must edit** |
+| `slurm_qos` | `"your_qos"` | **Must edit** |
+| `cpus` | `50` | Matches BLAST threads |
+| `memory_gb` | `187` | BLAST can be memory-intensive |
+| `time_hours` | `96` | Depends on species count |
 
 ---
 
@@ -197,7 +207,7 @@ grep -c ">" OUTPUT_pipeline/14-output/*.aa 2>/dev/null
 grep -c ">" OUTPUT_pipeline/16-output/*.aa 2>/dev/null
 
 # Verify output_to_input
-ls ../../../output_to_input/STEP_1-homolog_discovery/ags_fastas/*/
+ls -l ../../../output_to_input/*/STEP_1-homolog_discovery/
 ```
 
 ---
@@ -265,5 +275,5 @@ bash RUN-workflow.sh
 ## After Successful Run
 
 1. **Verify**: Check final AGS has expected sequence count
-2. **Check output_to_input**: `ls ../../../output_to_input/STEP_1-homolog_discovery/ags_fastas/`
+2. **Check output_to_input**: `ls -l ../../../output_to_input/*/STEP_1-homolog_discovery/`
 3. **Next step**: Proceed to STEP_2 phylogenetic analysis

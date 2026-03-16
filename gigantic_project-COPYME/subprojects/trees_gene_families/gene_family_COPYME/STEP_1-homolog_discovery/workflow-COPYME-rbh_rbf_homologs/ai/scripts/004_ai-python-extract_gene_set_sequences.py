@@ -10,13 +10,13 @@ This script parses BLAST reports to identify hits, then extracts both full-lengt
 sequences and hit-region subsequences from the project database FASTA files.
 
 Input:
-    - output/1-output/1_ai-list-projectdb-blastdbs: List of database FASTA files
-    - output/4-output/4_ai-list-reports: List of BLAST report files
+    - 1-output/1_ai-list-projectdb-blastdbs: List of database FASTA files
+    - 4-list-reports: List of BLAST report files
     - Database FASTA files
 
 Output:
-    - output/4-output/4_ai-blastp-hits.fasta: Full-length sequences of all hits
-    - output/4-output/4_ai-blastp-hit-regions.fasta: Hit-region subsequences (optional)
+    - 4-output/4_ai-blastp-hits.fasta: Full-length sequences of all hits
+    - 4-output/4_ai-blastp-hit-regions.fasta: Hit-region subsequences (optional)
 
 Log:
     - 004_ai-log-extract_gene_set_sequences.log
@@ -251,28 +251,28 @@ def main():
     parser.add_argument(
         '--database-list',
         type=Path,
-        default=Path( 'output/1-list-projectdb-blastdbs' ),
+        default=Path( '1-list-projectdb-blastdbs' ),
         help='File containing list of FASTA database paths'
     )
     
     parser.add_argument(
         '--report-list',
         type=Path,
-        default=Path( 'output/4-list-reports' ),
+        default=Path( '4-list-reports' ),
         help='File containing list of BLAST report paths'
     )
     
     parser.add_argument(
         '--output-full',
         type=Path,
-        default=Path( 'output/4-output/4_ai-blastp-hits.fasta' ),
+        default=Path( '4-output/4_ai-blastp-hits.fasta' ),
         help='Output file for full-length sequences'
     )
     
     parser.add_argument(
         '--output-regions',
         type=Path,
-        default=Path( 'output/4-output/4_ai-blastp-hit-regions.fasta' ),
+        default=Path( '4-output/4_ai-blastp-hit-regions.fasta' ),
         help='Output file for hit-region sequences (optional)'
     )
     

@@ -101,7 +101,7 @@ Example: `>rgs_innexins-human-PANX1-hgnc_gg305_Pannexin-NP_001229977.1`
 - No remapping needed - BLAST v5 databases preserve full GIGANTIC identifiers
 
 **Outputs**:
-- `output_to_input/STEP_1-homolog_discovery/ags_fastas/<gene_family>/16_ai-ags-*.aa`
+- `output_to_input/<gene_family>/STEP_1-homolog_discovery/` (symlinks to workflow OUTPUT_pipeline/)
 
 ### STEP_2-phylogenetic_analysis
 
@@ -115,7 +115,7 @@ Example: `>rgs_innexins-human-PANX1-hgnc_gg305_Pannexin-NP_001229977.1`
 - Tree visualization (human-friendly and computer-vision)
 
 **Outputs**:
-- `output_to_input/STEP_2-phylogenetic_analysis/trees/<gene_family>/*.newick, *.svg`
+- `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (symlinks to workflow OUTPUT_pipeline/)
 
 ---
 
@@ -133,9 +133,10 @@ trees_gene_families/
 ├── research_notebook/                 # Personal workspace
 ├── upload_to_server/                  # Server sharing
 │
-├── output_to_input/                   # FINAL OUTPUTS for downstream (single location)
-│   ├── STEP_1-homolog_discovery/ags_fastas/  # AGS homolog sequences by gene family
-│   └── STEP_2-phylogenetic_analysis/trees/   # Phylogenetic trees by gene family
+├── output_to_input/                   # FINAL OUTPUTS for downstream (gene family first)
+│   └── <gene_family>/                # One directory per gene family
+│       ├── STEP_1-homolog_discovery/ # Symlinks to AGS homolog sequences
+│       └── STEP_2-phylogenetic_analysis/ # Symlinks to trees and visualizations
 │
 ├── gene_family_COPYME/                # TEMPLATE (copy this for each gene family)
 │   ├── STEP_1-homolog_discovery/
@@ -161,13 +162,13 @@ User provides RGS FASTA + species keeper list
 STEP_1: Validate RGS → BLAST → Reciprocal BLAST → Filter → AGS
        │
        ▼
-output_to_input/STEP_1-homolog_discovery/ags_fastas/
+output_to_input/<gene_family>/STEP_1-homolog_discovery/
        │
        ▼
 STEP_2: Align → Trim → Build Trees → Visualize
        │
        ▼
-output_to_input/STEP_2-phylogenetic_analysis/trees/
+output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
        │
        ▼
 (Downstream subprojects or publication)
@@ -188,8 +189,8 @@ output_to_input/STEP_2-phylogenetic_analysis/trees/
 
 | Location | What | Consumers |
 |----------|------|-----------|
-| `output_to_input/STEP_1-homolog_discovery/ags_fastas/` | AGS homolog sets | Internal (STEP_2) |
-| `output_to_input/STEP_2-phylogenetic_analysis/trees/` | Phylogenetic trees | Publication, downstream |
+| `output_to_input/<gene_family>/STEP_1-homolog_discovery/` | AGS homolog sets | Internal (STEP_2) |
+| `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` | Phylogenetic trees | Publication, downstream |
 
 ---
 
@@ -241,7 +242,7 @@ workflow-*/ai/logs/
 | "RGS validation failed" | Invalid headers or filename | Fix RGS file format per the header/filename conventions above |
 | "Species not in keeper list" | Species not in species_keeper_list.tsv | Add species to INPUT_user/species_keeper_list.tsv |
 | "No BLAST hits" | E-value too stringent or wrong RGS | Try less stringent E-value or check RGS sequences |
-| STEP_2 can't find AGS | STEP_1 not complete | Run STEP_1 first, check output_to_input/STEP_1-homolog_discovery/ags_fastas/ |
+| STEP_2 can't find AGS | STEP_1 not complete | Run STEP_1 first, check output_to_input/<gene_family>/STEP_1-homolog_discovery/ |
 | Tree building fails | Insufficient sequences after filtering | Check species keeper list, may need more species |
 
 ### Diagnostic Commands
@@ -250,11 +251,11 @@ workflow-*/ai/logs/
 # Check genomesDB dependency
 ls ../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp/ | head
 
-# Check STEP_1 outputs
-ls output_to_input/STEP_1-homolog_discovery/ags_fastas/
+# Check STEP_1 outputs (gene family first, then step)
+ls output_to_input/*/STEP_1-homolog_discovery/
 
 # Check STEP_2 outputs
-ls output_to_input/STEP_2-phylogenetic_analysis/trees/
+ls output_to_input/*/STEP_2-phylogenetic_analysis/
 ```
 
 ---
@@ -267,7 +268,7 @@ ls output_to_input/STEP_2-phylogenetic_analysis/trees/
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
 | `gene_family_COPYME/STEP_2-*/workflow-*/START_HERE-user_config.yaml` | Tree methods, alignment settings | **YES** |
-| `gene_family-*/STEP_N-*/workflow-*/RUN-workflow.sh` | Run pipeline | **YES** (SLURM settings) |
+| `gene_family-*/STEP_N-*/workflow-*/RUN-workflow.sh` | Run pipeline | No (reads from config) |
 
 ---
 

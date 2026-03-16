@@ -28,30 +28,30 @@
 
 **Purpose**: Find homologous sequences across all project species using Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF) BLAST.
 
-**16-Step Process**:
+**Pipeline Process**:
 
 | Steps | Phase | What Happens |
 |-------|-------|--------------|
-| 001-003 | Forward BLAST | BLAST RGS against all project species databases |
+| 001 | Validate RGS | Validate RGS FASTA file format (fails fast if invalid) |
+| 002-003 | Forward BLAST | BLAST RGS against all project species databases |
 | 004 | Extract BGS | Extract blast gene sequences from BLAST hits |
 | 005-006 | RGS Genome BLAST | BLAST RGS against source organism genomes |
 | 007-010 | Reciprocal Setup | Map RGS to genomes, create modified BLAST databases |
 | 011-012 | Reciprocal BLAST | BLAST candidates back against RGS+genome databases |
 | 013 | Extract CGS | Extract candidate gene sequences confirmed by reciprocal BLAST |
 | 014 | Species Filter | Keep only species in the keeper list |
-| 015 | Remap IDs | Convert short BLAST IDs back to full GIGANTIC phylonames |
 | 016 | Create AGS | Concatenate RGS + filtered CGS into final All Gene Set |
+| 017 | Run Log | Write pipeline execution summary |
+
+**Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step (015) is needed.
 
 ---
 
 ## Critical Technical Details
 
-### Short Identifier Mapping (BLAST 50-Character Limit)
+### BLAST v5 Preserves Full Identifiers
 
-BLAST truncates sequence identifiers at 50 characters. GIGANTIC phylonames exceed this limit. The pipeline:
-1. Uses truncated IDs during BLAST (scripts 001-013)
-2. Remaps to full GIGANTIC phylonames at the end (script 015)
-3. Requires the CGS mapping file from genomesDB
+BLAST v5 databases preserve full GIGANTIC phyloname identifiers (the old 50-character truncation issue is resolved). No identifier remapping step is needed.
 
 ### Full-Length Sequences for Reciprocal BLAST
 
@@ -101,7 +101,6 @@ OUTPUT_pipeline/
 ├── 12-output/   # Reciprocal BLAST results
 ├── 13-output/   # CGS filtered sequences
 ├── 14-output/   # Species-filtered sequences
-├── 15-output/   # Remapped to GIGANTIC phylonames
 └── 16-output/   # Final AGS (All Gene Set)
 ```
 
@@ -109,7 +108,7 @@ OUTPUT_pipeline/
 
 | Level | Path |
 |-------|------|
-| Subproject-root | `../output_to_input/STEP_1-homolog_discovery/ags_fastas/<gene_family>/16_ai-ags-*.aa` |
+| Subproject-root | `../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (symlinks to OUTPUT_pipeline/) |
 
 ---
 
@@ -120,10 +119,9 @@ STEP_1-homolog_discovery/
 ├── AI_GUIDE-homolog_discovery.md      # THIS FILE
 ├── README.md
 └── workflow-COPYME-rbh_rbf_homologs/
-# Note: output goes to ../output_to_input/STEP_1-homolog_discovery/ags_fastas/
+# Note: output symlinked to ../../output_to_input/<gene_family>/STEP_1-homolog_discovery/
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   ├── species_keeper_list.tsv
@@ -136,7 +134,7 @@ STEP_1-homolog_discovery/
         ├── main.nf
         ├── nextflow.config
         └── scripts/
-            ├── 001_ai-python-setup_block_directories.py
+            ├── 001_ai-python-validate_rgs.py
             ├── 002_ai-python-generate_blastp_commands-project_database.py
             ├── 004_ai-python-extract_gene_set_sequences.py
             ├── 005_ai-python-generate_blastp_commands-rgs_genomes.py
@@ -145,10 +143,11 @@ STEP_1-homolog_discovery/
             ├── 009_ai-python-create_modified_genomes.py
             ├── 010_ai-python-generate_makeblastdb_commands.py
             ├── 011_ai-python-generate_reciprocal_blast_commands.py
+            ├── 012_ai-bash-execute_reciprocal_blast.sh
             ├── 013_ai-python-extract_reciprocal_best_hits.py
             ├── 014_ai-python-filter_species_for_tree_building.py
-            ├── 015_ai-python-remap_cgs_identifiers_to_gigantic.py
-            └── 016_ai-python-concatenate_sequences.py
+            ├── 016_ai-python-concatenate_sequences.py
+            └── 017_ai-python-write_run_log.py
 ```
 
 ---
@@ -161,7 +160,7 @@ STEP_1-homolog_discovery/
 | `workflow-*/INPUT_user/species_keeper_list.tsv` | Species to keep in final AGS | **YES** |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Map short names to Genus_species | **YES** (if needed) |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** |
-| `../output_to_input/STEP_1-homolog_discovery/ags_fastas/` | Final AGS files | No (auto-created) |
+| `../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` | Final AGS files | No (auto-created symlinks) |
 
 ---
 
