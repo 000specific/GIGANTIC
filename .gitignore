@@ -19,6 +19,9 @@ workflow-RUN_*/
 # Gene family instance directories (copies of gene_family_COPYME, contain large data)
 gene_family-*/
 
+# Gene group instance directories (copies created by burst scripts, contain large data)
+gene_group-*/
+
 # SLURM log directories (generated during cluster runs)
 slurm_logs/
 

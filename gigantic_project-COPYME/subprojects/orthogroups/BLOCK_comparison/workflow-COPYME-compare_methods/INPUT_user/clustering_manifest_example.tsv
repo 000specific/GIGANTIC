@@ -1,0 +1,78 @@
+# GIGANTIC Orthogroup Clustering Manifest
+# AI: Claude Code | Opus 4.6 | 2026 March 30
+# Human: Eric Edsinger
+#
+# This manifest lists orthogroup clustering results to be compared.
+# Each row points to one completed clustering run's OUTPUT_pipeline directory.
+#
+# ============================================================================
+# FORMAT: 3 tab-separated columns (TSV)
+# ============================================================================
+#
+#   run_label              - Short label for this clustering run (used in tables and plots)
+#   output_pipeline_path   - Path to the run's OUTPUT_pipeline/ directory (relative to this workflow directory)
+#   clustering_method      - Clustering tool used (orthohmm, orthofinder, broccoli)
+#
+# ============================================================================
+# EXPECTED FILES BY CLUSTERING METHOD
+# ============================================================================
+#
+# orthohmm:
+#   output_pipeline_path should point to the run's OUTPUT_pipeline/ directory:
+#     4-output/4_ai-orthogroups_gigantic_ids.tsv   - Orthogroup assignments
+#     4-output/4_ai-gene_count_gigantic_ids.tsv    - Gene counts per species
+#
+# orthofinder:
+#   output_pipeline_path should point to the OrthoFinder Results_*/ directory:
+#     Orthogroups/Orthogroups.GeneCount.tsv        - Gene counts per species
+#     Orthogroups/Orthogroups.tsv                  - Orthogroup gene assignments
+#     Orthogroups/Orthogroups_UnassignedGenes.tsv  - Unassigned genes (added as singletons)
+#
+#
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+#   - Lines starting with # are comments (ignored)
+#   - Paths are relative to this workflow directory (workflow-COPYME-compare_methods/)
+#   - At least 2 clustering runs are required for comparison
+#   - Runs can be from the same method (e.g., OrthoHMM with different parameters)
+#     or from different methods (e.g., OrthoHMM vs OrthoFinder)
+#   - run_label must be unique within the manifest
+#
+# ============================================================================
+# USAGE
+# ============================================================================
+#
+# 1. Copy this file:
+#      cp clustering_manifest_example.tsv clustering_manifest.tsv
+#
+# 2. Edit clustering_manifest.tsv with your clustering run paths
+#
+# 3. Run the comparison:
+#      bash RUN-workflow.sh
+#
+#    Or run scripts directly:
+#      python3 ai/scripts/001_ai-python-compare_clustering_runs_table.py \
+#          --manifest INPUT_user/clustering_manifest.tsv
+#
+#      python3 ai/scripts/002_ai-python-compare_clustering_runs_visualization.py \
+#          --manifest INPUT_user/clustering_manifest.tsv
+#
+# ============================================================================
+# HEADER ROW (required, must be exactly these 3 column names)
+# ============================================================================
+run_label	output_pipeline_path	clustering_method
+# ============================================================================
+# EXAMPLE DATA (uncomment and edit with your clustering runs)
+# ============================================================================
+#
+# Same method, multiple runs (comparing OrthoHMM parameter sensitivity):
+# RUN_1	../../BLOCK_orthohmm/workflow-RUN_1-run_orthohmm/OUTPUT_pipeline	orthohmm
+# RUN_2	../../BLOCK_orthohmm/workflow-RUN_2-run_orthohmm/OUTPUT_pipeline	orthohmm
+# RUN_3	../../BLOCK_orthohmm/workflow-RUN_3-run_orthohmm/OUTPUT_pipeline	orthohmm
+#
+# Cross-method comparison (OrthoFinder path points to Results_* directory):
+# orthofinder	path/to/OrthoFinder/Results_orthofinder_species67	orthofinder
+# orthohmm	../../BLOCK_orthohmm/workflow-RUN_1-run_orthohmm/OUTPUT_pipeline	orthohmm
+# broccoli	../../BLOCK_broccoli/workflow-RUN_1-run_broccoli/OUTPUT_pipeline	broccoli

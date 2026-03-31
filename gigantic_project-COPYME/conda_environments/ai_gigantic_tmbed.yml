@@ -27,15 +27,19 @@ channels:
   - defaults
 
 dependencies:
-  # Core requirements
-  - python>=3.11
+  # Core requirements (Python 3.10 required for CUDA PyTorch compatibility)
+  - python==3.10.*
   - nextflow>=23.0
 
-  # PyTorch for protein language model
-  - pytorch
-  - torchvision
+  # Required for transformers T5 tokenizer (SentencePiece protobuf parsing)
+  - protobuf
 
-  # tmbed via pip
+  # PyTorch with CUDA and tmbed via pip
+  # NOTE: conda-forge pytorch is CPU-only. CUDA PyTorch must come from pip
+  # using the PyTorch CUDA index URL.
+  # NOTE: tmbed was removed from PyPI. Install from GitHub source.
   - pip
   - pip:
-    - tmbed
+    - --extra-index-url https://download.pytorch.org/whl/cu121
+    - torch
+    - git+https://github.com/BernhoferM/TMbed.git

@@ -1,77 +1,69 @@
 #!/usr/bin/env nextflow
-// AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Nextflow pipeline for cross-method orthogroup comparison
+// AI: Claude Code | Opus 4.6 | 2026 March 30 | Purpose: Nextflow pipeline for orthogroup clustering comparison
 // Human: Eric Edsinger
 
 nextflow.enable.dsl = 2
 
 // =============================================================================
-// Cross-Method Orthogroup Comparison Pipeline
+// Orthogroup Clustering Comparison Pipeline
 // =============================================================================
 //
-// Two-step pipeline:
-//   1. Load standardized results from subproject-root output_to_input/BLOCK_*/
-//   2. Compare orthogroup methods (overlap, statistics, size distributions)
+// Three-step pipeline:
+//   1. Compare clustering runs - summary table (32 metrics, 7 sections)
+//   2. Compare clustering runs - 5 visualization plots
+//   3. Write run log
 //
-// Reads from subproject-root output_to_input/:
-//   - output_to_input/BLOCK_orthofinder/
-//   - output_to_input/BLOCK_orthohmm/
-//   - output_to_input/BLOCK_broccoli/
+// Input: clustering_manifest.tsv in INPUT_user/
+//   Each row points to one completed clustering run's OUTPUT_pipeline directory.
 //
-// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes
+// Symlinks for output_to_input/ are created by RUN-workflow.sh after pipeline completes.
 // =============================================================================
 
 scripts_dir = "${projectDir}/scripts"
 
-process load_tool_results {
+process compare_clustering_runs_table {
     publishDir "${params.output_dir}/1-output", mode: 'copy'
 
     input:
-        val orthofinder_dir
-        val orthohmm_dir
-        val broccoli_dir
+        val manifest_path
 
     output:
-        path '1_ai-loaded_tool_results_summary.tsv', emit: results_summary
-        path 'tool_orthogroups/', emit: tool_orthogroups_dir
-        path '1_ai-log-load_tool_results.log'
+        path '1_ai-compare_clustering_runs.tsv', emit: comparison_table
+        path '1_ai-per_species_copy_number_profiles.tsv'
+        path '1_ai-pairwise_run_overlap.tsv'
+        path '1_ai-log-compare_clustering_runs_table.log'
 
     script:
     """
-    python3 ${scripts_dir}/001_ai-python-load_tool_results.py \
-        --orthofinder-dir ${orthofinder_dir} \
-        --orthohmm-dir ${orthohmm_dir} \
-        --broccoli-dir ${broccoli_dir} \
-        --output-dir .
+    python3 ${scripts_dir}/001_ai-python-compare_clustering_runs_table.py \
+        --manifest ${manifest_path} \
+        --output-dir . \
+        --overlap-sample-size ${params.overlap_sample_size}
     """
 }
 
-process compare_methods {
+process compare_clustering_runs_visualization {
     publishDir "${params.output_dir}/2-output", mode: 'copy'
 
     input:
-        path tool_orthogroups_dir
+        val manifest_path
+        val table_done
 
     output:
-        path '2_ai-method_comparison_summary.tsv', emit: method_comparison
-        path '2_ai-gene_overlap_between_methods.tsv', emit: gene_overlap
-        path '2_ai-orthogroup_size_comparison.tsv', emit: size_comparison
-        path '2_ai-log-compare_orthogroup_methods.log'
+        path '2_ai-compare_clustering_runs-size_distribution.png'
+        path '2_ai-compare_clustering_runs-summary_bar_chart.png'
+        path '2_ai-compare_clustering_runs-single_copy_thresholds.png'
+        path '2_ai-compare_clustering_runs-species_completeness.png'
+        path '2_ai-compare_clustering_runs-taxonomic_breadth.png'
 
     script:
     """
-    python3 ${scripts_dir}/002_ai-python-compare_orthogroup_methods.py \
-        --tool-results-dir ${tool_orthogroups_dir} \
+    python3 ${scripts_dir}/002_ai-python-compare_clustering_runs_visualization.py \
+        --manifest ${manifest_path} \
         --output-dir .
     """
 }
 
-/*
- * Process 3: Write Run Log
- * Calls: scripts/003_ai-python-write_run_log.py
- *
- * Creates a timestamped log in ai/logs/ within this workflow directory
- * for transparency and reproducibility.
- */
 process write_run_log {
     label 'local'
 
@@ -94,22 +86,23 @@ process write_run_log {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for output_to_input/BLOCK_comparison/ are created by
-// RUN-workflow.sh AFTER this pipeline completes. NextFlow only writes
-// real files to OUTPUT_pipeline/N-output/ directories.
-// ============================================================================
+
 workflow {
-    load_tool_results(
-        params.orthofinder_dir,
-        params.orthohmm_dir,
-        params.broccoli_dir
+    // Resolve manifest to absolute path so scripts can find relative paths
+    manifest_absolute = file( params.manifest ).toAbsolutePath().toString()
+
+    compare_clustering_runs_table( manifest_absolute )
+
+    compare_clustering_runs_visualization(
+        manifest_absolute,
+        compare_clustering_runs_table.out.comparison_table
     )
-    compare_methods( load_tool_results.out.tool_orthogroups_dir )
-    write_run_log( compare_methods.out.method_comparison )
+
+    write_run_log( compare_clustering_runs_visualization.out )
 }
 
 workflow.onComplete {
     if ( workflow.success ) {
-        log.info "Run log written to ai/logs/ in this workflow directory"
+        log.info "Pipeline complete. Run log written to ai/logs/"
     }
 }

@@ -22,7 +22,8 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| trees_gene_families concepts, two-step structure | This file |
+| trees_gene_families concepts, pipeline architecture | This file |
+| RGS preparation, naming conventions | `research_notebook/README.md` |
 | STEP_1 homolog discovery | `gene_family_COPYME/STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
 | STEP_2 phylogenetic analysis | `gene_family_COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
 
@@ -32,9 +33,12 @@
 
 **Purpose**: Build phylogenetic trees for individual gene families across GIGANTIC species.
 
-**Two-Step Pipeline**:
-1. **Homolog Discovery** - Validate RGS, then find homologs via Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF)
-2. **Phylogenetic Analysis** - Align sequences, trim, build trees, visualize
+**Current scale**: 76 gene family analyses (channels, receptors, enzymes, ligands, transporters, transcription factors, structural proteins).
+
+**Three-Phase Workflow**:
+1. **RGS Preparation** - Source, curate, and format reference gene sequences in `research_notebook/`
+2. **Homolog Discovery (STEP_1)** - Validate RGS, then find homologs via Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF)
+3. **Phylogenetic Analysis (STEP_2)** - Align sequences, trim, build trees, visualize
 
 **Note**: RGS validation is built into STEP_1 as its first process. If validation fails, the pipeline stops immediately before expensive BLAST runs.
 
@@ -74,17 +78,45 @@ To analyze multiple gene families, create multiple `gene_family-[name]` copies f
 
 ### RGS File Format
 
-RGS files are user-curated FASTA files with specific header and filename conventions:
+RGS files are user-curated FASTA files with specific header and filename conventions. Within each dash-separated field, **only letters, numbers, and underscores** are allowed (no dots, dashes, or special characters).
 
-**Filename**: `rgs_{category}-{species_short_names}-{gene_family_details}.aa`
+**Filename**: `rgs_<category>-<source_species>-<description>.aa`
 
-**Header**: 5 dash-separated fields:
+| Component | Description | Examples |
+|-----------|-------------|----------|
+| category | Functional category | `channel`, `receptor`, `enzyme`, `ligand`, `tf`, `transporter`, `structure` |
+| source_species | Species in the RGS | `human`, `human_fly_worm`, `human_mouse_fly_worm_anemone` |
+| description | Full descriptive name | `kinases_AGC`, `transient_receptor_potential_cation_channels` |
+
+**Header**: `>rgs_<family_subfamily>-<species>-<gene>-<source>-<accession>`
+
+| Field | Description | Examples |
+|-------|-------------|----------|
+| family_subfamily | Family with optional hierarchy | `kinases_AGC_Akt`, `transient_receptor_potential_cation_TRPML` |
+| species | Source organism | `human`, `fly`, `worm` |
+| gene | Gene symbol | `AKT1`, `MCLN1`, `GRM1` |
+| source | Database source | `uniprot`, `kinase_database`, `hgnc`, `phosphatome_database` |
+| accession | Sequence ID | `Q9GZU1`, `Hs_AKT1_AA`, `NP_000830_2` |
+
+**Examples**:
 ```
->rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
-MAEIPDETIQQFM...
+>rgs_kinases_AGC_Akt-human-AKT1-kinase_database-Hs_AKT1_AA
+>rgs_transient_receptor_potential_cation_TRPML-human-TRPML_TRPML_MCLN1-uniprot-Q9GZU1
+>rgs_phosphatases_AP_AP_AP_AP-human-ALPI-phosphatome_database-Hsap_ALPI
 ```
 
-Example: `>rgs_innexins-human-PANX1-hgnc_gg305_Pannexin-NP_001229977.1`
+### RGS Preparation (research_notebook)
+
+RGS files are sourced, curated, and reformatted in `research_notebook/rgs_from_before/`. The flow:
+
+1. **Raw sources** in `rgs_sources/` - varied legacy formats from HGNC, UniProt, kinase/phosphatome databases
+2. **Conversion scripts** in `rgs_for_trees/new_rgs_*/` - reformat to GIGANTIC standard, produce mapping TSVs
+3. **Formatted RGS files** ready for pipeline input
+4. **Burst setup scripts** at subproject root - automate gene_family directory creation and SLURM submission
+
+Each conversion batch includes `mapping-*.tsv` files mapping original headers to new GIGANTIC headers for traceability.
+
+See `research_notebook/README.md` for full specification.
 
 ---
 
@@ -126,11 +158,18 @@ trees_gene_families/
 ├── AI_GUIDE-trees_gene_families.md    # THIS FILE
 ├── README.md                          # Human documentation
 ├── RUN-clean_and_record_subproject.sh # Cleanup + session recording
-├── RUN-setup_and_submit_step1_burst.sh # Burst setup + submit for all gene families (STEP_1)
-├── RUN-setup_and_submit_step2_burst.sh # Burst setup + submit for all gene families (STEP_2)
-├── RUN-update_upload_to_server.sh     # Update server symlinks
+├── RUN-setup_and_submit_step1_burst.sh             # Burst: STEP_1 for original RGS set
+├── RUN-setup_and_submit_step2_burst.sh             # Burst: STEP_2 with size filter
+├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh # Burst: STEP_1 for new RGS set
+├── RUN-clean_and_record_subproject.sh              # Cleanup + AI session recording
+├── RUN-update_upload_to_server.sh                  # Update server symlinks
 │
-├── research_notebook/                 # Personal workspace
+├── research_notebook/                 # RGS preparation + personal workspace
+│   └── rgs_from_before/              # RGS sources and formatted files
+│       ├── rgs_sources/              # Raw/legacy RGS files
+│       └── rgs_for_trees/            # GIGANTIC-formatted RGS files
+│           ├── new_rgs_25mar2026/    # Batch: channel subfamilies
+│           └── new_rgs_31mar2026/    # Batch: TRP, kinome, phosphatome, etc.
 ├── upload_to_server/                  # Server sharing
 │
 ├── output_to_input/                   # FINAL OUTPUTS for downstream (gene family first)
@@ -153,10 +192,19 @@ trees_gene_families/
 
 ---
 
-## Data Flow Between Steps
+## Data Flow: Full Pipeline
 
 ```
-User provides RGS FASTA + species keeper list
+research_notebook/rgs_sources/         Raw/legacy RGS files from databases
+       │
+       ▼
+research_notebook/rgs_for_trees/       Format to GIGANTIC standard (conversion scripts + mapping TSVs)
+       │
+       ▼
+RUN-setup_and_submit_*_burst.sh        Automate: create gene_family dirs, populate inputs, submit SLURM
+       │
+       ▼
+gene_family-*/STEP_1/workflow-RUN_1/   INPUT_user/ populated with RGS + species keeper list
        │
        ▼
 STEP_1: Validate RGS → BLAST → Reciprocal BLAST → Filter → AGS
@@ -264,6 +312,10 @@ ls output_to_input/*/STEP_2-phylogenetic_analysis/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
+| `research_notebook/rgs_from_before/rgs_for_trees/` | Formatted RGS FASTA files | **YES** (source data) |
+| `RUN-setup_and_submit_step1_burst.sh` | Burst setup + submit STEP_1 (original RGS) | **YES** (SLURM settings) |
+| `RUN-setup_and_submit_new_rgs_31mar2026_burst.sh` | Burst setup + submit STEP_1 (new RGS) | **YES** (SLURM settings, RGS path) |
+| `RUN-setup_and_submit_step2_burst.sh` | Burst setup + submit STEP_2 (with size filter) | **YES** (SLURM settings, MAX_SEQS) |
 | `gene_family_COPYME/STEP_1-*/workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, species DB | **YES** |
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
@@ -277,6 +329,7 @@ ls output_to_input/*/STEP_2-phylogenetic_analysis/
 | Situation | Ask |
 |-----------|-----|
 | Starting trees_gene_families | "Have you run the genomesDB subproject? We need BLAST databases." |
+| New gene families to add | "Do you have RGS FASTA files? Are they in GIGANTIC format (only letters/numbers/underscores within fields)? Do they need reformatting?" |
 | Before STEP_1 | "What gene family? Do you have a curated RGS FASTA file and species keeper list?" |
 | Before STEP_2 | "Which tree method? FastTree (fast, default), IQ-TREE (publication), VeryFastTree (large datasets), or PhyloBayes (Bayesian)?" |
 | Multiple gene families | "How many gene families? You'll need one gene_family-[name] directory per family." |

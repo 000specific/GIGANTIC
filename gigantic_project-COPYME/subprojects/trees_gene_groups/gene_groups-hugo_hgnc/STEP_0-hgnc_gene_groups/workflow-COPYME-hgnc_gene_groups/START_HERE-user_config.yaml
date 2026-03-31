@@ -1,0 +1,103 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC trees_gene_groups STEP_0 - HGNC Gene Group RGS Generation Configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 30
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This workflow downloads HGNC gene group data, builds aggregated gene sets,
+# and generates RGS FASTA files for ALL gene groups from the human proteome.
+#
+# Unlike STEP_1/STEP_2, this runs ONCE and produces RGS files for all HGNC
+# gene groups. Downstream STEPs then use individual RGS files.
+#
+# Example:
+#   cp -r workflow-COPYME-hgnc_gene_groups workflow-RUN_01-hgnc_gene_groups
+#   cd workflow-RUN_01-hgnc_gene_groups
+#   # Edit this config file (set human_proteome_path)
+#   bash RUN-workflow.sh
+#
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  # Path to GIGANTIC human T1 proteome .aa file (REQUIRED)
+  # Header format: >g_GENE_SYMBOL-t_TRANSCRIPT-p_PROTEIN-n_PHYLONAME
+  # From genomesDB subproject output
+  human_proteome_path: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa"
+
+# ============================================================================
+# RGS GENERATION SETTINGS
+# ============================================================================
+
+rgs:
+  # Date stamp for RGS filenames (YYYYMMDD format)
+  # Leave empty to use today's date
+  date_stamp: ""
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# Computational Resources
+# ============================================================================
+# STEP_0 is lightweight - downloads + Python processing only (no BLAST).
+# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
+
+cpus: 4
+memory_gb: 16
+time_hours: 1
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# WORKFLOW STEPS:
+#   001: Download HGNC gene group database tables from genenames.org
+#   002: Build aggregated gene symbol sets for each gene group
+#   003: Generate RGS FASTA files by extracting sequences from human proteome
+#
+# OUTPUT STRUCTURE:
+#   OUTPUT_pipeline/1-output/  - Downloaded HGNC data files + manifest
+#   OUTPUT_pipeline/2-output/  - Aggregated gene sets + metadata TSVs
+#   OUTPUT_pipeline/3-output/  - RGS FASTA files + generation manifest/summary
+#   OUTPUT_pipeline/3-output/rgs_fastas/rgs_hugo_hgnc-human-{name}.aa
+#
+# The RGS files are also symlinked to:
+#   ../../../output_to_input/gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/rgs_fastas/
+#
+# DOWNSTREAM USAGE:
+#   Individual RGS files feed into STEP_1 (validation) or STEP_2 (homolog discovery)
+#   for each gene group.
+#

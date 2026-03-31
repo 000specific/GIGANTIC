@@ -2,11 +2,33 @@
 
 Build phylogenetic trees for individual gene families across GIGANTIC project species.
 
+**Current scale**: 76 gene family analyses covering channels, receptors, enzymes (kinases, phosphatases), ligands, transporters, transcription factors, and structural proteins.
+
 ## Overview
 
 This subproject takes curated reference gene sequences (RGS), finds homologs across all project species via reciprocal best hit/family (RBH/RBF) BLAST, and builds phylogenetic trees.
 
 Each gene family is a **self-contained unit** with its own copy of the two-step pipeline.
+
+The full workflow has three phases:
+
+| Phase | Where | Purpose |
+|-------|-------|---------|
+| RGS Preparation | `research_notebook/` | Source, curate, and format reference gene sequences |
+| STEP_1 | `gene_family-*/STEP_1-homolog_discovery/` | Validate RGS, find homologs via RBH/RBF BLAST |
+| STEP_2 | `gene_family-*/STEP_2-phylogenetic_analysis/` | Align, trim, build trees, visualize |
+
+## RGS Preparation (Before the Pipeline)
+
+Before running the two-step pipeline, RGS FASTA files must be prepared in GIGANTIC standard format. This happens in `research_notebook/`.
+
+**RGS filename format**: `rgs_<category>-<source_species>-<description>.aa`
+
+**RGS header format**: `>rgs_<family_subfamily>-<species>-<gene>-<source>-<accession>`
+
+Within each dash-separated field, only letters, numbers, and underscores are allowed. See `research_notebook/README.md` for full specification and examples.
+
+**RGS sources include**: HGNC gene groups, UniProt, kinase/phosphatome databases, and curated sets from prior GIGANTIC work. Conversion scripts in `research_notebook/rgs_from_before/rgs_for_trees/` reformat legacy headers to GIGANTIC standard and produce mapping TSVs for traceability.
 
 ## Two-Step Pipeline
 
@@ -37,8 +59,11 @@ trees_gene_families/
 ├── upload_to_server/                      # Curated data for GIGANTIC server
 ├── research_notebook/                     # Personal notes and exploratory work
 ├── slurm_logs/                            # SLURM job logs from burst submissions
-├── RUN-setup_and_submit_step1_burst.sh    # Burst: set up + submit all STEP_1 jobs
-├── RUN-setup_and_submit_step2_burst.sh    # Burst: set up + submit STEP_2 jobs (with size filter)
+├── RUN-setup_and_submit_step1_burst.sh             # Burst: set up + submit STEP_1 (original RGS set)
+├── RUN-setup_and_submit_step2_burst.sh             # Burst: set up + submit STEP_2 (with size filter)
+├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh # Burst: STEP_1 for new RGS set (TRP, kinome, phosphatome, etc.)
+├── RUN-clean_and_record_subproject.sh              # Cleanup temp files + record AI sessions
+├── RUN-update_upload_to_server.sh                  # Update upload_to_server/ symlinks
 ├── AI_GUIDE-trees_gene_families.md
 └── README.md
 ```
@@ -184,6 +209,24 @@ bash RUN-setup_and_submit_step2_burst.sh --max-seqs 500
 # Full run with default size filter
 bash RUN-setup_and_submit_step2_burst.sh
 ```
+
+### RUN-setup_and_submit_new_rgs_31mar2026_burst.sh
+
+Same pattern as the STEP_1 burst script, but for **new RGS files** prepared in `research_notebook/rgs_from_before/rgs_for_trees/new_rgs_31mar2026/`. This script:
+
+1. Automatically derives gene family names from RGS filenames
+2. Creates gene_family directories from the COPYME template
+3. Populates INPUT_user/ with the RGS file, species keeper list, and species map
+4. Submits SLURM burst jobs
+
+**Default burst resources** (configurable at top of script):
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `SLURM_CPUS` | 100 | CPUs per job |
+| `SLURM_MEM` | 750gb | Memory per job |
+| `SLURM_TIME` | 96:00:00 | Wall time per job |
+
+This script serves as a **template** for creating burst scripts for future RGS batches. Copy it, update the `RGS_SOURCE_DIR` path, and adjust SLURM resources as needed.
 
 ### Typical Workflow
 

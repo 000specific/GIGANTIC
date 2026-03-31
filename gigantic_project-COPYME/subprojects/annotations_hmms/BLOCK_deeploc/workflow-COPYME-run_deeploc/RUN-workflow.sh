@@ -138,7 +138,8 @@ echo "Starting DeepLoc Annotation Pipeline"
 echo "========================================================================"
 
 nextflow run ai/main.nf \
-    -c ai/nextflow.config
+    -c ai/nextflow.config \
+    -resume
 
 EXIT_CODE=$?
 

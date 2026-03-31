@@ -2,21 +2,34 @@
 # WORKFLOW CONFIGURATION - Edit this file before running
 # ============================================================================
 #
-# This is the main configuration file for this workflow.
-# Review and update the settings below for your project, then run:
+# This is the main configuration file for the clustering comparison workflow.
 #
-#     bash RUN-workflow.sh
+# BEFORE RUNNING:
+# 1. Create your clustering manifest:
+#      cp INPUT_user/clustering_manifest_example.tsv INPUT_user/clustering_manifest.tsv
+# 2. Edit INPUT_user/clustering_manifest.tsv with your clustering run paths
+# 3. Run the workflow:
+#      bash RUN-workflow.sh          (local)
+#      sbatch SLURM_workflow.sbatch  (SLURM)
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Comparison pipeline configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 30 | Purpose: Clustering comparison pipeline configuration
 # Human: Eric Edsinger
 
 # =============================================================================
-# Cross-Method Comparison Pipeline Configuration
+# Clustering Comparison Pipeline Configuration
 # =============================================================================
 
-# Paths to subproject-root output_to_input/BLOCK_*/ directories (relative to workflow directory)
-orthofinder_dir: "../../output_to_input/BLOCK_orthofinder"
-orthohmm_dir: "../../output_to_input/BLOCK_orthohmm"
-broccoli_dir: "../../output_to_input/BLOCK_broccoli"
+# Input manifest (relative to this workflow directory)
+# The manifest lists clustering runs to compare.
+# See INPUT_user/clustering_manifest_example.tsv for format and examples.
+manifest: "INPUT_user/clustering_manifest.tsv"
+
+# Project name (used in run log)
+project_name: "GIGANTIC"
+
+# Pairwise overlap analysis sampling
+# Higher values = more accurate overlap estimates, but slower.
+# 500000 is a good default. Reduce to 100000 for faster exploratory runs.
+overlap_sample_size: 500000
