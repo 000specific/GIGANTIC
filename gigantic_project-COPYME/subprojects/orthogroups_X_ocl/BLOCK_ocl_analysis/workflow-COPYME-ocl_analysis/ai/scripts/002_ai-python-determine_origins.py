@@ -555,8 +555,6 @@ def load_phylogenetic_paths_for_structure():
     logger.info( f"Loading phylogenetic paths from trees_species: {input_trees_phylogenetic_paths_all}" )
 
     path_files = list( input_trees_phylogenetic_paths_all.glob( '*paths*.tsv' ) )
-    if not path_files:
-        path_files = list( input_trees_phylogenetic_paths_all.glob( '*evolutionary_paths*.tsv' ) )
 
     if not path_files:
         logger.warning( f"No phylogenetic paths files found in: {input_trees_phylogenetic_paths_all}" )

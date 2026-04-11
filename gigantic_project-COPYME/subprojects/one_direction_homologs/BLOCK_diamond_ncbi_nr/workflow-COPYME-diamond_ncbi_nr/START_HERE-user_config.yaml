@@ -9,27 +9,24 @@
 #
 # ============================================================================
 
-# GIGANTIC One-Direction Homologs Configuration
-# =============================================
-#
-# Edit this file before running the workflow.
-# All paths are relative to this workflow directory unless absolute.
-#
-# Run: bash RUN-workflow.sh (local) or sbatch RUN-workflow.sbatch (SLURM)
+# AI: Claude Code | Opus 4.6 | 2026 March 31 | Purpose: DIAMOND NCBI nr search pipeline configuration
+# Human: Eric Edsinger
 
-# --------------------------------------------------------------------------
+# =============================================================================
 # Project Settings
-# --------------------------------------------------------------------------
+# =============================================================================
+
 project:
-  # Your project name (used in output filenames)
+  # Your project name (used in output filenames and run logs)
   name: "my_project"
 
   # Path to proteome manifest (relative to this workflow directory)
   proteome_manifest: "INPUT_user/proteome_manifest.tsv"
 
-# --------------------------------------------------------------------------
+# =============================================================================
 # DIAMOND Search Settings
-# --------------------------------------------------------------------------
+# =============================================================================
+
 diamond:
   # Path to DIAMOND-formatted NCBI nr database
   # REQUIRED: You must create this database before running the pipeline
@@ -47,17 +44,86 @@ diamond:
   max_target_sequences: 10
 
   # Number of parts to split each proteome into (for parallelization)
-  # With 67 species and 40 parts = 2,680 parallel DIAMOND jobs
-  # Adjust based on your cluster's CPU limits
+  # With 70 species and 40 parts = 2,800 parallel DIAMOND jobs
+  # Adjust based on your cluster's job limits
   num_parts: 40
 
-  # CPU threads per DIAMOND job
-  # Using 1 thread per job maximizes parallelization on SLURM clusters
-  threads_per_job: 1
+  # CPU threads per DIAMOND job (in burst mode, each job gets its own allocation)
+  threads_per_job: 50
 
-# --------------------------------------------------------------------------
+# =============================================================================
+# Proteome Directory
+# =============================================================================
+# Path to directory containing species proteome FASTA files (.aa)
+# Used by script 005 to look up full query protein lengths for
+# self-hit alignment coverage validation.
+# Relative to this workflow directory or absolute path.
+
+proteome_directory: "../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Choose how the pipeline runs:
+#
+#   "local"       - Run directly on this machine. All chunks process sequentially.
+#                   Good for: Small datasets, testing, machines without SLURM.
+#
+#   "slurm"       - Submit as ONE SLURM job. All chunks process sequentially
+#                   inside that job. Uses your account's dedicated CPUs.
+#                   Good for: Medium datasets when you have available CPUs.
+#
+#   "slurm_burst" - Nextflow submits EACH DIAMOND split as its own SLURM burst
+#                   job. Thousands of splits can run in parallel across the cluster.
+#                   Good for: Large datasets (50+ species). DRAMATICALLY faster.
+#                   Note: Runs the Nextflow orchestrator from within a small
+#                   SLURM job so it stays alive for the full duration.
+#
+# Performance comparison (70 species, 40 splits each = 2,800 DIAMOND jobs):
+#   local/slurm:       Days to weeks (sequential DIAMOND searches)
+#   slurm_burst:       Hours (parallel DIAMOND searches across cluster)
+
+execution_mode: "slurm_burst"
+
+# =============================================================================
+# SLURM Settings (for "slurm" and "slurm_burst" modes)
+# =============================================================================
+
+slurm_account: "moroz"
+slurm_qos: "moroz"
+
+# =============================================================================
+# Resources for "local" and "slurm" modes
+# =============================================================================
+# These control the SINGLE job that runs all DIAMOND searches sequentially.
+# In "local" mode, these are the resources Nextflow can use on this machine.
+# In "slurm" mode, these are the SLURM job resources.
+
+cpus: 50
+memory_gb: 350
+time_hours: 96
+
+# =============================================================================
+# Resources for "slurm_burst" mode
+# =============================================================================
+# In burst mode, EACH DIAMOND split gets its own SLURM job.
+# These control the per-split job resources.
+
+burst_qos: "moroz-b"
+burst_cpus_per_chunk: 50
+burst_memory_gb_per_chunk: 350
+burst_time_hours_per_chunk: 96
+
+# Orchestrator job: small SLURM job that runs Nextflow itself.
+# Needs minimal resources but must stay alive until all DIAMOND jobs finish.
+burst_orchestrator_cpus: 2
+burst_orchestrator_memory_gb: 8
+burst_orchestrator_time_hours: 96
+
+# =============================================================================
 # Output Settings
-# --------------------------------------------------------------------------
+# =============================================================================
+
 output:
   # Base directory for pipeline output (relative to this workflow directory)
   base_dir: "OUTPUT_pipeline"

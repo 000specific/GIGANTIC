@@ -9,7 +9,7 @@
 # PURPOSE:
 # Run the OCL pipeline to create annotation groups (annogroups), determine
 # their phylogenetic origins, quantify conservation and loss patterns, and
-# validate results across phylogenetic tree structures.
+# validate results across phylogenetic species tree structures.
 #
 # USAGE:
 #   bash RUN-workflow.sh

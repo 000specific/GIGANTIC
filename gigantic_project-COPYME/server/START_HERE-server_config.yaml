@@ -1,0 +1,122 @@
+# ============================================================================
+# GIGANTIC DATA SERVER CONFIGURATION
+# ============================================================================
+#
+# Edit this file before starting the server.
+#
+# To start the server:
+#   Local:  bash RUN-start_server.sh
+#   SLURM:  sbatch RUN-start_server.sbatch
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.6 | 2026 April 02 | Purpose: GIGANTIC data server configuration
+# Human: Eric Edsinger
+
+# ============================================================================
+# Server Settings
+# ============================================================================
+
+# Project display name (shown in page header and browser tab)
+project_name: "GIGANTIC DATA"
+
+# Server port (change if port is already in use)
+port: 9456
+
+# Auto-refresh interval in seconds
+# How often the server re-scans server_data/ for new or changed files
+refresh_interval_seconds: 300
+
+# ============================================================================
+# Subprojects to Serve
+# ============================================================================
+# Controls which subproject upload_to_server/ directories are served.
+#
+# Option 1: Serve ALL subprojects that have upload_to_server/ directories
+#   subprojects: "all"
+#
+# Option 2: Serve only specific subprojects (list by directory name)
+#   subprojects:
+#     - annotations_hmms
+#     - trees_gene_families
+#     - trees_species
+
+subprojects: "all"
+
+# ============================================================================
+# Display Customization
+# ============================================================================
+
+# Custom display names for subprojects (optional)
+# If not specified, directory names are auto-formatted:
+#   underscores become spaces, title case applied
+#
+# display_names:
+#   trees_gene_families: "GENE FAMILY TREES"
+#   trees_species: "SPECIES TREES"
+#   annotations_hmms: "FUNCTIONAL ANNOTATIONS"
+#   ocl_X_annotations: "OCL x ANNOTATIONS"
+display_names: {}
+
+# Subprojects to exclude from the landing page display
+# Even if data exists in server_data/, these won't appear on the web interface.
+# Useful for infrastructure subprojects that produce internal-only data.
+#
+# exclude_from_display:
+#   - phylonames
+#   - genomesDB
+exclude_from_display: []
+
+# Custom sort order for sections within folder pages
+# Sections matching these keywords (case-insensitive) appear first.
+# Unmatched sections appear alphabetically after these.
+section_sort_order:
+  - sequence
+  - alignment
+  - tree
+  - visualization
+  - annotation
+  - database
+
+# ============================================================================
+# File Filtering
+# ============================================================================
+
+# Filenames matching these patterns are hidden from the web interface.
+# Uses simple substring matching (case-sensitive).
+exclude_file_patterns:
+  - ".gitignore"
+  - ".DS_Store"
+  - "README.md"
+
+# Exclude files in specific subproject types by keyword (optional)
+# Format: if subproject name contains the key, exclude files containing
+# any of the listed keywords.
+#
+# subproject_file_exclusions:
+#   trees:
+#     - computer_vision
+#     - image_analysis
+subproject_file_exclusions: {}
+
+# ============================================================================
+# SLURM Settings (used by RUN-start_server.sbatch)
+# ============================================================================
+
+slurm:
+  account: "your_account"
+  qos: "your_qos"
+  partition: "hpg-default"
+  time_hours: 725
+  memory_gb: 4
+  cpus: 1
+  # Email notifications (optional - comment out to disable)
+  # mail_user: "your_email@university.edu"
+
+# ============================================================================
+# Credits (shown in page footer)
+# ============================================================================
+
+credits:
+  ai: "Claude Code"
+  human: "Your Name"

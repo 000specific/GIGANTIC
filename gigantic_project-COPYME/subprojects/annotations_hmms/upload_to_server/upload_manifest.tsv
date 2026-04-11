@@ -1,0 +1,19 @@
+# GIGANTIC Upload Manifest - annotations_hmms Subproject
+# Format: source_path<TAB>include
+# source_path is relative to subproject root
+# Glob patterns are supported (e.g., *.csv)
+#
+# DeepLoc subcellular localization predictions (70 species)
+output_to_input/BLOCK_deeploc/*.csv	yes
+#
+# MetaPredict intrinsic disorder predictions (70 species, 2 files each)
+output_to_input/BLOCK_metapredict/*.tsv	yes
+#
+# SignalP signal peptide predictions (incomplete - only 2 species so far)
+# output_to_input/BLOCK_signalp/*.tsv	no
+#
+# InterProScan domain annotations (not yet consolidated)
+# output_to_input/BLOCK_interproscan/*.tsv	no
+#
+# tmbed transmembrane predictions (not yet run)
+# output_to_input/BLOCK_tmbed/*.tsv	no

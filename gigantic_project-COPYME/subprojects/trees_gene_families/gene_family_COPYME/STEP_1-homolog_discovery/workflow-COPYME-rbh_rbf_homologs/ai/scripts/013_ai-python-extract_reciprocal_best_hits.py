@@ -125,43 +125,48 @@ def parse_reciprocal_blast_results(
         List of keeper sequence identifiers
     """
     keepers = []
-    
+    rgs_identifiers_set = set( rgs_identifiers )
+
     with open( blast_report, 'r' ) as input_report, \
          open( output_filtered, 'w' ) as output_dropped:
-        
+
         for line in input_report:
             parts = line.strip().split( '\t' )
-            
+
             if len( parts ) < 2:
                 continue
-            
+
             query = parts[ 0 ]
             hit = parts[ 1 ]
-            
-            # Parse hit to extract species name
-            hit_parts = hit.split( '-' )
-            if len( hit_parts ) < 2:
-                continue
-            
-            species_part = hit_parts[ 1 ]
-            
-            # Extract species name (handle Genus_species format)
-            species_name = species_part.split( '_' )[ -1 ].lower() if '_' in species_part else species_part.lower()
-            
-            # Check if hit is to model species
-            is_rbh_species = any( species in species_name for species in rbh_species )
-            
-            if is_rbh_species:
-                # Keep if NOT in RGS (avoid circularity)
-                if query not in rgs_identifiers:
+
+            # Primary check: is the hit one of our RGS sequences (spliced into modified genomes)?
+            # This is the cleanest signal of a true homolog: the BGS sequence's reciprocal best hit
+            # lands on one of our reference RGS sequences. Works regardless of header truncation.
+            hit_is_rgs = hit in rgs_identifiers_set
+
+            # Fallback: if hit is not directly in our RGS set, check if it's a model organism
+            # protein (the original genome contents, not our spliced-in RGS). Some legitimate
+            # homologs may reciprocally hit a paralog in the model organism rather than our
+            # specific RGS sequence.
+            is_rbh_species = False
+            if not hit_is_rgs:
+                hit_parts = hit.split( '-' )
+                if len( hit_parts ) >= 2:
+                    species_part = hit_parts[ 1 ]
+                    species_name = species_part.split( '_' )[ -1 ].lower() if '_' in species_part else species_part.lower()
+                    is_rbh_species = any( species in species_name for species in rbh_species )
+
+            if hit_is_rgs or is_rbh_species:
+                # Keep if NOT in RGS (avoid circularity - RGS hitting itself)
+                if query not in rgs_identifiers_set:
                     keepers.append( query )
             else:
                 # Log filtered sequence
                 output_dropped.write( f"{query}\t{hit}\n" )
-    
+
     if logger:
         logger.info( f"Identified {len(keepers)} keeper sequences" )
-    
+
     return keepers
 
 

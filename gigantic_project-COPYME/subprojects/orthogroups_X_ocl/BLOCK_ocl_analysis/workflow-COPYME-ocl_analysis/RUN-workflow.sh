@@ -8,7 +8,7 @@
 #
 # PURPOSE:
 # Run the OCL pipeline to determine orthogroup origins, quantify conservation
-# and loss patterns, and validate results across phylogenetic tree structures.
+# and loss patterns, and validate results across phylogenetic species tree structures.
 #
 # USAGE:
 #   bash RUN-workflow.sh

@@ -160,11 +160,21 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
                         logger.error( "Expected: >rgs_{{family}}-{{species}}-{{gene_symbol}}-{{source}}-{{identifier}}" )
 
     if len( statistics[ 'families_found' ] ) > 1:
-        all_valid = False
-        issue = f"Inconsistent family prefixes: {sorted( statistics[ 'families_found' ] )}"
-        statistics[ 'header_issues' ].append( issue )
-        if logger:
-            logger.error( issue )
+        # Check if all family prefixes share a common root (e.g., kinases_AGC_Akt and kinases_CAMK
+        # both start with "kinases"). Superfamily RGS files legitimately contain multiple subfamilies.
+        families_list = sorted( statistics[ 'families_found' ] )
+        common_root = families_list[ 0 ].split( '_' )[ 0 ]
+        all_share_root = all( family.startswith( common_root ) for family in families_list )
+
+        if not all_share_root:
+            all_valid = False
+            issue = f"Inconsistent family prefixes (no common root): {families_list}"
+            statistics[ 'header_issues' ].append( issue )
+            if logger:
+                logger.error( issue )
+        else:
+            if logger:
+                logger.info( f"Multiple subfamily prefixes found (common root: {common_root}): {len( families_list )} subfamilies" )
 
     id_counts = Counter( sequence_ids )
     duplicates = [ seq_id for seq_id, count in id_counts.items() if count > 1 ]

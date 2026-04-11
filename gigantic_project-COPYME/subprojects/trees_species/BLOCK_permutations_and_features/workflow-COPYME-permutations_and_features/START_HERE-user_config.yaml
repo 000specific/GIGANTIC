@@ -40,10 +40,12 @@ input_files:
 permutation:
   # List of clade names whose branching order is unresolved
   # The pipeline generates all (2N-3)!! possible arrangements
-  # For N=5 clades: 105 topologies
-  # For N=0 or 1 clade: No permutation (single tree mode)
+  # For N=5 clades: 105 topologies (each becomes one structure_NNN)
+  # For N=0 or 1 clade: No permutation (single species tree mode — the input
+  #   species tree is already resolved, so the pipeline produces one structure_001
+  #   identical to the input)
   #
-  # These must match clade names in the input Newick tree exactly
+  # These must match clade names in the input Newick species tree exactly
   unresolved_clades:
     - Ctenophora
     - Porifera

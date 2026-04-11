@@ -35,6 +35,9 @@ nextflow.enable.dsl = 2
 // Workflow root directory (parent of ai/)
 params.workflow_dir = "${projectDir}/.."
 
+// Project name (used by run-log script for the run log header)
+params.project_name = 'GIGANTIC'
+
 // ============================================================================
 // PROCESSES
 // ============================================================================

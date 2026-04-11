@@ -407,8 +407,6 @@ def load_phylogenetic_paths_for_structure():
 
     path_files = list( input_trees_phylogenetic_paths_all.glob( '*paths*.tsv' ) )
     if not path_files:
-        path_files = list( input_trees_phylogenetic_paths_all.glob( '*evolutionary_paths*.tsv' ) )
-    if not path_files:
         return {}
 
     path_file = path_files[ 0 ]

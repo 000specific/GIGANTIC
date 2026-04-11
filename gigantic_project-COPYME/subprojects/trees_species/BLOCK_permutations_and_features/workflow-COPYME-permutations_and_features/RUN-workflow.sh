@@ -165,7 +165,7 @@ done
 # Create symlinks for each output category in 4-output through 9-output
 # Phylogenetic Paths (from 4-output)
 if [ -d "OUTPUT_pipeline/4-output" ]; then
-    for item in OUTPUT_pipeline/4-output/*evolutionary_paths*; do
+    for item in OUTPUT_pipeline/4-output/*phylogenetic_paths*; do
         if [ -f "$item" ]; then
             mkdir -p "${SHARED_DIR}/Species_Phylogenetic_Paths"
             ln -sf "../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/$(basename "$item")" \
@@ -256,7 +256,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/  Tree components (outgroups, major clades)"
 echo "  OUTPUT_pipeline/2-output/  Topology skeletons (permutations)"
 echo "  OUTPUT_pipeline/3-output/  Annotated topologies (with clade IDs)"
-echo "  OUTPUT_pipeline/4-output/  Complete trees + evolutionary paths"
+echo "  OUTPUT_pipeline/4-output/  Complete trees + phylogenetic paths"
 echo "  OUTPUT_pipeline/5-output/  Parent-child/sibling relationships"
 echo "  OUTPUT_pipeline/6-output/  Phylogenetic blocks"
 echo "  OUTPUT_pipeline/7-output/  Integrated clade data (master table)"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 01 | Purpose: Run DIAMOND blastp search for one split file against NCBI nr
+# AI: Claude Code | Opus 4.6 | 2026 March 31 | Purpose: Run DIAMOND blastp search for one split file against NCBI nr
 # Human: Eric Edsinger
 
 ################################################################################
@@ -19,12 +19,17 @@
 #   output_file    Path for output TSV file
 #   evalue         E-value threshold (e.g., 1e-5)
 #   max_targets    Maximum target sequences per query (e.g., 10)
-#   threads        Number of CPU threads (e.g., 1)
+#   threads        Number of CPU threads (e.g., 50)
 #
 # OUTPUT FORMAT:
-#   15-column TSV: qseqid sseqid pident length mismatch gapopen
+#   13-column TSV: qseqid sseqid pident length mismatch gapopen
 #                  qstart qend sstart send evalue bitscore
-#                  stitle full_qseq full_sseq
+#                  stitle
+#
+# SELF-HIT DETECTION:
+#   Self-hits are identified downstream (script 005) using alignment metrics:
+#   pident == 100.0, mismatch == 0, gapopen == 0, plus alignment coverage
+#   >= 95% of query protein length. Full sequences are NOT needed.
 #
 ################################################################################
 
@@ -34,7 +39,7 @@ DIAMOND_DATABASE="$2"
 OUTPUT_FILE="$3"
 EVALUE="${4:-1e-5}"
 MAX_TARGETS="${5:-10}"
-THREADS="${6:-1}"
+THREADS="${6:-50}"
 
 # Validate arguments
 if [ -z "$INPUT_FASTA" ] || [ -z "$DIAMOND_DATABASE" ] || [ -z "$OUTPUT_FILE" ]; then
@@ -79,9 +84,7 @@ echo ""
 # Run DIAMOND blastp
 # --sensitive: Use sensitive mode for better detection of distant homologs
 # --outfmt 6: Tabular output with custom columns
-# stitle: Full NCBI header (subject title)
-# full_qseq: Full query sequence (for self/non-self comparison)
-# full_sseq: Full subject sequence (for self/non-self comparison)
+# stitle: Full NCBI header (subject title) - includes organism in brackets
 
 diamond blastp \
     --query "$INPUT_FASTA" \
@@ -93,7 +96,7 @@ diamond blastp \
     --sensitive \
     --outfmt 6 qseqid sseqid pident length mismatch gapopen \
                 qstart qend sstart send evalue bitscore \
-                stitle full_qseq full_sseq
+                stitle
 
 EXIT_CODE=$?
 

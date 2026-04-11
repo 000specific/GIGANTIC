@@ -21,8 +21,8 @@ concepts and troubleshooting.
 
 ## What This Subproject Does
 
-Performs Origin-Conservation-Loss (OCL) analysis of orthogroups across phylogenetic tree
-structures. For each orthogroup, determines:
+Performs Origin-Conservation-Loss (OCL) analysis of orthogroups across phylogenetic
+species tree structures. For each orthogroup, determines:
 
 - **Origin**: The most recent common ancestor (MRCA) where the orthogroup first appeared
 - **Conservation**: How often the orthogroup is retained across descendant lineages

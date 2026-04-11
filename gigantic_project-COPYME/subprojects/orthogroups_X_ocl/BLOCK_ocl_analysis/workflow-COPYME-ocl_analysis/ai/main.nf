@@ -5,7 +5,7 @@
  * OCL PIPELINE: ORIGIN-CONSERVATION-LOSS ANALYSIS
  * ==============================================================================
  * GIGANTIC_1 NextFlow workflow for analyzing orthogroup origins, conservation,
- * and loss across phylogenetic tree structures.
+ * and loss across phylogenetic species tree structures.
  *
  * Design: "Scripts Own the Data, NextFlow Manages Execution"
  * - Scripts read/write directly to OUTPUT_pipeline/structure_NNN/N-output/

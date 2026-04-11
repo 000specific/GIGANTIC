@@ -37,9 +37,9 @@ gene_family:
 # ============================================================
 
 input:
-  # Path to output_to_input directory (relative to this workflow directory)
-  # AGS files are found at: <output_to_input_dir>/<gene_family>/STEP_1-homolog_discovery/
-  output_to_input_dir: "../../../../output_to_input"
+  # Path to STEP_1 output_to_input directory (relative to this workflow directory)
+  # AGS files are found at: <step1_output_dir>/gene_group-<gene_family>/
+  step1_output_dir: "../../../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery"
 
 # ============================================================
 # PROJECT SETTINGS

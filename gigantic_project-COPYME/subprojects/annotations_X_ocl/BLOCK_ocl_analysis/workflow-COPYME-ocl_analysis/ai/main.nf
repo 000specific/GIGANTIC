@@ -5,7 +5,7 @@
  * ANNOTATIONS OCL PIPELINE: ORIGIN-CONSERVATION-LOSS ANALYSIS OF ANNOGROUPS
  * ==============================================================================
  * GIGANTIC_1 NextFlow workflow for analyzing annotation group (annogroup) origins,
- * conservation, and loss across phylogenetic tree structures.
+ * conservation, and loss across phylogenetic species tree structures.
  *
  * Annogroups are the annotation analog to orthogroups — sets of proteins grouped
  * by their annotation pattern from a specific database. Each annogroup has a

@@ -354,8 +354,6 @@ def load_phylogenetic_paths():
     logger.info( f"Loading phylogenetic paths from: {input_phylogenetic_paths_directory}" )
 
     paths_files = list( input_phylogenetic_paths_directory.glob( '*paths*.tsv' ) )
-    if not paths_files:
-        paths_files = list( input_phylogenetic_paths_directory.glob( '*evolutionary_paths*.tsv' ) )
 
     if not paths_files:
         logger.warning( f"No phylogenetic paths files found in: {input_phylogenetic_paths_directory}" )

@@ -1,0 +1,107 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for the gigantic_species_tree workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC trees_species - BLOCK_gigantic_species_tree Workflow Configuration
+# AI: Claude Code | Opus 4.6 | 2026 April 10
+# Human: Eric Edsinger
+
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration controls how the gigantic_species_tree workflow processes
+# your input species tree. Edit the settings below to match your project.
+#
+# After editing:
+#   1. Place your species tree Newick file in INPUT_user/species_tree.newick
+#   2. Run: bash RUN-workflow.sh  (or: sbatch RUN-workflow.sbatch for SLURM)
+#
+# ============================================================================
+
+# ============================================================================
+# SPECIES SET
+# ============================================================================
+
+# Identifier for this species set. Used in output filenames to distinguish
+# species sets (e.g., "species70", "species71", "species53", "speciesN").
+# Keep it short, lowercase, and use underscores (no spaces or special chars).
+species_set_name: "speciesN"
+
+# ============================================================================
+# INPUT FILES
+# ============================================================================
+
+input_files:
+  # Path to your species tree in Newick format (relative to this workflow dir).
+  #
+  # Required format:
+  #   - Leaves: Genus_species (e.g., Homo_sapiens, Trichoplax_sp_H2)
+  #     Use underscores for multi-word species names or strain suffixes.
+  #   - Internal nodes: either user-provided clade names (e.g., Metazoa,
+  #     Bilateria) OR left unlabeled. Unlabeled internals will be auto-named
+  #     by Script 002 as "ancestral_clade_001", "ancestral_clade_002", etc.
+  #   - Tree must be fully binary (no polytomies). See INPUT_user/README.md.
+  #   - Branch lengths are optional; will be standardized to 1.0 by Script 001.
+  #
+  # See INPUT_user/README.md for full format specification and examples.
+  species_tree: "INPUT_user/species_tree.newick"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory (relative to this workflow directory)
+  # Each script writes to its own N-output subdirectory within this dir.
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# WORKFLOW PURPOSE:
+#   BLOCK_gigantic_species_tree takes a raw user-provided species tree and
+#   produces a fully standardized, labeled, validated species tree in all the
+#   canonical GIGANTIC formats. This is typically the first step for any
+#   project that has a species set and wants to run downstream analyses
+#   (OCL, permutations, orthogroup analyses, etc.).
+#
+# WHAT THE WORKFLOW DOES:
+#   Script 001: Validates your Newick input (binary, unique names, reserved
+#               namespace not collided, etc.) and standardizes names (replaces
+#               any invalid characters with underscores) and branch lengths
+#               (normalizes to 1.0).
+#   Script 002: Fills in "ancestral_clade_NNN" names for any unlabeled internal
+#               nodes, then assigns "CXXX_" clade identifier prefixes to every
+#               node in the tree.
+#   Script 003: Emits three Newick variants: simple (Genus_species at leaves
+#               only, internals unlabeled), full (CXXX_Name everywhere),
+#               and ids-only (CXXX at every node).
+#   Script 004: Generates a TSV lookup table mapping each clade name to its
+#               clade ID.
+#   Script 005: Renders a species tree visualization (SVG). Soft-fails with
+#               a placeholder file if ete3 tooling is unavailable.
+#   Script 006: Cross-validates all outputs for internal consistency.
+#   Script 007: Writes a timestamped run log to ai/logs/.
+#
+# OUTPUT STRUCTURE:
+#   OUTPUT_pipeline/1-output/   Canonical input tree + name mapping + validation report
+#   OUTPUT_pipeline/2-output/   Fully labeled tree (CXXX_Name everywhere)
+#   OUTPUT_pipeline/3-output/   Three Newick variants (simple, full, ids-only)
+#   OUTPUT_pipeline/4-output/   Clade name <-> clade ID lookup TSV
+#   OUTPUT_pipeline/5-output/   Visualization SVG (or placeholder on soft-fail)
+#   OUTPUT_pipeline/6-output/   Cross-validation report
+#
+# DOWNSTREAM SYMLINKS:
+#   After successful completion, RUN-workflow.sh creates symlinks in
+#   ../../output_to_input/BLOCK_gigantic_species_tree/ for downstream consumers
+#   (e.g., BLOCK_permutations_and_features which expects the full-format tree).
+#

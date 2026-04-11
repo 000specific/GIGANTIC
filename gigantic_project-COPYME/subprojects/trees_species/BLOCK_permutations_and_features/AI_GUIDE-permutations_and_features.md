@@ -24,11 +24,15 @@ This guide covers the permutations_and_features block specifically.
 Takes a user-provided annotated species tree (Newick format with CXXX_Name labels) and
 generates all possible topology permutations for user-specified unresolved clades.
 For each topology, extracts comprehensive phylogenetic features: paths, blocks,
-parent-child relationships, clade-species mappings, and tree visualizations.
+parent-child relationships, clade-species mappings, and species tree visualizations.
+
+(See `../README.md` Terminology section for canonical definitions of structure,
+topology, resolved vs unresolved input species tree, and species-tree-vs-gene-tree
+explicitness.)
 
 Key capabilities:
 - **Topology permutations**: (2N-3)!! unrooted topologies for N unresolved clades
-  (e.g., 5 clades = 105 topologies, 0 clades = single tree mode)
+  (e.g., 5 clades = 105 topologies, 0 clades = single species tree mode)
 - **Clade identifier system**: Persistent CXXX identifiers across all structures
 - **Phylogenetic blocks**: Parent::Child branch identifiers with synthetic C000_Pre_Basal root
 - **Comprehensive integration**: 24-column master table with all clade data
@@ -61,10 +65,10 @@ BLOCK_permutations_and_features/
 
 | Script | Purpose | Key Input | Key Output |
 |--------|---------|-----------|------------|
-| 001 | Extract tree components | species_tree.newick | Clade registry, paths, metadata |
+| 001 | Extract species tree components | species_tree.newick | Clade registry, paths, metadata |
 | 002 | Generate topology permutations | Metadata (unresolved clades) | Permutation Newick strings |
 | 003 | Assign clade identifiers | Topology permutations | Annotated skeletons with CXXX IDs |
-| 004 | Build complete trees | Skeletons + original tree | Complete species trees, clade registry |
+| 004 | Build complete species trees | Skeletons + original species tree | Complete species trees, clade registry |
 | 005 | Extract parent-child relationships | Complete trees | Parent-sibling (9-col) + parent-child (4-col) |
 | 006 | Generate phylogenetic blocks | Parent-sibling tables | Phylogenetic blocks (Parent::Child) |
 | 007 | Integrate all clade data | Registry, trees, blocks | 24-column master clade table |
@@ -87,16 +91,18 @@ BLOCK_permutations_and_features/
 - Synthetic `C000_Pre_Basal` parent for root nodes
 - Each internal node produces exactly 2 blocks (binary tree)
 
-### Single Tree Mode
+### Single Species Tree Mode
 When 0 unresolved clades are specified, the pipeline skips permutation and outputs the
-original tree as structure_001 with all features extracted.
+original species tree as structure_001 with all features extracted. (This is the
+"resolved input" case — see the canonical Resolved vs Unresolved subsection in
+`../README.md`.)
 
 ---
 
 ## Output to Downstream
 
 This block publishes to `output_to_input/BLOCK_permutations_and_features/` at the subproject root:
-- `Species_Tree_Structures/` - Complete Newick trees per structure
+- `Species_Tree_Structures/` - Complete Newick species trees per structure
 - `Species_Phylogenetic_Paths/` - Root-to-leaf paths per species per structure
 - `Species_Parent_Sibling_Sets/` - Parent-sibling tables (9-column)
 - `Species_Parent_Child_Relationships/` - Parent-child tables (4-column)

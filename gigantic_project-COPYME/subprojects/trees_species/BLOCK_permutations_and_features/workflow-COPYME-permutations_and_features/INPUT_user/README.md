@@ -17,6 +17,28 @@ a clade identifier and name in the format `CXXX_Clade_Name`:
 - Internal nodes labeled (not just terminal species)
 - Single-line file (standard Newick)
 
+### Don't have a labeled tree yet?
+
+If you have a raw species tree with `Genus_species` at leaves and optional
+clade names at internals (but no `CXXX_` prefixes), run
+**`BLOCK_gigantic_species_tree`** first (sibling BLOCK within `trees_species/`).
+It standardizes, validates, and labels your tree, producing the
+`CXXX_Clade_Name` format this BLOCK expects. The labeled output will be
+available at:
+
+```
+../../output_to_input/BLOCK_gigantic_species_tree/{species_set}-species_tree-with_clade_ids_and_names.newick
+```
+
+You can then symlink that labeled tree into this BLOCK's `INPUT_user/`:
+
+```bash
+ln -sf ../../../output_to_input/BLOCK_gigantic_species_tree/{species_set}-species_tree-with_clade_ids_and_names.newick \
+    INPUT_user/species_tree.newick
+```
+
+See `../../../BLOCK_gigantic_species_tree/AI_GUIDE-gigantic_species_tree.md` for details.
+
 ## Optional Input
 
 ### clade_names.tsv

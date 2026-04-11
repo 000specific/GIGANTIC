@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-// AI: Claude Code | Opus 4.6 | 2026 March 01 | Purpose: DIAMOND NCBI nr one-direction homolog search pipeline
+// AI: Claude Code | Opus 4.6 | 2026 March 31 | Purpose: DIAMOND NCBI nr one-direction homolog search pipeline
 // Human: Eric Edsinger
 
 nextflow.enable.dsl = 2
@@ -11,30 +11,29 @@ nextflow.enable.dsl = 2
 // Searches species proteomes against NCBI nr database using DIAMOND.
 // Identifies top hits, self-hits vs non-self-hits, per-species statistics.
 //
-// 6-step pipeline (each step publishes documented output to OUTPUT_pipeline/):
+// 7-step pipeline (each step publishes documented output to OUTPUT_pipeline/):
 //   001: Validate proteomes          -> 1-output/
 //   002: Split proteomes into N parts -> 2-output/
-//   003: DIAMOND search per split     -> 3-output/  (massively parallel)
+//   003: DIAMOND search per split     -> 3-output/  (massively parallel / burst)
 //   004: Combine results per species  -> 4-output/
 //   005: Identify top self/non-self   -> 5-output/
 //   006: Compile master statistics    -> 6-output/
+//   007: Write run log                -> ai/logs/
+//
+// Self-hit detection uses a strengthened alignment proxy:
+//   pident == 100.0, mismatch == 0, gapopen == 0, PLUS alignment covers
+//   >= 95% of the full query protein length (from proteome FASTA).
+//   This prevents false positives from conserved domains in paralogs.
 //
 // All real output files go to OUTPUT_pipeline/N-output/ directories.
 // Symlinks for the subproject-root output_to_input/BLOCK_diamond_ncbi_nr/
 // are created by RUN-workflow.sh after the pipeline completes (not by NextFlow).
-//
-// Research documentation: Every step produces visible, documented output
-// in OUTPUT_pipeline/. Nothing is passed silently between steps.
 //
 // ============================================================================
 
 
 // ----------------------------------------------------------------------------
 // Process 1: Validate proteomes and manifest
-// ----------------------------------------------------------------------------
-// Input:  User-provided proteome manifest (species_name, proteome_path, phyloname)
-// Output: Validated manifest with sequence counts added
-// Log:    1_ai-log-validate_proteomes.log
 // ----------------------------------------------------------------------------
 process validate_proteomes {
     tag "validate"
@@ -59,10 +58,6 @@ process validate_proteomes {
 
 // ----------------------------------------------------------------------------
 // Process 2: Split proteomes into N parts for parallel DIAMOND search
-// ----------------------------------------------------------------------------
-// Input:  Validated manifest from step 1
-// Output: Split FASTA files + job manifest documenting every split
-// Log:    2_ai-log-split_proteomes.log
 // ----------------------------------------------------------------------------
 process split_proteomes {
     tag "split"
@@ -90,9 +85,10 @@ process split_proteomes {
 // ----------------------------------------------------------------------------
 // Process 3: DIAMOND blastp search per split file
 // ----------------------------------------------------------------------------
-// Input:  One split FASTA file
-// Output: DIAMOND results (15-column TSV including stitle, full_qseq, full_sseq)
-// Note:   This process runs massively in parallel (species x parts)
+// Output: 13-column TSV (qseqid sseqid pident length mismatch gapopen
+//         qstart qend sstart send evalue bitscore stitle)
+// Note: This process runs massively in parallel. In burst mode, each split
+//       is submitted as its own SLURM job via burst QOS.
 // ----------------------------------------------------------------------------
 process diamond_search {
     tag "${split_fasta.simpleName}"
@@ -121,10 +117,6 @@ process diamond_search {
 // ----------------------------------------------------------------------------
 // Process 4: Combine DIAMOND results per species
 // ----------------------------------------------------------------------------
-// Input:  All N split DIAMOND result files for one species
-// Output: Single combined file per species + log documenting parts combined
-// Log:    4_ai-log-combine_diamond_results.log
-// ----------------------------------------------------------------------------
 process combine_results {
     tag "${species_name}"
 
@@ -134,7 +126,7 @@ process combine_results {
         tuple val(species_name), path(diamond_files)
 
     output:
-        path "combined_${species_name}.tsv", emit: combined_results
+        tuple val(species_name), path("combined_${species_name}.tsv"), emit: combined_results
         path "4_ai-log-combine_diamond_results.log", emit: log
 
     script:
@@ -150,23 +142,20 @@ process combine_results {
 // ----------------------------------------------------------------------------
 // Process 5: Identify top self/non-self hits per species
 // ----------------------------------------------------------------------------
-// Input:  Combined DIAMOND results for one species
-// Output: Per-protein top hit analysis + species-level statistics
-// Log:    5_ai-log-identify_top_hits.log
+// Self-hit detection: strengthened alignment proxy
+//   pident == 100.0, mismatch == 0, gapopen == 0, PLUS alignment covers
+//   >= 95% of full query protein length (read from proteome FASTA).
 //
-// This is the core analysis step:
-//   - For each query protein, finds top 10 NCBI nr hits
-//   - Identifies top non-self hit (first hit with different sequence)
-//   - Identifies top self-hit (first hit with identical sequence)
-//   - Records NCBI headers and full sequences for each
+// Receives both the combined DIAMOND results AND the original proteome
+// FASTA file for query length lookup.
 // ----------------------------------------------------------------------------
 process identify_top_hits {
-    tag "${combined_file.simpleName}"
+    tag "${species_name}"
 
     publishDir "${params.output_dir}/5-output", mode: 'copy'
 
     input:
-        path combined_file
+        tuple val(species_name), path(combined_file), path(proteome_file)
 
     output:
         path "*_top_hits.tsv", emit: top_hits
@@ -174,23 +163,18 @@ process identify_top_hits {
         path "5_ai-log-identify_top_hits.log", emit: log
 
     script:
-    // Extract species name from filename: combined_{species_name}.tsv
-    def species_name = combined_file.simpleName.replaceFirst( /^combined_/, '' )
     """
     python3 ${projectDir}/scripts/005_ai-python-identify_top_hits.py \
         --input-file ${combined_file} \
         --output-dir . \
-        --species-name ${species_name}
+        --species-name ${species_name} \
+        --proteome-file ${proteome_file}
     """
 }
 
 
 // ----------------------------------------------------------------------------
 // Process 6: Compile master statistics across all species
-// ----------------------------------------------------------------------------
-// Input:  Individual per-species statistics files from step 5
-// Output: Master summary table (one row per species)
-// Log:    6_ai-log-compile_statistics.log
 // ----------------------------------------------------------------------------
 process compile_statistics {
     tag "compile"
@@ -215,7 +199,6 @@ process compile_statistics {
 
 /*
  * Process 7: Write Run Log
- * Calls: scripts/007_ai-python-write_run_log.py
  *
  * Creates a timestamped log in ai/logs/ within this workflow directory
  * for transparency and reproducibility.
@@ -243,10 +226,6 @@ process write_run_log {
 // ============================================================================
 // Workflow
 // ============================================================================
-// NOTE: Symlinks for the subproject-root output_to_input/BLOCK_diamond_ncbi_nr/
-// are created by RUN-workflow.sh AFTER this pipeline completes. NextFlow only
-// writes real files to OUTPUT_pipeline/N-output/ directories.
-// ============================================================================
 workflow {
 
     // Input channel: proteome manifest
@@ -258,7 +237,7 @@ workflow {
     // Step 2: Split proteomes into N parts
     split_proteomes( validate_proteomes.out.validated_manifest )
 
-    // Step 3: DIAMOND search (parallel across all splits)
+    // Step 3: DIAMOND search (parallel across all splits, burst mode on SLURM)
     diamond_search( split_proteomes.out.split_fastas.flatten() )
 
     // Step 4: Combine results per species
@@ -275,7 +254,26 @@ workflow {
     combine_results( grouped_results )
 
     // Step 5: Identify top hits per species
-    identify_top_hits( combine_results.out.combined_results )
+    // Join combined results with proteome files for query length lookup.
+    // Build species_name -> proteome_path mapping from the validated manifest.
+    validate_proteomes.out.validated_manifest
+        .splitCsv( sep: '\t', header: true )
+        .filter { row -> !row.values().first().startsWith( '#' ) }
+        .map { row ->
+            // Manifest columns: Species_Name (...), Proteome_Path (...), Phyloname, Sequence_Count
+            def species_name = row.values().toList()[ 0 ]
+            def proteome_path = row.values().toList()[ 1 ]
+            return tuple( species_name, file( proteome_path ) )
+        }
+        .set { species_proteomes }
+
+    // Join combined results (species_name, combined_file) with proteomes (species_name, proteome_file)
+    combine_results.out.combined_results
+        .join( species_proteomes )
+        .set { combined_with_proteomes }
+    // Result: tuple( species_name, combined_file, proteome_file )
+
+    identify_top_hits( combined_with_proteomes )
 
     // Step 6: Compile master statistics
     compile_statistics( identify_top_hits.out.statistics.collect() )

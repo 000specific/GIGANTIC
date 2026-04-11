@@ -22,7 +22,7 @@ concepts and troubleshooting.
 ## What This Subproject Does
 
 Performs Origin-Conservation-Loss (OCL) analysis of **annotation groups** ("annogroups")
-across phylogenetic tree structures. This is the annotation-centric counterpart to
+across phylogenetic species tree structures. This is the annotation-centric counterpart to
 `orthogroups_X_ocl` (which does OCL on orthogroups).
 
 For each annogroup, determines:

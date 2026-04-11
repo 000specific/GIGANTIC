@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 31 14:55 | Purpose: Set up gene group directories and submit STEP_1 homolog discovery burst jobs for HGNC gene groups
+# AI: Claude Code | Opus 4.6 | 2026 April 01 00:30 | Purpose: Set up and submit STEP_1 homolog discovery as blocked SLURM jobs for HGNC gene groups
 # Human: Eric Edsinger
 
 ################################################################################
@@ -7,16 +7,20 @@
 ################################################################################
 #
 # PURPOSE:
-# For each RGS file produced by STEP_0 (HGNC gene group RGS generation):
-#   1. Create gene_group-[name]/ directory inside STEP_1-homolog_discovery/
-#   2. Copy workflow-COPYME-rbh_rbf_homologs -> workflow-RUN_01-rbh_rbf_homologs
-#   3. Copy RGS file, species_keeper_list, and rgs_species_map to INPUT_user/
-#   4. Update START_HERE-user_config.yaml with gene group name and RGS path
-#   5. Submit SLURM job for STEP_1 homolog discovery
+# Process all HGNC gene groups through STEP_1 (homolog discovery) using a
+# block-based SLURM strategy: gene groups are chunked into blocks of N,
+# and each block runs as a single SLURM job that processes its gene groups
+# sequentially. This means ~20-25 SLURM jobs instead of ~2,000, so once
+# a job gets allocated it keeps its resources and processes all groups in
+# that block without returning to the queue.
 #
-# INPUT:
-# Reads the STEP_0 summary TSV to iterate over all HGNC gene groups.
-# RGS FASTA files are accessed via output_to_input symlinks from STEP_0.
+# TWO PHASES:
+#   1. SETUP: Create gene_group-[name]/workflow-RUN_01 directories from COPYME
+#   2. SUBMIT: Chunk gene groups into blocks and submit each block as one SLURM job
+#
+# TWO TIERS (based on RGS sequence count):
+#   Small (<= 50 seqs): 4 CPUs, 30GB, 96hr, blocks of 100
+#   Large (> 50 seqs):  15 CPUs, 112GB, 96hr, blocks of 25
 #
 # USAGE:
 #   bash RUN-setup_and_submit_step1_burst.sh [OPTIONS]
@@ -25,8 +29,6 @@
 #   --dry-run         Show what would be done without making changes
 #   --setup-only      Set up directories but don't submit jobs
 #   --submit-only     Submit jobs for already-set-up directories
-#   --max-seqs N      Only process gene groups with <= N sequences (default: all)
-#   --min-seqs N      Only process gene groups with >= N sequences (default: 1)
 #   --gene-group NAME Process only this specific gene group (sanitized name)
 #   --help            Show this help message
 #
@@ -67,13 +69,24 @@ GENOMESDB_BLASTP="${SCRIPT_DIR}/../../genomesDB-species70/output_to_input/STEP_4
 CONDA_ENV="ai_gigantic_trees_gene_families"
 
 # ============================================================================
-# SLURM settings for STEP_1 (BLAST-heavy homolog discovery)
+# SLURM settings - two-tier block-based strategy
 # ============================================================================
 SLURM_ACCOUNT="moroz"
 SLURM_QOS="moroz-b"
-SLURM_MEM="112gb"
-SLURM_TIME="96:00:00"
-SLURM_CPUS="15"
+
+LARGE_THRESHOLD=50  # RGS sequence count threshold
+
+# Small gene groups (<= threshold): many per block, lower resources
+SLURM_MEM_SMALL="30gb"
+SLURM_TIME_SMALL="96:00:00"
+SLURM_CPUS_SMALL="4"
+BLOCK_SIZE_SMALL=100
+
+# Large gene groups (> threshold): fewer per block, higher resources
+SLURM_MEM_LARGE="112gb"
+SLURM_TIME_LARGE="96:00:00"
+SLURM_CPUS_LARGE="15"
+BLOCK_SIZE_LARGE=25
 
 # ============================================================================
 # Options
@@ -81,8 +94,6 @@ SLURM_CPUS="15"
 DRY_RUN=false
 SETUP_ONLY=false
 SUBMIT_ONLY=false
-MAX_SEQS=0       # 0 = no limit
-MIN_SEQS=1
 SINGLE_GENE_GROUP=""
 
 # Parse arguments
@@ -100,20 +111,12 @@ while [[ $# -gt 0 ]]; do
             SUBMIT_ONLY=true
             shift
             ;;
-        --max-seqs)
-            MAX_SEQS="$2"
-            shift 2
-            ;;
-        --min-seqs)
-            MIN_SEQS="$2"
-            shift 2
-            ;;
         --gene-group)
             SINGLE_GENE_GROUP="$2"
             shift 2
             ;;
         --help|-h)
-            head -33 "$0" | grep -E "^#" | sed 's/^# //' | sed 's/^#//'
+            head -36 "$0" | grep -E "^#" | sed 's/^# //' | sed 's/^#//'
             exit 0
             ;;
         *)
@@ -129,13 +132,10 @@ echo "GIGANTIC trees_gene_groups (HGNC) - STEP_1 Burst Setup & Submission"
 echo "========================================================================"
 echo ""
 echo "Started: $(date)"
-echo "SLURM: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
-if [ "$MAX_SEQS" -gt 0 ] 2>/dev/null; then
-    echo "Filter: max ${MAX_SEQS} sequences per gene group"
-fi
-if [ "$MIN_SEQS" -gt 1 ] 2>/dev/null; then
-    echo "Filter: min ${MIN_SEQS} sequences per gene group"
-fi
+echo ""
+echo "Block-based SLURM strategy:"
+echo "  Small (<= ${LARGE_THRESHOLD} seqs): ${BLOCK_SIZE_SMALL}/block, ${SLURM_CPUS_SMALL} CPUs, ${SLURM_MEM_SMALL}, ${SLURM_TIME_SMALL}"
+echo "  Large (>  ${LARGE_THRESHOLD} seqs): ${BLOCK_SIZE_LARGE}/block, ${SLURM_CPUS_LARGE} CPUs, ${SLURM_MEM_LARGE}, ${SLURM_TIME_LARGE}"
 if [ -n "${SINGLE_GENE_GROUP}" ]; then
     echo "Filter: single gene group '${SINGLE_GENE_GROUP}'"
 fi
@@ -181,7 +181,6 @@ fi
 # ============================================================================
 SPECIES_KEEPER_LIST="/tmp/gigantic_species70_keeper_list_$$.tsv"
 
-# Extract Genus_species from proteome filenames
 ls "${GENOMESDB_BLASTP}"/*.aa 2>/dev/null | while read f; do
     basename "$f" | sed 's/-T1-proteome\.aa$//' | awk -F'_' '{print $(NF-1)"_"$NF}'
 done | sort -u > "${SPECIES_KEEPER_LIST}"
@@ -190,123 +189,76 @@ species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
 echo "Species keeper list: ${species_count} species from genomesDB-species70"
 echo ""
 
-# Create slurm_logs directory at the STEP_1 level
+# Create slurm_logs directory
 mkdir -p "${STEP1_DIR}/slurm_logs"
 
 # ============================================================================
-# Read STEP_0 summary and process gene groups
+# PHASE 1: SETUP - Create gene_group-[name]/workflow-RUN_01 directories
 # ============================================================================
 
-# Track counts
+# Collect gene groups into small/large lists for block submission
+SMALL_GENE_GROUPS=()
+LARGE_GENE_GROUPS=()
+
 setup_count=0
-submit_count=0
 skip_count=0
 error_count=0
-filter_count=0
 total_count=0
 
-# Read the summary TSV (skip header line)
-# Use process substitution to avoid subshell (so counter variables persist)
+echo "========================================================================"
+echo "PHASE 1: Setup gene group workflow directories"
+echo "========================================================================"
+echo ""
+
 while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filename sequence_count; do
     total_count=$((total_count + 1))
 
-    # --- Apply filters ---
+    # Apply single gene group filter
     if [ -n "${SINGLE_GENE_GROUP}" ] && [ "${sanitized_name}" != "${SINGLE_GENE_GROUP}" ]; then
         continue
     fi
 
-    if [ "$MAX_SEQS" -gt 0 ] 2>/dev/null && [ "$sequence_count" -gt "$MAX_SEQS" ] 2>/dev/null; then
-        filter_count=$((filter_count + 1))
-        continue
-    fi
-
-    if [ "$sequence_count" -lt "$MIN_SEQS" ] 2>/dev/null; then
-        filter_count=$((filter_count + 1))
-        continue
-    fi
-
-    # --- Paths for this gene group ---
+    # Paths for this gene group
     GENE_GROUP_DIR="${STEP1_DIR}/gene_group-${sanitized_name}"
     WORKFLOW_RUN="${GENE_GROUP_DIR}/workflow-RUN_01-rbh_rbf_homologs"
     RGS_SOURCE="${STEP0_RGS_DIR}/${rgs_filename}"
 
-    echo "----------------------------------------"
-    echo "Gene group: ${sanitized_name} (${gene_group_id}, ${sequence_count} seqs)"
-
     # Verify RGS file exists
     if [ ! -f "${RGS_SOURCE}" ]; then
-        echo -e "  ${RED}ERROR: RGS file not found: ${rgs_filename}${NC}"
+        echo -e "  ${RED}ERROR: RGS not found: ${rgs_filename}${NC}"
         error_count=$((error_count + 1))
         continue
     fi
 
-    # ====================================================================
-    # SETUP PHASE
-    # ====================================================================
+    # Categorize into small/large
+    if [ "$sequence_count" -gt "$LARGE_THRESHOLD" ] 2>/dev/null; then
+        LARGE_GENE_GROUPS+=("${sanitized_name}")
+    else
+        SMALL_GENE_GROUPS+=("${sanitized_name}")
+    fi
+
+    # ---- SETUP ----
     if ! $SUBMIT_ONLY; then
         if [ -d "${WORKFLOW_RUN}" ]; then
-            echo -e "  ${YELLOW}workflow-RUN_01 exists, skipping setup${NC}"
             skip_count=$((skip_count + 1))
         else
             if $DRY_RUN; then
-                echo -e "  ${BLUE}[DRY RUN] Would create: gene_group-${sanitized_name}/workflow-RUN_01-rbh_rbf_homologs${NC}"
                 setup_count=$((setup_count + 1))
             else
-                # 1. Create gene_group directory and copy workflow template
                 mkdir -p "${GENE_GROUP_DIR}"
                 cp -r "${STEP1_COPYME}" "${WORKFLOW_RUN}"
 
-                # 2. Populate INPUT_user
                 mkdir -p "${WORKFLOW_RUN}/INPUT_user"
-
-                # Copy RGS file (follow symlink to get real file)
                 cp -L "${RGS_SOURCE}" "${WORKFLOW_RUN}/INPUT_user/${rgs_filename}"
-
-                # Copy species keeper list
                 cp "${SPECIES_KEEPER_LIST}" "${WORKFLOW_RUN}/INPUT_user/species_keeper_list.tsv"
-
-                # Copy RGS species map (HGNC RGS headers use "human" as short name)
                 cp "${RGS_SPECIES_MAP}" "${WORKFLOW_RUN}/INPUT_user/rgs_species_map.tsv"
 
-                # 3. Update config YAML
                 CONFIG_FILE="${WORKFLOW_RUN}/START_HERE-user_config.yaml"
                 sed -i "s|name: \"innexin_pannexin\"|name: \"${sanitized_name}\"|" "${CONFIG_FILE}"
                 sed -i "s|rgs_file: \"INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa\"|rgs_file: \"INPUT_user/${rgs_filename}\"|" "${CONFIG_FILE}"
 
-                echo -e "  ${GREEN}Created and configured STEP_1 workflow${NC}"
                 setup_count=$((setup_count + 1))
             fi
-        fi
-    fi
-
-    # ====================================================================
-    # SUBMIT PHASE
-    # ====================================================================
-    if ! $SETUP_ONLY; then
-        if ! $DRY_RUN && [ ! -d "${WORKFLOW_RUN}" ]; then
-            echo -e "  ${YELLOW}Workflow directory not found, skipping submit${NC}"
-            continue
-        fi
-
-        if $DRY_RUN; then
-            echo -e "  ${BLUE}[DRY RUN] Would submit SLURM job for STEP_1${NC}"
-            submit_count=$((submit_count + 1))
-        else
-            JOB_NAME="s1_hgnc_${sanitized_name}"
-            # Truncate job name to 64 chars (SLURM limit)
-            JOB_NAME="${JOB_NAME:0:64}"
-
-            sbatch \
-                --job-name="${JOB_NAME}" \
-                --account="${SLURM_ACCOUNT}" \
-                --qos="${SLURM_QOS}" \
-                --mem="${SLURM_MEM}" \
-                --time="${SLURM_TIME}" \
-                --cpus-per-task="${SLURM_CPUS}" \
-                --output="${STEP1_DIR}/slurm_logs/step1_${sanitized_name}-%j.log" \
-                --wrap="module load conda 2>/dev/null || true; conda activate ${CONDA_ENV} || { echo 'ERROR: Failed to activate conda environment ${CONDA_ENV}'; exit 1; }; cd ${WORKFLOW_RUN} && bash RUN-workflow.sh"
-
-            submit_count=$((submit_count + 1))
         fi
     fi
 
@@ -315,7 +267,135 @@ done < <(tail -n +2 "${STEP0_SUMMARY}")
 # Clean up species keeper list
 rm -f "${SPECIES_KEEPER_LIST}"
 
+if ! $SUBMIT_ONLY; then
+    echo "Setup: ${setup_count} new, ${skip_count} already exist, ${error_count} errors"
+fi
+echo "Small gene groups: ${#SMALL_GENE_GROUPS[@]}"
+echo "Large gene groups: ${#LARGE_GENE_GROUPS[@]}"
+echo ""
+
+# ============================================================================
+# PHASE 2: SUBMIT - Chunk into blocks and submit each block as one SLURM job
+# ============================================================================
+
+if $SETUP_ONLY; then
+    echo "Setup-only mode. Exiting."
+    echo ""
+    echo "Completed: $(date)"
+    exit 0
+fi
+
+echo "========================================================================"
+echo "PHASE 2: Submit SLURM block jobs"
+echo "========================================================================"
+echo ""
+
+submit_block() {
+    local block_name="$1"
+    local slurm_cpus="$2"
+    local slurm_mem="$3"
+    local slurm_time="$4"
+    local tier="$5"
+    shift 5
+    local gene_groups=("$@")
+    local count=${#gene_groups[@]}
+
+    if [ "$count" -eq 0 ]; then
+        return
+    fi
+
+    # Build the sequential runner command
+    # Each gene group: cd into its workflow-RUN_01 dir, run RUN-workflow.sh, cd back
+    local runner_commands="module load conda 2>/dev/null || true; conda activate ${CONDA_ENV} || { echo 'FATAL: conda env failed'; exit 1; }; "
+    runner_commands+="echo '========================================'; "
+    runner_commands+="echo 'BLOCK: ${block_name} (${count} gene groups)'; "
+    runner_commands+="echo '========================================'; "
+    runner_commands+="BLOCK_SUCCESS=0; BLOCK_FAIL=0; BLOCK_TOTAL=${count}; "
+
+    for gene_group in "${gene_groups[@]}"; do
+        local workflow_dir="${STEP1_DIR}/gene_group-${gene_group}/workflow-RUN_01-rbh_rbf_homologs"
+        runner_commands+="echo ''; echo '----------------------------------------'; "
+        runner_commands+="echo \"[\$(date)] Starting: ${gene_group}\"; "
+        runner_commands+="if cd '${workflow_dir}' 2>/dev/null; then "
+        runner_commands+="  if bash RUN-workflow.sh; then "
+        runner_commands+="    echo \"[\$(date)] SUCCESS: ${gene_group}\"; "
+        runner_commands+="    BLOCK_SUCCESS=\$((BLOCK_SUCCESS + 1)); "
+        runner_commands+="  else "
+        runner_commands+="    echo \"[\$(date)] FAILED: ${gene_group} (exit \$?)\"; "
+        runner_commands+="    BLOCK_FAIL=\$((BLOCK_FAIL + 1)); "
+        runner_commands+="  fi; "
+        runner_commands+="else "
+        runner_commands+="  echo \"[\$(date)] FAILED: ${gene_group} (directory not found)\"; "
+        runner_commands+="  BLOCK_FAIL=\$((BLOCK_FAIL + 1)); "
+        runner_commands+="fi; "
+    done
+
+    runner_commands+="echo ''; echo '========================================'; "
+    runner_commands+="echo \"BLOCK COMPLETE: \${BLOCK_SUCCESS}/\${BLOCK_TOTAL} succeeded, \${BLOCK_FAIL} failed\"; "
+    runner_commands+="echo '========================================'; "
+
+    if $DRY_RUN; then
+        echo -e "  ${BLUE}[DRY RUN] Block ${block_name}: ${count} gene groups (${tier}: ${slurm_cpus} CPUs, ${slurm_mem})${NC}"
+    else
+        sbatch \
+            --job-name="${block_name}" \
+            --account="${SLURM_ACCOUNT}" \
+            --qos="${SLURM_QOS}" \
+            --mem="${slurm_mem}" \
+            --time="${slurm_time}" \
+            --cpus-per-task="${slurm_cpus}" \
+            --output="${STEP1_DIR}/slurm_logs/${block_name}-%j.log" \
+            --wrap="${runner_commands}"
+
+        echo -e "  ${GREEN}Submitted ${block_name}: ${count} gene groups (${tier})${NC}"
+    fi
+}
+
+# ---- Submit small blocks ----
+small_block_count=0
+small_submitted=0
+block_start=0
+
+while [ "$block_start" -lt "${#SMALL_GENE_GROUPS[@]}" ]; do
+    block_end=$((block_start + BLOCK_SIZE_SMALL))
+    if [ "$block_end" -gt "${#SMALL_GENE_GROUPS[@]}" ]; then
+        block_end=${#SMALL_GENE_GROUPS[@]}
+    fi
+
+    small_block_count=$((small_block_count + 1))
+    block_name="s1_hgnc_small_block_$(printf '%02d' ${small_block_count})"
+    block_slice=("${SMALL_GENE_GROUPS[@]:${block_start}:${BLOCK_SIZE_SMALL}}")
+
+    submit_block "${block_name}" "${SLURM_CPUS_SMALL}" "${SLURM_MEM_SMALL}" "${SLURM_TIME_SMALL}" "small" "${block_slice[@]}"
+
+    small_submitted=$((small_submitted + ${#block_slice[@]}))
+    block_start=$block_end
+done
+
+# ---- Submit large blocks ----
+large_block_count=0
+large_submitted=0
+block_start=0
+
+while [ "$block_start" -lt "${#LARGE_GENE_GROUPS[@]}" ]; do
+    block_end=$((block_start + BLOCK_SIZE_LARGE))
+    if [ "$block_end" -gt "${#LARGE_GENE_GROUPS[@]}" ]; then
+        block_end=${#LARGE_GENE_GROUPS[@]}
+    fi
+
+    large_block_count=$((large_block_count + 1))
+    block_name="s1_hgnc_large_block_$(printf '%02d' ${large_block_count})"
+    block_slice=("${LARGE_GENE_GROUPS[@]:${block_start}:${BLOCK_SIZE_LARGE}}")
+
+    submit_block "${block_name}" "${SLURM_CPUS_LARGE}" "${SLURM_MEM_LARGE}" "${SLURM_TIME_LARGE}" "large" "${block_slice[@]}"
+
+    large_submitted=$((large_submitted + ${#block_slice[@]}))
+    block_start=$block_end
+done
+
+# ============================================================================
 # Summary
+# ============================================================================
 echo ""
 echo "========================================================================"
 if $DRY_RUN; then
@@ -323,17 +403,16 @@ if $DRY_RUN; then
 else
     echo -e "${GREEN}SUMMARY${NC}"
 fi
-echo "Total gene groups in STEP_0: ${total_count}"
-echo "Filtered out: ${filter_count}"
-if ! $SUBMIT_ONLY; then
-    echo "Set up: ${setup_count}"
-    echo "Skipped (already exist): ${skip_count}"
-fi
-if ! $SETUP_ONLY; then
-    echo "Jobs submitted: ${submit_count}"
-fi
+echo "Total gene groups: ${total_count}"
+echo ""
+echo "Small blocks: ${small_block_count} SLURM jobs (${small_submitted} gene groups, ${BLOCK_SIZE_SMALL}/block)"
+echo "  Resources: ${SLURM_CPUS_SMALL} CPUs, ${SLURM_MEM_SMALL} RAM, ${SLURM_TIME_SMALL}"
+echo ""
+echo "Large blocks: ${large_block_count} SLURM jobs (${large_submitted} gene groups, ${BLOCK_SIZE_LARGE}/block)"
+echo "  Resources: ${SLURM_CPUS_LARGE} CPUs, ${SLURM_MEM_LARGE} RAM, ${SLURM_TIME_LARGE}"
+echo ""
+echo "Total SLURM jobs: $((small_block_count + large_block_count))"
 echo "Errors: ${error_count}"
-echo "SLURM resources per job: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
 echo ""
 echo "SLURM logs: ${STEP1_DIR}/slurm_logs/"
 echo "========================================================================"

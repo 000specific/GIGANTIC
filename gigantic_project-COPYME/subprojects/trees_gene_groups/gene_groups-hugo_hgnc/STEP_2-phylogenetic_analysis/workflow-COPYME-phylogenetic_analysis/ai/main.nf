@@ -56,8 +56,8 @@ params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
 // Gene family (single gene family per workflow copy)
 params.gene_family = config.gene_family?.name ?: null
 
-// Input: output_to_input directory (AGS found at <dir>/<gene_family>/STEP_1-homolog_discovery/)
-params.output_to_input_dir = config.input?.output_to_input_dir ?: '../../../output_to_input'
+// Input: STEP_1 output directory (AGS found at <dir>/gene_group-<gene_family>/)
+params.step1_output_dir = config.input?.step1_output_dir ?: '../../../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery'
 
 // Project database name (for file naming)
 params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
@@ -114,17 +114,17 @@ process prepare_alignment_input {
 
     script:
     def project_db = params.project_database
-    def oti_dir = file( "${projectDir}/../${params.output_to_input_dir}" ).toAbsolutePath()
+    def step1_dir = file( "${projectDir}/../${params.step1_output_dir}" ).toAbsolutePath()
     """
     mkdir -p 1-output
 
-    # Find AGS file from output_to_input/<gene_family>/STEP_1-homolog_discovery/
-    AGS_FILE=\$(find -L "${oti_dir}/${gene_family}/STEP_1-homolog_discovery/" -name "*.aa" -type f | head -1)
+    # Find AGS file from STEP_1 output: .../gene_group-<gene_family>/
+    AGS_FILE=\$(find -L "${step1_dir}/gene_group-${gene_family}/" -name "*.aa" -type f | head -1)
 
     if [ -z "\${AGS_FILE}" ] || [ ! -f "\${AGS_FILE}" ]; then
-        echo "ERROR: AGS file not found in: ${oti_dir}/${gene_family}/STEP_1-homolog_discovery/"
-        echo "Ensure STEP_1 has completed and output_to_input/${gene_family}/STEP_1-homolog_discovery/ contains results."
-        echo "Expected directory: ${oti_dir}/${gene_family}/STEP_1-homolog_discovery/"
+        echo "ERROR: AGS file not found in: ${step1_dir}/gene_group-${gene_family}/"
+        echo "Ensure STEP_1 has completed for this gene group."
+        echo "Expected directory: ${step1_dir}/gene_group-${gene_family}/"
         exit 1
     fi
 
@@ -484,7 +484,7 @@ workflow {
     ========================================================================
     Gene family      : ${params.gene_family}
     Project database : ${params.project_database}
-    output_to_input  : ${params.output_to_input_dir}
+    STEP_1 output    : ${params.step1_output_dir}
     Output directory : ${params.output_dir}
 
     Tree methods enabled:

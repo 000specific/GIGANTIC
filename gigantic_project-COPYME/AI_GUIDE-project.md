@@ -27,6 +27,108 @@
 
 ---
 
+## ⚠️ CRITICAL: GIGANTIC Terminology Discipline
+
+GIGANTIC is a phylogenomic platform with several pairs of distinct concepts
+that look similar but must NOT be used interchangeably. The full canonical
+worked examples of all rules below live in
+`subprojects/trees_species/README.md` (Terminology section). The compact
+versions below are sufficient for day-to-day work.
+
+### Rule 1: Phylogenetic vs Evolutionary
+
+- **phylogenetic** refers ONLY to a species tree as a data structure —
+  its topology, structural components, and relationships expressed by the
+  species tree itself. Use for: `phylogenetic_tree`, `phylogenetic_path`
+  (root-to-tip walk on a species tree), `phylogenetic_block` (a parent::child
+  edge on a species tree), `phylogenetic relationships between clades`,
+  parent-child tables derived from a species tree.
+
+- **evolutionary** refers to biology — both (a) actual biological history
+  in nature, and (b) biological patterns inferred by combining feature
+  data with a species tree. Use for: "evolutionary history," "evolutionary
+  relatives," "evolutionary patterns of conservation and loss," "evolutionary
+  origin of an orthogroup," "evolutionary OCL inferences."
+
+**The clean mental model**:
+
+> `trees_species` produces PHYLOGENETIC data (species tree structures on disk).
+> `orthogroups` / `annotations` produce FEATURE data.
+> `orthogroups_X_ocl` / `annotations_X_ocl` combine the two to produce
+> EVOLUTIONARY inferences.
+
+**Atomic terms exception**: `phylogenetic block` and `phylogenetic path` are
+single named concepts in GIGANTIC vocabulary. Do NOT inject `species tree`
+into these compound terms (no "phylogenetic species tree block"). Qualify
+the surrounding context if needed.
+
+### Rule 2: Structure vs Topology (Species Tree)
+
+- A **structure** is the persistent identity of one resolved binary species
+  tree variant tracked through `trees_species/`, identified by `structure_NNN`
+  (e.g., `structure_001` through `structure_105`). The structure is the
+  *who* — the persistent identifier.
+
+- A **topology** is the abstract branching pattern of a structure — the
+  arrangement of clades, ignoring labels and branch lengths. The (2N-3)!!
+  formula counts topologies. The topology is the *what* — the branching
+  pattern.
+
+> Every structure has a topology; every topology becomes one structure when
+> the pipeline instantiates it (assigns clade identifiers, grafts species
+> subtrees, adds branch lengths and metadata).
+
+The two terms are not synonyms. Script 002 enumerates topologies; Script 004
+builds complete species trees from those topologies; downstream OCL operates
+on structures via `structure_manifest.tsv`.
+
+### Rule 3: Resolved vs Unresolved Input Species Tree
+
+- **Resolved** input (no polytomies/ambiguities) → pipeline produces 1
+  structure (`structure_001` = the input species tree)
+- **Unresolved** input (N ambiguous nodes) → pipeline produces (2N-3)!!
+  structures (each one a different binary resolution of the input)
+
+**Every structure produced by the pipeline is itself resolved by
+construction. The resolution status is a property of the input, not of
+any specific structure.**
+
+### Rule 4: Tree References Must Be Explicit (Species Tree vs Gene Tree)
+
+GIGANTIC works with two fundamentally different kinds of phylogenetic trees:
+
+- **species tree**: relationships between species (one per species set;
+  produced by `trees_species/`; leaves are species)
+- **gene tree**: relationships between gene copies for a gene family or
+  group (produced by `trees_gene_families/` or `trees_gene_groups/`;
+  leaves are gene copies)
+
+**Documentation rule (strict)**: Always qualify tree references as `species
+tree` or `gene tree` in READMEs, AI_GUIDEs, design documents, INPUT_user
+READMEs, and config file comments. The qualification "phylogenetic tree"
+alone is also ambiguous — make it specific.
+
+**Code rule (context-tolerant)**: In code, bare `tree` references are
+acceptable when the surrounding subproject context makes the kind of tree
+unambiguous. Strict qualification is for documentation, not code.
+
+### Rule 5: Hierarchies vs Trees — Origin vs Root
+
+- **Trees** (species trees, gene trees) have a **root**. Edges represent
+  inferred biological relationships (descent, divergence). Rooting is an
+  analytical choice.
+
+- **Hierarchies** (the NCBI taxonomic classification) have an **origin**.
+  Edges represent set inclusion (`Mammalia ⊂ Chordata`). They are
+  definitional, not inferred. A hierarchy is intrinsically singly-originated;
+  there is no "unrooted hierarchy."
+
+**Rule**: Do not refer to taxonomy as a "tree" or to its topmost node as a
+"root." Use "hierarchy" and "origin" instead. Do not write "rooted hierarchy"
+— this is a category error.
+
+---
+
 ## What GIGANTIC Is
 
 **GIGANTIC** = Genome Integration and Gene Analysis across Numerous Topology-Interrogated Clades

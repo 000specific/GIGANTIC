@@ -9,7 +9,11 @@ Lists which species tree structure(s) to analyze for origin-conservation-loss.
 **Values**: Three-digit structure identifiers matching trees_species output
 (e.g., "001", "002", ..., "105")
 
-**Default**: Single structure "001" (the original input tree topology)
+**Default**: Single structure "001" (the original input species tree topology)
+
+(For canonical definitions of structure, topology, and the resolved-vs-unresolved
+input species tree distinction, see
+`../../../../trees_species/README.md` Terminology section.)
 
 **Examples**:
 - Analyze one structure: just "001"

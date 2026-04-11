@@ -15,15 +15,17 @@ Processes all orthogroups across user-selected species tree topologies in parall
 
 ## Terminology
 
-- **Phylogenetic block**: A single parent-to-child transition on a given phylogenetic tree.
+- **Phylogenetic block**: A single parent-to-child transition on a given phylogenetic species tree.
   Format: `Parent::Child` (e.g., `Metazoa::Bilateria`). The computational unit for
   tracking origins, conservation, and loss.
 
-- **Phylogenetic path**: The path on a given phylogenetic tree from a node to the root.
+- **Phylogenetic path**: The path on a given phylogenetic species tree from a node to the root.
   Example: `Homo_sapiens > Hominidae > Primates > ... > Basal`
 
-These are exclusively "phylogenetic" (model-derived from tree topologies), not "evolutionary"
-(which refers to actual biological history).
+For full canonical definitions of `phylogenetic` vs `evolutionary`, structure vs
+topology, the resolved-vs-unresolved input species tree distinction, and the
+species-tree-vs-gene-tree explicitness rule, see
+`../trees_species/README.md` (Terminology section).
 
 ## Design: COPYME for Multi-Tool Exploration
 

@@ -4,7 +4,9 @@
 **Human**: Eric Edsinger
 
 **For AI Assistants**: Read the BLOCK guide (`../../AI_GUIDE-permutations_and_features.md`) first.
-This guide focuses on running the workflow.
+This guide focuses on running the workflow. The canonical Terminology definitions
+(Structure vs Topology, Resolved vs Unresolved input species tree, species-tree-vs-gene-tree
+explicitness) live in `../../../README.md`.
 
 ---
 
@@ -49,7 +51,7 @@ sbatch RUN-workflow.sbatch
 5. **Script 005** extracts parent-child (4-col) and parent-sibling (9-col) relationships
 6. **Script 006** generates phylogenetic blocks (Parent::Child transitions)
 7. **Script 007** integrates all data into 24-column master clade table
-8. **Script 008** creates SVG and PDF tree visualizations (requires ete3)
+8. **Script 008** creates SVG and PDF species tree visualizations (requires ete3)
 9. **Script 009** generates clade-to-descendant-species mappings
 10. **RUN-workflow.sh** creates symlinks in output_to_input/BLOCK_permutations_and_features/
 
@@ -89,7 +91,7 @@ ls OUTPUT_pipeline/4-output/newick_trees/*.newick | wc -l
 # Check integrated master table columns (should be 24)
 head -1 OUTPUT_pipeline/7-output/7_ai-integrated_clade_data-all_structures.tsv | tr '\t' '\n' | wc -l
 
-# Check tree visualizations
+# Check species tree visualizations
 ls OUTPUT_pipeline/8-output/*.svg | wc -l
 
 # Check downstream symlinks
@@ -102,7 +104,7 @@ ls ../../output_to_input/BLOCK_permutations_and_features/
 
 | N Unresolved Clades | Topologies | Approximate Runtime |
 |---------------------|------------|---------------------|
-| 0 (single tree) | 1 | < 1 minute |
+| 0 (single species tree, resolved input) | 1 | < 1 minute |
 | 3 | 3 | < 1 minute |
 | 5 | 105 | 1-5 minutes |
 | 7 | 10395 | 10-30 minutes |

@@ -90,7 +90,7 @@ ls ../../output_to_input/BLOCK_ocl_analysis/Species71_pfam/
 ## Script Pipeline Detail
 
 ### Script 001: Create Annogroups
-- Phase A: Loads phylogenetic tree data (blocks, parent-child, paths, clade mappings)
+- Phase A: Loads phylogenetic species tree data (blocks, parent-child, paths, clade mappings)
 - Phase B: Loads per-species annotation files from annotations_hmms (7-column TSV)
 - Phase C: Creates annogroups per subtype (single, combo, zero) with sequential IDs
 - Phase D: Writes annogroup map + per-subtype files + subtypes manifest
