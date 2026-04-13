@@ -52,15 +52,73 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # ============================================================================
+# Read execution mode from START_HERE-user_config.yaml
+# ============================================================================
+# Uses grep to parse flat YAML keys (no Python dependency required).
+
+read_config() {
+    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+    echo "${value:-$2}"
+}
+
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+
+# ============================================================================
+# SLURM submission (if execution_mode is "slurm" and not already inside a job)
+# ============================================================================
+# Self-submits as a SLURM job so heavy work (conda env creation, NextFlow
+# pipeline) runs on a compute node — never on the login node.
+
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    echo "Execution mode: SLURM (submitting job)"
+    echo ""
+
+    SLURM_CPUS=$(read_config "cpus" "1")
+    SLURM_MEM=$(read_config "memory_gb" "4")
+    SLURM_TIME=$(read_config "time_hours" "1")
+    SLURM_ACCOUNT=$(read_config "slurm_account" "")
+    SLURM_QOS=$(read_config "slurm_qos" "")
+
+    mkdir -p slurm_logs
+
+    SBATCH_ARGS="--job-name=gigantic_species_tree"
+    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/gigantic_species_tree-%j.log"
+
+    if [ -n "${SLURM_ACCOUNT}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+    fi
+    if [ -n "${SLURM_QOS}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+    fi
+
+    echo "Submitting with: sbatch ${SBATCH_ARGS}"
+    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+    echo ""
+    echo "Job submitted. Check slurm_logs/ for output."
+    exit 0
+fi
+
+if [ -n "${SLURM_JOB_ID}" ]; then
+    echo "Running inside SLURM job ${SLURM_JOB_ID}"
+else
+    echo "Execution mode: local"
+fi
+echo ""
+
+# ============================================================================
 # Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
 # This workflow requires:
-#   - conda environment: ai_gigantic_trees_species (Python, PyYAML, ete3, PyQt5)
+#   - conda environment: aiG-trees_species-gigantic_species_tree (Python, PyYAML, ete3, PyQt5)
 #   - NextFlow: from conda env OR system module
 #
 # The environment is created automatically on first run from the yml spec
-# in conda_environments/. You can also pre-create all environments at once:
-#   cd ../../../../ && bash RUN-setup_environments.sh
+# colocated at ai/conda_environment.yml. mamba is preferred (much faster);
+# conda is the fallback if mamba is not available.
 #
 # NextFlow availability:
 #   - If installed in conda env: used automatically
@@ -68,9 +126,10 @@ cd "${SCRIPT_DIR}"
 #   - If neither available: exits with error and instructions
 # ============================================================================
 
-ENV_NAME="ai_gigantic_trees_species"
-ENV_YML="../../../../conda_environments/${ENV_NAME}.yml"
+ENV_NAME="aiG-trees_species-gigantic_species_tree"
+ENV_YML="ai/conda_environment.yml"
 
+# Specific to GIGANTIC development for GitHub
 # Load conda module (required on HPC systems like HiPerGator)
 module load conda 2>/dev/null || true
 
@@ -94,8 +153,19 @@ if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
     fi
     if command -v mamba &> /dev/null; then
         mamba env create -f "${ENV_YML}" -y
+        CREATE_EXIT=$?
     else
         conda env create -f "${ENV_YML}" -y
+        CREATE_EXIT=$?
+    fi
+    if [ $CREATE_EXIT -ne 0 ]; then
+        echo ""
+        echo "ERROR: Failed to create conda environment '${ENV_NAME}' (exit code $CREATE_EXIT)"
+        echo "Check the error messages above and verify the spec at: ${ENV_YML}"
+        echo ""
+        echo "If a partial env was left behind, remove it before retrying:"
+        echo "  mamba env remove -n ${ENV_NAME} -y"
+        exit 1
     fi
     echo ""
     echo "Environment '${ENV_NAME}' created successfully."
@@ -112,6 +182,7 @@ fi
 # Ensure NextFlow is available (conda env or system module)
 if ! command -v nextflow &> /dev/null; then
     echo "NextFlow not found in conda env. Trying system module..."
+    # Specific to GIGANTIC development for GitHub
     module load nextflow 2>/dev/null || true
     if ! command -v nextflow &> /dev/null; then
         echo ""
@@ -171,7 +242,15 @@ echo ""
 echo "Running NextFlow pipeline..."
 echo ""
 
-nextflow run ai/main.nf
+# Optionally resume from cached work/ if user enabled it in config
+RESUME=$(read_config "resume" "false")
+RESUME_FLAG=""
+if [ "${RESUME}" == "true" ]; then
+    RESUME_FLAG="-resume"
+    echo "  resume: enabled (using NextFlow work/ cache)"
+fi
+
+nextflow run ai/main.nf ${RESUME_FLAG}
 
 EXIT_CODE=$?
 

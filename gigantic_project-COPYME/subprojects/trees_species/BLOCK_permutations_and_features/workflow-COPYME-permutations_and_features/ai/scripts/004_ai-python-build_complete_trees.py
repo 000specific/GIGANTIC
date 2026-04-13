@@ -556,20 +556,25 @@ def build_complete_tree( fixed_structure: NewickNode, variable_root_label: str, 
 
     Returns:
         A new complete tree with the variable root subtree inserted.
+
+    RUN_2 optimization: variable_root_subtree is built fresh per skeleton in the
+    caller (graft_subtrees_onto_skeleton creates a new tree each call), so it
+    has no parent and is consumed exactly once here. We can therefore link it
+    directly into the new tree without an extra deep copy via extract_subtree(),
+    saving one full copy of the variable region per structure.
     """
     if fixed_structure.is_leaf() and fixed_structure.label == variable_root_label:
-        # This is the stub - replace with the full variable root subtree
-        complete_subtree = variable_root_subtree.extract_subtree()
-        complete_subtree.branch_length = fixed_structure.branch_length
-        return complete_subtree
+        # This is the stub - link in the variable root subtree directly.
+        variable_root_subtree.branch_length = fixed_structure.branch_length
+        variable_root_subtree.parent = None
+        return variable_root_subtree
 
     new_node = NewickNode( fixed_structure.label, fixed_structure.branch_length )
     for child in fixed_structure.children:
         if child.is_leaf() and child.label == variable_root_label:
-            # Replace stub with variable root subtree
-            complete_subtree = variable_root_subtree.extract_subtree()
-            complete_subtree.branch_length = child.branch_length
-            new_node.add_child( complete_subtree )
+            # Link variable root subtree directly into the new tree (no copy).
+            variable_root_subtree.branch_length = child.branch_length
+            new_node.add_child( variable_root_subtree )
         else:
             child_copy = build_complete_tree( child, variable_root_label, variable_root_subtree )
             new_node.add_child( child_copy )

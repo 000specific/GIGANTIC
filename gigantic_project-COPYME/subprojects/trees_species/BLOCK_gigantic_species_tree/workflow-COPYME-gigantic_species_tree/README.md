@@ -86,7 +86,7 @@ See `INPUT_user/README.md` for the required species tree format and examples.
 ## Prerequisites
 
 - **Species tree** in Newick format with `Genus_species` at leaves (see `INPUT_user/README.md`)
-- **Conda environment**: `ai_gigantic_trees_species` with ete3 + NextFlow installed
+- **Conda environment**: `aiG-trees_species-gigantic_species_tree` with ete3 + NextFlow installed (auto-created from `ai/conda_environment.yml` on first run via mamba)
 - **No upstream dependencies**: this BLOCK is typically the first step for a new species set
 
 ---

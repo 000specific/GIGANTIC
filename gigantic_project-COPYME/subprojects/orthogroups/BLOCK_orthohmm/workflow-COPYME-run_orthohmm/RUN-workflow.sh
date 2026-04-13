@@ -96,7 +96,16 @@ echo ""
 echo "Running NextFlow pipeline..."
 echo ""
 
-nextflow run ai/main.nf \
+# Optionally resume from cached work/ if user enabled it in config
+# (inline yaml-read since this older workflow lacks the read_config helper)
+RESUME=$(grep "^resume:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+RESUME_FLAG=""
+if [ "${RESUME}" == "true" ]; then
+    RESUME_FLAG="-resume"
+    echo "  resume: enabled (using NextFlow work/ cache)"
+fi
+
+nextflow run ai/main.nf ${RESUME_FLAG} \
     -c ai/nextflow.config
 
 EXIT_CODE=$?

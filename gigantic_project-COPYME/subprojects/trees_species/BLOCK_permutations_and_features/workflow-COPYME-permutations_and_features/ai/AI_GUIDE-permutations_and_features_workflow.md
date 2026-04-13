@@ -28,7 +28,7 @@ explicitness) live in `../../../README.md`.
 2. `START_HERE-user_config.yaml` edited with:
    - `species_set_name` (e.g., "species71")
    - `unresolved_clades` list (clade names matching the Newick tree)
-3. Conda environment `ai_gigantic_trees_species` installed (for Script 008 visualization)
+3. Conda environment `aiG-trees_species-permutations_and_features` installed (for Script 008 visualization) — auto-created from `ai/conda_environment.yml` on first run via mamba
 
 ### Running
 
@@ -120,7 +120,7 @@ Script 008 (visualization) is typically the slowest process due to ete3 renderin
 | `Species tree not found` | Missing INPUT_user/species_tree.newick | Place Newick file in INPUT_user/ |
 | `Clade 'X' not found in tree` | Unresolved clade name doesn't match Newick labels | Check clade names match exactly (after CXXX_ prefix) |
 | `Variable root label: NONE` | No common ancestor found for unresolved clades | Verify unresolved clades share a common ancestor in tree |
-| `ete3 library not available` | Conda environment missing or not activated | Install ai_gigantic_trees_species env, or run with -with-conda |
+| `ete3 library not available` | Conda environment missing or not activated | Rerun `bash RUN-workflow.sh` — it on-demand creates `aiG-trees_species-permutations_and_features` from `ai/conda_environment.yml` if missing |
 | `No .newick files found in 4-output` | Script 004 failed | Check 3-output/ has annotated topology skeletons |
 | `No parent-sibling table files` | Script 005 failed | Check 4-output/newick_trees/ has complete trees |
 

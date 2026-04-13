@@ -174,7 +174,7 @@ The pipeline is dominated by Newick parsing and ete3 visualization. The parsing 
 | `CRITICAL ERROR: ... collide with the reserved ancestral_clade_NNN namespace` | User-provided name matches the reserved pattern | Rename the conflicting node(s) in `INPUT_user/species_tree.newick` |
 | `CRITICAL ERROR: Duplicate leaf (species) names found` | Two leaves have the same name (possibly after standardization) | Check for duplicate species; if two different input names collapsed to the same standardized name, rename one |
 | `CRITICAL ERROR: Failed to parse input newick` | Malformed Newick syntax | Check for unmatched parentheses, missing commas, stray characters |
-| NextFlow `command not found` | Conda environment not activated | Run `module load conda && conda activate ai_gigantic_trees_species` |
+| NextFlow `command not found` | Conda environment not activated | Run `module load conda && conda activate aiG-trees_species-gigantic_species_tree` (or just rerun `bash RUN-workflow.sh` — it activates and on-demand creates the env from `ai/conda_environment.yml`) |
 | Visualization placeholder instead of SVG | ete3 tooling unavailable in current env | **Not an error** — visualization is soft-fail. Other outputs are still valid. Investigate `5-output/5_ai-log-visualize_species_tree.log` if you need the SVG. |
 | Stale cached results | NextFlow `-resume` used old `work/` | Delete `work/`, `.nextflow/`, `.nextflow.log*` and re-run fresh |
 

@@ -458,6 +458,10 @@ structure_ids___complete_newicks = {}
 # We need ALL clades (internal + leaf) so we parse the trees directly
 structure_clade_pairs___path_data = {}
 
+# RUN_2 optimization: store parsed tree per structure + clade_id_name->node lookup.
+# Avoids O(L) string-search in the inner loop (extract_clade_subtree_newick).
+structure_clade_id_names___nodes = {}
+
 newick_files = sorted( newick_trees_dir.glob( '*.newick' ) )
 
 if not newick_files:
@@ -489,8 +493,35 @@ for newick_file in newick_files:
                 'phylogenetic_path': clade_data[ 'phylogenetic_path' ]
             }
 
+        # RUN_2 optimization: build (structure_id, clade_id_name) -> node lookup
+        # for fast subtree extraction in the inner loop below.
+        def _build_node_lookup( node ):
+            if node.label:
+                structure_clade_id_names___nodes[ ( structure_id, node.label ) ] = node
+            for child in node.children:
+                _build_node_lookup( child )
+        _build_node_lookup( tree_root )
+
 print( f"  Loaded {len( structure_ids___complete_newicks )} complete tree Newick files" )
 print( f"  Extracted {len( structure_clade_pairs___path_data )} (structure, clade) path entries" )
+print()
+
+
+# RUN_2 optimization: precompute species-tree-level newick conversions ONCE per
+# structure. These are constant per structure but were previously recomputed
+# inside the per-(structure,clade) loop below — i.e. ~150x per structure x 105
+# structures = ~15,750 redundant regex passes over 10KB strings. Doing them
+# once collapses that to 105 calls per conversion.
+print( "Pre-computing per-structure species tree conversions..." )
+structure_ids___species_tree_conversions = {}
+for structure_id, complete_newick in structure_ids___complete_newicks.items():
+    structure_ids___species_tree_conversions[ structure_id ] = {
+        'structure_only': convert_newick_to_structure_only( complete_newick ),
+        'ids_only': convert_newick_to_ids_only( complete_newick ),
+        'names_only': convert_newick_to_names_only( complete_newick ),
+        'ids_and_names': convert_newick_to_ids_and_names( complete_newick ),
+    }
+print( f"  Pre-computed conversions for {len( structure_ids___species_tree_conversions )} structures" )
 print()
 
 
@@ -627,29 +658,28 @@ for structure_id, clade_id in sorted_pairs:
     clade_id_name_or_structure = f"{clade_id_name}|{structure_id}" if clade_id_name else f"|{structure_id}"
 
     # --- Clade Newick Representations ---
-    complete_newick = structure_ids___complete_newicks.get( structure_id, '' )
+    # RUN_2 optimization: O(1) node lookup + O(N) tree-walk (node.to_newick())
+    # replaces the previous O(L) string-search via extract_clade_subtree_newick().
     clade_newick_ids_only = ''
     clade_newick_names_only = ''
     clade_newick_ids_and_names = ''
 
-    if complete_newick and clade_id_name:
-        clade_subtree = extract_clade_subtree_newick( complete_newick, clade_id_name )
+    clade_node = structure_clade_id_names___nodes.get( ( structure_id, clade_id_name ) )
+    if clade_node is not None:
+        clade_subtree = clade_node.to_newick()
         if clade_subtree:
             clade_newick_ids_only = convert_newick_to_ids_only( clade_subtree )
             clade_newick_names_only = convert_newick_to_names_only( clade_subtree )
             clade_newick_ids_and_names = convert_newick_to_ids_and_names( clade_subtree )
 
     # --- Species Tree Representations ---
-    species_tree_structure_only = ''
-    species_tree_ids_only = ''
-    species_tree_names_only = ''
-    species_tree_ids_and_names = ''
-
-    if complete_newick:
-        species_tree_structure_only = convert_newick_to_structure_only( complete_newick )
-        species_tree_ids_only = convert_newick_to_ids_only( complete_newick )
-        species_tree_names_only = convert_newick_to_names_only( complete_newick )
-        species_tree_ids_and_names = convert_newick_to_ids_and_names( complete_newick )
+    # RUN_2 optimization: pull from per-structure pre-computed cache instead of
+    # re-running the regex conversions on every (structure, clade) row.
+    species_tree_data = structure_ids___species_tree_conversions.get( structure_id, {} )
+    species_tree_structure_only = species_tree_data.get( 'structure_only', '' )
+    species_tree_ids_only = species_tree_data.get( 'ids_only', '' )
+    species_tree_names_only = species_tree_data.get( 'names_only', '' )
+    species_tree_ids_and_names = species_tree_data.get( 'ids_and_names', '' )
 
     # --- Topology Newick ---
     topology_newick = structure_ids___topology_newicks.get( structure_id, '' )

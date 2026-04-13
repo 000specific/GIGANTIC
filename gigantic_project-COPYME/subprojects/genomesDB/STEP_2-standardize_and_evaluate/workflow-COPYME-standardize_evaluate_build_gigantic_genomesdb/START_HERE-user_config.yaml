@@ -100,3 +100,16 @@ busco:
 #
 # The species manifest is also copied to ../../output_to_input/STEP_2-standardize_and_evaluate/ for STEP_3.
 #
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+
+resume: false

@@ -63,6 +63,41 @@ output:
   # Each script writes to its own N-output subdirectory within this dir.
   base_dir: "OUTPUT_pipeline"
 
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by SLURM (job resources) when execution_mode is "slurm".
+# This BLOCK is light: serial Python scripts, no heavy computation.
+
+cpus: 1
+memory_gb: 4
+time_hours: 1
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+
+resume: false
+
 # ============================================================================
 # NOTES
 # ============================================================================

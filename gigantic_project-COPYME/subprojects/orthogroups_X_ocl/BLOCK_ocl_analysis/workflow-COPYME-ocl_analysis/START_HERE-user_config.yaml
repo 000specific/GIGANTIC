@@ -58,3 +58,16 @@ output:
   # Main output directory (relative to this workflow directory)
   # Each structure gets: OUTPUT_pipeline/structure_NNN/1-output/ through 5-output/
   base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+
+resume: false

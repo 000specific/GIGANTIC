@@ -49,3 +49,16 @@ execution_mode: "local"
 # SLURM settings (only used when execution_mode is "slurm")
 slurm_account: "your_account"
 slurm_qos: "your_qos"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+
+resume: false

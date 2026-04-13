@@ -1,0 +1,36 @@
+# GIGANTIC trees_species - BLOCK_permutations_and_features environment
+# AI: Claude Code | Opus 4.6 | 2026 April 13
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_permutations_and_features.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# This file is the canonical dependency specification for this BLOCK.
+# All workflow templates in this BLOCK share this environment.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-trees_species-permutations_and_features
+
+name: aiG-trees_species-permutations_and_features
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+  - pyyaml
+
+  # Tree visualization (Script 008)
+  - ete3
+  - pyqt   # PyQt5 generation; on conda-forge the package name is "pyqt" (not "pyqt5")

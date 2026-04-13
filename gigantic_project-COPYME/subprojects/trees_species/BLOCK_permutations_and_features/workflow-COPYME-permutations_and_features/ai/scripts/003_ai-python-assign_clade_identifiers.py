@@ -55,6 +55,11 @@ class TreeNode:
         self.parent: Optional[ 'TreeNode' ] = None
         self.clade_id: Optional[ str ] = None
         self.clade_name: Optional[ str ] = None
+        # Memoization cache for get_canonical_structure (RUN_2 optimization).
+        # Result is invariant for a given node + unresolved_names tuple, so we
+        # cache it on the node itself to avoid recomputing during recursive
+        # traversals from assign_clade_ids().
+        self._canonical_cache: Optional[ str ] = None
 
     def add_child( self, child: 'TreeNode' ):
         """Add a child node."""
@@ -69,12 +74,21 @@ class TreeNode:
         Get the canonical structure of this subtree.
         For leaves: return the clade name (unresolved clade name if applicable)
         For internal nodes: return alphabetically-ordered Newick structure
+
+        Memoized on self._canonical_cache: the result is a deterministic function
+        of the subtree structure, so caching avoids O(N²) recomputation when
+        assign_clade_ids() walks the tree bottom-up calling this on each node.
         """
+        if self._canonical_cache is not None:
+            return self._canonical_cache
+
         if not self.children:
             # Check if this is an unresolved clade
             for unresolved_name in unresolved_names:
                 if unresolved_name in self.name:
+                    self._canonical_cache = unresolved_name
                     return unresolved_name
+            self._canonical_cache = self.name
             return self.name
 
         child_structures = []
@@ -82,7 +96,9 @@ class TreeNode:
             child_structures.append( child.get_canonical_structure( unresolved_names ) )
 
         child_structures.sort()
-        return f"({','.join( child_structures )})"
+        result = f"({','.join( child_structures )})"
+        self._canonical_cache = result
+        return result
 
 
 def parse_topology_newick( newick_string: str ) -> TreeNode:

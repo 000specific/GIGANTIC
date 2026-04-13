@@ -190,7 +190,7 @@ trees_species/
 |-------|-------|----------|
 | "No clades specified for permutation" | Config has empty `unresolved_clades` list | Add clade names to config, or set `permutation_count: 0` for single-tree mode |
 | "Clade not found in tree" | Clade name in config doesn't match tree | Check clade names match exactly (case-sensitive) |
-| "ete3 not available" | Missing visualization dependency | Install via `conda activate ai_gigantic_trees_species` |
+| "ete3 not available" | Missing visualization dependency | Rerun `bash RUN-workflow.sh` in the BLOCK's workflow directory — it auto-creates the per-BLOCK env from `ai/conda_environment.yml` (env names: `aiG-trees_species-gigantic_species_tree`, `aiG-trees_species-permutations_and_features`) |
 | "0 structures generated" | Permutation calculation error | Check that unresolved_clades has at least 2 entries |
 
 ---
@@ -202,7 +202,8 @@ trees_species/
 | `START_HERE-user_config.yaml` | Yes | Species set name, unresolved clades, paths |
 | `INPUT_user/species_tree.newick` | Yes | The input species tree |
 | `INPUT_user/clade_names.tsv` | Optional | Custom clade ID → name mapping |
-| `RUN-workflow.sh` | Rarely | Only to change conda environment name |
+| `RUN-workflow.sh` | No | Workflow launcher; on-demand creates the per-BLOCK conda env from `ai/conda_environment.yml` |
+| `ai/conda_environment.yml` | No | Per-BLOCK conda env spec (canonical dependencies for this BLOCK) |
 | `ai/main.nf` | No | NextFlow pipeline definition |
 | `ai/scripts/*.py` | No | Pipeline scripts |
 

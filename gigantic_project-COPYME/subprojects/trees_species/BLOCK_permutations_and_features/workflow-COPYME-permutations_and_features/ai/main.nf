@@ -189,7 +189,7 @@ process integrate_clade_data {
  */
 process visualize_species_trees {
     label 'local'
-    conda 'ai_gigantic_trees_species'
+    conda 'aiG-trees_species-permutations_and_features'
 
     input:
         val ready

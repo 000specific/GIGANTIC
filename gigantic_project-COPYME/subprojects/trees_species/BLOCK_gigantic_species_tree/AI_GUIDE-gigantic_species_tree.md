@@ -83,7 +83,7 @@ Most GIGANTIC users with a species set start here. The output of this BLOCK is t
 | Species tree in Newick format | This is the only required input | Check `workflow-RUN_*/INPUT_user/species_tree.newick` exists |
 | `Genus_species` at leaves | GIGANTIC convention | See `workflow-COPYME-*/INPUT_user/README.md` for format specification |
 | Binary tree (no polytomies) | This BLOCK refuses polytomies | Manually resolve or use `BLOCK_permutations_and_features` for unresolved clades |
-| Conda environment | For NextFlow + ete3 visualization | `conda activate ai_gigantic_trees_species` |
+| Conda environment | For NextFlow + ete3 visualization | `conda activate aiG-trees_species-gigantic_species_tree` (auto-created on demand by RUN-workflow.sh) |
 
 ---
 

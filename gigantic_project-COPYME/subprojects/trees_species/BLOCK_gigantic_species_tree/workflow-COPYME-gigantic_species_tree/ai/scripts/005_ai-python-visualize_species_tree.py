@@ -143,7 +143,7 @@ def write_placeholder_on_failure( output_dir, species_set_name, failure_reason, 
         f"To diagnose: see 5_ai-log-visualize_species_tree.log in this directory.\n"
         f"\n"
         f"To manually render the tree with ete3:\n"
-        f"  conda activate ai_gigantic_trees_species\n"
+        f"  conda activate aiG-trees_species-gigantic_species_tree\n"
         f"  export QT_QPA_PLATFORM=offscreen\n"
         f"  python3 -c \"from ete3 import Tree; t = Tree('path/to/species_tree.newick', format=1); t.render('out.svg')\"\n"
         f"\n"

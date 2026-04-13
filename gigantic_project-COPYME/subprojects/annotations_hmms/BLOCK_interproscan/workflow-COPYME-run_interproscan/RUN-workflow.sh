@@ -87,7 +87,15 @@ if [ "${EXECUTION_MODE}" == "local" ]; then
     echo "Starting InterProScan Annotation Pipeline (local)"
     echo "========================================================================"
 
-    nextflow run ai/main.nf \
+# Optionally resume from cached work/ if user enabled it in config
+RESUME=$(read_config "resume" "false")
+RESUME_FLAG=""
+if [ "${RESUME}" == "true" ]; then
+    RESUME_FLAG="-resume"
+    echo "  resume: enabled (using NextFlow work/ cache)"
+fi
+
+    nextflow run ai/main.nf ${RESUME_FLAG} \
         -c ai/nextflow.config
 
 # ============================================================================
