@@ -3,6 +3,8 @@
 **AI**: Claude Code | Opus 4.5 | 2026 February 12
 **Human**: Eric Edsinger
 
+**Status**: The active genomesDB. Build outputs live in `workflow-RUN_1` of each STEP.
+
 ---
 
 ## Purpose

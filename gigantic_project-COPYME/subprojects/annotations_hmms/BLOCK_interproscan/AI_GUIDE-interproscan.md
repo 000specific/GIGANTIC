@@ -32,7 +32,7 @@ BLOCK_interproscan/
 
 | Run | Species Set | Applications | Notes |
 |-----|-------------|-------------|-------|
-| RUN_1 | genomesDB-species70 (70 proteomes) | Pfam + GO terms | 25 CPUs, 187 GB RAM, SLURM account=moroz |
+| RUN_1 | genomesDB (active build, 70 proteomes) | Pfam + GO terms | 25 CPUs, 187 GB RAM, SLURM account=moroz |
 
 ## Pipeline Scripts (4 steps)
 

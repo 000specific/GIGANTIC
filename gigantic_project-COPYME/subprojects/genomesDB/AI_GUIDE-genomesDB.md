@@ -4,6 +4,8 @@
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/`
 
+**Status**: The active genomesDB. Build outputs live in `workflow-RUN_1` of each STEP. The specific species set is determined by the source manifest provided in STEP_1.
+
 ---
 
 ## ⚠️ CRITICAL: Surface Discrepancies - No Silent Changes

@@ -230,7 +230,7 @@ output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
 
 | Subproject | What | Path |
 |------------|------|------|
-| genomesDB | BLAST databases (per-species .aa files) | `../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp/` |
+| genomesDB | BLAST databases (per-species .aa files) | `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` |
 | phylonames | Species name mappings | `../phylonames/output_to_input/maps/` |
 
 ### Outputs TO
@@ -297,7 +297,7 @@ workflow-*/ai/logs/
 
 ```bash
 # Check genomesDB dependency
-ls ../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp/ | head
+ls ../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/ | head
 
 # Check STEP_1 outputs (gene family first, then step)
 ls output_to_input/*/STEP_1-homolog_discovery/

@@ -269,7 +269,7 @@ bash RUN-setup_and_submit_step2_burst.sh
 
 | Subproject | What | Path |
 |------------|------|------|
-| genomesDB | BLAST databases (per-species .aa files) | `../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp/` |
+| genomesDB | BLAST databases (per-species .aa files) | `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` |
 | phylonames | Species name mappings | `../phylonames/output_to_input/maps/` |
 
 ### Outputs TO
@@ -326,7 +326,7 @@ All STEPs across all sources use this single environment.
 
 ```bash
 # Check genomesDB dependency
-ls ../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp/ | head
+ls ../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/ | head
 
 # Check STEP_0 outputs (HGNC)
 ls output_to_input/gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/rgs_fastas/ | wc -l

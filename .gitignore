@@ -16,6 +16,13 @@ OUTPUT_pipeline/
 # Test/production run directories (contain large data, not templates)
 workflow-RUN_*/
 
+# One-off COPYME snapshot used to generate species70 OrthoHMM RUN_1-3 outside the live subproject
+# Migrated for archival/audit alongside its RUN dirs; not a canonical template
+/gigantic_project-COPYME/subprojects/orthogroups/BLOCK_orthohmm/workflow-COPYME-run_orthohmm_USED_FOR_RUNS_1_TO_3/
+
+# Historical species53 genomesDB build (kept locally as reference; not for the public template)
+/gigantic_project-COPYME/subprojects/genomesDB-species53/
+
 # Gene family instance directories (copies of gene_family_COPYME, contain large data)
 gene_family-*/
 
