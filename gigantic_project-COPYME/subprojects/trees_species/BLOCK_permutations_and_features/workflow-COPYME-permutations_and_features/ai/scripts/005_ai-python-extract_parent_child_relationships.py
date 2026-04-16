@@ -7,18 +7,12 @@ GIGANTIC trees_species - Script 005: Extract Parent-Child Relationships
 
 Purpose:
     Parse all complete species tree Newick files from script 004 and generate
-    two types of parent-child relationship tables for each structure:
+    one parent-child relationship table per structure. Each row is one
+    phylogenetic block (parent_clade_id_name -> child_clade_id_name edge) per
+    Rule 7 vocabulary.
 
-    1. Parent-Sibling Sets (9 columns):
-       For each node in the tree, record the parent and both children.
-       - Internal nodes: Parent → Child_1, Child_2
-       - Leaf nodes: Self-referential (parent = child_1 = child_2)
-       This format captures the full sibling context at each node.
-
-    2. Parent-Child Relationships (4 columns):
-       Simple parent → child pairs for every edge in the tree.
-       - Internal nodes: One row per child
-       - Leaf nodes: Self-referential (parent = self, child = self)
+    Terminal tip self-loops (parent == child) are NOT emitted: tips have no
+    children so they are not parents in any phylogenetic block.
 
 Inputs:
     --workflow-dir: Workflow root directory
@@ -26,11 +20,14 @@ Inputs:
            OUTPUT_pipeline/4-output/newick_trees/ (complete tree Newick files)
 
 Outputs:
-    OUTPUT_pipeline/5-output/{species_set_name}_Parent_Sibling_Sets/
-        5_ai-structure_XXX_parent_child_table.tsv (per structure)
-
     OUTPUT_pipeline/5-output/{species_set_name}_Parent_Child_Relationships/
         5_ai-structure_XXX_parent_child_relationships.tsv (per structure)
+
+    Column structure (Rule 6 atomic identifiers + Rule 7 block framing):
+        Phylogenetic_Block       atomic block identifier
+                                 Parent_Clade_ID_Name::Child_Clade_ID_Name
+        Parent_Clade_ID_Name     atomic parent clade identifier
+        Child_Clade_ID_Name      atomic child clade identifier
 """
 
 from pathlib import Path
@@ -157,7 +154,14 @@ def parse_newick( newick_string: str ) -> NewickNode:
 
         i += 1
 
-    return stack[ 0 ]
+    # Unwrap parser sentinel: the initial empty TreeNode used as a stack base.
+    # If it has no label and exactly one child, the real tree root is that child.
+    sentinel = stack[ 0 ]
+    if sentinel.label == '' and len( sentinel.children ) == 1:
+        actual_root = sentinel.children[ 0 ]
+        actual_root.parent = None
+        return actual_root
+    return sentinel
 
 
 def collect_all_nodes( node: NewickNode ) -> List[ NewickNode ]:
@@ -182,102 +186,38 @@ def sort_key_clade_id( node: NewickNode ) -> Tuple[ int, int ]:
 # Relationship Extraction Functions
 # ============================================================================
 
-def extract_parent_sibling_rows( root: NewickNode ) -> List[ dict ]:
+def extract_phylogenetic_block_rows( root: NewickNode ) -> List[ dict ]:
     """
-    Extract parent-sibling set rows for all nodes in the tree.
+    Extract one row per phylogenetic block (parent -> child edge) in the tree.
 
-    For internal nodes: parent → child_1, child_2
-    For leaf nodes: self-referential (parent = child_1 = child_2)
-    """
-    all_nodes = collect_all_nodes( root )
-    rows = []
+    Per Rule 7, a phylogenetic block has two distinct endpoint clades (parent
+    and child). Tip clades have no children, so they are not parents in any
+    phylogenetic block and do not contribute rows here. Tip self-loops are
+    therefore NOT emitted.
 
-    for node in all_nodes:
-        if node.is_leaf():
-            # Leaf node: self-referential row
-            row = {
-                'parent_id': node.clade_id,
-                'parent_name': node.clade_name,
-                'parent_id_name': node.get_clade_id_name(),
-                'child_1_id': node.clade_id,
-                'child_1_name': node.clade_name,
-                'child_1_id_name': node.get_clade_id_name(),
-                'child_2_id': node.clade_id,
-                'child_2_name': node.clade_name,
-                'child_2_id_name': node.get_clade_id_name(),
-            }
-            rows.append( row )
-        else:
-            # Internal node: parent with two children
-            # Trees are bifurcating, so expect exactly 2 children
-            if len( node.children ) == 2:
-                child_1 = node.children[ 0 ]
-                child_2 = node.children[ 1 ]
-
-                row = {
-                    'parent_id': node.clade_id,
-                    'parent_name': node.clade_name,
-                    'parent_id_name': node.get_clade_id_name(),
-                    'child_1_id': child_1.clade_id,
-                    'child_1_name': child_1.clade_name,
-                    'child_1_id_name': child_1.get_clade_id_name(),
-                    'child_2_id': child_2.clade_id,
-                    'child_2_name': child_2.clade_name,
-                    'child_2_id_name': child_2.get_clade_id_name(),
-                }
-                rows.append( row )
-            elif len( node.children ) > 2:
-                # Handle multifurcating nodes: emit one row per pair
-                for child_index in range( 0, len( node.children ), 2 ):
-                    child_1 = node.children[ child_index ]
-                    child_2 = node.children[ child_index + 1 ] if child_index + 1 < len( node.children ) else child_1
-
-                    row = {
-                        'parent_id': node.clade_id,
-                        'parent_name': node.clade_name,
-                        'parent_id_name': node.get_clade_id_name(),
-                        'child_1_id': child_1.clade_id,
-                        'child_1_name': child_1.clade_name,
-                        'child_1_id_name': child_1.get_clade_id_name(),
-                        'child_2_id': child_2.clade_id,
-                        'child_2_name': child_2.clade_name,
-                        'child_2_id_name': child_2.get_clade_id_name(),
-                    }
-                    rows.append( row )
-
-    return rows
-
-
-def extract_parent_child_rows( root: NewickNode ) -> List[ dict ]:
-    """
-    Extract simple parent-child relationship rows for all nodes in the tree.
-
-    For internal nodes: one row per child (parent → child)
-    For leaf nodes: self-referential (parent = self, child = self)
+    Each row uses Rule 6 atomic identifiers (clade_id_name form, e.g.
+    C082_Metazoa) and records the canonical Phylogenetic_Block identifier
+    Parent_Clade_ID_Name::Child_Clade_ID_Name.
     """
     all_nodes = collect_all_nodes( root )
     rows = []
 
     for node in all_nodes:
         if node.is_leaf():
-            # Leaf node: self-referential row
+            continue
+
+        parent_clade_id_name = node.get_clade_id_name()
+
+        for child in node.children:
+            child_clade_id_name = child.get_clade_id_name()
+            phylogenetic_block = f"{parent_clade_id_name}::{child_clade_id_name}"
+
             row = {
-                'parent_id': node.clade_id,
-                'parent_name': node.clade_name,
-                'child_id': node.clade_id,
-                'child_name': node.clade_name,
+                'phylogenetic_block': phylogenetic_block,
+                'parent_clade_id_name': parent_clade_id_name,
+                'child_clade_id_name': child_clade_id_name,
             }
             rows.append( row )
-        else:
-            # Internal node: one row per child
-            for child in node.children:
-                row = {
-                    'parent_id': node.clade_id,
-                    'parent_name': node.clade_name,
-                    'child_id': child.clade_id,
-                    'child_name': child.clade_name,
-                }
-                rows.append( row )
 
     return rows
 
@@ -303,9 +243,7 @@ output_dir = output_pipeline_dir / '5-output'
 output_dir.mkdir( parents=True, exist_ok=True )
 
 # Output subdirectories
-output_parent_sibling_dir = output_dir / f"{species_set_name}_Parent_Sibling_Sets"
 output_parent_child_dir = output_dir / f"{species_set_name}_Parent_Child_Relationships"
-output_parent_sibling_dir.mkdir( parents=True, exist_ok=True )
 output_parent_child_dir.mkdir( parents=True, exist_ok=True )
 
 print( "=" * 80 )
@@ -347,8 +285,7 @@ print()
 print( "Processing tree structures..." )
 print()
 
-total_parent_sibling_rows = 0
-total_parent_child_rows = 0
+total_phylogenetic_block_rows = 0
 structures_processed = 0
 
 for newick_file in newick_files:
@@ -391,83 +328,59 @@ for newick_file in newick_files:
         continue
 
     # ----------------------------------------------------------------
-    # Extract Parent-Sibling Sets (9-column format)
+    # Extract Phylogenetic Blocks (one row per parent -> child edge)
     # ----------------------------------------------------------------
 
-    parent_sibling_rows = extract_parent_sibling_rows( tree_root )
+    phylogenetic_block_rows = extract_phylogenetic_block_rows( tree_root )
 
-    # Sort rows by parent clade ID numerically
-    parent_sibling_rows.sort( key=lambda row: (
-        ( 0, int( row[ 'parent_id' ][ 1: ] ) ) if row[ 'parent_id' ] and row[ 'parent_id' ].startswith( 'C' ) and row[ 'parent_id' ][ 1: ].isdigit() else ( 1, 0 )
-    ) )
+    # Synthesize C000_Pre_Basal::root block. The tree root has no biological
+    # parent; we add a synthetic Pre_Basal edge so the root clade has an
+    # incoming block like every other clade. Without this, origin determination
+    # fails for orthogroups whose most recent common ancestor is the root.
+    root_clade_id_name = tree_root.get_clade_id_name()
+    if root_clade_id_name:
+        pre_basal_clade_id_name = 'C000_Pre_Basal'
+        pre_basal_block = f"{pre_basal_clade_id_name}::{root_clade_id_name}"
+        phylogenetic_block_rows.insert( 0, {
+            'phylogenetic_block': pre_basal_block,
+            'parent_clade_id_name': pre_basal_clade_id_name,
+            'child_clade_id_name': root_clade_id_name,
+        } )
 
-    output_parent_sibling_file = output_parent_sibling_dir / f"5_ai-{structure_id}_parent_child_table.tsv"
+    # Helper to sort by numeric Cxxx component of a clade_id_name (e.g. C082_Metazoa -> 82)
+    def clade_id_name_sort_key( clade_id_name ):
+        if clade_id_name and clade_id_name.startswith( 'C' ):
+            prefix = clade_id_name.split( '_', 1 )[ 0 ]
+            if prefix[ 1: ].isdigit():
+                return ( 0, int( prefix[ 1: ] ) )
+        return ( 1, 0 )
 
-    with open( output_parent_sibling_file, 'w' ) as output_file:
-        # Write header
-        header = (
-            'Parent_ID (clade identifier of the parent node)\t'
-            'Parent_Name (clade name of the parent node)\t'
-            'Parent_ID_Name (full clade identifier and name of the parent node)\t'
-            'Child_1_ID (clade identifier of the first child node)\t'
-            'Child_1_Name (clade name of the first child node)\t'
-            'Child_1_ID_Name (full clade identifier and name of the first child node)\t'
-            'Child_2_ID (clade identifier of the second child node)\t'
-            'Child_2_Name (clade name of the second child node)\t'
-            'Child_2_ID_Name (full clade identifier and name of the second child node)\n'
-        )
-        output_file.write( header )
-
-        for row in parent_sibling_rows:
-            output = (
-                f"{row[ 'parent_id' ]}\t"
-                f"{row[ 'parent_name' ]}\t"
-                f"{row[ 'parent_id_name' ]}\t"
-                f"{row[ 'child_1_id' ]}\t"
-                f"{row[ 'child_1_name' ]}\t"
-                f"{row[ 'child_1_id_name' ]}\t"
-                f"{row[ 'child_2_id' ]}\t"
-                f"{row[ 'child_2_name' ]}\t"
-                f"{row[ 'child_2_id_name' ]}\n"
-            )
-            output_file.write( output )
-
-    total_parent_sibling_rows += len( parent_sibling_rows )
-
-    # ----------------------------------------------------------------
-    # Extract Parent-Child Relationships (4-column format)
-    # ----------------------------------------------------------------
-
-    parent_child_rows = extract_parent_child_rows( tree_root )
-
-    # Sort rows by parent clade ID numerically, then by child clade ID
-    parent_child_rows.sort( key=lambda row: (
-        ( 0, int( row[ 'parent_id' ][ 1: ] ) ) if row[ 'parent_id' ] and row[ 'parent_id' ].startswith( 'C' ) and row[ 'parent_id' ][ 1: ].isdigit() else ( 1, 0 ),
-        ( 0, int( row[ 'child_id' ][ 1: ] ) ) if row[ 'child_id' ] and row[ 'child_id' ].startswith( 'C' ) and row[ 'child_id' ][ 1: ].isdigit() else ( 1, 0 )
+    # Sort rows by parent clade identifier numerically, then by child clade identifier
+    phylogenetic_block_rows.sort( key=lambda row: (
+        clade_id_name_sort_key( row[ 'parent_clade_id_name' ] ),
+        clade_id_name_sort_key( row[ 'child_clade_id_name' ] )
     ) )
 
     output_parent_child_file = output_parent_child_dir / f"5_ai-{structure_id}_parent_child_relationships.tsv"
 
     with open( output_parent_child_file, 'w' ) as output_file:
-        # Write header
+        # Write header (Rule 6 atomic identifiers + Rule 7 block framing)
         header = (
-            'Parent_ID (clade identifier of the parent node)\t'
-            'Parent_Name (clade name of the parent node)\t'
-            'Child_ID (clade identifier of the child node)\t'
-            'Child_Name (clade name of the child node)\n'
+            'Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)\t'
+            'Parent_Clade_ID_Name (atomic parent clade identifier e.g. C082_Metazoa)\t'
+            'Child_Clade_ID_Name (atomic child clade identifier e.g. C086_Ctenophora)\n'
         )
         output_file.write( header )
 
-        for row in parent_child_rows:
+        for row in phylogenetic_block_rows:
             output = (
-                f"{row[ 'parent_id' ]}\t"
-                f"{row[ 'parent_name' ]}\t"
-                f"{row[ 'child_id' ]}\t"
-                f"{row[ 'child_name' ]}\n"
+                f"{row[ 'phylogenetic_block' ]}\t"
+                f"{row[ 'parent_clade_id_name' ]}\t"
+                f"{row[ 'child_clade_id_name' ]}\n"
             )
             output_file.write( output )
 
-    total_parent_child_rows += len( parent_child_rows )
+    total_phylogenetic_block_rows += len( phylogenetic_block_rows )
 
     structures_processed += 1
 
@@ -476,8 +389,7 @@ for newick_file in newick_files:
     if structure_number <= 10 or structure_number > total_structures - 5:
         leaf_count = sum( 1 for node in all_nodes if node.is_leaf() )
         internal_count = sum( 1 for node in all_nodes if not node.is_leaf() )
-        print( f"  {structure_id}: {len( parent_sibling_rows )} parent-sibling rows, "
-               f"{len( parent_child_rows )} parent-child rows "
+        print( f"  {structure_id}: {len( phylogenetic_block_rows )} phylogenetic blocks "
                f"({leaf_count} leaves, {internal_count} internal)" )
     elif structure_number == 11:
         print( f"  ... (structures 011-{total_structures - 5:03d}) ..." )
@@ -499,14 +411,11 @@ print( "SCRIPT 005 COMPLETE" )
 print( "=" * 80 )
 print()
 print( f"Structures processed: {structures_processed}" )
-print( f"Total parent-sibling rows: {total_parent_sibling_rows}" )
-print( f"Total parent-child rows: {total_parent_child_rows}" )
+print( f"Total phylogenetic block rows: {total_phylogenetic_block_rows}" )
 print()
-print( f"Output directories:" )
-print( f"  Parent-Sibling Sets:         {output_parent_sibling_dir.name}/" )
-print( f"    ({structures_processed} files, 9-column format)" )
+print( f"Output directory:" )
 print( f"  Parent-Child Relationships:  {output_parent_child_dir.name}/" )
-print( f"    ({structures_processed} files, 4-column format)" )
+print( f"    ({structures_processed} files, 3-column format: Phylogenetic_Block, Parent_Clade_ID_Name, Child_Clade_ID_Name)" )
 print()
 print( "Next step: Run script 006 to generate phylogenetic blocks" )
 print()

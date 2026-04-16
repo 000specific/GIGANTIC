@@ -83,6 +83,20 @@ slurm_account: "your_account"
 slurm_qos: "your_qos"
 
 # =============================================================================
+# Parallelism Mode
+# =============================================================================
+# Controls how NextFlow dispatches tasks (independent of execution_mode —
+# they compose):
+#   "slurm" - Each task submits as its own SLURM job (best for fewer/longer tasks)
+#   "local" - All tasks run in parallel within this process, no per-task SLURM
+#             overhead (best for many short tasks)
+#
+# Default "local" fits this BLOCK's short-task profile. Switch to "slurm" only
+# if per-task work is large enough to absorb scheduling overhead.
+
+parallelism_mode: "local"
+
+# =============================================================================
 # Resume from cached NextFlow work directory
 # =============================================================================
 # When true, NextFlow re-uses cached results from work/ for unchanged tasks

@@ -1,6 +1,6 @@
 # AI Guide: OCL Analysis Workflow
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
+**AI**: Claude Code | Opus 4.6 | 2026 April 13
 **Human**: Eric Edsinger
 
 **For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-orthogroups_X_ocl.md`)
@@ -14,7 +14,7 @@ first for concepts and architecture. This guide focuses on running the workflow.
 |---------------|----------|
 | GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
 | Subproject concepts | `../../../AI_GUIDE-orthogroups_X_ocl.md` |
-| BLOCK architecture | `../../AI_GUIDE-ocl_analysis.md` |
+| STEP architecture | `../../AI_GUIDE-ocl_analysis.md` |
 | Running the workflow | This file |
 
 ---
@@ -23,17 +23,17 @@ first for concepts and architecture. This guide focuses on running the workflow.
 
 ### 1. Prerequisites
 
-Verify upstream subprojects have completed:
+Verify upstream subprojects have populated their `output_to_input/` directories:
 
 ```bash
 # Check trees_species output exists
-ls ../../../../trees_species/output_to_input/BLOCK_permutations_and_features/
+ls ../../../trees_species/output_to_input/BLOCK_permutations_and_features/
 
 # Check orthogroups output exists (match your tool choice)
-ls ../../../../orthogroups/output_to_input/BLOCK_orthofinder/
+ls ../../../orthogroups/output_to_input/BLOCK_orthohmm/
 
-# Check proteomes exist
-ls ../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
+# Check proteomes exist (replace speciesN with your species set)
+ls ../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
 ```
 
 ### 2. Configure
@@ -41,17 +41,29 @@ ls ../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species
 Edit `START_HERE-user_config.yaml`:
 
 ```yaml
-run_label: "Species71_X_OrthoFinder"    # Unique name for this exploration
-species_set_name: "species71"
-orthogroup_tool: "OrthoFinder"
+run_label: "species70_X_OrthoHMM"    # Unique name for this exploration
+species_set_name: "species70"
+orthogroup_tool: "OrthoHMM"
 
 inputs:
   structure_manifest: "INPUT_user/structure_manifest.tsv"
-  trees_species_dir: "../../../../trees_species/output_to_input/BLOCK_permutations_and_features"
-  orthogroups_dir: "../../../../orthogroups/output_to_input/BLOCK_orthofinder"
-  proteomes_dir: "../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes"
+  trees_species_dir: "../../../trees_species/output_to_input/BLOCK_permutations_and_features"
+  orthogroups_dir: "../../../orthogroups/output_to_input/BLOCK_orthohmm"
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
 
 include_fasta_in_output: false
+
+# Computational Resources (used when execution_mode is "slurm")
+cpus: 3
+memory_gb: 20
+time_hours: 24
+
+# Execution Mode: "local" (run here) or "slurm" (self-submit as SLURM job)
+execution_mode: "slurm"
+slurm_account: "moroz"
+slurm_qos: "moroz"
+
+resume: false
 ```
 
 Edit `INPUT_user/structure_manifest.tsv`:
@@ -65,13 +77,15 @@ structure_id
 
 ### 3. Run
 
-```bash
-# Local execution
-bash RUN-workflow.sh
+Single entry point for both local and SLURM execution — behavior determined by
+`execution_mode` in the config above:
 
-# SLURM cluster
-sbatch RUN-workflow.sbatch
+```bash
+bash RUN-workflow.sh
 ```
+
+On first run, the conda env `aiG-orthogroups_X_ocl-ocl_analysis` is created
+automatically from `ai/conda_environment.yml` (via mamba, falls back to conda).
 
 ### 4. Verify
 
@@ -83,7 +97,7 @@ cat OUTPUT_pipeline/structure_001/5-output/5_ai-validation_report.txt
 cat OUTPUT_pipeline/structure_001/5-output/5_ai-qc_metrics.tsv
 
 # Check symlinks were created
-ls ../../output_to_input/BLOCK_ocl_analysis/Species71_X_OrthoFinder/
+ls ../../output_to_input/BLOCK_ocl_analysis/species70_X_OrthoHMM/
 ```
 
 ---
@@ -100,17 +114,31 @@ ls ../../output_to_input/BLOCK_ocl_analysis/Species71_X_OrthoFinder/
 - MRCA algorithm: single-species (~86%) get species as origin
 - Multi-species: path intersection + deepest divergence point
 - Loads proteome FASTA sequences (config-driven path)
+- Emits per orthogroup:
+  - `Origin_Phylogenetic_Block` — tree-structural edge `parent::child` (e.g.
+    `C069_Holozoa::C082_Metazoa`). Feature-agnostic identifier.
+  - `Origin_Phylogenetic_Block_State` — block tagged with the Origin letter,
+    `parent::child-O` (e.g. `C069_Holozoa::C082_Metazoa-O`). Feature-specific
+    identifier in the five-state vocabulary {A, O, P, L, X}.
 - **Output**: `2-output/` (origins table + per-clade files + summary)
 
-### Script 003: Quantify Conservation and Loss
-- TEMPLATE_03 dual-metric algorithm
-- Four event types per orthogroup per block
-- Terminal self-loop exclusion
-- Edge case: zero inherited transitions -> rates = 0.0
-- **Output**: `3-output/` (block stats + orthogroup patterns + summary)
+### Script 003: Classify Block-States and Quantify Conservation / Loss
+- Reads Script 002's block and block-state identifiers.
+- TEMPLATE_03 dual-metric algorithm classifies each (block, orthogroup) pair
+  into one of the five block-states:
+  - `-A` Inherited Absence (pre-origin): parent absent, child absent, upstream of the orthogroup's origin
+  - `-O` Origin (event): parent absent, child present (emitted by Script 002, not re-scored here)
+  - `-P` Inherited Presence (conservation): parent present, child present
+  - `-L` Loss (event): parent present, child absent
+  - `-X` Inherited Loss (post-loss): parent absent, child absent, downstream of a loss
+- Terminal self-loops (parent == child at leaf) are excluded from the block
+  set — they are placeholder rows, not true parent-to-child blocks.
+- Edge case: zero inherited transitions -> rates = 0.0 (handled explicitly).
+- **Output**: `3-output/` (block stats + per-orthogroup TEMPLATE_03 patterns + summary)
 
 ### Script 004: Comprehensive Analysis
-- Integrates Scripts 002 + 003 data
+- Integrates Scripts 002 + 003 data, preserving both `Origin_Phylogenetic_Block`
+  and `Origin_Phylogenetic_Block_State` columns.
 - Cross-validates orthogroup counts (Script 003 vs 004)
 - Generates per-clade and per-species summaries
 - **Output**: `4-output/` (complete summary + clade stats + species stats + validation)
@@ -126,10 +154,11 @@ ls ../../output_to_input/BLOCK_ocl_analysis/Species71_X_OrthoFinder/
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| NextFlow "command not found" | Conda env not activated | Run `module load conda && conda activate ai_gigantic_orthogroups_X_ocl` |
-| "No such file" for trees_species | Wrong relative path in config | Verify `trees_species_dir` path resolves from workflow directory |
-| SLURM job OOM killed | Structure has too many orthogroups | Increase memory in nextflow.config |
-| Stale cached results | Updated scripts but used `-resume` | Delete `work/`, `.nextflow/`, `.nextflow.log*` and re-run fresh |
+| "conda not found" | On HPC, conda module not loaded | `module load conda` (HiPerGator) then re-run `bash RUN-workflow.sh` |
+| Env create hangs on Lustre | Login node contention + small-file writes | Set `execution_mode: "slurm"` so env creation runs on a compute node |
+| "No such file" for trees_species | Wrong relative path in config | From the workflow dir, it's `../../../trees_species/...` (3 ups, not 4) |
+| SLURM job OOM killed | Structure has too many orthogroups | Increase `memory_gb` in `START_HERE-user_config.yaml` |
+| Stale cached results | Used `-resume` after script changes | `resume: false` (default) avoids this; if cache got stale, delete `work/`, `.nextflow/`, `.nextflow.log*` and re-run |
 | Validation exit code 1 | Data inconsistency found | Check `5-output/5_ai-validation_error_log.txt` for specific failures |
 
 ---

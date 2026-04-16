@@ -177,15 +177,13 @@ def extract_all_clades_with_paths( tree_root: TreeNode ) -> List[ Dict ]:
     """
     Extract all clades from a tree with their phylogenetic paths.
 
-    Returns a list of dictionaries with keys:
-    - clade_id, clade_name, clade_id_name, clade_type, phylogenetic_path
+    Returns a list of dictionaries with keys (Rule 6 atomic identifiers):
+    - clade_id_name, clade_type, phylogenetic_path
     """
     results = []
 
     def traverse( node: TreeNode ):
         if node.label:
-            clade_id = node.get_clade_id()
-            clade_name = node.get_clade_name()
             clade_id_name = node.label
             clade_type = 'species' if node.is_leaf() else 'internal'
 
@@ -194,8 +192,6 @@ def extract_all_clades_with_paths( tree_root: TreeNode ) -> List[ Dict ]:
             phylogenetic_path = ','.join( path )
 
             results.append( {
-                'clade_id': clade_id,
-                'clade_name': clade_name,
                 'clade_id_name': clade_id_name,
                 'clade_type': clade_type,
                 'phylogenetic_path': phylogenetic_path
@@ -410,13 +406,26 @@ if not input_clade_registry_path.exists():
     print( "Run script 004 first." )
     sys.exit( 1 )
 
-# Build a lookup: clade_id -> { clade_name, clade_id_name, appears_in_structures }
-clade_ids___registry_data = {}
+# Build a lookup keyed by the atomic clade_id_name (Rule 6): clade_id_name -> { appears_in_structures }
+clade_id_names___registry_data = {}
 
 # Clade_ID (clade identifier)	Clade_Name (clade name after identifier prefix)	Clade_ID_Name (full clade identifier and name)	Appears_In_Structures (comma delimited list of structures containing this clade)	Newick_Structure (newick subtree for this clade)
 # C001	Fonticula_alba	C001_Fonticula_alba	structure_001,structure_002,...	C001_Fonticula_alba
 with open( input_clade_registry_path, 'r' ) as input_file:
-    header = input_file.readline()
+    header_line = input_file.readline().strip()
+    header_parts = header_line.split( '\t' )
+    column_names___indices = {}
+    for column_index, column_header in enumerate( header_parts ):
+        column_name = column_header.split( '(' )[ 0 ].strip()
+        column_names___indices[ column_name ] = column_index
+
+    clade_id_name_column_index = column_names___indices.get( 'Clade_ID_Name' )
+    appears_in_structures_column_index = column_names___indices.get( 'Appears_In_Structures' )
+
+    if clade_id_name_column_index is None:
+        print( f"CRITICAL ERROR: Clade registry missing required Clade_ID_Name column." )
+        print( f"  Found columns: {header_parts}" )
+        sys.exit( 1 )
 
     for line in input_file:
         line = line.strip()
@@ -424,18 +433,18 @@ with open( input_clade_registry_path, 'r' ) as input_file:
             continue
 
         parts = line.split( '\t' )
-        clade_id = parts[ 0 ]
-        clade_name = parts[ 1 ]
-        clade_id_name = parts[ 2 ]
-        appears_in_structures = parts[ 3 ] if len( parts ) > 3 else ''
+        clade_id_name = parts[ clade_id_name_column_index ]
+        appears_in_structures = (
+            parts[ appears_in_structures_column_index ]
+            if appears_in_structures_column_index is not None and len( parts ) > appears_in_structures_column_index
+            else ''
+        )
 
-        clade_ids___registry_data[ clade_id ] = {
-            'clade_name': clade_name,
-            'clade_id_name': clade_id_name,
+        clade_id_names___registry_data[ clade_id_name ] = {
             'appears_in_structures': appears_in_structures
         }
 
-print( f"  Loaded {len( clade_ids___registry_data )} clades from registry" )
+print( f"  Loaded {len( clade_id_names___registry_data )} clades from registry" )
 print()
 
 
@@ -485,10 +494,8 @@ for newick_file in newick_files:
         all_clades_with_paths = extract_all_clades_with_paths( tree_root )
 
         for clade_data in all_clades_with_paths:
-            clade_id = clade_data[ 'clade_id' ]
-            structure_clade_pairs___path_data[ ( structure_id, clade_id ) ] = {
-                'clade_name': clade_data[ 'clade_name' ],
-                'clade_id_name': clade_data[ 'clade_id_name' ],
+            clade_id_name = clade_data[ 'clade_id_name' ]
+            structure_clade_pairs___path_data[ ( structure_id, clade_id_name ) ] = {
                 'clade_type': clade_data[ 'clade_type' ],
                 'phylogenetic_path': clade_data[ 'phylogenetic_path' ]
             }
@@ -545,11 +552,13 @@ if not phylogenetic_blocks_files:
 input_phylogenetic_blocks_path = phylogenetic_blocks_files[ 0 ]
 print( f"  Using: {input_phylogenetic_blocks_path.name}" )
 
-# Build a lookup: (structure_id, clade_id) -> { block_id, block_name, block_id_name }
+# Build a lookup keyed by atomic clade_id_name (Rule 6):
+# (structure_id, child_clade_id_name) -> { phylogenetic_block, parent_clade_id_name }
 structure_clade_pairs___phylogenetic_blocks = {}
 
-# Structure_ID (tree topology structure identifier)	Clade_ID (clade identifier for the child in this block)	Clade_Name (clade name for the child in this block)	Clade_ID_Name (full child clade identifier and name)	Parent_Clade_ID (clade identifier for the parent in this block)	Parent_Clade_Name (clade name for the parent in this block)	Parent_Clade_ID_Name (full parent clade identifier and name)	Phylogenetic_Block_Name (block name as Parent_Name::Child_Name)	Phylogenetic_Block_ID (block identifier as Parent_ID::Child_ID)	Phylogenetic_Block_ID_Name (block as Parent_ID_Name::Child_ID_Name)
-# structure_001	C068	Root	C068_Root	C000	Pre_Root	C000_Pre_Root	Pre_Root::Root	C000::C068	C000_Pre_Root::C068_Root
+# Script 006 output format (4 columns):
+# Structure_ID (tree topology structure identifier)	Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)	Parent_Clade_ID_Name (atomic parent clade identifier e.g. C082_Metazoa)	Child_Clade_ID_Name (atomic child clade identifier e.g. C086_Ctenophora)
+# structure_001	C000_Pre_Basal::C071_Basal	C000_Pre_Basal	C071_Basal
 with open( input_phylogenetic_blocks_path, 'r' ) as input_file:
     header_line = input_file.readline().strip()
     header_columns = header_line.split( '\t' )
@@ -557,16 +566,25 @@ with open( input_phylogenetic_blocks_path, 'r' ) as input_file:
     # Map column names to indices
     column_names___indices = {}
     for column_index, column_header in enumerate( header_columns ):
-        # Extract the identifier part before the parenthesized description
         column_name = column_header.split( '(' )[ 0 ].strip()
         column_names___indices[ column_name ] = column_index
 
-    # Identify the key column indices
-    structure_id_column_index = column_names___indices.get( 'Structure_ID', 0 )
-    clade_id_column_index = column_names___indices.get( 'Clade_ID', 1 )
-    block_id_column_index = column_names___indices.get( 'Phylogenetic_Block_ID', None )
-    block_name_column_index = column_names___indices.get( 'Phylogenetic_Block_Name', None )
-    block_id_name_column_index = column_names___indices.get( 'Phylogenetic_Block_ID_Name', None )
+    structure_id_column_index = column_names___indices.get( 'Structure_ID' )
+    phylogenetic_block_column_index = column_names___indices.get( 'Phylogenetic_Block' )
+    parent_clade_id_name_column_index = column_names___indices.get( 'Parent_Clade_ID_Name' )
+    child_clade_id_name_column_index = column_names___indices.get( 'Child_Clade_ID_Name' )
+
+    required = {
+        'Structure_ID': structure_id_column_index,
+        'Phylogenetic_Block': phylogenetic_block_column_index,
+        'Parent_Clade_ID_Name': parent_clade_id_name_column_index,
+        'Child_Clade_ID_Name': child_clade_id_name_column_index,
+    }
+    missing = [ name for name, idx in required.items() if idx is None ]
+    if missing:
+        print( f"CRITICAL ERROR: Phylogenetic blocks file missing required columns: {missing}" )
+        print( f"  Found columns: {header_columns}" )
+        sys.exit( 1 )
 
     for line in input_file:
         line = line.strip()
@@ -574,18 +592,18 @@ with open( input_phylogenetic_blocks_path, 'r' ) as input_file:
             continue
 
         parts = line.split( '\t' )
+        if len( parts ) <= max( required.values() ):
+            continue
 
-        structure_id = parts[ structure_id_column_index ] if structure_id_column_index is not None else ''
-        clade_id = parts[ clade_id_column_index ] if clade_id_column_index is not None else ''
-        block_id = parts[ block_id_column_index ] if block_id_column_index is not None and len( parts ) > block_id_column_index else ''
-        block_name = parts[ block_name_column_index ] if block_name_column_index is not None and len( parts ) > block_name_column_index else ''
-        block_id_name = parts[ block_id_name_column_index ] if block_id_name_column_index is not None and len( parts ) > block_id_name_column_index else ''
+        structure_id = parts[ structure_id_column_index ]
+        phylogenetic_block = parts[ phylogenetic_block_column_index ]
+        parent_clade_id_name = parts[ parent_clade_id_name_column_index ]
+        child_clade_id_name = parts[ child_clade_id_name_column_index ]
 
-        if structure_id and clade_id:
-            structure_clade_pairs___phylogenetic_blocks[ ( structure_id, clade_id ) ] = {
-                'block_id': block_id,
-                'block_name': block_name,
-                'block_id_name': block_id_name
+        if structure_id and child_clade_id_name:
+            structure_clade_pairs___phylogenetic_blocks[ ( structure_id, child_clade_id_name ) ] = {
+                'phylogenetic_block': phylogenetic_block,
+                'parent_clade_id_name': parent_clade_id_name,
             }
 
 print( f"  Loaded {len( structure_clade_pairs___phylogenetic_blocks )} phylogenetic block entries" )
@@ -598,17 +616,20 @@ print()
 
 print( "Building integrated clade data table..." )
 
-# Use all (structure_id, clade_id) pairs from the parsed Newick trees
+# Use all (structure_id, clade_id_name) pairs from the parsed Newick trees (Rule 6 atomic key)
 all_structure_clade_pairs = set( structure_clade_pairs___path_data.keys() )
 
-print( f"  Total (structure, clade) pairs to integrate: {len( all_structure_clade_pairs )}" )
+print( f"  Total (structure, clade_id_name) pairs to integrate: {len( all_structure_clade_pairs )}" )
 
-# Sort pairs for consistent output: by structure_id then clade_id (numeric)
+# Sort pairs for consistent output: by structure number then the numeric Cxxx prefix of clade_id_name
 def sort_key_structure_clade( pair ):
-    """Sort by structure number, then clade number."""
-    structure_id, clade_id = pair
+    structure_id, clade_id_name = pair
     structure_number = int( re.search( r'\d+', structure_id ).group() ) if re.search( r'\d+', structure_id ) else 0
-    clade_number = int( clade_id[ 1: ] ) if clade_id.startswith( 'C' ) and clade_id[ 1: ].isdigit() else 99999
+    clade_number = 99999
+    if clade_id_name and clade_id_name.startswith( 'C' ):
+        prefix = clade_id_name.split( '_', 1 )[ 0 ]
+        if prefix[ 1: ].isdigit():
+            clade_number = int( prefix[ 1: ] )
     return ( structure_number, clade_number )
 
 sorted_pairs = sorted( all_structure_clade_pairs, key=sort_key_structure_clade )
@@ -617,45 +638,22 @@ sorted_pairs = sorted( all_structure_clade_pairs, key=sort_key_structure_clade )
 integrated_rows = []
 clade_type_counts = { 'species': 0, 'internal': 0, 'unknown': 0 }
 
-for structure_id, clade_id in sorted_pairs:
+for structure_id, clade_id_name in sorted_pairs:
 
     # --- Basic Clade Info from Registry ---
-    registry_data = clade_ids___registry_data.get( clade_id, {} )
+    registry_data = clade_id_names___registry_data.get( clade_id_name, {} )
     appears_in_structures = registry_data.get( 'appears_in_structures', '' )
 
     # --- Clade Info from Parsed Tree ---
-    path_data = structure_clade_pairs___path_data.get( ( structure_id, clade_id ), {} )
-    clade_name = path_data.get( 'clade_name', registry_data.get( 'clade_name', '' ) )
-    clade_id_name = path_data.get( 'clade_id_name', registry_data.get( 'clade_id_name', f"{clade_id}_{clade_name}" if clade_name else clade_id ) )
+    path_data = structure_clade_pairs___path_data.get( ( structure_id, clade_id_name ), {} )
     clade_type = path_data.get( 'clade_type', 'unknown' )
     phylogenetic_path = path_data.get( 'phylogenetic_path', '' )
     clade_type_counts[ clade_type ] = clade_type_counts.get( clade_type, 0 ) + 1
 
-    # --- Parent Clade Info (from phylogenetic path) ---
-    parent_clade_id = ''
-    parent_clade_name = ''
-    parent_clade_id_name = ''
-
-    if phylogenetic_path:
-        path_elements = phylogenetic_path.split( ',' )
-        # The current clade is the last element; the parent is the second-to-last
-        if len( path_elements ) >= 2:
-            parent_clade_id_name = path_elements[ -2 ]
-            if '_' in parent_clade_id_name and parent_clade_id_name[ 0 ] == 'C':
-                parts_parent = parent_clade_id_name.split( '_', 1 )
-                parent_clade_id = parts_parent[ 0 ]
-                parent_clade_name = parts_parent[ 1 ]
-
-    # --- Phylogenetic Block Info ---
-    block_data = structure_clade_pairs___phylogenetic_blocks.get( ( structure_id, clade_id ), {} )
-    phylogenetic_block_id = block_data.get( 'block_id', '' )
-    phylogenetic_block_name = block_data.get( 'block_name', '' )
-    phylogenetic_block_id_name = block_data.get( 'block_id_name', '' )
-
-    # --- Clade ID or Structure Columns ---
-    clade_id_or_structure = f"{clade_id}|{structure_id}"
-    clade_name_or_structure = f"{clade_name}|{structure_id}" if clade_name else f"|{structure_id}"
-    clade_id_name_or_structure = f"{clade_id_name}|{structure_id}" if clade_id_name else f"|{structure_id}"
+    # --- Phylogenetic Block Info (Rule 6 atomic identifiers) ---
+    block_data = structure_clade_pairs___phylogenetic_blocks.get( ( structure_id, clade_id_name ), {} )
+    phylogenetic_block = block_data.get( 'phylogenetic_block', '' )
+    parent_clade_id_name = block_data.get( 'parent_clade_id_name', '' )
 
     # --- Clade Newick Representations ---
     # RUN_2 optimization: O(1) node lookup + O(N) tree-walk (node.to_newick())
@@ -684,22 +682,17 @@ for structure_id, clade_id in sorted_pairs:
     # --- Topology Newick ---
     topology_newick = structure_ids___topology_newicks.get( structure_id, '' )
 
-    # --- Build Row ---
+    # --- Clade-Structure unique key (atomic clade_id_name, Rule 6) ---
+    clade_id_name_or_structure = f"{clade_id_name}|{structure_id}" if clade_id_name else f"|{structure_id}"
+
+    # --- Build Row (Rule 6 atomic identifiers only; split forms removed) ---
     row = {
         'Structure_ID': structure_id,
-        'Clade_ID': clade_id,
-        'Clade_Name': clade_name,
         'Clade_ID_Name': clade_id_name,
         'Clade_Type': clade_type,
-        'Parent_Clade_ID': parent_clade_id,
-        'Parent_Clade_Name': parent_clade_name,
         'Parent_Clade_ID_Name': parent_clade_id_name,
-        'Phylogenetic_Block_ID': phylogenetic_block_id,
-        'Phylogenetic_Block_Name': phylogenetic_block_name,
-        'Phylogenetic_Block_ID_Name': phylogenetic_block_id_name,
+        'Phylogenetic_Block': phylogenetic_block,
         'Phylogenetic_Path': phylogenetic_path,
-        'Clade_ID_Or_Structure': clade_id_or_structure,
-        'Clade_Name_Or_Structure': clade_name_or_structure,
         'Clade_ID_Name_Or_Structure': clade_id_name_or_structure,
         'Clade_Newick_IDs_Only': clade_newick_ids_only,
         'Clade_Newick_Names_Only': clade_newick_names_only,
@@ -726,22 +719,18 @@ print()
 print( "Writing integrated clade data table..." )
 
 # Define column order with self-documenting headers
+# Rule 6: all clade and block identifiers are atomic (clade_id_name form).
+# Split forms (Clade_ID, Clade_Name, Parent_Clade_ID, Parent_Clade_Name,
+# Phylogenetic_Block_ID, Phylogenetic_Block_Name, Clade_ID_Or_Structure,
+# Clade_Name_Or_Structure) have been removed.
 column_headers = [
     'Structure_ID (topology structure identifier)',
-    'Clade_ID (clade identifier)',
-    'Clade_Name (clade name after identifier prefix)',
-    'Clade_ID_Name (full clade identifier and name)',
+    'Clade_ID_Name (atomic clade identifier e.g. C082_Metazoa)',
     'Clade_Type (species for leaf nodes or internal for non-leaf nodes)',
-    'Parent_Clade_ID (parent clade identifier)',
-    'Parent_Clade_Name (parent clade name)',
-    'Parent_Clade_ID_Name (full parent clade identifier and name)',
-    'Phylogenetic_Block_ID (phylogenetic block identifier for parent to child transition)',
-    'Phylogenetic_Block_Name (phylogenetic block name for parent to child transition)',
-    'Phylogenetic_Block_ID_Name (full phylogenetic block identifier and name)',
-    'Phylogenetic_Path (comma delimited root to node path of clade id names)',
-    'Clade_ID_Or_Structure (clade identifier pipe structure identifier for unique key)',
-    'Clade_Name_Or_Structure (clade name pipe structure identifier)',
-    'Clade_ID_Name_Or_Structure (full clade identifier and name pipe structure identifier)',
+    'Parent_Clade_ID_Name (atomic parent clade identifier)',
+    'Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)',
+    'Phylogenetic_Path (comma delimited root to node path of atomic clade identifiers)',
+    'Clade_ID_Name_Or_Structure (atomic clade identifier pipe structure identifier for unique key)',
     'Clade_Newick_IDs_Only (newick subtree of this clade with only clade identifiers)',
     'Clade_Newick_Names_Only (newick subtree of this clade with only clade names)',
     'Clade_Newick_IDs_And_Names (newick subtree of this clade with identifiers and names)',
@@ -754,11 +743,10 @@ column_headers = [
 ]
 
 column_keys = [
-    'Structure_ID', 'Clade_ID', 'Clade_Name', 'Clade_ID_Name', 'Clade_Type',
-    'Parent_Clade_ID', 'Parent_Clade_Name', 'Parent_Clade_ID_Name',
-    'Phylogenetic_Block_ID', 'Phylogenetic_Block_Name', 'Phylogenetic_Block_ID_Name',
-    'Phylogenetic_Path', 'Clade_ID_Or_Structure', 'Clade_Name_Or_Structure',
-    'Clade_ID_Name_Or_Structure', 'Clade_Newick_IDs_Only', 'Clade_Newick_Names_Only',
+    'Structure_ID', 'Clade_ID_Name', 'Clade_Type',
+    'Parent_Clade_ID_Name', 'Phylogenetic_Block',
+    'Phylogenetic_Path', 'Clade_ID_Name_Or_Structure',
+    'Clade_Newick_IDs_Only', 'Clade_Newick_Names_Only',
     'Clade_Newick_IDs_And_Names', 'Species_Tree_Structure_Only', 'Species_Tree_IDs_Only',
     'Species_Tree_Names_Only', 'Species_Tree_IDs_And_Names', 'Topology_Newick',
     'Appears_In_Structures'
@@ -783,7 +771,7 @@ unique_structures = set()
 unique_clades = set()
 for row in integrated_rows:
     unique_structures.add( row[ 'Structure_ID' ] )
-    unique_clades.add( row[ 'Clade_ID' ] )
+    unique_clades.add( row[ 'Clade_ID_Name' ] )
 
 print( "=" * 80 )
 print( "SCRIPT 007 COMPLETE" )

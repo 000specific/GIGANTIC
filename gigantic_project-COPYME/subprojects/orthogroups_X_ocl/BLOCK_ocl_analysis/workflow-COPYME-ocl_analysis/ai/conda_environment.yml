@@ -1,0 +1,34 @@
+# GIGANTIC orthogroups_X_ocl - STEP_1 environment
+# AI: Claude Code | Opus 4.6 | 2026 April 13
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_ocl_analysis.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# This file is the canonical dependency specification for this STEP.
+# All workflow templates in this STEP share this environment.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-orthogroups_X_ocl-ocl_analysis
+
+name: aiG-orthogroups_X_ocl-ocl_analysis
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # Configuration parsing
+  - pyyaml

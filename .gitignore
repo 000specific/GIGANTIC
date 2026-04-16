@@ -88,6 +88,12 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code per-project state (settings, scheduled-task locks)
+.claude/
+
+# Crash core dumps
+core.*
+
 # Logs
 *.log
 

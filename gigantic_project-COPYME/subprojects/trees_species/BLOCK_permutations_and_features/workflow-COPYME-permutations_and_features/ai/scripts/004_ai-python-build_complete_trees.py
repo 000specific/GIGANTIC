@@ -712,9 +712,9 @@ if not unresolved_clade_names or len( unresolved_clade_names ) <= 1 or variable_
 
     print( f"  Written: {output_clade_registry_path.name}" )
 
-    # Generate phylogenetic paths for single structure
+    # Generate phylogenetic paths for single structure (Rule 6: atomic Species_Clade_ID_Name only)
     with open( output_phylogenetic_paths_path, 'w' ) as output_file:
-        output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (species clade identifier and name)\tSpecies_Name (species name extracted from clade identifier)\tPhylogenetic_Path (comma delimited root to leaf path of clade identifiers)\n' )
+        output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (atomic species clade identifier e.g. C040_Caenorhabditis_elegans)\tPhylogenetic_Path (comma delimited root to leaf path of atomic clade identifiers)\n' )
 
         for leaf_label in sorted( all_original_leaves ):
             leaf_node = original_tree_root.find_clade( leaf_label )
@@ -723,13 +723,7 @@ if not unresolved_clade_names or len( unresolved_clade_names ) <= 1 or variable_
                 path.reverse()
                 phylogenetic_path = ','.join( path )
 
-                # Extract species name from label
-                species_name = ''
-                if '_' in leaf_label:
-                    parts_label = leaf_label.split( '_', 1 )
-                    species_name = parts_label[ 1 ]
-
-                output = f"structure_001\t{leaf_label}\t{species_name}\t{phylogenetic_path}\n"
+                output = f"structure_001\t{leaf_label}\t{phylogenetic_path}\n"
                 output_file.write( output )
 
     print( f"  Written: {output_phylogenetic_paths_path.name}" )
@@ -849,21 +843,37 @@ for skeleton_file in skeleton_files:
     structure_id = structure_id_match.group( 1 )
     structure_number = int( structure_id.replace( 'structure_', '' ) )
 
-    # Read the skeleton Newick
-    with open( skeleton_file, 'r' ) as input_file:
-        skeleton_newick_string = input_file.read().strip()
+    # structure_001 IS the user's input species tree, with all clade
+    # annotations already in place. Script 003 writes the full annotated tree
+    # as structure_001's "skeleton" (not a variable-region-only topology like
+    # structures 002+). Running the skeleton-graft-and-insert pipeline on
+    # that full tree would incorrectly relabel its root to variable_root_label
+    # and then insert it into the fixed structure — producing a self-nested
+    # tree where every ancestor of variable_root_label appears twice.
+    #
+    # For structure_001 we therefore use the parsed original species tree
+    # directly as the complete tree. Structures 002+ still go through the
+    # standard skeleton-graft-and-insert pipeline below.
+    if structure_id == 'structure_001':
+        complete_tree_root = original_tree_root
+    else:
+        # Read the skeleton Newick.
+        with open( skeleton_file, 'r' ) as input_file:
+            skeleton_newick_string = input_file.read().strip()
 
-    # Parse the skeleton
-    skeleton_root = parse_skeleton_newick( skeleton_newick_string )
+        # Parse the skeleton (variable-region-only topology with unresolved
+        # clade names as leaves).
+        skeleton_root = parse_skeleton_newick( skeleton_newick_string )
 
-    # Graft unresolved clade subtrees onto the skeleton
-    grafted_variable_root = graft_subtrees_onto_skeleton( skeleton_root, unresolved_clade_id_names___subtrees )
+        # Graft unresolved clade subtrees onto the skeleton leaves.
+        grafted_variable_root = graft_subtrees_onto_skeleton( skeleton_root, unresolved_clade_id_names___subtrees )
 
-    # Ensure the grafted variable root has the correct label
-    grafted_variable_root.label = variable_root_label
+        # Ensure the grafted variable root has the correct label.
+        grafted_variable_root.label = variable_root_label
 
-    # Build the complete tree by inserting grafted variable root into fixed structure
-    complete_tree_root = build_complete_tree( fixed_structure_root, variable_root_label, grafted_variable_root )
+        # Build the complete tree by inserting the grafted variable root into
+        # the fixed structure's stub position.
+        complete_tree_root = build_complete_tree( fixed_structure_root, variable_root_label, grafted_variable_root )
 
     # Write the complete tree to a Newick file
     complete_newick = complete_tree_root.to_newick()
@@ -897,13 +907,8 @@ for skeleton_file in skeleton_files:
             path.reverse()
             phylogenetic_path = ','.join( path )
 
-            # Extract species name from leaf label
-            species_name = ''
-            if '_' in leaf_label:
-                parts_label = leaf_label.split( '_', 1 )
-                species_name = parts_label[ 1 ]
-
-            all_phylogenetic_paths.append( ( structure_id, leaf_label, species_name, phylogenetic_path ) )
+            # Rule 6: store atomic species_clade_id_name only; no split species_name field.
+            all_phylogenetic_paths.append( ( structure_id, leaf_label, phylogenetic_path ) )
 
     # Show progress
     if structure_number <= 10 or structure_number > len( skeleton_files ) - 5:
@@ -960,17 +965,17 @@ print()
 print( "STEP 8: Writing phylogenetic paths for all structures..." )
 
 with open( output_phylogenetic_paths_path, 'w' ) as output_file:
-    output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (species clade identifier and name)\tSpecies_Name (species name extracted from clade identifier)\tPhylogenetic_Path (comma delimited root to leaf path of clade identifiers)\n' )
+    output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (atomic species clade identifier e.g. C040_Caenorhabditis_elegans)\tPhylogenetic_Path (comma delimited root to leaf path of atomic clade identifiers)\n' )
 
-    # Sort by structure_id, then by species name
-    all_phylogenetic_paths.sort( key=lambda x: ( x[ 0 ], x[ 2 ] ) )
+    # Sort by structure_id, then by atomic species_clade_id_name
+    all_phylogenetic_paths.sort( key=lambda x: ( x[ 0 ], x[ 1 ] ) )
 
-    for structure_id, species_clade_id_name, species_name, phylogenetic_path in all_phylogenetic_paths:
-        output = f"{structure_id}\t{species_clade_id_name}\t{species_name}\t{phylogenetic_path}\n"
+    for structure_id, species_clade_id_name, phylogenetic_path in all_phylogenetic_paths:
+        output = f"{structure_id}\t{species_clade_id_name}\t{phylogenetic_path}\n"
         output_file.write( output )
 
 total_phylogenetic_paths = len( all_phylogenetic_paths )
-unique_species_count = len( set( path_entry[ 2 ] for path_entry in all_phylogenetic_paths ) )
+unique_species_count = len( set( path_entry[ 1 ] for path_entry in all_phylogenetic_paths ) )
 print( f"  Total phylogenetic path entries: {total_phylogenetic_paths}" )
 print( f"  Unique species: {unique_species_count}" )
 print( f"  Structures: {complete_tree_count}" )

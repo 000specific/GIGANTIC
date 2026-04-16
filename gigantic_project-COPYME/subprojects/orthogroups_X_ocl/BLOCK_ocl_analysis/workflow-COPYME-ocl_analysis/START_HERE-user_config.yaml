@@ -37,16 +37,16 @@ inputs:
 
   # trees_species output directory (phylogenetic blocks, paths, clade-species mappings)
   # Points to trees_species output_to_input via relative path
-  trees_species_dir: "../../../../trees_species/output_to_input/BLOCK_permutations_and_features"
+  trees_species_dir: "../../../trees_species/output_to_input/BLOCK_permutations_and_features"
 
   # Orthogroups output directory (orthogroup assignments in GIGANTIC IDs)
   # Change the BLOCK name to match the tool: BLOCK_orthofinder, BLOCK_orthohmm, BLOCK_broccoli
-  orthogroups_dir: "../../../../orthogroups/output_to_input/BLOCK_orthofinder"
+  orthogroups_dir: "../../../orthogroups/output_to_input/BLOCK_orthofinder"
 
   # Proteomes directory (FASTA files for GIGANTIC species)
   # Used by Script 002 to load sequences for origin determination
   # Replace SET_NAME_HERE with your species set name (e.g., species71)
-  proteomes_dir: "../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/SET_NAME_HERE_gigantic_T1_proteomes"
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/SET_NAME_HERE_gigantic_T1_proteomes"
 
 # FASTA embedding in output TSVs
 # true = embed protein sequences in summary tables (~1GB per structure)
@@ -58,6 +58,53 @@ output:
   # Main output directory (relative to this workflow directory)
   # Each structure gets: OUTPUT_pipeline/structure_NNN/1-output/ through 5-output/
   base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by SLURM (job resources) when execution_mode is "slurm".
+# OCL work is mostly serial Python; defaults fit a 105-structure species70 run.
+
+cpus: 3
+memory_gb: 20
+time_hours: 24
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the NextFlow driver).
+#   "local" - Run directly on this machine
+#   "slurm" - Self-submit as a SLURM job (driver runs on a compute node)
+
+execution_mode: "slurm"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Parallelism Mode
+# =============================================================================
+# Controls how NextFlow dispatches the per-structure tasks (independent of
+# execution_mode above — they compose).
+#   "slurm" - Each task submits as its own SLURM job (best for fewer/longer tasks)
+#   "local" - All tasks run in parallel within this process, no per-task SLURM
+#             overhead (best for many short tasks — e.g. 105 structures × 5
+#             scripts at seconds each)
+#
+# Combinations:
+#   execution_mode  parallelism_mode  Use case
+#   --------------  ----------------  --------
+#   local           local             Single-machine dev
+#   local           slurm             Driver on login, fan out to SLURM per task
+#   slurm           local             One SLURM allocation, local parallelism inside (default)
+#   slurm           slurm             Driver in a SLURM job, submits sub-jobs
+#
+# Default is "local" because OCL tasks are short and per-task SLURM overhead
+# would dominate runtime. Switch to "slurm" only if per-task work is large
+# enough to absorb the scheduling overhead.
+
+parallelism_mode: "local"
 
 # =============================================================================
 # Resume from cached NextFlow work directory

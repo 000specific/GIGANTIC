@@ -127,6 +127,158 @@ unambiguous. Strict qualification is for documentation, not code.
 "root." Use "hierarchy" and "origin" instead. Do not write "rooted hierarchy"
 — this is a category error.
 
+### Rule 6: Clade IDs as Topologically-Structured Species Sets
+
+A clade identifier (`clade_id_name`, e.g., `C082_Metazoa`) identifies a
+**topologically-structured species set** — a specific combination of:
+
+1. **Species content**: the exact set of descendant species under this clade
+2. **Topological arrangement**: the branching pattern of those species as
+   seen from this clade's subtree
+
+Two clades across different species tree structures are the SAME clade (same
+`clade_id_name`) if and only if BOTH (1) and (2) match. Different species
+content OR different branching arrangement = different biological clade with
+a different `clade_id`.
+
+**Implications:**
+
+- Named clades outside the unresolved zone (Metazoa, Bilateria, Mammalia,
+  etc.) have **globally stable `clade_id_name` across all candidate species
+  tree structures** — the same biological grouping receives the same ID in
+  every one of the (2N-3)!! structures produced from N unresolved clades.
+- Within the unresolved zone, an internal grouping like `(Bilateria,
+  Cnidaria)` in one structure and `(Bilateria, Placozoa)` in another are
+  DIFFERENT biological groupings and receive different `clade_id_name`
+  (even when both are auto-named `Clade_NNN` style).
+- If the same ambiguous-zone grouping happens to appear in multiple
+  candidate topologies, it receives the SAME `clade_id` in each — because
+  its topologically-structured species set is identical.
+- **Cross-structure aggregation** (e.g., in the planned `occams_tree`
+  subproject that ranks topologies by total-loss parsimony) can safely use
+  `clade_id_name` as a global key: if two rows across structures share a
+  `clade_id_name`, they refer to the same biological clade.
+
+**Identifier usage convention**: `clade_id_name` is the canonical atomic
+identifier — always used as a single unit, never split into `clade_id` and
+`clade_name` for internal lookups. Separate `clade_id` and `clade_name`
+columns may appear in TSV outputs for human-readable display, but code paths
+use `clade_id_name` consistently to avoid ambiguity.
+
+**Implementation**:
+`trees_species/BLOCK_permutations_and_features/ai/scripts/003_ai-python-assign_clade_identifiers.py`
+computes a canonical (alphabetically-sorted) topological signature for every
+internal node and assigns `clade_id` accordingly — new ID when the signature
+is novel, reuse when the signature has been registered in any prior structure.
+The registry file tracks `appears_in_structures` (which of the candidate
+structures each clade appears in).
+
+### Rule 7: Phylogenetic Blocks, Block-States, and the Five-State Vocabulary
+
+GIGANTIC distinguishes tree-structural edges from per-feature states on those
+edges using a three-level identifier hierarchy built on `::` and `-LETTER`
+suffixes.
+
+- A **phylogenetic block** is a single parent-to-child edge of a species tree
+  structure — the parent clade, the child clade, and the edge joining them,
+  with no intervening nodes. Written `parent_clade_id_name::child_clade_id_name`
+  (e.g. `C069_Holozoa::C082_Metazoa`). Feature-agnostic: the block exists as a
+  structural fact about the species tree, independent of any feature.
+
+- A **phylogenetic block-state** is a block paired with a specific feature's
+  state on that block. Written `parent_clade_id_name::child_clade_id_name-LETTER`
+  (e.g. `C069_Holozoa::C082_Metazoa-O`). Feature-specific: the same block has
+  different block-states for different features.
+
+- The **five-state vocabulary** refines classical Dollo by separating two
+  kinds of absence: pre-origin absence (feature has not yet arisen) and
+  post-loss absence (feature was present upstream and has been lost).
+
+| Letter | State | Parent | Child | Kind |
+|---|---|---|---|---|
+| **A** | Inherited Absence | absent | absent (pre-origin) | inheritance |
+| **O** | Origin | absent | present | event |
+| **P** | Inherited Presence | present | present | inheritance |
+| **L** | Loss | present | absent | event |
+| **X** | Inherited Loss | absent | absent (post-loss) | inheritance |
+
+- **Phylogenetic event blocks** carry state **O** or **L** — the feature's
+  state differs between the parent and child endpoints, so an evolutionary
+  change is localized to this block.
+
+- **Phylogenetic inheritance blocks** carry state **A**, **P**, or **X** —
+  the feature's state is the same at both endpoints; it has been inherited
+  across the block rather than changed on it.
+
+**Key implications**:
+
+- An event block's identification claims: at some point within the real
+  evolutionary time and biological events the block represents, a change in
+  the feature's state occurred between the parent and child endpoints. The
+  block is the resolution; within-block placement is not available from the
+  species tree alone.
+- Every phylogenetic block, for every feature, falls into exactly one of the
+  five states. Per-structure OCL accounting is a partition of all blocks in
+  the structure into these five categories per feature.
+- The origin-block invariant carries cleanly: the block carrying state O for
+  a feature is the first block where the feature appears; blocks upstream on
+  the root-to-origin path are all state A; blocks immediately downstream are
+  state P unless intervening losses put them in state L or X.
+
+**Prose conventions**:
+
+- *the Holozoa-Metazoa phylogenetic block* — both endpoint clade names, because
+  both are contained in the block.
+- *the Holozoa-Metazoa phylogenetic block in state O for orthogroup OG0000001* —
+  block, state letter, feature in scope all explicit.
+- Avoid *"the block entering Metazoa"* (directional/agentive), *"the block
+  between Holozoa and Metazoa"* ("between" excludes endpoints), or *"conserved
+  across this block"* (in biology "conserved across X" refers to parallel
+  lineages, not a single parent-child edge).
+
+**Phylogenetic paths and phylogenetic path-states**:
+
+Blocks and paths are the same substrate viewed at two granularities:
+
+- A **phylogenetic block** is the atomic unit — one parent-to-child edge of a
+  species tree structure.
+- A **phylogenetic path** is a chain of consecutive phylogenetic blocks — the
+  walk from the root of a species tree structure down to one tip species.
+  Every species in the structure has exactly one phylogenetic path. The path
+  is literally a sequence of blocks laid end-to-end.
+
+Written `start_clade_id_name>>end_clade_id_name` (e.g.
+`C000_Pre_Basal>>C040_Caenorhabditis_elegans`) using `>>` to distinguish from
+block's `::`. Feature-agnostic: the path is a structural fact about the
+species tree.
+
+- A **phylogenetic path-state** is a path paired with a specific feature's
+  state along each block of that path. Written as the concatenated five-state
+  letters in root-to-tip order (e.g. `AAAOPLXX`). Feature-specific: the same
+  path has different path-states for different features. A path-state is the
+  compact fingerprint of a feature's biological evolutionary history along
+  that one species's lineage.
+
+The biological purpose of this vocabulary:
+
+- Every evolutionary event (origin, loss) has to happen on some phylogenetic
+  block — that is the smallest chunk of evolution the species tree can
+  resolve. Blocks are the atomic unit of OCL analysis.
+- Every species's full evolutionary history on the tree is its phylogenetic
+  path. The path-state for a feature tells you, in a single string, where
+  origins and losses localized on that species's lineage and what the feature
+  looked like at every intermediate ancestor.
+- `trees_species` produces the phylogenetic structural substrate (blocks,
+  paths). `orthogroups_X_ocl` / `annotations_X_ocl` combine that substrate
+  with feature data to produce the evolutionary inferences (block-states,
+  path-states).
+
+**Full specification**:
+`subprojects/orthogroups_X_ocl/research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`
+contains the complete mathematical and phylogenetic definitions, identifier
+reference, implementation notes for Scripts 002-005, and the state life-cycle
+diagram.
+
 ---
 
 ## What GIGANTIC Is
@@ -259,6 +411,43 @@ gigantic_project-[project_name]/
 ---
 
 ## Key Patterns
+
+### STEP vs BLOCK: When to use which inside a subproject
+
+Subprojects organize their internal work in one of two ways. The choice depends on
+the dependency shape of the work, not on personal preference.
+
+**STEP pattern** — use when the work is a strict linear pipeline. `STEP_N+1` has
+no meaning without `STEP_N` having run first. The user always runs them in order,
+end to end.
+
+- Examples: `genomesDB` (STEP_1 sources → STEP_2 standardize → STEP_3 databases
+  → STEP_4 final species set), `trees_gene_families` (STEP_1 homolog discovery
+  → STEP_2 phylogenetic analysis)
+- Naming: `STEP_N-short_descriptor/`
+
+**BLOCK pattern** — use when the work is a set of modular units with a dependency
+graph (not a chain). User may choose which blocks to run. Dependencies are
+expressed through each block's `output_to_input/` consumption, and documented in
+the subproject's README and AI_GUIDE.
+
+- Examples: `orthogroups` (BLOCK_orthohmm, BLOCK_orthofinder, BLOCK_broccoli are
+  alternatives; BLOCK_comparison depends on whichever were run),
+  `annotations_hmms` (one BLOCK per annotation tool), `trees_species`
+  (BLOCK_gigantic_species_tree, BLOCK_permutations_and_features)
+- Naming: `BLOCK_short_descriptor/`
+
+**Distinguishing test:** if `X_2` and `X_3` both depend on `X_1` but NOT on each
+other, that's a dependency TREE — use BLOCK. If `X_2` strictly follows from
+`X_1` with no alternative path, that's a CHAIN — use STEP.
+
+**Cross-subproject integration work** (e.g., a step that combines outputs from
+multiple unrelated subprojects) belongs in its own subproject, NOT nested as a
+BLOCK/STEP inside a data-producer subproject. This keeps each subproject's
+scope coherent — a subproject produces ONE kind of thing; integrations across
+kinds live at the peer subproject level.
+
+---
 
 ### Project INPUT_user → Workflow INPUT_user Flow
 
@@ -542,6 +731,53 @@ workflow-COPYME-*/ai/validation/     # Validation outputs
 
 ---
 
+## ⚠️ CRITICAL: Data Flow Contract
+
+Three rules govern where scripts may read data from. Violating them couples
+subprojects to each other's internal layouts and breaks GIGANTIC's
+composability + reproducibility guarantees.
+
+**Rule 1 — Inter-subproject / inter-workflow:** Always through
+`output_to_input/` of the producing subproject. Never reach into another
+workflow's `OUTPUT_pipeline/` directly. The `output_to_input/` directory is
+the published, version-stable interface — what's behind those symlinks is
+the producing subproject's private business and may change.
+
+**Rule 2 — Intra-workflow:** Scripts in the same workflow may read each
+other's `OUTPUT_pipeline/N-output/` outputs. These are durable, named,
+traceable artifacts.
+
+**Rule 3 — Never read NextFlow's `work/`:** It is ephemeral cache, cleaned
+between runs, and lacks the explicit traceability GIGANTIC requires for
+research transparency. Pass data between scripts via `OUTPUT_pipeline/`,
+not via NextFlow channels reading from `work/`.
+
+### Publishing Responsibility
+
+When a workflow finishes, its `RUN-workflow.sh` is responsible for
+**publishing** selected `OUTPUT_pipeline/` artifacts into the subproject's
+`output_to_input/` (typically as relative-path symlinks). Downstream
+consumers see only `output_to_input/`; the layout of `OUTPUT_pipeline/`
+is the producing workflow's internal business.
+
+### Quick Diagram
+
+```
+producing_subproject/
+├── BLOCK_X/workflow-RUN_NN/
+│   └── OUTPUT_pipeline/           # internal — DO NOT read across subprojects
+│       └── N-output/file.tsv
+└── output_to_input/               # published interface — read across subprojects
+    └── BLOCK_X/                   # symlinks → ../../BLOCK_X/workflow-RUN_NN/OUTPUT_pipeline/N-output/file.tsv
+
+consuming_subproject/
+└── workflow-RUN_NN/
+    └── ai/scripts/001_*.py        # reads via config: producing_subproject/output_to_input/BLOCK_X/...
+                                   # NOT: producing_subproject/BLOCK_X/workflow-RUN_NN/OUTPUT_pipeline/...
+```
+
+---
+
 ## Subproject Dependency Chain
 
 ### Core Pipeline
@@ -696,6 +932,68 @@ Users may not be bioinformatics experts. Give specific commands, not general adv
 
 **"My workflow will run for days - how do I keep it running?"**
 → Use `sbatch` on SLURM (safest). For SSH sessions, use `screen` or `tmux`. See "Long-Running Jobs" above.
+
+---
+
+## CPU and Memory Configuration
+
+Workflows use two fields in `START_HERE-user_config.yaml` to set SLURM resources:
+`cpus` and `memory_gb`. The values interact with the cluster's standard RAM-per-CPU
+ratio and with the workflow's natural parallelism.
+
+### RAM-per-CPU ratio (cluster-specific)
+
+Each HPC cluster allocates a fixed amount of RAM per requested CPU when you don't
+specify `--mem` explicitly. On **HiPerGator** (the reference cluster for GIGANTIC
+development), this is **7.5 GB per CPU**. Other clusters may use different ratios
+(e.g., 4 GB/CPU). Users on non-HiPerGator systems should confirm their local ratio
+and adjust `memory_gb` accordingly.
+
+### CPU strategy for per-task-parallel pipelines
+
+When a pipeline naturally parallelizes across independent tasks (e.g., OCL analysis
+across `N` tree structures), the efficient allocation is:
+
+    cpus = N_parallel_tasks + 1   # one CPU per task + one for the NextFlow driver
+
+For example, for OCL on 105 species tree structures:
+
+    cpus: 106
+    memory_gb: 795   # 106 × 7.5 GB (HiPerGator ratio) — each parallel task can use up to ~7.5 GB
+
+NextFlow's `local` executor inside the SLURM allocation dispatches up to `cpus`
+concurrent tasks; providing memory proportional to CPUs lets each task have
+reasonable working memory without one heavy task blocking others.
+
+### Baseline for smaller or mostly-serial pipelines
+
+For pipelines without per-task parallelism (a handful of sequential scripts), start
+with:
+
+    cpus: 1
+    memory_gb: 8      # roughly HiPerGator's 7.5 GB/CPU baseline, rounded up
+
+Bump `memory_gb` if a specific step loads a large dataset (e.g., loading 170k
+orthogroups with full GIGANTIC identifiers can peak at a few GB). For merely
+"lightweight" jobs (small TSVs, simple parsing), `memory_gb: 1` is often
+sufficient on a single CPU.
+
+### Rules of thumb
+
+| Situation | `cpus` | `memory_gb` |
+|-----------|--------|-------------|
+| Lightweight single-process (simple TSV parse / copy / rename) | 1 | 1 |
+| Typical single-structure pipeline (one config, one output) | 1–3 | 8–24 (~7.5 GB/CPU) |
+| Per-task parallel pipeline, `N` tasks | `N + 1` | `(N+1) × 7.5` (HiPerGator) |
+| Memory-heavy step dominates (large BLAST DB, FASTA embedding) | per-step tuning | explicitly set in script or nextflow.config |
+
+### Why match memory to CPUs
+
+If `memory_gb` is much lower than `cpus × 7.5 GB`, individual heavy tasks may hit
+memory limits and be killed even though CPUs sit idle. If it's much higher than
+needed, the SLURM job consumes a larger share of cluster resources than necessary
+(slower scheduling, less fair to other users). Matching the ratio keeps throughput
+high and scheduling fair.
 
 ---
 

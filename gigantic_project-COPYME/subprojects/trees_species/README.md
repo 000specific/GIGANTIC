@@ -206,6 +206,68 @@ distinct, and GIGANTIC keeps the vocabulary separate:
 to its topmost node as a "root." Use "hierarchy" and "origin" instead. Do
 not write "rooted hierarchy" — this is a category error.
 
+### Clade IDs as Topologically-Structured Species Sets
+
+Clade identifiers (`clade_id_name`, e.g., `C082_Metazoa`) produced by this
+subproject identify a **topologically-structured species set** — a unique
+combination of:
+
+1. **Species content**: the exact set of descendant species under the clade
+2. **Topological arrangement**: the branching pattern of those species as
+   seen from the clade's subtree
+
+Two clades across different species tree structures are the same clade
+(same `clade_id_name`) if and only if BOTH match. Different species content
+OR different branching arrangement = different biological clade with a
+different ID.
+
+**Implications for downstream consumers**:
+
+- **Named clades outside the unresolved zone** (Metazoa, Bilateria, etc.)
+  receive a globally stable `clade_id_name` across all (2N-3)!! candidate
+  structures. Downstream analyses can treat `clade_id_name` as a global key
+  for that biological clade regardless of which structure it appears in.
+- **Ambiguous-zone internal groupings** like `(Bilateria, Cnidaria)` vs
+  `(Bilateria, Placozoa)` are different biological clades and receive
+  different IDs. If the same grouping appears in multiple topologies, it
+  receives the SAME `clade_id` in each — the registry's
+  `appears_in_structures` tracks this.
+- Cross-structure aggregation (e.g., the planned `occams_tree` subproject)
+  uses `clade_id_name` directly as a global key — no structure-prefixed
+  composite identifier is needed.
+
+**Implementation**: `BLOCK_permutations_and_features/ai/scripts/003_ai-python-assign_clade_identifiers.py`
+computes a canonical (alphabetically-sorted) topological signature for
+every internal node and assigns IDs accordingly — new ID for novel
+signatures, reused ID for signatures already registered in any prior
+structure.
+
+**Sibling-order invariance (at arbitrary depth)**: sibling order in a
+Newick string is a representational detail, not biology. `(species_A,
+species_B)` and `(species_B, species_A)` describe the same grouping and
+receive the same `clade_id_name`. The canonical signature computation
+alphabetically sorts children at every recursion level, so the invariance
+holds for arbitrarily deep nesting — e.g., `(((A,B),C),D)`, `(D,(C,(A,B)))`,
+and `(D,((B,A),C))` all map to the same canonical `(((A,B),C),D)` and
+therefore the same `clade_id_name`. Downstream pipelines should use
+`clade_id_name` as the atomic identifier rather than parse Newick child
+order.
+
+**Scope — rooted trees only**: this canonicalization applies to rooted
+trees, which is what trees_species produces (every structure has an
+explicit root/basal node). For rooted trees, `(A,(B,C))` and `((A,B),C)`
+encode genuinely different biological groupings — they represent different
+answers to the question "which two clades are sister" — and correctly
+receive different signatures. Unrooted-tree equivalence (where those two
+would be considered the same) is a different computation based on
+bipartition sets and is out of scope for GIGANTIC species tree analyses.
+
+**Usage convention**: `clade_id_name` is the canonical atomic identifier
+— always used as a single unit in code. Separate `clade_id` and
+`clade_name` columns appear in output TSVs for display, but code paths
+consume `clade_id_name` for lookups to avoid the ambiguity of mixing
+identifier representations.
+
 ## Directory Structure
 
 ```

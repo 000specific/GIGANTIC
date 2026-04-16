@@ -4,24 +4,23 @@
 """
 OCL Pipeline Script 005: Validate Results
 
-Performs 7 comprehensive validation checks across all OCL pipeline outputs
-(Scripts 001-004) to ensure data integrity, logical consistency, and
-TEMPLATE_03 metric correctness.
+Performs 7 validation checks across all OCL pipeline outputs (Scripts 001-004)
+to ensure data integrity and Rule 7 count consistency.
 
 CRITICAL DESIGN DECISION:
   ALL validation failures exit with code 1 (non-zero).
-  Edge cases like zero-transition orthogroups are handled explicitly in
-  Scripts 003-004 (rates set to 0.0) rather than being allowed to produce
-  invalid metrics that validation would flag. If Script 005 finds failures,
-  the pipeline stops and the user investigates.
+  Edge cases like zero-scored-block orthogroups are handled explicitly in
+  Scripts 003-004 (counts set to 0) rather than producing invalid numbers
+  that validation would flag. If Script 005 finds failures, the pipeline
+  stops and the user investigates.
 
 Validation Checks:
   1. File Integrity - all expected output files exist and have content
   2. Cross-Script Consistency - orthogroup counts match across Scripts 001-004
   3. Conservation/Loss Arithmetic - inherited = conserved + lost for every block
-  4. Conservation Rate Bounds - rates between 0 and 100, cons + loss = 100
-  5. TEMPLATE_03 Orthogroup Metrics - event arithmetic, loss coverage, rate bounds
-  6. Origin in Species Paths - origin clade in phylogenetic path of every species
+  4. Per-Block Count Consistency - conserved + lost = inherited for every block
+  5. Per-Orthogroup Block-State Counts - total = P + L + X for every orthogroup
+  6. Origin in Species Paths - child endpoint of origin block appears in phylogenetic path
   7. No Orphan Orthogroups - no orthogroups with zero species
 
 Inputs (from previous scripts):
@@ -123,6 +122,7 @@ INPUT_ORTHOGROUP_PATTERNS = input_directory_3 / '3_ai-conservation_patterns-per_
 INPUT_ORTHOGROUP_COMPLETE = input_directory_4 / '4_ai-orthogroups-complete_ocl_summary.tsv'
 INPUT_CLADE_STATS = input_directory_4 / '4_ai-clades-comprehensive_statistics.tsv'
 INPUT_SPECIES_SUMMARIES = input_directory_4 / '4_ai-species-summaries.tsv'
+INPUT_PATH_STATES = input_directory_4 / '4_ai-path_states-per_orthogroup_per_species.tsv'
 
 # Output directory
 output_directory = base_output / '5-output'
@@ -228,11 +228,11 @@ def load_phylogenetic_paths():
     Load phylogenetic paths from Script 001 output.
 
     Returns:
-        species_names___phylogenetic_paths: dict mapping clade name to list of clades in path
+        species_clade_id_names___phylogenetic_paths: dict mapping clade name to list of clades in path
     """
     logger.info( f"Loading phylogenetic paths from: {INPUT_PHYLOGENETIC_PATHS}" )
 
-    species_names___phylogenetic_paths = {}
+    species_clade_id_names___phylogenetic_paths = {}
 
     with open( INPUT_PHYLOGENETIC_PATHS, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
@@ -252,10 +252,10 @@ def load_phylogenetic_paths():
             path = [ clade.strip() for clade in phylogenetic_path_string.split( ',' ) if clade.strip() ]
 
             # Store by leaf clade ID (species-level)
-            species_names___phylogenetic_paths[ leaf_clade_id ] = path
+            species_clade_id_names___phylogenetic_paths[ leaf_clade_id ] = path
 
-    logger.info( f"Loaded {len( species_names___phylogenetic_paths )} phylogenetic paths" )
-    return species_names___phylogenetic_paths
+    logger.info( f"Loaded {len( species_clade_id_names___phylogenetic_paths )} phylogenetic paths" )
+    return species_clade_id_names___phylogenetic_paths
 
 
 def load_origins():
@@ -272,8 +272,13 @@ def load_origins():
     with open( INPUT_ORIGINS, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Orthogroup_ID (...)	Origin_Clade (...)	Origin_Clade_Phylogenetic_Block (...)	...
-        # OG0000000	C100	Root::C100	C100,C050,...
+        # Orthogroup_ID	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	...
+        # OG0000000	C069_Holozoa::C082_Metazoa	C069_Holozoa::C082_Metazoa-O	...
+        # Per Rule 7, the origin is a transition block (state O). Column 1 is
+        # the phylogenetic block (parent::child); column 2 is the block-state
+        # (parent::child-O). For the "origin in species paths" check below,
+        # the validator needs the child clade of the origin block (which IS
+        # contained in the block identifier after the `::`).
         header = next( csv_reader )  # Skip single-row header
 
         for parts in csv_reader:
@@ -281,9 +286,17 @@ def load_origins():
                 continue
 
             orthogroup_id = parts[ 0 ]
-            origin_clade = parts[ 1 ]
+            phylogenetic_block = parts[ 1 ]
 
-            orthogroups___origins[ orthogroup_id ] = origin_clade
+            # Derive child clade of origin block for downstream path-membership
+            # checks. Per Rule 7 naming convention: the origin block's child
+            # endpoint is what we colloquially call the "origin clade."
+            if '::' in phylogenetic_block:
+                origin_child_clade_id_name = phylogenetic_block.split( '::', 1 )[ 1 ]
+            else:
+                origin_child_clade_id_name = 'NA'
+
+            orthogroups___origins[ orthogroup_id ] = origin_child_clade_id_name
 
     logger.info( f"Loaded origins for {len( orthogroups___origins )} orthogroups" )
     return orthogroups___origins
@@ -303,8 +316,8 @@ def load_block_statistics():
     with open( INPUT_BLOCK_STATS, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Parent_Clade (...)	Child_Clade (...)	Inherited_Count (...)	Conserved_Count (...)	Lost_Count (...)	Conservation_Rate (...)	Loss_Rate (...)
-        # Eukaryota	Metazoa	45231	43892	1339	97.04	2.96
+        # Parent_Clade_ID_Name	Child_Clade_ID_Name	Inherited_Count	Conserved_Count	Lost_Count
+        # C069_Holozoa	C082_Metazoa	45231	43892	1339
         header = next( csv_reader )  # Skip single-row header
 
         for parts in csv_reader:
@@ -317,8 +330,6 @@ def load_block_statistics():
                 'inherited_count': int( parts[ 2 ] ),
                 'conserved_count': int( parts[ 3 ] ),
                 'lost_count': int( parts[ 4 ] ),
-                'conservation_rate': float( parts[ 5 ] ),
-                'loss_rate': float( parts[ 6 ] )
             }
 
             block_stats.append( stat )
@@ -349,7 +360,8 @@ def validate_file_integrity():
         INPUT_ORTHOGROUP_PATTERNS,
         INPUT_ORTHOGROUP_COMPLETE,
         INPUT_CLADE_STATS,
-        INPUT_SPECIES_SUMMARIES
+        INPUT_SPECIES_SUMMARIES,
+        INPUT_PATH_STATES
     ]
 
     for file_path in expected_files:
@@ -489,18 +501,16 @@ def validate_conservation_loss_arithmetic( block_stats ):
 
 
 # ============================================================================
-# SECTION 5: VALIDATION CHECK 4 - CONSERVATION RATE BOUNDS
+# SECTION 5: VALIDATION CHECK 4 - PER-BLOCK COUNT CONSISTENCY
 # ============================================================================
 
-def validate_conservation_rates( block_stats ):
+def validate_block_count_consistency( block_stats ):
     """
-    Validate that conservation rates are between 0 and 100.
-    Also check that conservation_rate + loss_rate = 100 (within tolerance).
-
-    Blocks with zero inherited orthogroups have both rates set to 0.0
-    (handled in Script 003), which sums to 0 not 100 - this is expected.
+    Per-block count sanity: conserved_count + lost_count must equal inherited_count
+    for every block (the orthogroups biologically present at parent are partitioned
+    into "also present at child" (conserved) and "absent at child" (lost)).
     """
-    logger.info( "CHECK 4: Validating conservation rate bounds..." )
+    logger.info( "CHECK 4: Validating per-block count consistency..." )
 
     errors = []
     total_blocks = len( block_stats )
@@ -508,56 +518,32 @@ def validate_conservation_rates( block_stats ):
     failed = 0
 
     for stat in block_stats:
-        conservation_rate = stat[ 'conservation_rate' ]
-        loss_rate = stat[ 'loss_rate' ]
         inherited = stat[ 'inherited_count' ]
+        conserved = stat[ 'conserved_count' ]
+        lost = stat[ 'lost_count' ]
 
-        block_valid = True
-
-        # Check bounds
-        if conservation_rate < 0 or conservation_rate > 100:
+        if conserved + lost != inherited:
             errors.append( {
-                'check': 'rate_bounds',
+                'check': 'block_count_consistency',
                 'parent': stat[ 'parent_clade' ],
                 'child': stat[ 'child_clade' ],
-                'error': f"Conservation rate {conservation_rate}% out of bounds [0, 100]"
+                'inherited': inherited,
+                'conserved': conserved,
+                'lost': lost,
+                'error': (
+                    f"conserved ({conserved}) + lost ({lost}) = {conserved + lost} "
+                    f"does not equal inherited ({inherited})"
+                ),
             } )
-            block_valid = False
-
-        if loss_rate < 0 or loss_rate > 100:
-            errors.append( {
-                'check': 'rate_bounds',
-                'parent': stat[ 'parent_clade' ],
-                'child': stat[ 'child_clade' ],
-                'error': f"Loss rate {loss_rate}% out of bounds [0, 100]"
-            } )
-            block_valid = False
-
-        # Check sum (allow small floating point error)
-        # Only check if there are inherited orthogroups (zero inherited => both rates = 0.0)
-        if inherited > 0:
-            rate_sum = conservation_rate + loss_rate
-            if abs( rate_sum - 100.0 ) > 0.1:
-                errors.append( {
-                    'check': 'rate_sum',
-                    'parent': stat[ 'parent_clade' ],
-                    'child': stat[ 'child_clade' ],
-                    'conservation_rate': conservation_rate,
-                    'loss_rate': loss_rate,
-                    'error': f"Rates sum to {rate_sum}% instead of 100%"
-                } )
-                block_valid = False
-
-        if block_valid:
-            passed += 1
-        else:
             failed += 1
+        else:
+            passed += 1
 
     logger.info( f"  Passed: {passed}/{total_blocks} blocks" )
     logger.info( f"  Failed: {failed}/{total_blocks} blocks" )
 
     return {
-        'name': 'Conservation Rate Bounds',
+        'name': 'Per-Block Count Consistency',
         'passed': passed,
         'failed': failed,
         'total': total_blocks,
@@ -566,143 +552,65 @@ def validate_conservation_rates( block_stats ):
 
 
 # ============================================================================
-# SECTION 6: VALIDATION CHECK 5 - TEMPLATE_03 ORTHOGROUP METRICS
+# SECTION 6: VALIDATION CHECK 5 - PER-ORTHOGROUP BLOCK-STATE COUNTS
 # ============================================================================
 
-def validate_template_03_orthogroup_metrics():
+def validate_per_orthogroup_counts():
     """
-    Validate TEMPLATE_03 orthogroup-level metrics from Script 004.
+    Validate per-orthogroup block-state counts from Script 004's complete summary.
 
-    Checks:
-    1. Event arithmetic: total_inherited = conservation + loss_origin + continued_absence
-    2. Loss coverage: loss_coverage = loss_origin + continued_absence
-    3. Percentage bounds: all percentages between 0 and 100
-    4. Tree coverage sum: percent_tree_conserved + percent_tree_loss = 100
-    5. Conservation/loss origin rate sum: conservation_rate + loss_origin_rate = 100
+    Single check: total_scored_blocks == conservation_events + loss_events +
+    continued_absence_events for every orthogroup. (Rule 7: P + L + X.)
     """
-    logger.info( "CHECK 5: Validating TEMPLATE_03 orthogroup metrics..." )
+    logger.info( "CHECK 5: Validating per-orthogroup block-state counts..." )
 
     errors = []
     passed = 0
     failed = 0
 
-    # Load orthogroup complete summaries from Script 004
     with open( INPUT_ORTHOGROUP_COMPLETE, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Orthogroup_ID (orthogroup identifier)	Origin_Clade (...)	Origin_Clade_Phylogenetic_Block (...)	...
-        # OG0000000	C100	Root::C100	C100,C050,...	67	132	110	15	7	22	83.33	11.36	83.33	16.67	...
+        # Orthogroup_ID	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Species_Count	Total_Scored_Blocks	Conservation_Events	Loss_Events	Continued_Absence_Events	Species_List	Sequence_IDs	[Sequences_FASTA]
         header = next( csv_reader )  # Skip single-row header
 
         orthogroup_count = 0
 
         for parts in csv_reader:
-            # Skip empty lines
             if not parts or all( field.strip() == '' for field in parts ):
                 continue
 
-            # Parse TEMPLATE_03 format (16 or 17 columns, single-row header)
             orthogroup_id = parts[ 0 ]
-            origin_clade = parts[ 1 ]
-            phylogenetic_block = parts[ 2 ]
-            phylogenetic_path = parts[ 3 ]
-            species_count = int( parts[ 4 ] )
-            total_inherited = int( parts[ 5 ] )
+            total_scored_blocks = int( parts[ 5 ] )
             conservation = int( parts[ 6 ] )
             loss_origin = int( parts[ 7 ] )
             continued_absence = int( parts[ 8 ] )
-            loss_coverage = int( parts[ 9 ] )
-            conservation_rate = float( parts[ 10 ] )
-            loss_origin_rate = float( parts[ 11 ] )
-            percent_tree_conserved = float( parts[ 12 ] )
-            percent_tree_loss = float( parts[ 13 ] )
 
             orthogroup_count += 1
-            orthogroup_valid = True
 
-            # SUB-CHECK 1: Event arithmetic
-            # total_inherited must equal sum of all event types
-            if total_inherited != ( conservation + loss_origin + continued_absence ):
+            if total_scored_blocks != ( conservation + loss_origin + continued_absence ):
                 errors.append( {
-                    'check': 'template03_arithmetic',
+                    'check': 'per_orthogroup_count_arithmetic',
                     'orthogroup_id': orthogroup_id,
-                    'total_inherited': total_inherited,
-                    'conservation': conservation,
-                    'loss_origin': loss_origin,
-                    'continued_absence': continued_absence,
-                    'error': f"total_inherited ({total_inherited}) != conservation ({conservation}) + loss_origin ({loss_origin}) + continued_absence ({continued_absence})"
+                    'total_scored_blocks': total_scored_blocks,
+                    'conservation_events': conservation,
+                    'loss_events': loss_origin,
+                    'continued_absence_events': continued_absence,
+                    'error': (
+                        f"total_scored_blocks ({total_scored_blocks}) != "
+                        f"conservation ({conservation}) + loss ({loss_origin}) + "
+                        f"continued_absence ({continued_absence})"
+                    ),
                 } )
-                orthogroup_valid = False
-
-            # SUB-CHECK 2: Loss coverage must equal loss origin + continued absence
-            if loss_coverage != ( loss_origin + continued_absence ):
-                errors.append( {
-                    'check': 'template03_loss_coverage',
-                    'orthogroup_id': orthogroup_id,
-                    'loss_coverage': loss_coverage,
-                    'loss_origin': loss_origin,
-                    'continued_absence': continued_absence,
-                    'error': f"loss_coverage ({loss_coverage}) != loss_origin ({loss_origin}) + continued_absence ({continued_absence})"
-                } )
-                orthogroup_valid = False
-
-            # SUB-CHECK 3: Percentage bounds (0-100)
-            for percentage_name, percentage_value in [
-                ( 'conservation_rate', conservation_rate ),
-                ( 'loss_origin_rate', loss_origin_rate ),
-                ( 'percent_tree_conserved', percent_tree_conserved ),
-                ( 'percent_tree_loss', percent_tree_loss )
-            ]:
-                if percentage_value < 0 or percentage_value > 100:
-                    errors.append( {
-                        'check': 'template03_percentage_bounds',
-                        'orthogroup_id': orthogroup_id,
-                        'metric': percentage_name,
-                        'value': percentage_value,
-                        'error': f"{percentage_name} ({percentage_value}%) is outside valid range [0, 100]"
-                    } )
-                    orthogroup_valid = False
-
-            # SUB-CHECK 4: Tree coverage sum (allow 0.1% tolerance for rounding)
-            # Only check if there are inherited transitions (zero => both percentages = 0.0)
-            if total_inherited > 0:
-                tree_sum = percent_tree_conserved + percent_tree_loss
-                if abs( tree_sum - 100.0 ) > 0.1:
-                    errors.append( {
-                        'check': 'template03_tree_coverage_sum',
-                        'orthogroup_id': orthogroup_id,
-                        'percent_tree_conserved': percent_tree_conserved,
-                        'percent_tree_loss': percent_tree_loss,
-                        'sum': tree_sum,
-                        'error': f"percent_tree_conserved ({percent_tree_conserved}%) + percent_tree_loss ({percent_tree_loss}%) = {tree_sum}% (expected 100%)"
-                    } )
-                    orthogroup_valid = False
-
-            # SUB-CHECK 5: Conservation + loss origin rate sum
-            # Only check if there are conservation/loss events (parent had it)
-            if ( conservation + loss_origin ) > 0:
-                rate_sum = conservation_rate + loss_origin_rate
-                if abs( rate_sum - 100.0 ) > 0.1:
-                    errors.append( {
-                        'check': 'template03_conservation_loss_rate_sum',
-                        'orthogroup_id': orthogroup_id,
-                        'conservation_rate': conservation_rate,
-                        'loss_origin_rate': loss_origin_rate,
-                        'sum': rate_sum,
-                        'error': f"conservation_rate ({conservation_rate}%) + loss_origin_rate ({loss_origin_rate}%) = {rate_sum}% (expected 100%)"
-                    } )
-                    orthogroup_valid = False
-
-            if orthogroup_valid:
-                passed += 1
-            else:
                 failed += 1
+            else:
+                passed += 1
 
     logger.info( f"  Passed: {passed}/{orthogroup_count} orthogroups" )
     logger.info( f"  Failed: {failed}/{orthogroup_count} orthogroups" )
 
     return {
-        'name': 'TEMPLATE_03 Orthogroup Metrics',
+        'name': 'Per-Orthogroup Block-State Counts',
         'passed': passed,
         'failed': failed,
         'total': orthogroup_count,
@@ -715,17 +623,15 @@ def validate_template_03_orthogroup_metrics():
 # ============================================================================
 
 def validate_origin_in_species_paths( orthogroups___origins, orthogroups___species,
-                                     species_names___phylogenetic_paths ):
+                                     species_clade_id_names___phylogenetic_paths ):
     """
-    Validate that for each orthogroup, the origin clade appears in the
-    phylogenetic path of every species that contains the orthogroup.
+    Validate that for each orthogroup, the origin_clade_id_name appears in at
+    least one phylogenetic path. Per Rule 6, both the origin (from Script 002)
+    and the path elements (from Script 001) are clade_id_name values — direct
+    comparison, no format translation.
 
-    Note: species_names___phylogenetic_paths is keyed by leaf clade ID,
-    and origin clades are also clade IDs (from Script 002). The origin
-    clade must appear somewhere in each species' root-to-leaf path.
-
-    For single-species orthogroups, the origin IS the species' leaf clade,
-    so the origin must be the last element in the path (or present).
+    For single-species orthogroups, the origin IS the species' leaf
+    clade_id_name, so it is the last element of that species' path.
     """
     logger.info( "CHECK 6: Validating origin in species paths..." )
 
@@ -734,12 +640,9 @@ def validate_origin_in_species_paths( orthogroups___origins, orthogroups___speci
     passed = 0
     failed = 0
 
-    # Build reverse mapping: species name -> set of leaf clade IDs
-    # Since phylogenetic paths are by leaf clade ID and orthogroup species
-    # are by name, we need to work at the orthogroup level where we have clade-based data
-
-    # For this validation, we load the orthogroup origins which use clade IDs,
-    # and the phylogenetic paths which are also by clade ID. We need to check
+    # Direct clade_id_name comparison — no translation required.
+    # For this validation, we load the orthogroup origins which use clade_id_name,
+    # and the phylogenetic paths which are also clade_id_name. We need to check
     # that the origin clade ID appears in the paths of leaf clades that have
     # species in the orthogroup.
     #
@@ -750,25 +653,22 @@ def validate_origin_in_species_paths( orthogroups___origins, orthogroups___speci
     # Alternative approach: check using the orthogroup origins data which stores
     # the origin clade ID, and verify it appears in ALL phylogenetic paths
     # (since the origin should be an ancestor of all species in the orthogroup).
-    # We check that origin_clade appears in at least some paths.
-    # Actually, for proper validation we should verify against the specific
-    # leaf clades, but without a species->clade mapping loaded here, we verify
-    # that the origin clade exists in the set of all path clades.
+    # Per Rule 6 (AI_GUIDE-project.md): clade_id_name is the canonical atomic
+    # identifier. Paths from Script 001 and origins from Script 002 are BOTH
+    # clade_id_name (e.g., "C071_Basal"). Comparison is direct — no format
+    # translation.
+    all_path_clade_id_names = set()
+    for species_clade_id_name, path in species_clade_id_names___phylogenetic_paths.items():
+        for clade_id_name in path:
+            all_path_clade_id_names.add( clade_id_name )
 
-    # Collect all clades that appear in any path
-    all_path_clades = set()
-    for leaf_clade_id, path in species_names___phylogenetic_paths.items():
-        for clade in path:
-            all_path_clades.add( clade )
-
-    for orthogroup_id, origin_clade in orthogroups___origins.items():
-        # Verify origin clade is a valid clade (appears in phylogenetic paths)
-        if origin_clade not in all_path_clades:
+    for orthogroup_id, origin_child_clade_id_name in orthogroups___origins.items():
+        if origin_child_clade_id_name not in all_path_clade_id_names:
             errors.append( {
                 'check': 'origin_in_path',
                 'orthogroup_id': orthogroup_id,
-                'origin_clade': origin_clade,
-                'error': f"Origin clade '{origin_clade}' not found in any phylogenetic path"
+                'origin_child_clade_id_name': origin_child_clade_id_name,
+                'error': f"Child clade_id_name of origin block '{origin_child_clade_id_name}' not found in any phylogenetic path"
             } )
             failed += 1
         else:
@@ -821,6 +721,200 @@ def validate_no_orphans( orthogroups___species ):
         'passed': passed,
         'failed': failed,
         'total': total_orthogroups,
+        'errors': errors
+    }
+
+
+# ============================================================================
+# SECTION 8b: VALIDATION CHECK 8 - PHYLOGENETIC PATH-STATE INTEGRITY (Rule 7)
+# ============================================================================
+
+def validate_path_states( species_clade_id_names___phylogenetic_paths ):
+    """
+    Validate the per (orthogroup, species) phylogenetic path-state file
+    produced by Script 004.
+
+    Checks (per row):
+    1. Every path-state letter is in the Rule 7 alphabet {A, O, P, L, X}.
+    2. Path-state length equals number of blocks on the species's phylogenetic
+       path (= path length minus 1).
+    3. Path-state structural integrity:
+       - At most one O letter (origins are unique per orthogroup lineage;
+         on a single root-to-tip path we see at most one).
+       - Letter sequence respects the Rule 7 state machine:
+           A*  [ O ]  [ P* [ L ]  X* ]
+         i.e. zero or more A, then optionally an O, then (if O present)
+         zero or more P then optionally L then zero or more X.
+       - If Species_In_Orthogroup=True, path-state must end with P (the
+         feature is present at the species tip), meaning the final block
+         is a conservation block.
+       - If Species_In_Orthogroup=False, path-state must not end with P.
+    """
+    logger.info( "CHECK 8: Validating phylogenetic path-state integrity..." )
+
+    rule_7_alphabet = { 'A', 'O', 'P', 'L', 'X' }
+    errors = []
+    passed = 0
+    failed = 0
+    total = 0
+
+    with open( INPUT_PATH_STATES, 'r', newline = '', encoding = 'utf-8' ) as input_file:
+        csv_reader = csv.reader( input_file, delimiter = '\t' )
+
+        header = next( csv_reader )
+        column_names___indices = {}
+        for index, column_header in enumerate( header ):
+            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
+            column_names___indices[ column_name ] = index
+
+        required_columns = [
+            'Orthogroup_ID', 'Species_Clade_ID_Name', 'Species_In_Orthogroup',
+            'Phylogenetic_Path', 'Phylogenetic_Path_State'
+        ]
+        for column_name in required_columns:
+            if column_name not in column_names___indices:
+                errors.append( {
+                    'check': 'header',
+                    'error': f"Missing required column: {column_name}"
+                } )
+                failed += 1
+                return {
+                    'name': 'Phylogenetic Path-State Integrity',
+                    'passed': passed, 'failed': failed, 'total': failed,
+                    'errors': errors
+                }
+
+        orthogroup_id_index = column_names___indices[ 'Orthogroup_ID' ]
+        species_clade_id_name_index = column_names___indices[ 'Species_Clade_ID_Name' ]
+        species_in_orthogroup_index = column_names___indices[ 'Species_In_Orthogroup' ]
+        phylogenetic_path_index = column_names___indices[ 'Phylogenetic_Path' ]
+        phylogenetic_path_state_index = column_names___indices[ 'Phylogenetic_Path_State' ]
+
+        for parts in csv_reader:
+            if not parts or all( field.strip() == '' for field in parts ):
+                continue
+
+            total += 1
+
+            orthogroup_id = parts[ orthogroup_id_index ]
+            species_clade_id_name = parts[ species_clade_id_name_index ]
+            species_in_orthogroup_string = parts[ species_in_orthogroup_index ]
+            phylogenetic_path_string = parts[ phylogenetic_path_index ]
+            phylogenetic_path_state = parts[ phylogenetic_path_state_index ]
+
+            species_in_orthogroup = ( species_in_orthogroup_string == 'True' )
+
+            # 1. Alphabet check
+            non_alphabet_letters = [ letter for letter in phylogenetic_path_state if letter not in rule_7_alphabet ]
+            if non_alphabet_letters:
+                errors.append( {
+                    'check': 'alphabet',
+                    'orthogroup_id': orthogroup_id,
+                    'species_clade_id_name': species_clade_id_name,
+                    'error': f"Path-state contains non-Rule-7 letters: {set( non_alphabet_letters )}"
+                } )
+                failed += 1
+                continue
+
+            # 2. Length check vs path
+            path_clades = phylogenetic_path_string.split( ',' ) if phylogenetic_path_string else []
+            expected_path_state_length = max( len( path_clades ) - 1, 0 )
+            if len( phylogenetic_path_state ) != expected_path_state_length:
+                errors.append( {
+                    'check': 'length',
+                    'orthogroup_id': orthogroup_id,
+                    'species_clade_id_name': species_clade_id_name,
+                    'error': ( f"Path-state length {len( phylogenetic_path_state )} does not match number of blocks "
+                               f"{expected_path_state_length} (path has {len( path_clades )} clades)" )
+                } )
+                failed += 1
+                continue
+
+            # 3a. At most one O
+            origin_letter_count = phylogenetic_path_state.count( 'O' )
+            if origin_letter_count > 1:
+                errors.append( {
+                    'check': 'multiple_origins',
+                    'orthogroup_id': orthogroup_id,
+                    'species_clade_id_name': species_clade_id_name,
+                    'error': f"Path-state contains {origin_letter_count} O letters (expected at most 1)"
+                } )
+                failed += 1
+                continue
+
+            # 3b. Letter-sequence regularity via state-machine walk
+            state_machine_violation = False
+            phase = 'before_origin'  # before_origin -> after_origin -> after_loss
+            previous_letter = None
+            for letter in phylogenetic_path_state:
+                if phase == 'before_origin':
+                    if letter == 'A':
+                        pass
+                    elif letter == 'O':
+                        phase = 'after_origin'
+                    else:
+                        state_machine_violation = True
+                        break
+                elif phase == 'after_origin':
+                    if letter == 'P':
+                        pass
+                    elif letter == 'L':
+                        phase = 'after_loss'
+                    else:
+                        state_machine_violation = True
+                        break
+                elif phase == 'after_loss':
+                    if letter == 'X':
+                        pass
+                    else:
+                        state_machine_violation = True
+                        break
+                previous_letter = letter
+
+            if state_machine_violation:
+                errors.append( {
+                    'check': 'state_sequence',
+                    'orthogroup_id': orthogroup_id,
+                    'species_clade_id_name': species_clade_id_name,
+                    'error': f"Path-state '{phylogenetic_path_state}' violates Rule 7 sequence A* [O [P* [L] X*]]"
+                } )
+                failed += 1
+                continue
+
+            # 3c. Terminal letter must match species membership
+            if phylogenetic_path_state:
+                terminal_letter = phylogenetic_path_state[ -1 ]
+                if species_in_orthogroup and terminal_letter != 'P':
+                    errors.append( {
+                        'check': 'terminal_membership',
+                        'orthogroup_id': orthogroup_id,
+                        'species_clade_id_name': species_clade_id_name,
+                        'error': ( f"Species_In_Orthogroup=True but path-state ends with '{terminal_letter}' "
+                                   f"(expected P)" )
+                    } )
+                    failed += 1
+                    continue
+                if ( not species_in_orthogroup ) and terminal_letter == 'P':
+                    errors.append( {
+                        'check': 'terminal_membership',
+                        'orthogroup_id': orthogroup_id,
+                        'species_clade_id_name': species_clade_id_name,
+                        'error': ( f"Species_In_Orthogroup=False but path-state ends with 'P' "
+                                   f"(species would have the orthogroup)" )
+                    } )
+                    failed += 1
+                    continue
+
+            passed += 1
+
+    logger.info( f"  Passed: {passed}/{total} path-state rows" )
+    logger.info( f"  Failed: {failed}/{total} path-state rows" )
+
+    return {
+        'name': 'Phylogenetic Path-State Integrity',
+        'passed': passed,
+        'failed': failed,
+        'total': total,
         'errors': errors
     }
 
@@ -983,7 +1077,7 @@ def main():
     # ========================================================================
     logger.info( "STEP 1: Loading data for validation..." )
     orthogroups___species = load_orthogroups()
-    species_names___phylogenetic_paths = load_phylogenetic_paths()
+    species_clade_id_names___phylogenetic_paths = load_phylogenetic_paths()
     orthogroups___origins = load_origins()
     block_stats = load_block_statistics()
     logger.info( "" )
@@ -997,10 +1091,11 @@ def main():
     validation_results.append( validate_file_integrity() )
     validation_results.append( validate_cross_script_consistency( orthogroups___origins, orthogroups___species ) )
     validation_results.append( validate_conservation_loss_arithmetic( block_stats ) )
-    validation_results.append( validate_conservation_rates( block_stats ) )
-    validation_results.append( validate_template_03_orthogroup_metrics() )
-    validation_results.append( validate_origin_in_species_paths( orthogroups___origins, orthogroups___species, species_names___phylogenetic_paths ) )
+    validation_results.append( validate_block_count_consistency( block_stats ) )
+    validation_results.append( validate_per_orthogroup_counts() )
+    validation_results.append( validate_origin_in_species_paths( orthogroups___origins, orthogroups___species, species_clade_id_names___phylogenetic_paths ) )
     validation_results.append( validate_no_orphans( orthogroups___species ) )
+    validation_results.append( validate_path_states( species_clade_id_names___phylogenetic_paths ) )
 
     logger.info( "" )
 
@@ -1042,12 +1137,11 @@ def main():
     # ========================================================================
     # STEP 5: Determine exit code - STRICT FAIL-FAST
     # ========================================================================
-    # CRITICAL: Exit 1 on ANY validation failure
-    # This is a design decision documented in the plan:
-    # "GIGANTIC fail-fast validation means Script 005 exits with code 1 on
-    # any validation failure. Edge cases like zero-transition orthogroups are
-    # handled explicitly in Scripts 003-004 (rates set to 0.0 or NA) rather
-    # than being allowed to produce invalid metrics that validation would flag."
+    # CRITICAL: Exit 1 on ANY validation failure.
+    # GIGANTIC fail-fast validation: Script 005 exits with code 1 on any
+    # validation failure. Edge cases like zero-scored-block orthogroups are
+    # handled explicitly in Scripts 003-004 (counts set to 0) rather than
+    # producing invalid numbers that validation would flag.
     total_failed = sum( 1 for result in validation_results if result[ 'failed' ] > 0 )
     if total_failed > 0:
         logger.error( f"VALIDATION FAILURES DETECTED: {total_failed} check(s) failed" )

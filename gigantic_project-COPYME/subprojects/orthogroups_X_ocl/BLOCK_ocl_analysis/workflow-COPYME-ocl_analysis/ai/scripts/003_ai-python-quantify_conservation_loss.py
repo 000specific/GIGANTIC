@@ -1,27 +1,34 @@
-# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Quantify orthogroup conservation and loss with TEMPLATE_03 dual-metric tracking
+# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Classify phylogenetic block-states per orthogroup and aggregate per-block counts
 # Human: Eric Edsinger
 
 """
-OCL Pipeline Script 003: Quantify Conservation and Loss (TEMPLATE_03)
+OCL Pipeline Script 003: Classify Phylogenetic Block-States (Rule 7)
 
-TEMPLATE_03 dual-metric tracking separates "phylogenetically inherited" from
-"actually present in species" to distinguish loss-at-origin from continued absence.
+For each phylogenetic block (parent::child) and each orthogroup, classify the
+(block, orthogroup) pair into one of the five Rule 7 block-states:
 
-For each phylogenetic block (parent to child transition):
-- Identifies orthogroups INHERITED by clades (origin in phylogenetic path)
-- Identifies orthogroups PRESENT in clades (at least one descendant species has it)
-- Classifies transitions into 4 event types:
-  * Conservation: inherited, present in parent, present in child
-  * Loss at Origin: inherited, present in parent, absent in child
-  * Continued Absence: inherited, absent in parent, absent in child
-  * Loss Coverage: loss at origin + continued absence
+  -A (Inherited Absence):   parent absent, child absent, pre-origin
+  -O (Origin):              parent absent, child present, event
+                            (emitted by Script 002; not re-scored here)
+  -P (Inherited Presence):  parent present, child present, conservation
+  -L (Loss):                parent present, child absent, event
+  -X (Inherited Loss):      parent absent, child absent, post-loss
 
-Terminal self-loops (where parent == child) are excluded as they are not
-biologically meaningful transitions.
+Two per-clade sets are computed from the phylogenetic paths imported by
+Script 001 (from trees_species):
 
-Edge cases handled explicitly:
-- Zero inherited transitions: rates set to 0.0 (not division by zero)
-- Orthogroups not inherited by parent: skipped (not counted)
+- "Scoring-eligible at this clade": the clade is a descendant of (or equal to)
+  the child endpoint of the orthogroup's origin transition block. Derived by
+  a single pass over the phylogenetic paths — no sampling.
+- "Actually present at this clade": at least one descendant species of the
+  clade carries the orthogroup in its genome.
+
+Terminal self-loops (parent_clade_id_name == child_clade_id_name at a tip)
+are placeholder rows in the parent-child table and are excluded from block
+iteration — they are not phylogenetic blocks.
+
+Edge case: an orthogroup with origin block whose child endpoint is a tip has
+no descendant blocks to score; its per-orthogroup counts are all zero.
 
 Inputs (from previous scripts):
 - 1-output: Clade mappings, parent-child relationships, phylogenetic paths,
@@ -154,25 +161,29 @@ logger = logging.getLogger( __name__ )
 # SECTION 1: LOAD PHYLOGENETIC TREE STRUCTURE
 # ============================================================================
 
-def load_clade_id_mapping():
+def load_clade_mappings():
     """
-    Load clade ID to name mapping from Script 001 output.
+    Load clade mappings from Script 001 output.
+
+    Builds a reverse map from bare clade_name -> clade_id_name (CXXX_Name),
+    used to convert orthogroup species names (bare Genus_species) to their
+    leaf clade_id_name form for consistent clade_id_name indexing throughout.
 
     Returns:
-        dict: { clade_id: clade_name }
+        dict: { clade_name: clade_id_name }  (e.g. 'Homo_sapiens' -> 'C005_Homo_sapiens')
     """
-    logger.info( f"Loading clade ID mappings from: {input_clade_mappings_file}" )
+    logger.info( f"Loading clade mappings from: {input_clade_mappings_file}" )
 
     if not input_clade_mappings_file.exists():
         logger.error( f"CRITICAL ERROR: Clade mapping file not found!" )
         logger.error( f"Expected: {input_clade_mappings_file}" )
         sys.exit( 1 )
 
-    clade_ids___clade_names = {}
+    clade_names___clade_id_names = {}
 
     with open( input_clade_mappings_file, 'r' ) as input_file:
-        # Clade_ID (clade identifier from trees_species)	Clade_Name (clade name from phylogenetic tree)
-        # C001	Fonticula_alba
+        # Clade_Name (bare clade name lookup key)	Clade_ID_Name (atomic clade identifier)
+        # Fonticula_alba	C001_Fonticula_alba
         header_line = input_file.readline()  # Skip single-row header
 
         for line in input_file:
@@ -181,30 +192,29 @@ def load_clade_id_mapping():
                 continue
 
             parts = line.split( '\t' )
-            clade_id = parts[ 0 ]
-            clade_name = parts[ 1 ]
+            if len( parts ) < 2:
+                continue
+            clade_name = parts[ 0 ]
+            clade_id_name = parts[ 1 ]
 
-            clade_ids___clade_names[ clade_id ] = clade_name
+            clade_names___clade_id_names[ clade_name ] = clade_id_name
 
-    logger.info( f"Loaded {len( clade_ids___clade_names )} clade ID mappings" )
+    logger.info( f"Loaded {len( clade_names___clade_id_names )} clade mappings (clade_name -> clade_id_name)" )
 
-    return clade_ids___clade_names
+    return clade_names___clade_id_names
 
 
-def load_parent_child_relationships( clade_ids___clade_names ):
+def load_parent_child_relationships():
     """
-    Load parent-child relationships from Script 001 output.
-
-    Excludes terminal self-loops (where parent_name == child_name) as these
-    are not biologically meaningful transitions for conservation/loss analysis.
-
-    Args:
-        clade_ids___clade_names: { clade_id: clade_name }
+    Load parent-child relationships from Script 001 output (Rule 6/7 atomic
+    3-column format). Each row is exactly one phylogenetic block: a parent
+    clade -> child clade edge with two distinct endpoints. Script 005 no
+    longer emits tip self-loops, so no self-loop filter is needed here.
 
     Returns:
         tuple: ( parents___children, children___parents )
-            - parents___children: { parent_name: [ child1_name, child2_name ] }
-            - children___parents: { child_name: parent_name }
+            - parents___children: { parent_clade_id_name: [ child_clade_id_name, ... ] }
+            - children___parents: { child_clade_id_name: parent_clade_id_name }
     """
     logger.info( f"Loading parent-child relationships from: {input_parent_child_file}" )
 
@@ -215,12 +225,26 @@ def load_parent_child_relationships( clade_ids___clade_names ):
 
     parents___children = {}
     children___parents = {}
-    self_loop_count = 0
 
     with open( input_parent_child_file, 'r' ) as input_file:
-        # Parent_ID (parent clade identifier)	Parent_Name (parent clade name)	Child_ID (child clade identifier)	Child_Name (child clade name)
-        # C068	Basal	C069	Holomycota
-        header_line = input_file.readline()  # Skip single-row header
+        # Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)	Parent_Clade_ID_Name (atomic parent clade identifier)	Child_Clade_ID_Name (atomic child clade identifier)
+        # C069_Holozoa::C082_Metazoa	C069_Holozoa	C082_Metazoa
+        header_line = input_file.readline()
+        header_parts = header_line.strip().split( '\t' )
+
+        column_names___indices = {}
+        for index, column_header in enumerate( header_parts ):
+            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
+            column_names___indices[ column_name ] = index
+
+        parent_clade_id_name_column = column_names___indices.get( 'Parent_Clade_ID_Name' )
+        child_clade_id_name_column = column_names___indices.get( 'Child_Clade_ID_Name' )
+
+        if parent_clade_id_name_column is None or child_clade_id_name_column is None:
+            logger.error( f"CRITICAL ERROR: Parent-child file missing required columns!" )
+            logger.error( f"Need: Parent_Clade_ID_Name, Child_Clade_ID_Name" )
+            logger.error( f"Found: {header_parts}" )
+            sys.exit( 1 )
 
         for line in input_file:
             line = line.strip()
@@ -228,35 +252,33 @@ def load_parent_child_relationships( clade_ids___clade_names ):
                 continue
 
             parts = line.split( '\t' )
-            parent_name = parts[ 1 ]
-            child_name = parts[ 3 ]
-
-            # Skip self-loops (terminal nodes) - not biologically meaningful transitions
-            if parent_name == child_name:
-                self_loop_count += 1
+            if len( parts ) <= max( parent_clade_id_name_column, child_clade_id_name_column ):
                 continue
 
-            # Build parent-to-children mapping
-            if parent_name not in parents___children:
-                parents___children[ parent_name ] = []
-            parents___children[ parent_name ].append( child_name )
+            parent_clade_id_name = parts[ parent_clade_id_name_column ]
+            child_clade_id_name = parts[ child_clade_id_name_column ]
 
-            # Build child-to-parent mapping
-            children___parents[ child_name ] = parent_name
+            if parent_clade_id_name not in parents___children:
+                parents___children[ parent_clade_id_name ] = []
+            parents___children[ parent_clade_id_name ].append( child_clade_id_name )
+
+            children___parents[ child_clade_id_name ] = parent_clade_id_name
 
     logger.info( f"Loaded {len( parents___children )} parent nodes with children" )
-    logger.info( f"Loaded {len( children___parents )} meaningful parent-child transitions" )
-    logger.info( f"Skipped {self_loop_count} terminal self-loops" )
+    logger.info( f"Loaded {len( children___parents )} parent-child transitions (phylogenetic blocks)" )
 
     return parents___children, children___parents
 
 
 def load_phylogenetic_paths():
     """
-    Load phylogenetic paths (root-to-tip) for each species from Script 001 output.
+    Load phylogenetic paths (root-to-tip) from Script 001 output.
+
+    Paths are kept in clade_id_name form throughout (no stripping). Dict
+    is keyed by the leaf species_clade_id_name (e.g. 'C005_Homo_sapiens').
 
     Returns:
-        dict: { species_name: [ clade_name_1, clade_name_2, ..., species_name ] }
+        dict: { species_clade_id_name: [ clade_id_name_root, ..., species_clade_id_name ] }
     """
     logger.info( f"Loading phylogenetic paths from: {input_phylogenetic_paths_file}" )
 
@@ -265,7 +287,7 @@ def load_phylogenetic_paths():
         logger.error( f"Expected: {input_phylogenetic_paths_file}" )
         sys.exit( 1 )
 
-    species_names___phylogenetic_paths = {}
+    species_clade_id_names___phylogenetic_paths = {}
 
     with open( input_phylogenetic_paths_file, 'r' ) as input_file:
         # Leaf_Clade_ID (terminal leaf clade identifier and name)	Path_Length (number of nodes in path from root to leaf)	Phylogenetic_Path (comma delimited path from root to leaf)
@@ -280,48 +302,77 @@ def load_phylogenetic_paths():
             parts = line.split( '\t' )
             path_string = parts[ 2 ]
 
-            # Parse path (comma-separated clade IDs with names, e.g. "C068_Basal,C069_Holomycota,C001_Fonticula_alba")
-            path_entries = path_string.split( ',' )
+            # Path already in clade_id_name form - keep as-is.
+            path = [ entry for entry in path_string.split( ',' ) if entry ]
 
-            # Extract just clade names (after first underscore in "CXXX_Name" format)
-            path = []
-            for clade_id_name in path_entries:
-                if '_' in clade_id_name:
-                    clade_name = '_'.join( clade_id_name.split( '_' )[ 1: ] )
-                    path.append( clade_name )
-
-            # Species name is the last clade in the path (the leaf)
             if path:
-                species_name = path[ -1 ]
-                species_names___phylogenetic_paths[ species_name ] = path
+                species_clade_id_name = path[ -1 ]
+                species_clade_id_names___phylogenetic_paths[ species_clade_id_name ] = path
 
-    logger.info( f"Loaded {len( species_names___phylogenetic_paths )} phylogenetic paths" )
+    logger.info( f"Loaded {len( species_clade_id_names___phylogenetic_paths )} phylogenetic paths" )
 
-    return species_names___phylogenetic_paths
+    return species_clade_id_names___phylogenetic_paths
 
 
-def build_clade_descendants( species_names___phylogenetic_paths ):
+def build_clade_descendants( species_clade_id_names___phylogenetic_paths ):
     """
-    Build mapping of each clade to all descendant species.
+    Build mapping of each clade_id_name to all descendant species_clade_id_names.
 
     Args:
-        species_names___phylogenetic_paths: { species_name: [ clade1, ..., species ] }
+        species_clade_id_names___phylogenetic_paths:
+            { species_clade_id_name: [ clade_id_name, ..., species_clade_id_name ] }
 
     Returns:
-        dict: { clade_name: set( descendant_species ) }
+        dict: { clade_id_name: set( descendant species_clade_id_name ) }
     """
-    logger.info( "Building clade-to-descendants mapping..." )
+    logger.info( "Building clade-to-descendants mapping (clade_id_name -> species_clade_id_name set)..." )
 
-    clades___descendant_species = defaultdict( set )
+    clade_id_names___descendant_species_clade_id_names = defaultdict( set )
 
-    for species_name, path in species_names___phylogenetic_paths.items():
-        # Add this species to all clades in its path
-        for clade_name in path:
-            clades___descendant_species[ clade_name ].add( species_name )
+    for species_clade_id_name, path in species_clade_id_names___phylogenetic_paths.items():
+        for clade_id_name in path:
+            clade_id_names___descendant_species_clade_id_names[ clade_id_name ].add( species_clade_id_name )
 
-    logger.info( f"Built descendants mapping for {len( clades___descendant_species )} clades" )
+    logger.info( f"Built descendants mapping for {len( clade_id_names___descendant_species_clade_id_names )} clades" )
 
-    return clades___descendant_species
+    return clade_id_names___descendant_species_clade_id_names
+
+
+def build_clade_to_all_descendant_clades_from_paths( species_clade_id_names___phylogenetic_paths ):
+    """
+    Build mapping of each clade_id_name to the set of all clade_id_names that
+    are descendants of it on the species tree structure, including itself.
+
+    Derived directly from the phylogenetic paths imported from trees_species
+    via Script 001. Each tip's root-to-tip path is a sequence
+    [ p0, p1, ..., pn ] where p0 is the root clade and pn is the tip. Every
+    clade pi in that path has, within this path, the descendants
+    { p_i, p_{i+1}, ..., p_n }. Unioning across all tip paths yields complete
+    descendant sets for every clade in the tree.
+
+    No new tree walk is needed — the paths already encode the ancestor/descendant
+    relationships of the species tree structure.
+
+    Args:
+        species_clade_id_names___phylogenetic_paths:
+            { species_clade_id_name: [ clade_id_name, ..., species_clade_id_name ] }
+
+    Returns:
+        dict: { clade_id_name: set( clade_id_name ) } — every clade maps to the
+        set containing itself and every descendant clade.
+    """
+    logger.info( "Building clade-to-all-descendant-clades mapping from imported phylogenetic paths..." )
+
+    clade_id_names___descendant_clade_id_names = defaultdict( set )
+
+    for species_clade_id_name, path in species_clade_id_names___phylogenetic_paths.items():
+        for position_index, clade_id_name in enumerate( path ):
+            for descendant_clade_id_name in path[ position_index: ]:
+                clade_id_names___descendant_clade_id_names[ clade_id_name ].add( descendant_clade_id_name )
+
+    logger.info( f"Built descendant-clades mapping for {len( clade_id_names___descendant_clade_id_names )} clades" )
+
+    return clade_id_names___descendant_clade_id_names
 
 
 # ============================================================================
@@ -356,10 +407,17 @@ def load_orthogroup_origins():
     """
     Load orthogroup origin data from Script 002 output.
 
+    Per Rule 7, origin is a phylogenetic transition block identified by both
+    `Origin_Phylogenetic_Block` (parent::child) and `Origin_Phylogenetic_Block_State`
+    (parent::child-O). The child endpoint of the origin block — useful for
+    ancestor-descendant lookups — is derived here by splitting the block
+    identifier on `::`.
+
     Returns:
         dict: { orthogroup_id: {
-            'origin': str,
+            'origin_child_clade_id_name': str,
             'phylogenetic_block': str,
+            'phylogenetic_block_state': str,
             'phylogenetic_path': str,
             'species_list': str,
             'sequence_ids': str,
@@ -378,11 +436,16 @@ def load_orthogroup_origins():
     with open( input_origins_file, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Orthogroup_ID (orthogroup identifier)	Origin_Clade (phylogenetic clade...)	Origin_Clade_Phylogenetic_Block (...)	Origin_Clade_Phylogenetic_Path (...)	Shared_Clades (...)	Species_Count (...)	Sequence_Count (...)	Species_List (...)	Sequence_IDs (...) [	Sequences_FASTA (...)]
-        # OG0000001	Filozoa	C069_Holozoa::C002_Filozoa	C068_Basal,C069_Holozoa,C002_Filozoa	Basal,Holozoa,Filozoa	42	120	Homo_sapiens,Mus_musculus	seq1,seq2	>seq...\nMSEQ...
+        # Orthogroup_ID	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Shared_Clade_ID_Names	Species_Count	Sequence_Count	Species_List	Sequence_IDs [	Sequences_FASTA]
+        # OG0000001	C069_Holozoa::C002_Filozoa	C069_Holozoa::C002_Filozoa-O	C068_Basal,C069_Holozoa,C002_Filozoa	C068_Basal,C069_Holozoa,C002_Filozoa	42	120	Homo_sapiens,...	g_001-...
+        # Per Rule 7, origin is a phylogenetic transition block (state O). It is
+        # fully specified by columns 1 and 2 below — the block `parent::child`
+        # and the block-state `parent::child-O`. The child clade (origin clade
+        # in the naming-convention sense) is extractable from the block string
+        # by splitting on `::` and taking the second half; no separate column
+        # is emitted for it.
         header_row = next( csv_reader )  # Skip single-row header
 
-        # Detect number of columns from header
         column_count = len( header_row )
         has_fasta_column = column_count >= 10
 
@@ -391,19 +454,24 @@ def load_orthogroup_origins():
                 continue
 
             orthogroup_id = parts[ 0 ]
-            origin_clade = parts[ 1 ]
-            phylogenetic_block = parts[ 2 ]
+            phylogenetic_block = parts[ 1 ]
+            phylogenetic_block_state = parts[ 2 ]
             phylogenetic_path = parts[ 3 ]
-            # shared_clades = parts[ 4 ]    # Available but not used here
-            # species_count = parts[ 5 ]    # Available but not used here
-            # sequence_count = parts[ 6 ]   # Available but not used here
             species_list = parts[ 7 ]
             sequence_ids = parts[ 8 ]
             sequences_fasta = parts[ 9 ] if has_fasta_column and len( parts ) > 9 else ''
 
+            # Derive the child clade of the origin block (the "origin clade"
+            # in naming-convention shorthand) from the block identifier.
+            if phylogenetic_block != 'NA' and '::' in phylogenetic_block:
+                origin_child_clade_id_name = phylogenetic_block.split( '::', 1 )[ 1 ]
+            else:
+                origin_child_clade_id_name = 'NA'
+
             orthogroups___origin_data[ orthogroup_id ] = {
-                'origin': origin_clade,
+                'origin_child_clade_id_name': origin_child_clade_id_name,
                 'phylogenetic_block': phylogenetic_block,
+                'phylogenetic_block_state': phylogenetic_block_state,
                 'phylogenetic_path': phylogenetic_path,
                 'species_list': species_list,
                 'sequence_ids': sequence_ids,
@@ -416,12 +484,21 @@ def load_orthogroup_origins():
     return orthogroups___origin_data
 
 
-def load_orthogroup_species():
+def load_orthogroup_species( clade_names___clade_id_names ):
     """
-    Load species composition for each orthogroup from Script 001 output.
+    Load species composition for each orthogroup from Script 001 output,
+    converting bare Genus_species names to species_clade_id_name form via
+    the clade_mappings reverse index.
+
+    Species in orthogroups but absent from the clade_mappings for this
+    structure are skipped (this can legitimately happen for orthogroups that
+    include species outside the structure's species set).
+
+    Args:
+        clade_names___clade_id_names: { clade_name: clade_id_name }
 
     Returns:
-        dict: { orthogroup_id: set( species_names ) }
+        dict: { orthogroup_id: set( species_clade_id_name ) }
     """
     logger.info( f"Loading orthogroup species from: {input_orthogroups_file}" )
 
@@ -430,7 +507,8 @@ def load_orthogroup_species():
         logger.error( f"Expected: {input_orthogroups_file}" )
         sys.exit( 1 )
 
-    orthogroups___species = {}
+    orthogroups___species_clade_id_names = {}
+    missing_species_names = set()
 
     with open( input_orthogroups_file, 'r' ) as input_file:
         # Orthogroup_ID (orthogroup identifier from clustering tool)	Sequence_Count (total count of sequences in orthogroup)	GIGANTIC_IDs (comma delimited list of GIGANTIC identifiers)	Unmapped_Short_IDs (comma delimited list of short IDs that could not be mapped)
@@ -446,171 +524,196 @@ def load_orthogroup_species():
             orthogroup_id = parts[ 0 ]
             gigantic_ids_string = parts[ 2 ]
 
-            # Parse comma-delimited GIGANTIC IDs
             gigantic_ids = gigantic_ids_string.split( ',' )
 
-            # Extract species names from GIGANTIC IDs
-            species_set = set()
+            species_clade_id_names_set = set()
             for gigantic_id in gigantic_ids:
                 gigantic_id = gigantic_id.strip()
                 if not gigantic_id:
                     continue
                 species_name = extract_species_from_gigantic_id( gigantic_id )
-                if species_name:
-                    species_set.add( species_name )
+                if not species_name:
+                    continue
+                species_clade_id_name = clade_names___clade_id_names.get( species_name )
+                if species_clade_id_name is None:
+                    missing_species_names.add( species_name )
+                    continue
+                species_clade_id_names_set.add( species_clade_id_name )
 
-            orthogroups___species[ orthogroup_id ] = species_set
+            orthogroups___species_clade_id_names[ orthogroup_id ] = species_clade_id_names_set
 
-    logger.info( f"Loaded species for {len( orthogroups___species )} orthogroups" )
+    logger.info( f"Loaded species_clade_id_names for {len( orthogroups___species_clade_id_names )} orthogroups" )
+    if missing_species_names:
+        logger.info( f"Skipped {len( missing_species_names )} species not in this structure's clade_mappings" )
 
-    return orthogroups___species
+    return orthogroups___species_clade_id_names
 
 
 # ============================================================================
 # SECTION 3: DETERMINE ORTHOGROUPS PRESENT IN EACH CLADE
 # ============================================================================
 
-def build_clade_orthogroups( orthogroups___origin_data, orthogroups___species,
-                             clades___descendant_species, species_names___phylogenetic_paths ):
+def build_clade_orthogroups( orthogroups___origin_data, orthogroups___species_clade_id_names,
+                             clade_id_names___descendant_species_clade_id_names,
+                             clade_id_names___descendant_clade_id_names ):
     """
-    Determine PHYLOGENETICALLY INHERITED vs ACTUALLY PRESENT orthogroups in each clade.
+    For each clade C, compute two per-clade orthogroup sets needed for scoring
+    phylogenetic blocks under Rule 7:
 
-    TEMPLATE_03 CRITICAL DISTINCTION: Two Types of Orthogroup-Clade Relationships
+    1. orthogroups for which C is a descendant of (or equal to) the child
+       endpoint of the origin transition block — i.e. orthogroups whose origin
+       transition block sits on the root-to-C lineage or at C itself. These
+       are the orthogroups eligible for P/L/X block-state scoring when C is a
+       parent in a block. Blocks where C is a parent but the orthogroup fails
+       this test are state-A blocks (pre-origin) and must not be scored.
 
-    1. PHYLOGENETICALLY INHERITED FROM ANCESTRAL ORIGIN
-       Definition: Orthogroup's origin clade is in the phylogenetic path to this clade
-       Meaning: Orthogroup COULD be present (was inherited from ancestor)
-       Criterion: Origin clade appears in clade's phylogenetic path
-       Requires: NO requirement for descendant species to actually have it
+    2. orthogroups actually carried by at least one descendant species of C
+       (biological presence, distinct from the topological eligibility above).
 
-    2. ACTUALLY PRESENT IN DESCENDANT SPECIES (Genomic Reality)
-       Definition: Orthogroup is inherited AND at least one descendant species actually has it
-       Meaning: Orthogroup IS found in species genomes (not just theoretically possible)
-       Criterion: Inherited + species intersection > 0
+    The eligibility test (1) uses pre-computed ancestor-descendant relationships
+    from the parent-child graph. It replaces the earlier sampling-based
+    "origin in a sample descendant species' root-to-tip path" test, which gave
+    wrong (sampling-dependent) answers whenever the child endpoint of the
+    origin transition block happened to be a tip — most singleton orthogroups.
 
     Args:
-        orthogroups___origin_data: { orthogroup_id: { 'origin': str, ... } }
-        orthogroups___species: { orthogroup_id: set( species ) }
-        clades___descendant_species: { clade_name: set( species ) }
-        species_names___phylogenetic_paths: { species_name: [ clade1, ..., species ] }
+        orthogroups___origin_data: {
+            orthogroup_id: { 'origin_child_clade_id_name': str, ... }
+        }
+        orthogroups___species_clade_id_names: {
+            orthogroup_id: set( species_clade_id_name )
+        }
+        clade_id_names___descendant_species_clade_id_names: {
+            clade_id_name: set( descendant species_clade_id_name )
+        }
+        clade_id_names___descendant_clade_id_names: {
+            clade_id_name: set( every descendant clade_id_name, including self )
+        }
 
     Returns:
-        tuple: ( clades___phylogenetically_inherited_orthogroups,
-                 clades___actually_present_in_species_orthogroups )
+        tuple: (
+            clade_id_names___orthogroups_eligible_for_scoring_at_this_clade,
+            clade_id_names___orthogroups_actually_present_at_this_clade
+        )
     """
     logger.info( "=" * 80 )
-    logger.info( "DETERMINING ORTHOGROUP-CLADE RELATIONSHIPS:" )
-    logger.info( "  1. PHYLOGENETICALLY INHERITED = origin in phylogenetic path" )
-    logger.info( "  2. ACTUALLY PRESENT IN SPECIES = inherited AND at least one species has it" )
+    logger.info( "DETERMINING ORTHOGROUP-CLADE RELATIONSHIPS (Rule 7):" )
+    logger.info( "  1. SCORING-ELIGIBLE = clade is a descendant of (or equal to)" )
+    logger.info( "     the child endpoint of the orthogroup's origin transition block" )
+    logger.info( "  2. ACTUALLY PRESENT = at least one descendant species of the clade" )
+    logger.info( "     carries the orthogroup" )
     logger.info( "=" * 80 )
 
-    # Dictionary 1: Phylogenetically inherited (theoretical inheritance from ancestor)
-    clades___phylogenetically_inherited_orthogroups = defaultdict( set )
+    clade_id_names___orthogroups_eligible_for_scoring_at_this_clade = defaultdict( set )
+    clade_id_names___orthogroups_actually_present_at_this_clade = defaultdict( set )
 
-    # Dictionary 2: Actually present in descendant species (genomic reality)
-    clades___actually_present_in_species_orthogroups = defaultdict( set )
-
-    # Process each orthogroup
-    for orthogroup_id, orthogroup_species in orthogroups___species.items():
+    for orthogroup_id, orthogroup_species_clade_id_names in orthogroups___species_clade_id_names.items():
         origin_data = orthogroups___origin_data.get( orthogroup_id )
         if not origin_data:
             continue
-        origin_clade = origin_data[ 'origin' ]
 
-        if not origin_clade:
+        origin_child_clade_id_name = origin_data.get( 'origin_child_clade_id_name', 'NA' )
+        if not origin_child_clade_id_name or origin_child_clade_id_name == 'NA':
             continue
 
-        # For each clade: determine if orthogroup is INHERITED and/or PRESENT
-        for clade_name, descendant_species in clades___descendant_species.items():
-            # Get any species in this clade to check its phylogenetic path
-            if not descendant_species:
-                continue
+        # All clades that sit on or below the child endpoint of the origin block.
+        # The child endpoint itself is included (a clade is its own descendant
+        # under this convention). These are exactly the clades for which the
+        # orthogroup is eligible for P/L/X scoring.
+        eligible_clade_id_names = clade_id_names___descendant_clade_id_names.get(
+            origin_child_clade_id_name, set()
+        )
 
-            sample_species = list( descendant_species )[ 0 ]
-            clade_path = species_names___phylogenetic_paths.get( sample_species, [] )
+        for clade_id_name in eligible_clade_id_names:
+            clade_id_names___orthogroups_eligible_for_scoring_at_this_clade[ clade_id_name ].add( orthogroup_id )
 
-            # CHECK 1: Is orthogroup PHYLOGENETICALLY INHERITED?
-            # Test: Is origin clade in this clade's phylogenetic path?
-            if origin_clade not in clade_path:
-                continue  # Not inherited, skip to next clade
+            descendant_species_clade_id_names = clade_id_names___descendant_species_clade_id_names.get(
+                clade_id_name, set()
+            )
+            if orthogroup_species_clade_id_names.intersection( descendant_species_clade_id_names ):
+                clade_id_names___orthogroups_actually_present_at_this_clade[ clade_id_name ].add( orthogroup_id )
 
-            # Orthogroup is PHYLOGENETICALLY INHERITED by this clade
-            clades___phylogenetically_inherited_orthogroups[ clade_name ].add( orthogroup_id )
-
-            # CHECK 2: Is orthogroup ACTUALLY PRESENT IN DESCENDANT SPECIES?
-            # Test: Do ANY descendant species actually have this orthogroup?
-            if orthogroup_species.intersection( descendant_species ):
-                clades___actually_present_in_species_orthogroups[ clade_name ].add( orthogroup_id )
-
-    logger.info( f"Phylogenetically inherited orthogroups: {len( clades___phylogenetically_inherited_orthogroups )} clades" )
-    logger.info( f"Actually present in species orthogroups: {len( clades___actually_present_in_species_orthogroups )} clades" )
+    logger.info(
+        f"Scoring-eligible orthogroups present at: "
+        f"{len( clade_id_names___orthogroups_eligible_for_scoring_at_this_clade )} clades"
+    )
+    logger.info(
+        f"Orthogroups actually present at: "
+        f"{len( clade_id_names___orthogroups_actually_present_at_this_clade )} clades"
+    )
     logger.info( "=" * 80 )
 
-    return clades___phylogenetically_inherited_orthogroups, clades___actually_present_in_species_orthogroups
+    return (
+        clade_id_names___orthogroups_eligible_for_scoring_at_this_clade,
+        clade_id_names___orthogroups_actually_present_at_this_clade,
+    )
 
 
 # ============================================================================
 # SECTION 4: CALCULATE CONSERVATION AND LOSS PER BLOCK
 # ============================================================================
 
-def calculate_conservation_loss( parents___children, clades___inherited_orthogroups,
-                                clades___present_orthogroups ):
+def calculate_conservation_loss(
+    parents___children,
+    clade_id_names___orthogroups_eligible_for_scoring_at_this_clade,
+    clade_id_names___orthogroups_actually_present_at_this_clade,
+):
     """
-    Calculate conservation and loss statistics for each phylogenetic block.
+    Compute per-block statistics for each phylogenetic block (parent::child).
 
-    Per-block statistics track orthogroups PRESENT in parent clade (at least one
-    species has the orthogroup). This differs from per-orthogroup analysis which
-    tracks ALL inherited transitions regardless of whether parent has species.
+    For each block, counts orthogroups in three categories using the biological
+    "actually present" sets (not the topological eligibility sets, which are
+    needed only for per-orthogroup block-state classification):
 
-    For each parent to child transition:
-    - Inherited: orthogroups present in parent clade
-    - Conserved: inherited orthogroups still present in child clade
-    - Lost: inherited orthogroups absent in child clade
+      - inherited_count: orthogroups biologically present at the parent clade.
+        An orthogroup can be biologically present at the parent only if its
+        origin transition block sits on the parent's descent line (Rule 7), so
+        this set is naturally scoped to Rule-7-eligible orthogroups at parent.
+      - conserved_count: inherited orthogroups that are also present at child
+        (equivalent to the number of orthogroups on this block in block-state P).
+      - lost_count: inherited orthogroups that are absent at child
+        (equivalent to the number of orthogroups on this block in block-state L).
 
     Args:
-        parents___children: { parent_name: [ child1, child2 ] }
-        clades___inherited_orthogroups: { clade_name: set( inherited orthogroup_ids ) }
-        clades___present_orthogroups: { clade_name: set( present orthogroup_ids ) }
+        parents___children: { parent_clade_id_name: [ child_clade_id_name, ... ] }
+        clade_id_names___orthogroups_eligible_for_scoring_at_this_clade:
+            { clade_id_name: set( orthogroup_id ) } — passed for API symmetry
+            with `analyze_orthogroup_patterns`; not directly needed here because
+            biological presence already implies eligibility.
+        clade_id_names___orthogroups_actually_present_at_this_clade:
+            { clade_id_name: set( orthogroup_id ) }
 
     Returns:
-        list: Per-block statistics dictionaries
+        list: Per-block statistics dictionaries.
     """
-    logger.info( "Calculating conservation and loss per phylogenetic block..." )
+    logger.info( "Calculating conservation and loss per phylogenetic block (Rule 7)..." )
 
     block_statistics = []
 
-    for parent_name, children in parents___children.items():
-        # Use PRESENT orthogroups for per-block statistics
-        parent_orthogroups_present = clades___present_orthogroups.get( parent_name, set() )
+    for parent_clade_id_name, children in parents___children.items():
+        orthogroups_actually_present_at_parent = (
+            clade_id_names___orthogroups_actually_present_at_this_clade.get(
+                parent_clade_id_name, set()
+            )
+        )
 
-        for child_name in children:
-            child_orthogroups_present = clades___present_orthogroups.get( child_name, set() )
+        for child_clade_id_name in children:
+            orthogroups_actually_present_at_child = (
+                clade_id_names___orthogroups_actually_present_at_this_clade.get(
+                    child_clade_id_name, set()
+                )
+            )
 
-            # Calculate conservation and loss
-            inherited = parent_orthogroups_present
-            conserved = inherited.intersection( child_orthogroups_present )
-            lost = inherited - child_orthogroups_present
-
-            inherited_count = len( inherited )
-            conserved_count = len( conserved )
-            lost_count = len( lost )
-
-            # Calculate rates (handle zero inherited explicitly)
-            if inherited_count > 0:
-                conservation_rate = ( conserved_count / inherited_count ) * 100
-                loss_rate = ( lost_count / inherited_count ) * 100
-            else:
-                conservation_rate = 0.0
-                loss_rate = 0.0
+            inherited = orthogroups_actually_present_at_parent
+            conserved = inherited.intersection( orthogroups_actually_present_at_child )
+            lost = inherited - orthogroups_actually_present_at_child
 
             block_statistic = {
-                'parent_clade': parent_name,
-                'child_clade': child_name,
-                'inherited_count': inherited_count,
-                'conserved_count': conserved_count,
-                'lost_count': lost_count,
-                'conservation_rate': conservation_rate,
-                'loss_rate': loss_rate
+                'parent_clade_id_name': parent_clade_id_name,
+                'child_clade_id_name': child_clade_id_name,
+                'inherited_count': len( inherited ),
+                'conserved_count': len( conserved ),
+                'lost_count': len( lost ),
             }
 
             block_statistics.append( block_statistic )
@@ -624,124 +727,160 @@ def calculate_conservation_loss( parents___children, clades___inherited_orthogro
 # SECTION 5: ANALYZE CONSERVATION PATTERNS PER ORTHOGROUP
 # ============================================================================
 
-def analyze_orthogroup_patterns( orthogroups___origin_data, orthogroups___species,
-                                parents___children, clades___inherited_orthogroups,
-                                clades___present_orthogroups ):
+def analyze_orthogroup_patterns(
+    orthogroups___origin_data,
+    orthogroups___species_clade_id_names,
+    parents___children,
+    clade_id_names___orthogroups_eligible_for_scoring_at_this_clade,
+    clade_id_names___orthogroups_actually_present_at_this_clade,
+):
     """
-    Analyze conservation/loss pattern across all blocks for each orthogroup.
+    Per-orthogroup classification of every scored block into a Rule 7 block-state.
 
-    TEMPLATE_03 dual-metric tracking:
-    1. Evaluates ALL inherited transitions (not just where parent has species)
-    2. Distinguishes loss at origin from continued absence
-    3. Calculates tree coverage metrics
+    For each orthogroup and each phylogenetic block `parent::child`:
+      - if parent is NOT on the orthogroup's eligible-for-scoring set, the block
+        is state A (pre-origin) or lies in a sibling subtree — it is skipped
+        and contributes nothing.
+      - otherwise classify by biological presence at parent and child:
+          both present         → block-state P (Inherited Presence, conservation)
+          parent present only  → block-state L (Loss event)
+          both absent          → block-state X (Inherited Loss, post-loss)
+        The O state (origin) is produced by Script 002, not here.
 
-    Event Types:
-    - Conservation: orthogroup inherited, present in parent, present in child
-    - Loss at Origin: orthogroup inherited, present in parent, absent in child
-    - Continued Absence: orthogroup inherited, absent in parent, absent in child
-    - Loss Coverage: loss at origin + continued absence
+    Aggregates per orthogroup:
+      - total_scored_blocks: P + L + X count (all scored blocks)
+      - conservation_events:    P count
+      - loss_origin_events:     L count
+      - continued_absence_events: X count
+      - loss_coverage_events:   L + X count
 
-    Edge case: zero inherited transitions results in all rates = 0.0
+    Edge case: zero scored blocks (e.g. singleton whose origin block's child is
+    a tip) yields all zero counts, since the orthogroup has no descendants
+    of its origin's child endpoint to score blocks through.
 
     Args:
-        orthogroups___origin_data: { orthogroup_id: { 'origin': str, ... } }
-        orthogroups___species: { orthogroup_id: set( species ) }
-        parents___children: { parent_name: [ child1, child2 ] }
-        clades___inherited_orthogroups: { clade_name: set( inherited orthogroup_ids ) }
-        clades___present_orthogroups: { clade_name: set( present orthogroup_ids ) }
+        orthogroups___origin_data: {
+            orthogroup_id: { 'origin_child_clade_id_name': str, ... }
+        }
+        orthogroups___species_clade_id_names: {
+            orthogroup_id: set( species_clade_id_name )
+        }
+        parents___children: { parent_clade_id_name: [ child_clade_id_name, ... ] }
+        clade_id_names___orthogroups_eligible_for_scoring_at_this_clade:
+            { clade_id_name: set( orthogroup_id ) }
+        clade_id_names___orthogroups_actually_present_at_this_clade:
+            { clade_id_name: set( orthogroup_id ) }
 
     Returns:
-        list: Per-orthogroup conservation pattern dictionaries
+        list: Per-orthogroup block-state count dictionaries.
     """
-    logger.info( "Analyzing conservation patterns per orthogroup (TEMPLATE_03 dual-metric tracking)..." )
+    logger.info( "Classifying per-orthogroup block-states across all phylogenetic blocks (Rule 7)..." )
 
     orthogroup_patterns = []
 
     for orthogroup_id, origin_data in orthogroups___origin_data.items():
-        origin_clade = origin_data[ 'origin' ]
-        species_count = len( orthogroups___species.get( orthogroup_id, set() ) )
+        origin_child_clade_id_name = origin_data.get( 'origin_child_clade_id_name', 'NA' )
+        species_count = len( orthogroups___species_clade_id_names.get( orthogroup_id, set() ) )
 
-        # Initialize event counters (4 types of events)
         conservation_events = 0
         loss_origin_events = 0
         continued_absence_events = 0
 
-        # Process ALL parent-child transitions where orthogroup was inherited
-        for parent_name, children in parents___children.items():
-            parent_inherited = clades___inherited_orthogroups.get( parent_name, set() )
-            parent_present = clades___present_orthogroups.get( parent_name, set() )
+        # Iterate phylogenetic blocks (parent::child) and classify each block for
+        # this orthogroup under the Rule 7 block-state vocabulary:
+        #   -A (Inherited Absence):   parent absent, child absent, pre-origin
+        #   -O (Origin):              parent absent, child present, event
+        #                             (emitted by Script 002, not scored here)
+        #   -P (Inherited Presence):  parent present, child present, conservation
+        #   -L (Loss):                parent present, child absent, event
+        #   -X (Inherited Loss):      parent absent, child absent, post-loss
+        #
+        # Scoring gate: the block is only classified if the parent clade sits on
+        # or below the child endpoint of this orthogroup's origin transition
+        # block (direct tree-structural descendant test). Blocks whose parent
+        # is NOT a descendant of the origin block's child endpoint are state A
+        # or in a sibling subtree and are correctly skipped.
+        for parent_clade_id_name, children in parents___children.items():
+            parent_scoring_eligible = (
+                clade_id_names___orthogroups_eligible_for_scoring_at_this_clade.get(
+                    parent_clade_id_name, set()
+                )
+            )
+            parent_actually_present = (
+                clade_id_names___orthogroups_actually_present_at_this_clade.get(
+                    parent_clade_id_name, set()
+                )
+            )
 
-            # Skip if orthogroup not inherited by parent
-            if orthogroup_id not in parent_inherited:
+            if orthogroup_id not in parent_scoring_eligible:
                 continue
 
-            # Determine if orthogroup is present in parent
-            parent_has_orthogroup = orthogroup_id in parent_present
+            parent_has_orthogroup = orthogroup_id in parent_actually_present
 
-            for child_name in children:
-                child_inherited = clades___inherited_orthogroups.get( child_name, set() )
-                child_present = clades___present_orthogroups.get( child_name, set() )
+            for child_clade_id_name in children:
+                child_scoring_eligible = (
+                    clade_id_names___orthogroups_eligible_for_scoring_at_this_clade.get(
+                        child_clade_id_name, set()
+                    )
+                )
+                child_actually_present = (
+                    clade_id_names___orthogroups_actually_present_at_this_clade.get(
+                        child_clade_id_name, set()
+                    )
+                )
 
-                # Verify child also inherited orthogroup
-                if orthogroup_id not in child_inherited:
-                    logger.warning( f"Orthogroup {orthogroup_id} inherited by parent {parent_name} "
-                                  f"but not child {child_name} - phylogenetic path inconsistency?" )
+                if orthogroup_id not in child_scoring_eligible:
+                    logger.warning(
+                        f"Orthogroup {orthogroup_id} eligible at parent {parent_clade_id_name} "
+                        f"but not at child {child_clade_id_name} — tree structure inconsistency?"
+                    )
                     continue
 
-                # Determine if orthogroup is present in child
-                child_has_orthogroup = orthogroup_id in child_present
+                child_has_orthogroup = orthogroup_id in child_actually_present
 
-                # Classify transition into one of 4 event types
+                # Classify this (block, orthogroup) into its block-state.
                 if parent_has_orthogroup and child_has_orthogroup:
-                    # CONSERVATION: Present in parent AND child
+                    # -P: Inherited Presence (conservation)
                     conservation_events += 1
-
                 elif parent_has_orthogroup and not child_has_orthogroup:
-                    # LOSS AT ORIGIN: Present in parent but absent in child
+                    # -L: Loss event (first disappearance on this block)
                     loss_origin_events += 1
-
                 elif not parent_has_orthogroup and not child_has_orthogroup:
-                    # CONTINUED ABSENCE: Absent in parent AND child
+                    # -X: Inherited Loss (post-loss continued absence).
+                    # Parent is scoring-eligible (descendant of origin's child)
+                    # but the orthogroup is not biologically present at parent
+                    # → the orthogroup was lost on an earlier block in this
+                    # clade's ancestry; the absence continues at this block.
                     continued_absence_events += 1
-
                 else:
-                    # Absent in parent, present in child - should not occur
-                    logger.warning( f"Unexpected case for orthogroup {orthogroup_id}: "
-                                  f"absent in parent {parent_name} but present in child {child_name}. "
-                                  f"This suggests orthogroup re-originated or phylogenetic path error." )
+                    # parent absent AND child present with parent scoring-eligible.
+                    # Would imply a second origin on the same descent line, which
+                    # violates Dollo-parsimonious origin assignment.
+                    logger.warning(
+                        f"Unexpected case for orthogroup {orthogroup_id}: "
+                        f"absent in parent {parent_clade_id_name} but present in child {child_clade_id_name}."
+                    )
 
-        # Calculate derived metrics
-        total_inherited_transitions = conservation_events + loss_origin_events + continued_absence_events
-        loss_coverage_events = loss_origin_events + continued_absence_events
+        # Per-orthogroup derived counts. No rates — raw counts only.
+        total_scored_blocks = conservation_events + loss_origin_events + continued_absence_events
 
-        # Calculate percentages (handle zero inherited transitions explicitly)
-        if total_inherited_transitions > 0:
-            conservation_rate_percent = ( conservation_events / total_inherited_transitions ) * 100
-            loss_origin_rate_percent = ( loss_origin_events / total_inherited_transitions ) * 100
-            percent_tree_conserved = conservation_rate_percent
-            percent_tree_loss = ( loss_coverage_events / total_inherited_transitions ) * 100
-        else:
-            conservation_rate_percent = 0.0
-            loss_origin_rate_percent = 0.0
-            percent_tree_conserved = 0.0
-            percent_tree_loss = 0.0
-
-        # Store pattern with metrics and annotation data from Script 002
+        # Store pattern with counts and annotation data from Script 002.
+        # phylogenetic_block (parent::child) is the tree-structural identifier of
+        # the origin transition block — the block on which this orthogroup
+        # originates. phylogenetic_block_state (parent::child-O) is the same
+        # block tagged with the Rule 7 block-state letter code O (Origin). Per
+        # Rule 7 the "origin clade" is not a separate field; the child endpoint
+        # of the origin transition block is in the block identifier.
         pattern = {
             'orthogroup_id': orthogroup_id,
-            'origin_clade': origin_clade,
             'phylogenetic_block': origin_data[ 'phylogenetic_block' ],
+            'phylogenetic_block_state': origin_data[ 'phylogenetic_block_state' ],
             'phylogenetic_path': origin_data[ 'phylogenetic_path' ],
             'species_count': species_count,
-            'total_inherited_transitions': total_inherited_transitions,
+            'total_scored_blocks': total_scored_blocks,
             'conservation_events': conservation_events,
             'loss_origin_events': loss_origin_events,
             'continued_absence_events': continued_absence_events,
-            'loss_coverage_events': loss_coverage_events,
-            'conservation_rate_percent': conservation_rate_percent,
-            'loss_origin_rate_percent': loss_origin_rate_percent,
-            'percent_tree_conserved': percent_tree_conserved,
-            'percent_tree_loss': percent_tree_loss,
             'species_list': origin_data[ 'species_list' ],
             'sequence_ids': origin_data[ 'sequence_ids' ],
             'sequences_fasta': origin_data[ 'sequences_fasta' ]
@@ -750,8 +889,8 @@ def analyze_orthogroup_patterns( orthogroups___origin_data, orthogroups___specie
         orthogroup_patterns.append( pattern )
 
     logger.info( f"Analyzed patterns for {len( orthogroup_patterns )} orthogroups" )
-    logger.info( f"Total transitions evaluated across all orthogroups: "
-               f"{sum( p[ 'total_inherited_transitions' ] for p in orthogroup_patterns )}" )
+    logger.info( f"Total scored blocks across all orthogroups: "
+               f"{sum( p[ 'total_scored_blocks' ] for p in orthogroup_patterns )}" )
 
     return orthogroup_patterns
 
@@ -761,25 +900,22 @@ def analyze_orthogroup_patterns( orthogroups___origin_data, orthogroups___specie
 # ============================================================================
 
 def write_block_statistics( block_statistics ):
-    """Write per-block conservation/loss statistics."""
+    """Write per-block counts. Counts only — no rates."""
     logger.info( f"Writing block statistics to: {output_block_statistics_file}" )
 
     with open( output_block_statistics_file, 'w' ) as output_file:
         # Single-row GIGANTIC_1 header
-        output = 'Parent_Clade (parent clade in phylogenetic block transition excluding terminal self-loops)\t'
-        output += 'Child_Clade (child clade in phylogenetic block transition excluding terminal self-loops)\t'
-        output += 'Inherited_Count (count of orthogroups present in parent clade that could be inherited by child)\t'
-        output += 'Conserved_Count (count of orthogroups from parent that are also present in child clade)\t'
-        output += 'Lost_Count (count of orthogroups from parent that are absent in child clade)\t'
-        output += 'Conservation_Rate (percentage of inherited orthogroups conserved in child calculated as conserved count divided by inherited count times 100)\t'
-        output += 'Loss_Rate (percentage of inherited orthogroups lost in child calculated as lost count divided by inherited count times 100)\n'
+        output = 'Parent_Clade_ID_Name (parent clade of phylogenetic block as clade_id_name e.g. C069_Holozoa; terminal self-loops excluded)\t'
+        output += 'Child_Clade_ID_Name (child clade of phylogenetic block as clade_id_name e.g. C002_Filozoa; terminal self-loops excluded)\t'
+        output += 'Inherited_Count (count of orthogroups biologically present at parent clade via its descendant species)\t'
+        output += 'Conserved_Count (count of orthogroups present at parent and also present at child — block-state P)\t'
+        output += 'Lost_Count (count of orthogroups present at parent but absent at child — block-state L)\n'
         output_file.write( output )
 
         for statistic in block_statistics:
-            output = f"{statistic[ 'parent_clade' ]}\t{statistic[ 'child_clade' ]}\t"
+            output = f"{statistic[ 'parent_clade_id_name' ]}\t{statistic[ 'child_clade_id_name' ]}\t"
             output += f"{statistic[ 'inherited_count' ]}\t{statistic[ 'conserved_count' ]}\t"
-            output += f"{statistic[ 'lost_count' ]}\t{statistic[ 'conservation_rate' ]:.2f}\t"
-            output += f"{statistic[ 'loss_rate' ]:.2f}\n"
+            output += f"{statistic[ 'lost_count' ]}\n"
 
             output_file.write( output )
 
@@ -787,30 +923,27 @@ def write_block_statistics( block_statistics ):
 
 
 def write_orthogroup_patterns( orthogroup_patterns ):
-    """Write per-orthogroup conservation patterns with TEMPLATE_03 dual-metric tracking."""
-    logger.info( f"Writing orthogroup patterns (TEMPLATE_03 format) to: {output_orthogroup_patterns_file}" )
+    """Write per-orthogroup block-state counts (Rule 7)."""
+    logger.info( f"Writing per-orthogroup block-state counts to: {output_orthogroup_patterns_file}" )
 
     with open( output_orthogroup_patterns_file, 'w', newline = '', encoding = 'utf-8' ) as output_file:
         csv_writer = csv.writer( output_file, delimiter = '\t', quoting = csv.QUOTE_MINIMAL )
 
-        # Build single-row GIGANTIC_1 header
+        # Build single-row GIGANTIC_1 header. Per Rule 7, origin is a transition
+        # block (state O); the "origin clade" is not a separate field. Counts
+        # only — no rates.
         header_columns = [
             'Orthogroup_ID (orthogroup identifier)',
-            'Origin_Clade (phylogenetic clade where orthogroup originated via most recent common ancestor algorithm)',
-            'Origin_Clade_Phylogenetic_Block (phylogenetic block for origin clade format Parent_Clade::Child_Clade)',
-            'Origin_Clade_Phylogenetic_Path (phylogenetic path for origin clade comma delimited from root to origin clade)',
+            'Origin_Phylogenetic_Block (phylogenetic block containing the origin transition format Parent_Clade_ID_Name::Child_Clade_ID_Name)',
+            'Origin_Phylogenetic_Block_State (phylogenetic transition block for origin in five-state vocabulary format Parent_Clade_ID_Name::Child_Clade_ID_Name-O where O marks Origin; five states are A=Inherited Absence O=Origin P=Inherited Presence L=Loss X=Inherited Loss)',
+            'Origin_Phylogenetic_Path (phylogenetic path from root to the child endpoint of the origin block comma delimited as clade_id_name values)',
             'Species_Count (total unique species containing this orthogroup across all genomes)',
-            'Total_Phylogenetically_Inherited_Transitions (count of all parent to child clade transitions descended from origin clade where orthogroup was phylogenetically inherited)',
-            'Conservation_Events_Actually_Present_In_Both_Parent_And_Child (count of transitions where orthogroup actually present in descendant species of both parent and child clades)',
-            'Loss_At_Origin_Events_Present_In_Parent_Absent_In_Child (count of transitions where orthogroup present in parent species but absent in child species representing phylogenetic origin of gene loss)',
-            'Continued_Absence_Events_Absent_In_Both_Parent_And_Child (count of transitions where orthogroup absent in both parent and child species meaning loss occurred earlier and absence continues)',
-            'Loss_Coverage_Events_All_Transitions_Where_Absent_In_Child (count of all transitions where orthogroup absent in child species calculated as loss at origin plus continued absence)',
-            'Conservation_Rate_Percent (percentage of inherited transitions showing conservation calculated as conservation events divided by total inherited transitions times 100)',
-            'Loss_At_Origin_Rate_Percent (percentage of inherited transitions where gene loss first occurs calculated as loss at origin events divided by total inherited transitions times 100)',
-            'Percent_Phylogenetic_Tree_With_Orthogroup_Actually_Present (percentage of phylogenetic tree where orthogroup is present calculated as conservation events divided by total inherited transitions times 100)',
-            'Percent_Phylogenetic_Tree_Lacking_Orthogroup (percentage of phylogenetic tree where orthogroup is absent calculated as loss coverage events divided by total inherited transitions times 100)',
+            'Total_Scored_Blocks (count of phylogenetic blocks classified into block-states P L or X for this orthogroup; equals P plus L plus X)',
+            'Conservation_Events (count of phylogenetic blocks in block-state P where orthogroup is present at both parent and child clades)',
+            'Loss_Events (count of phylogenetic blocks in block-state L where orthogroup is present at parent and absent at child)',
+            'Continued_Absence_Events (count of phylogenetic blocks in block-state X where orthogroup is absent at both parent and child after an upstream loss)',
             'Species_List (comma delimited list of all species containing this orthogroup)',
-            'Sequence_IDs (comma delimited list of short sequence identifiers in this orthogroup)'
+            'Sequence_IDs (comma delimited list of GIGANTIC sequence identifiers in this orthogroup)'
         ]
 
         if INCLUDE_FASTA:
@@ -827,19 +960,14 @@ def write_orthogroup_patterns( orthogroup_patterns ):
         for pattern in sorted_patterns:
             output_row = [
                 pattern[ 'orthogroup_id' ],
-                pattern[ 'origin_clade' ],
                 pattern[ 'phylogenetic_block' ],
+                pattern[ 'phylogenetic_block_state' ],
                 pattern[ 'phylogenetic_path' ],
                 pattern[ 'species_count' ],
-                pattern[ 'total_inherited_transitions' ],
+                pattern[ 'total_scored_blocks' ],
                 pattern[ 'conservation_events' ],
                 pattern[ 'loss_origin_events' ],
                 pattern[ 'continued_absence_events' ],
-                pattern[ 'loss_coverage_events' ],
-                f"{pattern[ 'conservation_rate_percent' ]:.2f}",
-                f"{pattern[ 'loss_origin_rate_percent' ]:.2f}",
-                f"{pattern[ 'percent_tree_conserved' ]:.2f}",
-                f"{pattern[ 'percent_tree_loss' ]:.2f}",
                 pattern[ 'species_list' ],
                 pattern[ 'sequence_ids' ]
             ]
@@ -849,56 +977,45 @@ def write_orthogroup_patterns( orthogroup_patterns ):
 
             csv_writer.writerow( output_row )
 
-    column_count = 17 if INCLUDE_FASTA else 16
-    logger.info( f"Wrote {len( orthogroup_patterns )} orthogroup patterns ({column_count} columns, TEMPLATE_03 format)" )
+    column_count = 12 if INCLUDE_FASTA else 11
+    logger.info( f"Wrote {len( orthogroup_patterns )} orthogroup patterns ({column_count} columns)" )
 
 
 def write_summary( block_statistics, orthogroup_patterns ):
-    """Write overall summary statistics."""
+    """Write overall summary counts. Counts only — no rates."""
     logger.info( f"Writing summary to: {output_summary_file}" )
 
-    # Calculate block-level summary statistics
+    # Block-level totals (summed across all phylogenetic blocks in the structure).
     total_blocks = len( block_statistics )
     total_inherited = sum( statistic[ 'inherited_count' ] for statistic in block_statistics )
     total_conserved = sum( statistic[ 'conserved_count' ] for statistic in block_statistics )
     total_lost = sum( statistic[ 'lost_count' ] for statistic in block_statistics )
 
-    if total_inherited > 0:
-        overall_conservation_rate = ( total_conserved / total_inherited ) * 100
-        overall_loss_rate = ( total_lost / total_inherited ) * 100
-    else:
-        overall_conservation_rate = 0.0
-        overall_loss_rate = 0.0
-
-    # Calculate orthogroup-level summary statistics
+    # Orthogroup-level totals (summed across all orthogroups).
     total_orthogroups = len( orthogroup_patterns )
     total_conservation_events = sum( p[ 'conservation_events' ] for p in orthogroup_patterns )
     total_loss_origin_events = sum( p[ 'loss_origin_events' ] for p in orthogroup_patterns )
     total_continued_absence_events = sum( p[ 'continued_absence_events' ] for p in orthogroup_patterns )
-    total_loss_coverage_events = sum( p[ 'loss_coverage_events' ] for p in orthogroup_patterns )
-    total_inherited_transitions = sum( p[ 'total_inherited_transitions' ] for p in orthogroup_patterns )
+    total_scored_blocks = sum( p[ 'total_scored_blocks' ] for p in orthogroup_patterns )
 
     with open( output_summary_file, 'w' ) as output_file:
-        output = "Conservation and Loss Analysis Summary (TEMPLATE_03)\n"
+        output = "Conservation and Loss Analysis Summary (Rule 7 block-state counts)\n"
         output += "=" * 80 + "\n\n"
         output += f"Structure: {TARGET_STRUCTURE}\n\n"
         output += "PHYLOGENETIC BLOCKS:\n"
         output += f"  Total blocks analyzed: {total_blocks}\n"
-        output += f"  Total inherited orthogroups (all blocks): {total_inherited}\n"
-        output += f"  Total conserved: {total_conserved}\n"
-        output += f"  Total lost: {total_lost}\n"
-        output += f"  Overall conservation rate: {overall_conservation_rate:.2f}%\n"
-        output += f"  Overall loss rate: {overall_loss_rate:.2f}%\n\n"
-        output += "ORTHOGROUPS (TEMPLATE_03 Dual-Metric Tracking):\n"
+        output += f"  Total orthogroups present at parent (summed over blocks): {total_inherited}\n"
+        output += f"  Total conserved (block-state P) (summed over blocks): {total_conserved}\n"
+        output += f"  Total lost (block-state L) (summed over blocks): {total_lost}\n\n"
+        output += "ORTHOGROUPS (Rule 7 per-orthogroup block-state counts):\n"
         output += f"  Total orthogroups analyzed: {total_orthogroups}\n"
-        output += f"  Total inherited transitions (all orthogroups): {total_inherited_transitions}\n"
-        output += f"  Conservation events (present in both parent and child): {total_conservation_events}\n"
-        output += f"  Loss at origin events (present in parent, absent in child): {total_loss_origin_events}\n"
-        output += f"  Continued absence events (absent in both parent and child): {total_continued_absence_events}\n"
-        output += f"  Loss coverage events (all transitions lacking orthogroup): {total_loss_coverage_events}\n"
+        output += f"  Total scored blocks (all orthogroups): {total_scored_blocks}\n"
+        output += f"  Conservation events (block-state P): {total_conservation_events}\n"
+        output += f"  Loss events (block-state L): {total_loss_origin_events}\n"
+        output += f"  Continued absence events (block-state X): {total_continued_absence_events}\n"
         output_file.write( output )
 
-    logger.info( "Wrote summary statistics" )
+    logger.info( "Wrote summary counts" )
 
 
 # ============================================================================
@@ -908,54 +1025,61 @@ def write_summary( block_statistics, orthogroup_patterns ):
 def main():
     """Main execution function."""
     logger.info( "=" * 80 )
-    logger.info( "SCRIPT 003: QUANTIFY CONSERVATION AND LOSS (TEMPLATE_03)" )
+    logger.info( "SCRIPT 003: CLASSIFY PHYLOGENETIC BLOCK-STATES PER ORTHOGROUP (Rule 7)" )
     logger.info( "=" * 80 )
     logger.info( f"Started: {Path( __file__ ).name}" )
     logger.info( f"Target structure: {TARGET_STRUCTURE}" )
     logger.info( f"FASTA embedding: {'enabled' if INCLUDE_FASTA else 'disabled'}" )
     logger.info( "" )
 
-    # STEP 1: Load phylogenetic tree structure
+    # STEP 1: Load phylogenetic tree structure (all keyed by clade_id_name)
     logger.info( "STEP 1: Loading phylogenetic tree structure..." )
-    clade_ids___clade_names = load_clade_id_mapping()
-    parents___children, children___parents = load_parent_child_relationships( clade_ids___clade_names )
-    species_names___phylogenetic_paths = load_phylogenetic_paths()
-    clades___descendant_species = build_clade_descendants( species_names___phylogenetic_paths )
+    clade_names___clade_id_names = load_clade_mappings()
+    parents___children, children___parents = load_parent_child_relationships()
+    species_clade_id_names___phylogenetic_paths = load_phylogenetic_paths()
+    clade_id_names___descendant_species_clade_id_names = build_clade_descendants( species_clade_id_names___phylogenetic_paths )
+    clade_id_names___descendant_clade_id_names = build_clade_to_all_descendant_clades_from_paths(
+        species_clade_id_names___phylogenetic_paths
+    )
     logger.info( "" )
 
     # STEP 2: Load orthogroup data
     logger.info( "STEP 2: Loading orthogroup data..." )
     orthogroups___origin_data = load_orthogroup_origins()
-    orthogroups___species = load_orthogroup_species()
+    orthogroups___species_clade_id_names = load_orthogroup_species( clade_names___clade_id_names )
     logger.info( "" )
 
-    # STEP 3: Determine orthogroups inherited and present in each clade
-    logger.info( "STEP 3: Determining inherited and present orthogroups for each clade..." )
-    clades___inherited_orthogroups, clades___present_orthogroups = build_clade_orthogroups(
+    # STEP 3: Determine scoring-eligible and actually-present orthogroups per clade.
+    # "Scoring-eligible" means the clade is a descendant of (or equal to) the child
+    # endpoint of the orthogroup's origin transition block — a direct tree-structural
+    # check under Rule 7, replacing the earlier sampling-based path test.
+    logger.info( "STEP 3: Determining scoring-eligible and actually-present orthogroups per clade..." )
+    clade_id_names___orthogroups_eligible_for_scoring_at_this_clade, \
+        clade_id_names___orthogroups_actually_present_at_this_clade = build_clade_orthogroups(
         orthogroups___origin_data,
-        orthogroups___species,
-        clades___descendant_species,
-        species_names___phylogenetic_paths
+        orthogroups___species_clade_id_names,
+        clade_id_names___descendant_species_clade_id_names,
+        clade_id_names___descendant_clade_id_names
     )
     logger.info( "" )
 
-    # STEP 4: Calculate conservation and loss per block
-    logger.info( "STEP 4: Calculating conservation and loss per block..." )
+    # STEP 4: Classify each (block, orthogroup) pair into a block-state and aggregate.
+    logger.info( "STEP 4: Classifying block-states and aggregating per-block statistics..." )
     block_statistics = calculate_conservation_loss(
         parents___children,
-        clades___inherited_orthogroups,
-        clades___present_orthogroups
+        clade_id_names___orthogroups_eligible_for_scoring_at_this_clade,
+        clade_id_names___orthogroups_actually_present_at_this_clade
     )
     logger.info( "" )
 
-    # STEP 5: Analyze conservation patterns per orthogroup
-    logger.info( "STEP 5: Analyzing conservation patterns per orthogroup..." )
+    # STEP 5: Aggregate per-orthogroup block-state counts.
+    logger.info( "STEP 5: Aggregating per-orthogroup block-state counts..." )
     orthogroup_patterns = analyze_orthogroup_patterns(
         orthogroups___origin_data,
-        orthogroups___species,
+        orthogroups___species_clade_id_names,
         parents___children,
-        clades___inherited_orthogroups,
-        clades___present_orthogroups
+        clade_id_names___orthogroups_eligible_for_scoring_at_this_clade,
+        clade_id_names___orthogroups_actually_present_at_this_clade
     )
     logger.info( "" )
 

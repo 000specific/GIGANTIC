@@ -79,12 +79,78 @@ BLOCK_permutations_and_features/
 
 ## Key Concepts
 
-### Clade Identifiers
-- Format: CXXX (e.g., C001, C068, C079)
+### Clade Identifiers — Topologically-Structured Species Sets
+
+Clade IDs produced by this BLOCK identify **topologically-structured species
+sets** — a combination of (1) a specific set of descendant species and
+(2) the topological arrangement of those species in the subtree. Two clades
+across different structures are the SAME clade (same `clade_id_name`, e.g.,
+`C082_Metazoa`) if and only if BOTH match.
+
+**Assignment policy (script 003):**
+- Format: `CXXX` (e.g., C001, C068, C079), combined with a human-readable
+  name into `clade_id_name` like `C082_Metazoa` as the canonical atomic
+  identifier
 - Species retain their original IDs across all structures
-- Internal nodes in structure_001 retain original IDs
-- Structures 002+ get new IDs for internal nodes (starting after max existing)
-- The variable root label identifies where permutations happen
+- Internal nodes of `structure_001` (user's input species tree) retain
+  original IDs
+- For `structure_002` onward: each internal node's **canonical
+  topological signature** (alphabetically-sorted Newick of its species
+  subset, using unresolved clade names as leaves) is computed; if the
+  signature matches a clade already registered in an earlier structure,
+  that clade's existing ID is **reused**. If the signature is new, a new
+  `C{next}` ID is minted.
+- Result: the same biological clade (same species + same arrangement) has
+  the same `clade_id_name` across every structure it appears in. The
+  registry's `appears_in_structures` column tracks which candidate
+  structures each clade belongs to.
+
+**Cross-structure use**: downstream subprojects (e.g., `orthogroups_X_ocl`
+and the planned `occams_tree`) can treat `clade_id_name` as a globally
+stable key for a biological clade. No structure-prefixed composite
+identifier is needed.
+
+**Auto-naming**: ambiguous-zone internal clades with no literature name
+get placeholder names like `Clade_069`. The `clade_id` is the semantic
+identifier; the name is a display label. Users may rename later if
+desired; the pipeline does not depend on name uniqueness beyond the
+`clade_id_name` composite.
+
+**Sibling-order invariance (applies at arbitrary depth)**:
+In phylogenetic trees, `(species_A, species_B)` and `(species_B, species_A)`
+represent the same topological grouping — sibling order in a Newick string
+is a representational detail, not biology. The canonical signature
+computation (`get_canonical_structure()` in script 003) enforces this
+invariance by alphabetically sorting children's signatures before joining
+them, **at every recursion level**. So the invariance holds for arbitrarily
+deep nesting:
+
+- `((A,B),C)`, `((B,A),C)`, `(C,(A,B))` all → `((A,B),C)` (same canonical)
+- `(((A,B),C),D)`, `(D, (C, (A,B)))`, `(D, ((B,A), C))` all → `(((A,B),C),D)`
+
+All receive the same `clade_id_name`. In contrast, `((A,C),B)` maps to
+`((A,C),B)` — correctly different, because A+C is a different biological
+grouping than A+B.
+
+**Scope — rooted trees only**:
+This canonicalization applies to ROOTED trees, which is exactly what this
+BLOCK produces (every structure has an explicit root/basal node). For
+rooted trees, `(A, (B,C))` and `((A,B), C)` encode different biological
+groupings and correctly receive different canonical signatures. Unrooted-
+tree equivalence (where those two would be considered equivalent) is a
+different computation entirely (based on bipartition sets) and out of scope
+for GIGANTIC's species tree analyses — species trees here are always
+rooted.
+
+The annotated Newick files emitted by this BLOCK preserve input child
+order (for readability / debugging), but clade ID assignments are
+already made on canonical equality, so downstream pipelines should use
+`clade_id_name` as the atomic identifier rather than parse Newick child
+order.
+
+For the full canonical definition, see Rule 6 in the project's
+`AI_GUIDE-project.md` or the Terminology section of
+`../README.md`.
 
 ### Phylogenetic Blocks
 - Format: `Parent_ID_Name::Child_ID_Name` (e.g., `C068_Basal::C069_Bilateria`)

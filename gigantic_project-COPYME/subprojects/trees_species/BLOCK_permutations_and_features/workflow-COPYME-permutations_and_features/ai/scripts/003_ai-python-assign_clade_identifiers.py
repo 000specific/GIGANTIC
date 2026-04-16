@@ -6,15 +6,40 @@
 GIGANTIC trees_species - Script 003: Assign Clade Identifiers
 
 Purpose:
-    Assign consistent clade IDs and names to all topology permutations.
+    Assign consistent clade IDs and names across all topology permutations,
+    treating each clade as a TOPOLOGICALLY-STRUCTURED SPECIES SET.
 
-    Strategy:
-    1. For structure_001: Use the original species tree with its clade IDs
-    2. For structures 002+: Reuse existing clade IDs where canonical subtree
-       structure matches, assign new IDs starting after the highest existing ID
+    A `clade_id_name` (e.g., `C082_Metazoa`) identifies a unique combination
+    of (1) a specific set of descendant species and (2) the topological
+    arrangement of those species within this clade's subtree. Two clades
+    across different candidate species tree structures are the SAME clade
+    (same `clade_id_name`) if and only if BOTH match. Different species
+    content OR different arrangement = different biological clade with a
+    different ID.
 
-    New clade IDs are assigned when a topology creates a grouping that does
-    not exist in structure_001.
+    See Rule 6 in the project-level AI_GUIDE-project.md and the Terminology
+    section of trees_species/README.md for the full canonical definition.
+
+    Assignment strategy:
+    1. For structure_001 (the user's input species tree): use the original
+       clade IDs from the annotated newick.
+    2. For structures 002+: compute each internal node's canonical
+       topological signature (alphabetically-sorted Newick of its species
+       subset, using unresolved clade names as leaves). If the signature
+       matches a clade already registered from an earlier structure, reuse
+       that clade's ID. If the signature is novel, mint a new C{next} ID.
+
+    This policy makes `clade_id_name` a GLOBALLY STABLE identifier: named
+    clades outside the unresolved zone (Metazoa, Bilateria, etc.) receive
+    the same ID in every one of the (2N-3)!! structures. Ambiguous-zone
+    internal groupings like `(Bilateria, Cnidaria)` vs `(Bilateria,
+    Placozoa)` are different biological clades and receive different IDs;
+    an identical grouping appearing in multiple candidate topologies gets
+    the same ID.
+
+    Downstream subprojects (orthogroups_X_ocl, the planned occams_tree) can
+    safely use `clade_id_name` as a cross-structure key without further
+    composition.
 
 Inputs:
     --workflow-dir: Workflow root directory
@@ -24,6 +49,9 @@ Inputs:
 
 Outputs:
     OUTPUT_pipeline/3-output/3_ai-clade_topology_registry.tsv
+        Registry with one row per unique clade: clade_id, clade_name,
+        canonical_structure signature, and `appears_in_structures` column
+        tracking which candidate topologies contain this clade.
     OUTPUT_pipeline/3-output/newick_trees/ (annotated newick files per structure)
 """
 
@@ -71,13 +99,58 @@ class TreeNode:
 
     def get_canonical_structure( self, unresolved_names: List[ str ] ) -> str:
         """
-        Get the canonical structure of this subtree.
-        For leaves: return the clade name (unresolved clade name if applicable)
-        For internal nodes: return alphabetically-ordered Newick structure
+        Compute the canonical topological signature of this subtree — the
+        key that defines a TOPOLOGICALLY-STRUCTURED SPECIES SET (see script
+        docstring for the canonical definition).
 
-        Memoized on self._canonical_cache: the result is a deterministic function
-        of the subtree structure, so caching avoids O(N²) recomputation when
-        assign_clade_ids() walks the tree bottom-up calling this on each node.
+        The signature is an alphabetically-sorted Newick-like string of this
+        clade's species subset (using unresolved clade names as leaves, not
+        expanding their internal structure). Two clades across different
+        species tree structures are the SAME clade if and only if they have
+        identical canonical signatures. New clades are minted when a novel
+        signature is seen; reused when an existing signature matches.
+
+        Leaves: return the clade name (unresolved clade name if applicable)
+        Internal nodes: return alphabetically-ordered Newick of children's signatures
+
+        SIBLING-ORDER INVARIANCE (important property):
+        In phylogenetic trees, `(species_A, species_B)` and `(species_B, species_A)`
+        represent the SAME topological grouping — sibling order in a Newick string
+        is a representational detail, not biology. The `child_structures.sort()`
+        call below enforces this invariance by alphabetically sorting children's
+        canonical signatures before joining them, at every recursion level.
+
+        The sort applies AT EVERY DEPTH, so the invariance holds for arbitrarily
+        deep nesting:
+            `(((A,B),C),D)`, `(D, (C, (A,B)))`, `(D, ((B,A), C))` all → `(((A,B),C),D)`
+        Each recursion level canonicalizes its children before returning, so
+        upper levels receive already-canonicalized subtree signatures and sort
+        them in turn. A tree of any depth collapses to one canonical form if
+        and only if it represents one biological topology.
+
+        In contrast, `((A,C),B)` stays distinct from `((A,B),C)` — correctly,
+        because A+C is a different biological grouping than A+B.
+
+        SCOPE — ROOTED TREES ONLY:
+        This canonicalization applies to ROOTED trees, which is exactly what
+        GIGANTIC's trees_species pipeline produces (every structure has an
+        explicit root/basal node). For rooted trees, `(A,(B,C))` and
+        `((A,B),C)` encode genuinely different biological groupings and
+        correctly receive different canonical signatures.
+        For UNROOTED trees (not produced here), those two would be equivalent
+        under unrooted-tree equivalence, which requires a different signature
+        based on bipartition sets — out of scope for this BLOCK.
+
+        Note: tree_to_newick() below preserves input child order (not canonical
+        order) when writing output Newick files. Clade IDs are still invariant
+        across re-orderings because they are assigned by canonical-signature
+        equality. Downstream code should use `clade_id_name` as the atomic
+        identifier rather than relying on child order in the emitted Newick.
+
+        Memoized on self._canonical_cache: the result is a deterministic
+        function of the subtree structure, so caching avoids O(N²)
+        recomputation when assign_clade_ids() walks the tree bottom-up
+        calling this on each node.
         """
         if self._canonical_cache is not None:
             return self._canonical_cache
@@ -102,7 +175,15 @@ class TreeNode:
 
 
 def parse_topology_newick( newick_string: str ) -> TreeNode:
-    """Parse a simple topology Newick tree string into a TreeNode structure."""
+    """Parse a simple topology Newick tree string into a TreeNode structure.
+
+    The parser uses a sentinel TreeNode at the bottom of its stack to receive
+    the first parsed `(...)` group as a child. After parsing completes, the
+    sentinel is unwrapped and the actual tree root is returned. Without this
+    unwrap, the sentinel would persist as a labeled internal node above the
+    real root once `assign_clade_ids` walked the tree, producing an extra
+    non-branching internal node in every parsed permutation topology.
+    """
     newick_string = newick_string.strip()
     if newick_string.endswith( ';' ):
         newick_string = newick_string[ :-1 ]
@@ -150,11 +231,30 @@ def parse_topology_newick( newick_string: str ) -> TreeNode:
 
         i += 1
 
-    return stack[ 0 ]
+    # Unwrap the parser sentinel: if stack[0] is the unlabeled empty wrapper
+    # holding exactly one child, return that child as the actual tree root.
+    sentinel = stack[ 0 ]
+    if (
+        sentinel.name == ''
+        and sentinel.clade_id is None
+        and len( sentinel.children ) == 1
+    ):
+        actual_root = sentinel.children[ 0 ]
+        actual_root.parent = None
+        return actual_root
+
+    return sentinel
 
 
 def parse_annotated_newick( newick_string: str ) -> TreeNode:
-    """Parse an annotated Newick tree (with CXXX_Name:length labels)."""
+    """Parse an annotated Newick tree (with CXXX_Name:length labels).
+
+    Same parser-sentinel unwrap as `parse_topology_newick` (see that function's
+    docstring for why this matters). For structure_001, the downstream
+    `extract_and_register_clade_info` filters on `clade_id`, so the sentinel
+    was previously masked here; the unwrap removes the artifact at the source
+    so both Script 003 code paths handle the parsed tree consistently.
+    """
     newick_string = newick_string.strip()
     if newick_string.endswith( ';' ):
         newick_string = newick_string[ :-1 ]
@@ -217,7 +317,18 @@ def parse_annotated_newick( newick_string: str ) -> TreeNode:
 
         i += 1
 
-    return stack[ 0 ]
+    # Unwrap the parser sentinel: see `parse_topology_newick` for the rationale.
+    sentinel = stack[ 0 ]
+    if (
+        sentinel.name == ''
+        and sentinel.clade_id is None
+        and len( sentinel.children ) == 1
+    ):
+        actual_root = sentinel.children[ 0 ]
+        actual_root.parent = None
+        return actual_root
+
+    return sentinel
 
 
 def tree_to_newick( node: TreeNode ) -> str:

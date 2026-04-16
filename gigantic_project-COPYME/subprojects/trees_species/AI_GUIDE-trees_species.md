@@ -71,12 +71,33 @@ vary across alternative topologies.
 - Example: 5 clades → 105 topologies
 - Zero permutations is valid (single species tree mode — see "Resolved vs Unresolved Input Species Tree" in `README.md`)
 
-### Clade Identifiers
+### Clade Identifiers — Topologically-Structured Species Sets
 
-Each node in the species tree has a permanent clade ID (e.g., C001, C068, C134):
-- C001-C067: Terminal species in the original tree
-- C068-C133: Internal nodes in the original tree (structure_001)
-- C134+: New internal nodes created by permutation (structures 002-105)
+Each clade has a permanent identifier `clade_id_name` (e.g., `C082_Metazoa`)
+that identifies a **topologically-structured species set**: a specific
+combination of (1) descendant species and (2) their branching arrangement.
+Two clades across different species tree structures are the SAME clade if
+and only if both match. Numerical ranges (illustrative):
+- C001 onward: Terminal species in the original tree
+- Internal nodes of structure_001 (user's input species tree) retain their
+  original IDs
+- Novel internal groupings minted during permutation of unresolved clades
+  receive new IDs starting after the max existing
+
+The assignment is **biologically content-driven** via canonical topological
+signatures (see `BLOCK_permutations_and_features/AI_GUIDE-permutations_and_features.md`
+"Clade Identifiers — Topologically-Structured Species Sets" for mechanism).
+If the same ambiguous-zone grouping appears in multiple candidate topologies,
+it receives the SAME ID. Named clades outside the unresolved zone (Metazoa,
+Bilateria, etc.) have globally stable IDs across all 105 structures.
+
+Downstream consumers (`orthogroups_X_ocl`, the planned `occams_tree`) use
+`clade_id_name` as an atomic cross-structure key — never split into
+`clade_id` and `clade_name` for lookups.
+
+See `README.md` Terminology section (rule "Clade IDs as Topologically-
+Structured Species Sets") and Rule 6 of `../../AI_GUIDE-project.md` for the
+canonical definition.
 
 ### Structure Numbering
 

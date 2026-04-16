@@ -252,7 +252,36 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-nextflow run ai/main.nf ${RESUME_FLAG}
+# Parallelism mode selects the NextFlow profile from ai/nextflow.config:
+#   "slurm" -> process.executor = 'slurm' (each task is its own sbatch)
+#   "local" -> process.executor = 'local' (tasks run in parallel here)
+PARALLELISM_MODE=$(read_config "parallelism_mode" "local")
+case "${PARALLELISM_MODE}" in
+    slurm) PROFILE_FLAG="-profile slurm" ;;
+    local) PROFILE_FLAG="-profile standard" ;;
+    *)
+        echo "ERROR: unknown parallelism_mode: '${PARALLELISM_MODE}'"
+        echo "Valid values: 'slurm' | 'local' (see START_HERE-user_config.yaml)"
+        exit 1
+        ;;
+esac
+echo "  parallelism_mode: ${PARALLELISM_MODE} (nextflow ${PROFILE_FLAG})"
+
+# Pipe SLURM account/QOS from START_HERE-user_config.yaml into nextflow.config
+# via --param CLI args so nextflow.config never needs hand-edited duplicates.
+# Re-read here because the outer SLURM_ACCOUNT/SLURM_QOS shell vars (if set)
+# only exist in the self-submitting branch above, not when re-invoked by sbatch.
+NEXTFLOW_SLURM_ACCOUNT=$(read_config "slurm_account" "")
+NEXTFLOW_SLURM_QOS=$(read_config "slurm_qos" "")
+NEXTFLOW_PARAMS=""
+if [ -n "${NEXTFLOW_SLURM_ACCOUNT}" ]; then
+    NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_account=${NEXTFLOW_SLURM_ACCOUNT}"
+fi
+if [ -n "${NEXTFLOW_SLURM_QOS}" ]; then
+    NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_qos=${NEXTFLOW_SLURM_QOS}"
+fi
+
+nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} ${NEXTFLOW_PARAMS}
 
 EXIT_CODE=$?
 
@@ -310,7 +339,7 @@ if [ -d "OUTPUT_pipeline/4-output/newick_trees" ]; then
     mkdir -p "${SHARED_DIR}/Species_Tree_Structures"
     for item in OUTPUT_pipeline/4-output/newick_trees/*.newick; do
         if [ -f "$item" ]; then
-            ln -sf "../../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/newick_trees/$(basename "$item")" \
+            ln -sf "../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/newick_trees/$(basename "$item")" \
                 "${SHARED_DIR}/Species_Tree_Structures/$(basename "$item")"
         fi
     done
@@ -319,7 +348,7 @@ if [ -d "OUTPUT_pipeline/4-output/newick_trees" ]; then
         if [ -f "$item" ]; then
             # Extract the relative path component (e.g., 2-output/newick_trees/file.newick)
             rel_path="${item#OUTPUT_pipeline/}"
-            ln -sf "../../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${rel_path}" \
+            ln -sf "../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${rel_path}" \
                 "${SHARED_DIR}/Species_Tree_Structures/$(basename "$item")"
         fi
     done
@@ -332,7 +361,7 @@ if [ -d "OUTPUT_pipeline/5-output" ]; then
             mkdir -p "${SHARED_DIR}/Species_Parent_Sibling_Sets"
             for item in "$dir"/*.tsv; do
                 if [ -f "$item" ]; then
-                    ln -sf "../../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/$(basename "$dir")/$(basename "$item")" \
+                    ln -sf "../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/$(basename "$dir")/$(basename "$item")" \
                         "${SHARED_DIR}/Species_Parent_Sibling_Sets/$(basename "$item")"
                 fi
             done
@@ -347,7 +376,7 @@ if [ -d "OUTPUT_pipeline/5-output" ]; then
             mkdir -p "${SHARED_DIR}/Species_Parent_Child_Relationships"
             for item in "$dir"/*.tsv; do
                 if [ -f "$item" ]; then
-                    ln -sf "../../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/$(basename "$dir")/$(basename "$item")" \
+                    ln -sf "../../../BLOCK_permutations_and_features/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/$(basename "$dir")/$(basename "$item")" \
                         "${SHARED_DIR}/Species_Parent_Child_Relationships/$(basename "$item")"
                 fi
             done
