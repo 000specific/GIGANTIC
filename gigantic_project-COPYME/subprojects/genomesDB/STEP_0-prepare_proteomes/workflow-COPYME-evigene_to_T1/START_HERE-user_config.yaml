@@ -1,0 +1,83 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# EvidentialGene T0/T1 Proteome Extraction Configuration
+# AI: Claude Code | Opus 4.6 (1M context) | 2026 April 18
+# Human: Eric Edsinger
+#
+# ============================================================================
+# WHAT IS EVIDENTIALGENE?
+# ============================================================================
+#
+# EvidentialGene (evigene) is a pipeline for de novo transcriptome assembly
+# that combines multiple assemblers and selects the best transcript per locus.
+# It produces an "okayset" directory containing okay.aa (protein sequences)
+# classified as:
+#
+#   main    = Best representative transcript per locus (one per gene)
+#   alt     = Alternative transcripts (splice variants, alternate assemblies)
+#   noclass = Transcripts that did not pass quality filters
+#
+# ============================================================================
+# WHAT ARE T0 AND T1?
+# ============================================================================
+#
+# GIGANTIC uses transcript-level labels:
+#
+#   T1 = main transcripts only (one protein per locus)
+#        This is what most GIGANTIC analyses need.
+#
+#   T0 = main + alt (all non-redundant transcripts, excluding noclass)
+#        Use when you want splice variants and alternative assemblies.
+#
+# This workflow reads the evigene okay.aa file, parses the evgclass= tag
+# in each FASTA header, and produces separate T1 and T0 output files.
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# 1. Set your species name (Genus_species format)
+# 2. Set the path to your evigene okayset okay.aa file
+# 3. Run: bash RUN-workflow.sh
+#
+# ============================================================================
+
+# ============================================================================
+# SPECIES SETTINGS (EDIT THESE)
+# ============================================================================
+
+species:
+  # Species name in Genus_species format
+  # Example: "Mnemiopsis_leidyi", "Pleurobrachia_bachei"
+  name: "Genus_species"
+
+# ============================================================================
+# INPUT SETTINGS (EDIT THESE)
+# ============================================================================
+
+input:
+  # Path to the EvidentialGene okayset okay.aa file
+  # This is the main protein output from an evigene run.
+  # Can be absolute or relative to this workflow directory.
+  #
+  # Typical location: your_evigene_run/okayset/your_species.okay.aa
+  #
+  # Example: "/path/to/evigene_run/okayset/Mnemiopsis_leidyi.okay.aa"
+  evigene_okay_aa: "INPUT_user/your_species.okay.aa"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory for all pipeline output
+  base_dir: "OUTPUT_pipeline"

@@ -26,6 +26,9 @@ cd "${SCRIPT_DIR}"
 # Activate Environment
 # ============================================================================
 
+# Disable NextFlow telemetry/update checks (prevents curl hangs on compute nodes)
+export NXF_OFFLINE=true
+
 module load conda 2>/dev/null || true
 
 if conda activate ai_gigantic_trees_gene_families 2>/dev/null; then

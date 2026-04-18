@@ -190,7 +190,7 @@ structure_clade_pairs___phylogenetic_blocks = {}
 
 # Script 006 output format (4 columns):
 # Structure_ID (tree topology structure identifier)	Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)	Parent_Clade_ID_Name (atomic parent clade identifier e.g. C082_Metazoa)	Child_Clade_ID_Name (atomic child clade identifier e.g. C086_Ctenophora)
-# structure_001	C000_Pre_Basal::C071_Basal	C000_Pre_Basal	C071_Basal
+# structure_001	C000_OOL::C071_Basal	C000_OOL	C071_Basal
 with open( input_phylogenetic_blocks_path, 'r' ) as input_file:
     header_line = input_file.readline().strip()
     header_columns = header_line.split( '\t' )

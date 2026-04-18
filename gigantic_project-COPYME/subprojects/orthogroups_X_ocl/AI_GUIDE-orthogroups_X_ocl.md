@@ -123,6 +123,33 @@ historical: A lives upstream of the origin (orthogroup never arose in this
 part of the tree), X lives downstream of a loss (orthogroup was present
 upstream and has been lost).
 
+### Phylogenetic Paths and Path-States
+
+A **phylogenetic path** is a chain of consecutive phylogenetic blocks — the
+walk from the conceptual biological parent of the species-tree root
+(`C000_OOL`, Origin Of Life — see Rule 7) down to one species. Every species
+in the structure has exactly one phylogenetic path. `trees_species`
+synthesizes `C000_OOL` automatically so every path begins with
+`C000_OOL,<root_clade_id_name>,...`.
+
+A **phylogenetic path-state** is a path paired with a specific orthogroup's
+state on each block of the path, written as the concatenated five-state
+letters in OOL-end-to-species-end order (e.g. `AAAOPLXX`). Script 004 emits
+one path-state per (orthogroup, species) pair into
+`4_ai-path_states-per_orthogroup_per_species.tsv`:
+
+| Column | Description |
+|---|---|
+| `Orthogroup_ID` | Orthogroup identifier |
+| `Species_Clade_ID_Name` | Atomic species clade identifier |
+| `Species_In_Orthogroup` | True if this species is in the orthogroup, False otherwise |
+| `Phylogenetic_Path` | Comma-delimited OOL-to-species atomic clade identifiers |
+| `Phylogenetic_Path_State` | OOL-to-species letters, one per phylogenetic block |
+
+Path-state letters follow the regular pattern `A* [O [P* [L X*]?]?]?`: zero
+or more A's, an optional O, zero or more P's, an optional L, and zero or more
+X's. Script 005 CHECK 8 enforces this invariant across every row.
+
 Full specification with mathematical definitions, identifier hierarchy, prose
 conventions, and implementation notes:
 `research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`.

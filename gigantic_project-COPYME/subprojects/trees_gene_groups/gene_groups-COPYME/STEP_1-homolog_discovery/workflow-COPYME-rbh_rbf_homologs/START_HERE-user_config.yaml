@@ -36,10 +36,47 @@ gene_family:
   # Name of the gene family being analyzed (used in output filenames)
   name: "innexin_pannexin"
 
-  # Path to the RGS FASTA file for this gene family
-  # Filename format: rgs_{category}-{species}-{gene_family_details}.aa
-  # Header format: >rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
-  rgs_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+  # Path to the full-length RGS FASTA file (ALWAYS REQUIRED)
+  # This file contains full-length protein sequences for the gene family.
+  # Used directly for BLAST when rgs_sequence_is_full_length is true.
+  # Used for full-length restoration in the final AGS when false.
+  rgs_full_length_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+
+  # ---- RGS Sequence Type ----
+  # Is the RGS a full-length protein or a domain subsequence?
+  #
+  #   true  = full-length proteins (DEFAULT, most gene families)
+  #           Pipeline uses rgs_full_length_file for BLAST discovery.
+  #
+  #   false = domain-only sequences (e.g., TRP pore regions)
+  #           Pipeline uses rgs_subsequence_file for BLAST discovery,
+  #           then restores full-length sequences in the final AGS.
+  #           You MUST also set rgs_subsequence_file below.
+  #
+  rgs_sequence_is_full_length: true
+
+  # Path to the SUBSEQUENCE RGS FASTA
+  # REQUIRED when rgs_sequence_is_full_length is false.
+  # Contains the subsequence-only sequences used for BLAST homolog discovery.
+  # Headers must match rgs_full_length_file exactly, with '_subsequence' appended.
+  #
+  # Example (TRP pore regions):
+  #   Full-length header:   >rgs-Q8NER1-trp_channels-human-TRPV1-uniprot
+  #   Subsequence header:   >rgs-Q8NER1-trp_channels-human-TRPV1-uniprot_subsequence
+  #
+  # rgs_subsequence_file: "INPUT_user/rgs_pore_region.aa"
+
+  # ---- Orphan RGS ----
+  # Include RGS sequences whose source species has no genome in the species set
+  # as reciprocal BLAST targets. This allows gene assignments for seeds like
+  # FLYC1 (venus flytrap) or TRPC2 (mouse) when their species isn't in the
+  # BLAST databases. Without this, those sequences pass the filter but get
+  # assigned to the closest available gene instead of the correct one.
+  #
+  #   true  = append orphan RGS to the modified genomes for reciprocal BLAST
+  #   false = do not include orphan RGS (DEFAULT)
+  #
+  include_orphan_rgs: false
 
 # ============================================================================
 # INPUT PATHS (EDIT THESE)
@@ -59,12 +96,12 @@ inputs:
   # BLAST protein databases directory (REQUIRED)
   # Path to directory containing per-species .aa BLAST database files
   # From genomesDB subproject: ../../../genomesDB/output_to_input/gigantic_T1_blastp/
-  blast_databases_dir: "../../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
+  blast_databases_dir: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
   # RGS genomes directory (REQUIRED)
   # Directory containing genome .aa files for RGS species
   # Usually the same as blast_databases_dir
-  rgs_genomes_dir: "../../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
+  rgs_genomes_dir: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
 # ============================================================================
 # PROJECT SETTINGS
@@ -137,6 +174,7 @@ slurm_qos: "your_qos"
 #   013: Extract candidate gene sequences (CGS)
 #   014: Filter species by keeper list
 #   016: Concatenate RGS + CGS into final AGS (All Gene Set)
+#   018: Restore full-length RGS sequences in AGS (optional, when using domain-restricted RGS)
 #
 # NOTE: Script 015 (identifier remapping) was removed because BLAST v5
 #       databases preserve full GIGANTIC identifiers without truncation.

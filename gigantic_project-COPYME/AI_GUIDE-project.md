@@ -243,12 +243,21 @@ Blocks and paths are the same substrate viewed at two granularities:
 - A **phylogenetic block** is the atomic unit — one parent-to-child edge of a
   species tree structure.
 - A **phylogenetic path** is a chain of consecutive phylogenetic blocks — the
-  walk from the root of a species tree structure down to one tip species.
-  Every species in the structure has exactly one phylogenetic path. The path
-  is literally a sequence of blocks laid end-to-end.
+  walk from the conceptual biological parent of the species-tree root down
+  to one species. Every species in the structure has exactly one phylogenetic
+  path. The path is literally a sequence of blocks laid end-to-end.
+
+  Every path begins at `C000_OOL` — Origin Of Life — which GIGANTIC treats as
+  the conceptual biological parent of any user-provided rooted species tree.
+  OOL is not a synthetic parsing device: every real clade ultimately descends
+  from OOL, so including it at the start of every path is biologically
+  accurate and gives the phylogenetic block INTO the species-tree root the
+  same representation as every other block. `trees_species` synthesizes OOL
+  automatically when processing the user's species tree — users do not need
+  to add it themselves.
 
 Written `start_clade_id_name>>end_clade_id_name` (e.g.
-`C000_Pre_Basal>>C040_Caenorhabditis_elegans`) using `>>` to distinguish from
+`C000_OOL>>C040_Caenorhabditis_elegans`) using `>>` to distinguish from
 block's `::`. Feature-agnostic: the path is a structural fact about the
 species tree.
 
@@ -421,7 +430,8 @@ the dependency shape of the work, not on personal preference.
 no meaning without `STEP_N` having run first. The user always runs them in order,
 end to end.
 
-- Examples: `genomesDB` (STEP_1 sources → STEP_2 standardize → STEP_3 databases
+- Examples: `genomesDB` (STEP_0 prepare proteomes [optional, evigene T1 extraction]
+  → STEP_1 sources → STEP_2 standardize → STEP_3 databases
   → STEP_4 final species set), `trees_gene_families` (STEP_1 homolog discovery
   → STEP_2 phylogenetic analysis)
 - Naming: `STEP_N-short_descriptor/`

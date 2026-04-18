@@ -108,30 +108,30 @@ input_directory_3 = base_output / '3-output'
 input_directory_4 = base_output / '4-output'
 
 # Input files from Script 001
-INPUT_ORTHOGROUPS = input_directory_1 / '1_ai-orthogroups-gigantic_identifiers.tsv'
-INPUT_PHYLOGENETIC_PATHS = input_directory_1 / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
+INPUT_ORTHOGROUPS = input_directory_1 / f'1_ai-{TARGET_STRUCTURE}_orthogroups-gigantic_identifiers.tsv'
+INPUT_PHYLOGENETIC_PATHS = input_directory_1 / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
 
 # Input files from Script 002
-INPUT_ORIGINS = input_directory_2 / '2_ai-orthogroup_origins.tsv'
+INPUT_ORIGINS = input_directory_2 / f'2_ai-{TARGET_STRUCTURE}_orthogroup_origins.tsv'
 
 # Input files from Script 003
-INPUT_BLOCK_STATS = input_directory_3 / '3_ai-conservation_loss-per_block.tsv'
-INPUT_ORTHOGROUP_PATTERNS = input_directory_3 / '3_ai-conservation_patterns-per_orthogroup.tsv'
+INPUT_BLOCK_STATS = input_directory_3 / f'3_ai-{TARGET_STRUCTURE}_conservation_loss-per_block.tsv'
+INPUT_ORTHOGROUP_PATTERNS = input_directory_3 / f'3_ai-{TARGET_STRUCTURE}_conservation_patterns-per_orthogroup.tsv'
 
 # Input files from Script 004
-INPUT_ORTHOGROUP_COMPLETE = input_directory_4 / '4_ai-orthogroups-complete_ocl_summary.tsv'
-INPUT_CLADE_STATS = input_directory_4 / '4_ai-clades-comprehensive_statistics.tsv'
-INPUT_SPECIES_SUMMARIES = input_directory_4 / '4_ai-species-summaries.tsv'
-INPUT_PATH_STATES = input_directory_4 / '4_ai-path_states-per_orthogroup_per_species.tsv'
+INPUT_ORTHOGROUP_COMPLETE = input_directory_4 / f'4_ai-{TARGET_STRUCTURE}_orthogroups-complete_ocl_summary.tsv'
+INPUT_CLADE_STATS = input_directory_4 / f'4_ai-{TARGET_STRUCTURE}_clades-comprehensive_statistics.tsv'
+INPUT_SPECIES_SUMMARIES = input_directory_4 / f'4_ai-{TARGET_STRUCTURE}_species-summaries.tsv'
+INPUT_PATH_STATES = input_directory_4 / f'4_ai-{TARGET_STRUCTURE}_path_states-per_orthogroup_per_species.tsv'
 
 # Output directory
 output_directory = base_output / '5-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
 # Output files
-OUTPUT_VALIDATION_REPORT = output_directory / '5_ai-validation_report.txt'
-OUTPUT_ERROR_LOG = output_directory / '5_ai-validation_error_log.txt'
-OUTPUT_QC_METRICS = output_directory / '5_ai-qc_metrics.tsv'
+OUTPUT_VALIDATION_REPORT = output_directory / f'5_ai-{TARGET_STRUCTURE}_validation_report.txt'
+OUTPUT_ERROR_LOG = output_directory / f'5_ai-{TARGET_STRUCTURE}_validation_error_log.txt'
+OUTPUT_QC_METRICS = output_directory / f'5_ai-{TARGET_STRUCTURE}_qc_metrics.tsv'
 
 # Log directory
 log_directory = base_output / 'logs'
@@ -842,10 +842,28 @@ def validate_path_states( species_clade_id_names___phylogenetic_paths ):
                 failed += 1
                 continue
 
-            # 3b. Letter-sequence regularity via state-machine walk
+            # 3b. Letter-sequence regularity via state-machine walk.
+            #
+            # Rule 7 valid path-state sequences (on a species's phylogenetic path
+            # from C000_OOL end to species end). Because C000_OOL is included in
+            # every species path as the conceptual biological parent of the
+            # species-tree root, every path carries the phylogenetic block INTO
+            # the root clade, so root-origin orthogroups also produce a path-state
+            # starting with A (OOL block) that then transitions to O at the
+            # OOL::root block.
+            #
+            #   - A*                  feature never reached this lineage
+            #   - A* O P*             origin on-path, inherited through species
+            #   - A* O P* L X*        origin on-path, inherited, then lost, then
+            #                         inherited absence after the loss
+            #
+            # State machine:
+            #   before_origin  A -> before_origin   O -> after_origin
+            #   after_origin   P -> after_origin    L -> after_loss
+            #   after_loss     X -> after_loss
+            # Any other transition is a violation.
             state_machine_violation = False
-            phase = 'before_origin'  # before_origin -> after_origin -> after_loss
-            previous_letter = None
+            phase = 'before_origin'
             for letter in phylogenetic_path_state:
                 if phase == 'before_origin':
                     if letter == 'A':
@@ -869,37 +887,46 @@ def validate_path_states( species_clade_id_names___phylogenetic_paths ):
                     else:
                         state_machine_violation = True
                         break
-                previous_letter = letter
 
             if state_machine_violation:
                 errors.append( {
                     'check': 'state_sequence',
                     'orthogroup_id': orthogroup_id,
                     'species_clade_id_name': species_clade_id_name,
-                    'error': f"Path-state '{phylogenetic_path_state}' violates Rule 7 sequence A* [O [P* [L] X*]]"
+                    'error': ( f"Path-state '{phylogenetic_path_state}' violates Rule 7 sequence "
+                               f"A* [O [P* [L X*]?]?]?" )
                 } )
                 failed += 1
                 continue
 
-            # 3c. Terminal letter must match species membership
+            # 3c. Terminal letter must match species membership.
+            #
+            # If species IS in the orthogroup, the feature is present at the
+            # species tip, so the terminal block has child_present=True. That
+            # means terminal letter is P (inherited presence) or O (origin at
+            # the species's own leaf block — species-specific orthogroup case).
+            #
+            # If species is NOT in the orthogroup, the terminal block has
+            # child_present=False, so terminal letter is A (pre-origin), L
+            # (loss at tip block), or X (inherited post-loss absence).
             if phylogenetic_path_state:
                 terminal_letter = phylogenetic_path_state[ -1 ]
-                if species_in_orthogroup and terminal_letter != 'P':
+                if species_in_orthogroup and terminal_letter not in ( 'P', 'O' ):
                     errors.append( {
                         'check': 'terminal_membership',
                         'orthogroup_id': orthogroup_id,
                         'species_clade_id_name': species_clade_id_name,
                         'error': ( f"Species_In_Orthogroup=True but path-state ends with '{terminal_letter}' "
-                                   f"(expected P)" )
+                                   f"(expected P or O)" )
                     } )
                     failed += 1
                     continue
-                if ( not species_in_orthogroup ) and terminal_letter == 'P':
+                if ( not species_in_orthogroup ) and terminal_letter in ( 'P', 'O' ):
                     errors.append( {
                         'check': 'terminal_membership',
                         'orthogroup_id': orthogroup_id,
                         'species_clade_id_name': species_clade_id_name,
-                        'error': ( f"Species_In_Orthogroup=False but path-state ends with 'P' "
+                        'error': ( f"Species_In_Orthogroup=False but path-state ends with '{terminal_letter}' "
                                    f"(species would have the orthogroup)" )
                     } )
                     failed += 1

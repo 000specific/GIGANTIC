@@ -713,15 +713,21 @@ if not unresolved_clade_names or len( unresolved_clade_names ) <= 1 or variable_
     print( f"  Written: {output_clade_registry_path.name}" )
 
     # Generate phylogenetic paths for single structure (Rule 6: atomic Species_Clade_ID_Name only)
+    # C000_OOL (Origin Of Life) is prepended to every path as the conceptual
+    # parent of the species-tree root clade. OOL is biological — every real
+    # clade ultimately descends from OOL — and its inclusion gives the
+    # phylogenetic block INTO the species-tree root a concrete presence on
+    # every species path, so root-origin orthogroups produce well-defined
+    # path-states with an O at the OOL::root block.
     with open( output_phylogenetic_paths_path, 'w' ) as output_file:
-        output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (atomic species clade identifier e.g. C040_Caenorhabditis_elegans)\tPhylogenetic_Path (comma delimited root to leaf path of atomic clade identifiers)\n' )
+        output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (atomic species clade identifier e.g. C040_Caenorhabditis_elegans)\tPhylogenetic_Path (comma delimited root to leaf path of atomic clade identifiers starting at C000_OOL)\n' )
 
         for leaf_label in sorted( all_original_leaves ):
             leaf_node = original_tree_root.find_clade( leaf_label )
             if leaf_node:
                 path = leaf_node.get_path_to_root()
                 path.reverse()
-                phylogenetic_path = ','.join( path )
+                phylogenetic_path = ','.join( [ 'C000_OOL' ] + path )
 
                 output = f"structure_001\t{leaf_label}\t{phylogenetic_path}\n"
                 output_file.write( output )
@@ -905,7 +911,12 @@ for skeleton_file in skeleton_files:
         if leaf_node:
             path = leaf_node.get_path_to_root()
             path.reverse()
-            phylogenetic_path = ','.join( path )
+            # Prepend C000_OOL as the conceptual parent of the species-tree root.
+            # Every real clade descends from OOL (Origin Of Life); including it on
+            # every path makes the phylogenetic block INTO the species-tree root
+            # visible on species paths, so root-origin orthogroups produce
+            # well-defined path-states with an O at the OOL::root block.
+            phylogenetic_path = ','.join( [ 'C000_OOL' ] + path )
 
             # Rule 6: store atomic species_clade_id_name only; no split species_name field.
             all_phylogenetic_paths.append( ( structure_id, leaf_label, phylogenetic_path ) )
@@ -965,7 +976,7 @@ print()
 print( "STEP 8: Writing phylogenetic paths for all structures..." )
 
 with open( output_phylogenetic_paths_path, 'w' ) as output_file:
-    output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (atomic species clade identifier e.g. C040_Caenorhabditis_elegans)\tPhylogenetic_Path (comma delimited root to leaf path of atomic clade identifiers)\n' )
+    output_file.write( 'Structure_ID (topology structure identifier)\tSpecies_Clade_ID_Name (atomic species clade identifier e.g. C040_Caenorhabditis_elegans)\tPhylogenetic_Path (comma delimited root to leaf path of atomic clade identifiers starting at C000_OOL)\n' )
 
     # Sort by structure_id, then by atomic species_clade_id_name
     all_phylogenetic_paths.sort( key=lambda x: ( x[ 0 ], x[ 1 ] ) )

@@ -124,8 +124,8 @@ def parse_rgs_header( header: str ) -> Tuple[bool, str, str, str]:
     """
     Parse GIGANTIC_1 standardized RGS header.
 
-    Expected format: >rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
-    5 dash-separated fields.
+    Expected format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
+    6 dash-separated fields, first is exactly 'rgs'.
 
     Args:
         header: RGS FASTA header (without >)
@@ -135,16 +135,16 @@ def parse_rgs_header( header: str ) -> Tuple[bool, str, str, str]:
     """
     parts = header.split( '-' )
 
-    if len( parts ) < 5:
+    if len( parts ) < 6:
         return False, '', '', header
 
-    # First part must start with rgs_
-    rgs_part = parts[0]
-    if not rgs_part.startswith( 'rgs_' ):
+    # First part must be exactly 'rgs'
+    if parts[0] != 'rgs':
         return False, '', '', header
 
-    species_short_name = parts[1]
-    source = parts[3]  # source_details is the 4th field
+    # New index positions: rgs-IDENTIFIER-FAMILY-SPECIES-GENE-SOURCE
+    species_short_name = parts[3]
+    source = parts[5]
 
     return True, species_short_name, source, header
 
@@ -287,10 +287,10 @@ def create_rgs_genome_mapping(
                 rgs_query = parts[0]  # RGS sequence ID (query)
                 genome_hit = parts[1]  # Genome sequence ID (subject/hit)
                 
-                # Extract species from RGS header (second field: rgs_{family}-{species}-{gene_symbol}-{source}-{id})
+                # Extract species from RGS header (fourth field: rgs-{id}-{family}-{species}-{gene}-{source})
                 rgs_parts = rgs_query.split( '-' )
-                if len( rgs_parts ) >= 2:
-                    rgs_species = rgs_parts[1]
+                if len( rgs_parts ) >= 4:
+                    rgs_species = rgs_parts[3]
                     
                     # Check if this RGS matches the report's model species
                     if rgs_species == report_model_species:

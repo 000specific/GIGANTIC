@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.6 | 2026 April 15 | Purpose: Aggregate phylogenetic blocks across all structures with synthetic Pre_Basal root edge
+# AI: Claude Code | Opus 4.6 | 2026 April 16 | Purpose: Aggregate phylogenetic blocks across all structures with C000_OOL root parent edge
 # Human: Eric Edsinger
 
 """
@@ -11,10 +11,12 @@ Purpose:
     blocks file that additionally carries the Structure_ID column.
 
     Per Rule 7 a phylogenetic block is a parent::child edge in a species tree.
-    Each binary internal node contributes one block per child. For the tree
-    root (which has no biological parent), a synthetic C000_Pre_Basal parent
-    is introduced so the root has an incoming block like:
-        C000_Pre_Basal::C071_Basal
+    Each binary internal node contributes one block per child. The species-
+    tree root has no parent in the user-provided tree, but biologically every
+    real clade descends from OOL (Origin Of Life). C000_OOL is therefore
+    included as the conceptual parent of the root, giving the root clade an
+    incoming block like every other clade:
+        C000_OOL::<root_clade_id_name>     (e.g. C000_OOL::C071_Basal)
 
     Tip self-loops are NOT present in Script 005 output and are not
     reintroduced here.
@@ -28,7 +30,7 @@ Inputs:
 
 Outputs:
     OUTPUT_pipeline/6-output/6_ai-structure_XXX_phylogenetic_blocks.tsv
-        (per structure; includes synthetic Pre_Basal::root block)
+        (per structure; includes C000_OOL::root block)
     OUTPUT_pipeline/6-output/6_ai-phylogenetic_blocks-all_{N}_structures.tsv
         (combined across all structures)
 
@@ -111,8 +113,12 @@ print()
 # STEP 2: Define Output Header
 # ============================================================================
 
-# Pre_Basal synthetic parent for the tree root (Rule 6 atomic identifier)
-pre_basal_clade_id_name = 'C000_Pre_Basal'
+# OOL (Origin Of Life) as the conceptual biological parent of the species-tree
+# root clade. Every real clade descends from OOL; including C000_OOL in the
+# parent_child / phylogenetic_blocks framework gives the root clade a parent
+# so origin-at-root orthogroups have a well-defined origin block
+# C000_OOL::<root_clade_id_name>.
+ool_clade_id_name = 'C000_OOL'
 
 output_header = (
     'Structure_ID (tree topology structure identifier)'
@@ -188,20 +194,9 @@ for parent_child_file in parent_child_files:
             parent_clade_id_names.add( parent_clade_id_name )
             child_clade_id_names.add( child_clade_id_name )
 
-    # Root detection: the clade that appears as parent but never as child
-    root_clade_id_names = parent_clade_id_names - child_clade_id_names
-
-    # Synthesize Pre_Basal::root block(s) first
-    for root_clade_id_name in sorted( root_clade_id_names ):
-        root_phylogenetic_block = f"{pre_basal_clade_id_name}::{root_clade_id_name}"
-
-        root_block_row = (
-            structure_id
-            + '\t' + root_phylogenetic_block
-            + '\t' + pre_basal_clade_id_name
-            + '\t' + root_clade_id_name
-        )
-        structure_block_rows.append( root_block_row )
+    # Note: C000_OOL::<root_clade_id_name> is already emitted by Script 005
+    # (see extract_parent_child_relationships) and arrives through `rows` below,
+    # so Script 006 does not synthesize the root block itself.
 
     # Emit one output row per input block row (pass-through with Structure_ID prepended)
     for row in rows:
@@ -229,7 +224,12 @@ for parent_child_file in parent_child_files:
     # Show progress for first 10 and last 5
     total_structures = len( parent_child_files )
     if structure_number <= 10 or structure_number > total_structures - 5:
-        root_names = ', '.join( sorted( root_clade_id_names ) ) if root_clade_id_names else 'none found'
+        # Report the species-tree root as the child endpoint of any C000_OOL::<root> row
+        ool_children = sorted( {
+            row.split( '\t', 4 )[ 3 ] for row in structure_block_rows
+            if row.split( '\t', 4 )[ 2 ] == ool_clade_id_name
+        } )
+        root_names = ', '.join( ool_children ) if ool_children else 'none found'
         print( f"  {structure_id}: {len( structure_block_rows )} blocks (root: {root_names})" )
     elif structure_number == 11:
         print( f"  ... (structures 011-{total_structures - 5:03d}) ..." )

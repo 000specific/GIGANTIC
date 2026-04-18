@@ -118,11 +118,11 @@ output_directory = output_base_directory / TARGET_STRUCTURE / '1-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
 # Output files
-output_phylogenetic_blocks_file = output_directory / f'1_ai-phylogenetic_blocks-{TARGET_STRUCTURE}.tsv'
-output_parent_child_file = output_directory / f'1_ai-parent_child_table-{TARGET_STRUCTURE}.tsv'
-output_phylogenetic_paths_file = output_directory / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
-output_clade_mappings_file = output_directory / f'1_ai-clade_mappings-{TARGET_STRUCTURE}.tsv'
-output_orthogroups_file = output_directory / '1_ai-orthogroups-gigantic_identifiers.tsv'
+output_phylogenetic_blocks_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_blocks.tsv'
+output_parent_child_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_parent_child_table.tsv'
+output_phylogenetic_paths_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
+output_clade_mappings_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
+output_orthogroups_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_orthogroups-gigantic_identifiers.tsv'
 
 # Log directory
 log_directory = output_base_directory / TARGET_STRUCTURE / 'logs'
@@ -188,7 +188,7 @@ def load_phylogenetic_blocks():
 
     with open( phylogenetic_blocks_path, 'r' ) as input_file:
         # Structure_ID (tree topology structure identifier)	Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)	Parent_Clade_ID_Name (atomic parent clade identifier)	Child_Clade_ID_Name (atomic child clade identifier)
-        # structure_001	C000_Pre_Basal::C071_Basal	C000_Pre_Basal	C071_Basal
+        # structure_001	C000_OOL::C071_Basal	C000_OOL	C071_Basal
         header = input_file.readline()
         header_parts = header.strip().split( '\t' )
 

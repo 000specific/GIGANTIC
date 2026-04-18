@@ -610,8 +610,18 @@ Examples:
 
         phyloname, phyloname_taxonid = genus_species___phyloname_tuples[ genus_species ]
 
-        # Build output filename: phyloname-T1-proteome.aa (T1 = transcript 1 proteome)
-        output_filename = phyloname + '-T1-proteome.aa'
+        # Build output filename: phyloname-{TX}-proteome.aa
+        # TX is detected from the input filename: files ending in -T0.aa get T0,
+        # files ending in -T1.aa get T1, everything else defaults to T1.
+        # This allows multiple proteome versions (e.g., T1 main-only vs T0 main+alt)
+        # for the same species to coexist in the database.
+        if filename.endswith( '-T0.aa' ):
+            proteome_type = 'T0'
+        elif filename.endswith( '-T1.aa' ):
+            proteome_type = 'T1'
+        else:
+            proteome_type = 'T1'
+        output_filename = phyloname + '-' + proteome_type + '-proteome.aa'
         output_file_path = output_proteomes_directory / output_filename
 
         logger.info( f"Processing: {genus_species}" )

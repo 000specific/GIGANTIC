@@ -1,4 +1,4 @@
-# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Create annotation groups (annogroups) from annotation files and prepare inputs for OCL analysis
+# AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Create annotation groups (annogroups) from annotation files and prepare inputs for OCL analysis
 # Human: Eric Edsinger
 
 """
@@ -11,28 +11,33 @@ Annogroups are the annotation analog to orthogroups -- sets of proteins grouped
 by their annotation pattern from a specific database. Each annogroup has a
 simple ID (annogroup_{db}_N) with full details in a companion map.
 
-Phase A: Load phylogenetic tree data (same as orthogroups_X_ocl Script 001)
+Phase A: Load phylogenetic tree data from trees_species (Rule 6 atomic identifiers)
+  - Phylogenetic blocks (parent_clade_id_name::child_clade_id_name)
+  - Parent-child relationships (Rule 6 atomic 3-column format)
+  - Phylogenetic paths (root-to-tip for each species)
+  - Clade mappings (bare Clade_Name -> atomic Clade_ID_Name)
+
 Phase B: Load per-species annotation files from annotations_hmms
+
 Phase C: Create annogroups for each requested subtype (single, combo, zero)
-Phase D: Write annogroup map, per-subtype files, subtypes manifest, and tree data
+  The 3 annogroup subtypes (each a direct protein-level evaluation):
+    single - proteins with exactly one annotation from this database
+    combo  - proteins with identical multi-annotation architecture
+    zero   - proteins with no annotations from this database (singletons)
 
-The 3 annogroup subtypes (each a direct protein-level evaluation):
-  single - proteins with exactly one annotation from this database
-  combo  - proteins with identical multi-annotation architecture
-  zero   - proteins with no annotations from this database (singletons)
-
-Inputs from upstream subprojects:
-  - trees_species: phylogenetic blocks, parent-child relationships, phylogenetic paths
-  - annotations_hmms: per-species annotation files (7-column TSV)
-
-Outputs (to 1-output/):
+Phase D: Write all outputs
   - Phylogenetic blocks, parent-child table, phylogenetic paths, clade mappings
   - Annogroup map (lookup table linking IDs to full details)
   - Per-subtype annogroup files
   - Annogroup subtypes manifest
+  - Standardized annogroups file (species already resolved to Genus_species)
+
+Inputs from upstream subprojects via output_to_input:
+  - trees_species (phylogenetic features: blocks, parent-child, paths)
+  - annotations_hmms (per-species annotation files, 7-column TSV)
 
 Usage:
-    python 001_ai-python-create_annogroups.py --structure_id 001 --config ../../START_HERE-user_config.yaml --output_dir OUTPUT_pipeline
+    python 001_ai-python-create_annogroups.py --structure_id 001 --config ../../START_HERE-user_config.yaml
 """
 
 import sys
@@ -52,7 +57,7 @@ import yaml
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description = 'OCL Pipeline Script 001: Create annotation groups (annogroups) from annotation files',
+        description = 'OCL Pipeline Script 001: Create annogroups from annotation files',
         formatter_class = argparse.RawDescriptionHelpFormatter
     )
 
@@ -74,7 +79,7 @@ def parse_arguments():
         '--output_dir',
         type = str,
         default = None,
-        help = 'Base output directory (overrides config if provided)'
+        help = 'Base output directory (default: derived from config.output.base_dir relative to config file)'
     )
 
     return parser.parse_args()
@@ -116,23 +121,25 @@ input_parent_child_directory = input_trees_species_directory / 'Species_Parent_C
 input_phylogenetic_paths_directory = input_trees_species_directory / 'Species_Phylogenetic_Paths'
 
 # Output directory
+# Prefer --output_dir (passed by NextFlow main.nf for consistency with scripts 003-005);
+# fall back to config.output.base_dir relative to config file when invoked standalone.
 if args.output_dir:
     output_base_directory = Path( args.output_dir )
 else:
     output_base_directory = config_directory / config[ 'output' ][ 'base_dir' ]
-
 output_directory = output_base_directory / TARGET_STRUCTURE / '1-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
-# Output files - phylogenetic data
-output_phylogenetic_blocks_file = output_directory / f'1_ai-phylogenetic_blocks-{TARGET_STRUCTURE}.tsv'
-output_parent_child_file = output_directory / f'1_ai-parent_child_table-{TARGET_STRUCTURE}.tsv'
-output_phylogenetic_paths_file = output_directory / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
-output_clade_mappings_file = output_directory / f'1_ai-clade_mappings-{TARGET_STRUCTURE}.tsv'
+# Output files - phylogenetic data (Rule 6 atomic identifiers)
+output_phylogenetic_blocks_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_blocks.tsv'
+output_parent_child_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_parent_child_table.tsv'
+output_phylogenetic_paths_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
+output_clade_mappings_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
 
 # Output files - annogroup data
-output_annogroup_map_file = output_directory / '1_ai-annogroup_map.tsv'
-output_subtypes_manifest_file = output_directory / '1_ai-annogroup_subtypes_manifest.tsv'
+output_annogroup_map_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_annogroup_map.tsv'
+output_annogroups_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_annogroups-species_identifiers.tsv'
+output_subtypes_manifest_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_annogroup_subtypes_manifest.tsv'
 
 # Log directory
 log_directory = output_base_directory / TARGET_STRUCTURE / 'logs'
@@ -156,7 +163,7 @@ logger = logging.getLogger( __name__ )
 
 
 # ============================================================================
-# PHASE A: LOAD PHYLOGENETIC TREE DATA
+# PHASE A: LOAD PHYLOGENETIC TREE DATA (Rule 6 atomic identifiers)
 # ============================================================================
 
 # --- Section A1: Load Phylogenetic Blocks ---
@@ -165,51 +172,65 @@ def load_phylogenetic_blocks():
     """
     Load phylogenetic blocks for the target structure from trees_species.
 
+    Scans the Species_Phylogenetic_Blocks directory for the combined blocks file
+    (Rule 6/7 atomic column format produced by trees_species Script 006) and
+    filters to the target structure.
+
     Returns:
-        dict: { clade_id: { 'clade_name': str, 'parent_id': str, 'structure_id': str } }
+        dict: keyed by atomic Child_Clade_ID_Name (Rule 6):
+            { child_clade_id_name: { 'phylogenetic_block': str,
+                                     'parent_clade_id_name': str,
+                                     'structure_id': str } }
     """
     logger.info( f"Loading phylogenetic blocks from: {input_phylogenetic_blocks_file}" )
 
-    phylogenetic_blocks_files = list( input_phylogenetic_blocks_file.glob( '*phylogenetic_blocks*.tsv' ) )
+    # Find the combined phylogenetic blocks file (contains all structures).
+    phylogenetic_blocks_files = list( input_phylogenetic_blocks_file.glob( '*phylogenetic_blocks-all_*_structures.tsv' ) )
 
     if not phylogenetic_blocks_files:
-        logger.error( f"CRITICAL ERROR: No phylogenetic blocks files found!" )
-        logger.error( f"Expected location: {input_phylogenetic_blocks_file}" )
+        logger.error( f"CRITICAL ERROR: No combined phylogenetic blocks file found!" )
+        logger.error( f"Expected pattern: *phylogenetic_blocks-all_*_structures.tsv" )
+        logger.error( f"In location: {input_phylogenetic_blocks_file}" )
         logger.error( f"Run trees_species pipeline first to generate phylogenetic blocks." )
+        sys.exit( 1 )
+
+    if len( phylogenetic_blocks_files ) > 1:
+        logger.error( f"CRITICAL ERROR: Multiple combined phylogenetic blocks files found (ambiguous):" )
+        for blocks_file in sorted( phylogenetic_blocks_files ):
+            logger.error( f"  {blocks_file.name}" )
         sys.exit( 1 )
 
     phylogenetic_blocks_path = phylogenetic_blocks_files[ 0 ]
     logger.info( f"Using file: {phylogenetic_blocks_path.name}" )
 
-    clade_ids___block_data = {}
+    child_clade_id_names___block_data = {}
 
     with open( phylogenetic_blocks_path, 'r' ) as input_file:
-        # Structure_ID (structure identifier)	Clade_ID (clade identifier)	Clade_Name (clade name)	...
-        # structure_001	C068	Basal	C068_Basal	C000	Pre_Basal	C000_Pre_Basal	...
+        # Structure_ID (tree topology structure identifier)	Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)	Parent_Clade_ID_Name (atomic parent clade identifier)	Child_Clade_ID_Name (atomic child clade identifier)
+        # structure_001	C000_OOL::C071_Basal	C000_OOL	C071_Basal
         header = input_file.readline()
         header_parts = header.strip().split( '\t' )
 
-        # Find column indices dynamically from header
-        structure_id_column = None
-        clade_id_column = None
-        clade_name_column = None
-        parent_clade_id_column = None
-
+        column_names___indices = {}
         for index, column_header in enumerate( header_parts ):
-            column_id = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
-            if column_id == 'Structure_ID':
-                structure_id_column = index
-            elif column_id == 'Clade_ID':
-                clade_id_column = index
-            elif column_id == 'Clade_Name':
-                clade_name_column = index
-            elif column_id == 'Parent_Clade_ID':
-                parent_clade_id_column = index
+            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
+            column_names___indices[ column_name ] = index
 
-        if None in [ structure_id_column, clade_id_column, clade_name_column, parent_clade_id_column ]:
-            logger.error( f"CRITICAL ERROR: Could not find required columns in phylogenetic blocks file!" )
+        structure_id_column = column_names___indices.get( 'Structure_ID' )
+        phylogenetic_block_column = column_names___indices.get( 'Phylogenetic_Block' )
+        parent_clade_id_name_column = column_names___indices.get( 'Parent_Clade_ID_Name' )
+        child_clade_id_name_column = column_names___indices.get( 'Child_Clade_ID_Name' )
+
+        required = {
+            'Structure_ID': structure_id_column,
+            'Phylogenetic_Block': phylogenetic_block_column,
+            'Parent_Clade_ID_Name': parent_clade_id_name_column,
+            'Child_Clade_ID_Name': child_clade_id_name_column,
+        }
+        missing = [ name for name, idx in required.items() if idx is None ]
+        if missing:
+            logger.error( f"CRITICAL ERROR: Phylogenetic blocks file missing required columns: {missing}" )
             logger.error( f"Found columns: {header_parts}" )
-            logger.error( f"Need: Structure_ID, Clade_ID, Clade_Name, Parent_Clade_ID" )
             sys.exit( 1 )
 
         for line in input_file:
@@ -220,48 +241,49 @@ def load_phylogenetic_blocks():
             parts = line.split( '\t' )
 
             structure_id = parts[ structure_id_column ]
-            clade_id = parts[ clade_id_column ]
-            clade_name = parts[ clade_name_column ]
-            parent_clade_id = parts[ parent_clade_id_column ]
+            phylogenetic_block = parts[ phylogenetic_block_column ]
+            parent_clade_id_name = parts[ parent_clade_id_name_column ]
+            child_clade_id_name = parts[ child_clade_id_name_column ]
 
+            # Only load blocks for target structure
             if structure_id == TARGET_STRUCTURE:
-                clade_ids___block_data[ clade_id ] = {
-                    'clade_name': clade_name,
-                    'parent_id': parent_clade_id if parent_clade_id != 'NA' and parent_clade_id != 'C000' else parent_clade_id,
+                child_clade_id_names___block_data[ child_clade_id_name ] = {
+                    'phylogenetic_block': phylogenetic_block,
+                    'parent_clade_id_name': parent_clade_id_name,
                     'structure_id': structure_id
                 }
 
-    logger.info( f"Loaded {len( clade_ids___block_data )} phylogenetic blocks for {TARGET_STRUCTURE}" )
+    logger.info( f"Loaded {len( child_clade_id_names___block_data )} phylogenetic blocks for {TARGET_STRUCTURE}" )
 
-    if len( clade_ids___block_data ) == 0:
+    if len( child_clade_id_names___block_data ) == 0:
         logger.error( f"CRITICAL ERROR: No blocks loaded for {TARGET_STRUCTURE}!" )
         logger.error( f"Check that structure exists in: {phylogenetic_blocks_path}" )
         sys.exit( 1 )
 
-    return clade_ids___block_data
+    return child_clade_id_names___block_data
 
 
-def write_phylogenetic_blocks( clade_ids___block_data ):
-    """Write phylogenetic blocks to standardized output file."""
+def write_phylogenetic_blocks( child_clade_id_names___block_data ):
+    """Write phylogenetic blocks to standardized output file (Rule 6 atomic identifiers)."""
     logger.info( f"Writing phylogenetic blocks to: {output_phylogenetic_blocks_file}" )
 
     with open( output_phylogenetic_blocks_file, 'w' ) as output_file:
-        output = 'Clade_ID (clade identifier from trees_species)\t'
-        output += 'Clade_Name (clade name from phylogenetic tree)\t'
-        output += 'Parent_ID (parent clade identifier or NA for root)\t'
-        output += 'Structure_ID (structure identifier for this phylogenetic tree)\n'
+        output = 'Structure_ID (structure identifier for this phylogenetic tree)\t'
+        output += 'Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)\t'
+        output += 'Parent_Clade_ID_Name (atomic parent clade identifier)\t'
+        output += 'Child_Clade_ID_Name (atomic child clade identifier)\n'
         output_file.write( output )
 
-        for clade_id in sorted( clade_ids___block_data.keys() ):
-            block_data = clade_ids___block_data[ clade_id ]
-            clade_name = block_data[ 'clade_name' ]
-            parent_id = block_data[ 'parent_id' ] if block_data[ 'parent_id' ] else 'NA'
+        for child_clade_id_name in sorted( child_clade_id_names___block_data.keys() ):
+            block_data = child_clade_id_names___block_data[ child_clade_id_name ]
+            phylogenetic_block = block_data[ 'phylogenetic_block' ]
+            parent_clade_id_name = block_data[ 'parent_clade_id_name' ]
             structure_id = block_data[ 'structure_id' ]
 
-            output = f"{clade_id}\t{clade_name}\t{parent_id}\t{structure_id}\n"
+            output = f"{structure_id}\t{phylogenetic_block}\t{parent_clade_id_name}\t{child_clade_id_name}\n"
             output_file.write( output )
 
-    logger.info( f"Wrote {len( clade_ids___block_data )} blocks to {output_phylogenetic_blocks_file.name}" )
+    logger.info( f"Wrote {len( child_clade_id_names___block_data )} blocks to {output_phylogenetic_blocks_file.name}" )
 
 
 # --- Section A2: Load Parent-Child Relationships ---
@@ -270,8 +292,13 @@ def load_parent_child_relationships():
     """
     Load parent-child relationships for the target structure from trees_species.
 
+    Reads the structure-specific parent-child file produced by trees_species
+    Script 005 (Rule 6/7 atomic 3-column format, no self-loops).
+
     Returns:
-        list: [ { 'parent_id': str, 'parent_name': str, 'child_id': str, 'child_name': str } ]
+        list: [ { 'phylogenetic_block': str,
+                  'parent_clade_id_name': str,
+                  'child_clade_id_name': str } ]
     """
     logger.info( f"Loading parent-child relationships from: {input_parent_child_directory}" )
 
@@ -292,9 +319,30 @@ def load_parent_child_relationships():
     relationships = []
 
     with open( parent_child_path, 'r' ) as input_file:
-        # Parent_ID (parent clade identifier)	Parent_Name (parent clade name)	Child_ID (child clade identifier)	Child_Name (child clade name)
-        # C068	Basal	C069	Holomycota
+        # Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)	Parent_Clade_ID_Name (atomic parent clade identifier)	Child_Clade_ID_Name (atomic child clade identifier)
+        # C069_Holozoa::C082_Metazoa	C069_Holozoa	C082_Metazoa
         header = input_file.readline()
+        header_parts = header.strip().split( '\t' )
+
+        column_names___indices = {}
+        for index, column_header in enumerate( header_parts ):
+            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
+            column_names___indices[ column_name ] = index
+
+        phylogenetic_block_column = column_names___indices.get( 'Phylogenetic_Block' )
+        parent_clade_id_name_column = column_names___indices.get( 'Parent_Clade_ID_Name' )
+        child_clade_id_name_column = column_names___indices.get( 'Child_Clade_ID_Name' )
+
+        required = {
+            'Phylogenetic_Block': phylogenetic_block_column,
+            'Parent_Clade_ID_Name': parent_clade_id_name_column,
+            'Child_Clade_ID_Name': child_clade_id_name_column,
+        }
+        missing = [ name for name, idx in required.items() if idx is None ]
+        if missing:
+            logger.error( f"CRITICAL ERROR: Parent-child relationships file missing required columns: {missing}" )
+            logger.error( f"Found columns: {header_parts}" )
+            sys.exit( 1 )
 
         for line in input_file:
             line = line.strip()
@@ -302,16 +350,14 @@ def load_parent_child_relationships():
                 continue
 
             parts = line.split( '\t' )
-
-            if len( parts ) < 4:
-                logger.warning( f"Expected 4+ fields, got {len( parts )}, skipping: {line[:80]}" )
+            if len( parts ) <= max( required.values() ):
+                logger.warning( f"Row has fewer columns than required, skipping: {line[:80]}" )
                 continue
 
             relationships.append( {
-                'parent_id': parts[ 0 ],
-                'parent_name': parts[ 1 ],
-                'child_id': parts[ 2 ],
-                'child_name': parts[ 3 ]
+                'phylogenetic_block': parts[ phylogenetic_block_column ],
+                'parent_clade_id_name': parts[ parent_clade_id_name_column ],
+                'child_clade_id_name': parts[ child_clade_id_name_column ],
             } )
 
     logger.info( f"Loaded {len( relationships )} parent-child relationships" )
@@ -324,19 +370,19 @@ def load_parent_child_relationships():
 
 
 def write_parent_child_relationships( relationships ):
-    """Write parent-child relationships to standardized output file."""
+    """Write parent-child relationships to standardized output file (Rule 6 atomic identifiers)."""
     logger.info( f"Writing parent-child relationships to: {output_parent_child_file}" )
 
     with open( output_parent_child_file, 'w' ) as output_file:
-        output = 'Parent_ID (parent clade identifier)\t'
-        output += 'Parent_Name (parent clade name)\t'
-        output += 'Child_ID (child clade identifier)\t'
-        output += 'Child_Name (child clade name)\n'
+        output = 'Phylogenetic_Block (atomic phylogenetic block identifier as Parent_Clade_ID_Name::Child_Clade_ID_Name)\t'
+        output += 'Parent_Clade_ID_Name (atomic parent clade identifier)\t'
+        output += 'Child_Clade_ID_Name (atomic child clade identifier)\n'
         output_file.write( output )
 
         for relationship in relationships:
-            output = f"{relationship[ 'parent_id' ]}\t{relationship[ 'parent_name' ]}\t"
-            output += f"{relationship[ 'child_id' ]}\t{relationship[ 'child_name' ]}\n"
+            output = f"{relationship[ 'phylogenetic_block' ]}\t"
+            output += f"{relationship[ 'parent_clade_id_name' ]}\t"
+            output += f"{relationship[ 'child_clade_id_name' ]}\n"
             output_file.write( output )
 
     logger.info( f"Wrote {len( relationships )} relationships to {output_parent_child_file.name}" )
@@ -353,12 +399,21 @@ def load_phylogenetic_paths():
     """
     logger.info( f"Loading phylogenetic paths from: {input_phylogenetic_paths_directory}" )
 
-    paths_files = list( input_phylogenetic_paths_directory.glob( '*paths*.tsv' ) )
+    # Find the combined phylogenetic paths file (contains all structures).
+    # Path.glob() does not guarantee ordering (especially on Lustre), so match
+    # the combined file explicitly rather than relying on [0].
+    paths_files = list( input_phylogenetic_paths_directory.glob( '*phylogenetic_paths-all_structures.tsv' ) )
 
     if not paths_files:
-        logger.warning( f"No phylogenetic paths files found in: {input_phylogenetic_paths_directory}" )
+        logger.warning( f"No combined phylogenetic paths file found in: {input_phylogenetic_paths_directory}" )
         logger.info( "Paths will need to be generated from phylogenetic blocks if needed downstream" )
         return {}
+
+    if len( paths_files ) > 1:
+        logger.error( f"CRITICAL ERROR: Multiple combined phylogenetic paths files found (ambiguous):" )
+        for paths_file in sorted( paths_files ):
+            logger.error( f"  {paths_file.name}" )
+        sys.exit( 1 )
 
     paths_path = paths_files[ 0 ]
     logger.info( f"Using file: {paths_path.name}" )
@@ -399,12 +454,14 @@ def load_phylogenetic_paths():
 
             structure_id = parts[ structure_id_column ]
 
+            # Only load paths for target structure
             if structure_id != TARGET_STRUCTURE:
                 continue
 
             leaf_clade_id = parts[ species_clade_id_column ]
             path_string = parts[ path_column ]
 
+            # Handle both comma-delimited and > delimited paths
             if '>' in path_string:
                 path = path_string.split( '>' )
             else:
@@ -422,6 +479,7 @@ def write_phylogenetic_paths( leaf_clade_ids___paths ):
     logger.info( f"Writing phylogenetic paths to: {output_phylogenetic_paths_file}" )
 
     with open( output_phylogenetic_paths_file, 'w' ) as output_file:
+        # Single-row GIGANTIC_1 header
         output = 'Leaf_Clade_ID (terminal leaf clade identifier and name)\t'
         output += 'Path_Length (number of nodes in path from root to leaf)\t'
         output += 'Phylogenetic_Path (comma delimited path from root to leaf)\n'
@@ -440,21 +498,34 @@ def write_phylogenetic_paths( leaf_clade_ids___paths ):
 
 # --- Section A4: Write Clade Mappings ---
 
-def write_clade_mappings( clade_ids___block_data ):
-    """Write clade ID to name mappings to standardized output file."""
+def write_clade_mappings( child_clade_id_names___block_data ):
+    """
+    Write clade name -> clade_id_name mappings to standardized output file.
+
+    Purpose of this file: a translation table for downstream OCL scripts that
+    receive bare clade/species names and need to resolve them to the atomic
+    Rule 6 clade_id_name form. Both columns are emitted explicitly: Clade_Name
+    is the lookup key (bare name as it appears in annogroup species lists),
+    Clade_ID_Name is the atomic value.
+    """
     logger.info( f"Writing clade mappings to: {output_clade_mappings_file}" )
 
     with open( output_clade_mappings_file, 'w' ) as output_file:
-        output = 'Clade_ID (clade identifier from trees_species)\t'
-        output += 'Clade_Name (clade name from phylogenetic tree)\n'
+        output = 'Clade_Name (bare clade name lookup key as it appears in annogroup species lists)\t'
+        output += 'Clade_ID_Name (atomic clade identifier e.g. C001_Fonticula_alba)\n'
         output_file.write( output )
 
-        for clade_id in sorted( clade_ids___block_data.keys() ):
-            clade_name = clade_ids___block_data[ clade_id ][ 'clade_name' ]
-            output = f"{clade_id}\t{clade_name}\n"
+        for child_clade_id_name in sorted( child_clade_id_names___block_data.keys() ):
+            # child_clade_id_name is the atomic form; derive bare name as text after first underscore
+            if '_' in child_clade_id_name:
+                clade_name = child_clade_id_name.split( '_', 1 )[ 1 ]
+            else:
+                clade_name = child_clade_id_name
+
+            output = f"{clade_name}\t{child_clade_id_name}\n"
             output_file.write( output )
 
-    logger.info( f"Wrote {len( clade_ids___block_data )} clade mappings to {output_clade_mappings_file.name}" )
+    logger.info( f"Wrote {len( child_clade_id_names___block_data )} clade mappings to {output_clade_mappings_file.name}" )
 
 
 # ============================================================================
@@ -579,13 +650,12 @@ def create_annogroups( species_names___annotations ):
         species_names___annotations: Dict mapping species names to annotation records
 
     Returns:
-        tuple: ( annogroup_map_entries, subtypes___annogroup_files )
+        tuple: ( annogroup_map_entries, subtypes___annogroup_data )
     """
     logger.info( f"Creating annogroups for database: {ANNOTATION_DATABASE}" )
     logger.info( f"Requested subtypes: {ANNOGROUP_SUBTYPES}" )
 
     # Step 1: Build per-protein annotation profiles
-    # For each protein, collect all its annotation identifiers
     logger.info( "Step 1: Building per-protein annotation profiles..." )
 
     # proteins___annotation_profiles: { sequence_identifier: { 'species_name': str, 'annotations': [ accession_1, ... ] } }
@@ -788,8 +858,8 @@ def write_annogroup_map( annogroup_map_entries ):
         output += 'Annotation_Accessions (comma delimited annotation accessions from the database or unannotated identifier)\t'
         output += 'Species_Count (number of unique species with at least one member sequence)\t'
         output += 'Sequence_Count (total number of member sequences)\t'
-        output += 'Species_List (comma delimited list of species names)\t'
-        output += 'Sequence_IDs (comma delimited list of GIGANTIC sequence identifiers)\n'
+        output += 'Species_List (comma delimited list of species names as Genus_species)\t'
+        output += 'Sequence_IDs (comma delimited list of sequence identifiers)\n'
         output_file.write( output )
 
         for entry in annogroup_map_entries:
@@ -806,22 +876,56 @@ def write_annogroup_map( annogroup_map_entries ):
     logger.info( f"Wrote {len( annogroup_map_entries )} entries to {output_annogroup_map_file.name}" )
 
 
+def write_annogroups_standardized( annogroup_map_entries ):
+    """
+    Write standardized annogroups file for consumption by Scripts 002-005.
+
+    This file parallels the orthogroups-gigantic_identifiers.tsv from the
+    orthogroups_X_ocl pipeline, but with species already resolved to
+    Genus_species format (no GIGANTIC ID parsing needed downstream).
+    """
+    logger.info( f"Writing standardized annogroups to: {output_annogroups_file}" )
+
+    with open( output_annogroups_file, 'w' ) as output_file:
+        # Single-row GIGANTIC_1 header
+        output = 'Annogroup_ID (annogroup identifier format annogroup_{db}_N)\t'
+        output += 'Annogroup_Subtype (single or combo or zero)\t'
+        output += 'Species_Count (number of unique species in annogroup)\t'
+        output += 'Species_List (comma delimited list of species names as Genus_species)\n'
+        output_file.write( output )
+
+        for entry in annogroup_map_entries:
+            output = f"{entry[ 'annogroup_id' ]}\t"
+            output += f"{entry[ 'annogroup_subtype' ]}\t"
+            output += f"{entry[ 'species_count' ]}\t"
+            output += f"{entry[ 'species_list' ]}\n"
+            output_file.write( output )
+
+    logger.info( f"Wrote {len( annogroup_map_entries )} annogroups to {output_annogroups_file.name}" )
+
+
 def write_per_subtype_annogroup_files( subtypes___annogroup_data ):
     """Write per-subtype annogroup files with annogroup ID and member sequences."""
     logger.info( "Writing per-subtype annogroup files..." )
 
     for subtype, annogroup_entries in subtypes___annogroup_data.items():
-        output_subtype_file = output_directory / f'1_ai-annogroups-{subtype}.tsv'
+        output_subtype_file = output_directory / f'1_ai-{TARGET_STRUCTURE}_annogroups-{subtype}.tsv'
         logger.info( f"Writing {subtype} annogroups to: {output_subtype_file}" )
 
         with open( output_subtype_file, 'w' ) as output_file:
             output = 'Annogroup_ID (annogroup identifier)\t'
+            output += 'Species_Count (number of unique species in annogroup)\t'
             output += 'Sequence_Count (total count of sequences in annogroup)\t'
+            output += 'Species_List (comma delimited list of species names as Genus_species)\t'
             output += 'Sequence_IDs (comma delimited list of sequence identifiers)\n'
             output_file.write( output )
 
             for entry in annogroup_entries:
-                output = f"{entry[ 'annogroup_id' ]}\t{entry[ 'sequence_count' ]}\t{entry[ 'sequence_ids' ]}\n"
+                output = f"{entry[ 'annogroup_id' ]}\t"
+                output += f"{entry[ 'species_count' ]}\t"
+                output += f"{entry[ 'sequence_count' ]}\t"
+                output += f"{entry[ 'species_list' ]}\t"
+                output += f"{entry[ 'sequence_ids' ]}\n"
                 output_file.write( output )
 
         logger.info( f"Wrote {len( annogroup_entries )} {subtype} annogroups" )
@@ -839,7 +943,7 @@ def write_subtypes_manifest( subtypes___annogroup_data ):
 
         for subtype in sorted( subtypes___annogroup_data.keys() ):
             annogroup_count = len( subtypes___annogroup_data[ subtype ] )
-            output_filename = f'1_ai-annogroups-{subtype}.tsv'
+            output_filename = f'1_ai-{TARGET_STRUCTURE}_annogroups-{subtype}.tsv'
 
             output = f"{subtype}\t{annogroup_count}\t{output_filename}\n"
             output_file.write( output )
@@ -865,15 +969,15 @@ def main():
     logger.info( "" )
 
     # ========================================================================
-    # PHASE A: Load phylogenetic tree data
+    # PHASE A: Load phylogenetic tree data (Rule 6 atomic identifiers)
     # ========================================================================
-    logger.info( "PHASE A: Loading phylogenetic tree data..." )
+    logger.info( "PHASE A: Loading phylogenetic tree data (Rule 6 atomic identifiers)..." )
 
     # Step A1: Load phylogenetic blocks
     logger.info( "" )
     logger.info( "STEP A1: Loading phylogenetic blocks..." )
-    clade_ids___block_data = load_phylogenetic_blocks()
-    write_phylogenetic_blocks( clade_ids___block_data )
+    child_clade_id_names___block_data = load_phylogenetic_blocks()
+    write_phylogenetic_blocks( child_clade_id_names___block_data )
 
     # Step A2: Load parent-child relationships
     logger.info( "" )
@@ -892,8 +996,8 @@ def main():
 
     # Step A4: Create clade mappings
     logger.info( "" )
-    logger.info( "STEP A4: Creating clade ID to name mappings..." )
-    write_clade_mappings( clade_ids___block_data )
+    logger.info( "STEP A4: Creating clade name to clade_id_name mappings..." )
+    write_clade_mappings( child_clade_id_names___block_data )
 
     # ========================================================================
     # PHASE B: Load annotation files
@@ -915,6 +1019,7 @@ def main():
     logger.info( "" )
     logger.info( "PHASE D: Writing annogroup outputs..." )
     write_annogroup_map( annogroup_map_entries )
+    write_annogroups_standardized( annogroup_map_entries )
     write_per_subtype_annogroup_files( subtypes___annogroup_data )
     write_subtypes_manifest( subtypes___annogroup_data )
 
@@ -935,8 +1040,9 @@ def main():
         logger.info( f"  {output_phylogenetic_paths_file.name}" )
     logger.info( f"  {output_clade_mappings_file.name}" )
     logger.info( f"  {output_annogroup_map_file.name}" )
+    logger.info( f"  {output_annogroups_file.name}" )
     for subtype in sorted( subtypes___annogroup_data.keys() ):
-        logger.info( f"  1_ai-annogroups-{subtype}.tsv" )
+        logger.info( f"  1_ai-{TARGET_STRUCTURE}_annogroups-{subtype}.tsv" )
     logger.info( f"  {output_subtypes_manifest_file.name}" )
     logger.info( "" )
     logger.info( f"Total annogroups: {len( annogroup_map_entries )}" )

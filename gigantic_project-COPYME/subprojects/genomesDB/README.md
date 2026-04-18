@@ -88,12 +88,26 @@ FASTA sequence headers follow this structure:
 
 ---
 
-## Four-Step Structure
+## T0 and T1 Proteome Concepts
 
-genomesDB is organized as four sequential steps, each with its own workflow:
+GIGANTIC distinguishes two proteome types based on transcript representation:
+
+- **T1 (one protein per gene/locus)**: The primary proteome used by GIGANTIC for homolog discovery, orthogroup identification, and species tree construction. For NCBI genomes, T1 means the longest transcript per gene extracted from `protein.faa` using the GFF3 annotation. For evigene transcriptomes, T1 means the main transcript per locus selected from the okayset using evgclass headers.
+
+- **T0 (all transcripts per locus)**: The complete proteome including alternative transcripts. For NCBI genomes, T0 includes all protein isoforms. For evigene transcriptomes, T0 includes both main and alt transcripts from the okayset.
+
+**GIGANTIC uses T1 by default** for all downstream analyses (orthogroups, gene trees, annotations). T0 is retained as a reference but is not used in standard pipelines.
+
+---
+
+## Pipeline Structure
+
+genomesDB is organized as four sequential steps plus an optional preparatory step, each with its own workflow:
 
 ```
 genomesDB/
+├── STEP_0-prepare_proteomes/          # (OPTIONAL) Prepare T1 proteomes from evigene transcriptomes
+│   └── workflow-COPYME-evigene_to_T1/
 ├── STEP_1-sources/                    # Ingest user-provided genome/proteome files
 │   └── workflow-COPYME-ingest_source_data/
 ├── STEP_2-standardize_and_evaluate/   # Standardize and evaluate quality
@@ -104,11 +118,26 @@ genomesDB/
     └── workflow-COPYME-create_final_species_set/
 ```
 
+### STEP_0-prepare_proteomes (OPTIONAL)
+
+**Purpose**: Extract T1 proteomes from evigene transcriptome assemblies.
+
+**When to use**: Only needed when your species set includes evigene transcriptomes. If all your data comes from NCBI genomes, skip STEP_0 entirely.
+
+**Key Concept**: Evigene transcriptome assemblies produce an okayset containing main and alt transcripts with classification headers (evgclass). STEP_0 parses these headers to extract only the main transcript per locus, producing a T1 proteome suitable for GIGANTIC.
+
+**Note**: For NCBI genomes, T1 extraction happens later in STEP_2 (Script 003), where the longest transcript per gene is extracted from `protein.faa` using the GFF3 annotation.
+
+**Workflow**: `STEP_0-prepare_proteomes/workflow-COPYME-prepare_proteomes/`
+
+**Inputs**: Evigene okayset FASTA files with evgclass headers
+**Outputs**: T1 proteome FASTA files ready for STEP_1
+
 ### STEP_1-sources (USER-DRIVEN)
 
 **Purpose**: Ingest user-provided proteome files into GIGANTIC.
 
-**Key Concept**: STEP_1 does NOT automatically download data. Users provide source data from outside GIGANTIC.
+**Key Concept**: STEP_1 does NOT automatically download data. Users provide source data from outside GIGANTIC. For NCBI genomes, provide the full `protein.faa` file (T1 extraction happens in STEP_2). For evigene transcriptomes, provide the T1 proteome produced by STEP_0.
 
 **Workflow**: `STEP_1-sources/workflow-COPYME-ingest_source_data/`
 
@@ -154,6 +183,16 @@ genomesDB/
 ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
 ├── output_to_input/                    # Final outputs for downstream subprojects
 ├── upload_to_server/                   # Files to share via GIGANTIC server
+│
+├── STEP_0-prepare_proteomes/           # (OPTIONAL) Prepare T1 from evigene transcriptomes
+│   ├── README.md
+│   ├── output_to_input/                # T1 proteomes for STEP_1
+│   └── workflow-COPYME-prepare_proteomes/
+│       ├── INPUT_user/
+│       ├── OUTPUT_pipeline/
+│       ├── RUN-workflow.sh
+│       ├── RUN-workflow.sbatch
+│       └── ai/
 │
 ├── STEP_1-sources/
 │   ├── README.md                       # Step-specific documentation
@@ -209,12 +248,14 @@ genomesDB/
 ## Data Flow
 
 ```
-STEP_1-sources → STEP_2-standardize_and_evaluate → STEP_3-databases → STEP_4-create_final_species_set → Downstream Subprojects
-      ↓                      ↓                           ↓                        ↓
- output_to_input/      output_to_input/           output_to_input/        output_to_input/
- STEP_1-sources/     STEP_2-standardize_         STEP_3-databases/   STEP_4-create_final_
-                     and_evaluate/                                    species_set/
+STEP_0-prepare_proteomes (optional) → STEP_1-sources → STEP_2-standardize_and_evaluate → STEP_3-databases → STEP_4-create_final_species_set → Downstream Subprojects
+         ↓                                 ↓                      ↓                           ↓                        ↓
+    output_to_input/                  output_to_input/      output_to_input/           output_to_input/        output_to_input/
+    STEP_0-prepare_                   STEP_1-sources/     STEP_2-standardize_         STEP_3-databases/   STEP_4-create_final_
+    proteomes/                                            and_evaluate/                                    species_set/
 ```
+
+STEP_0 is only needed when working with evigene transcriptomes. For NCBI genomes, start directly at STEP_1.
 
 Each step publishes outputs to the single subproject-root `output_to_input/` directory, under its own STEP subdirectory. STEP_4's outputs are the final species set that downstream GIGANTIC subprojects reference.
 
@@ -225,8 +266,14 @@ Each step publishes outputs to the single subproject-root `output_to_input/` dir
 ### Running All Steps
 
 ```bash
+# STEP_0 (OPTIONAL): Prepare T1 proteomes from evigene transcriptomes
+# Only needed if you have evigene data. Skip for NCBI genomes.
+cd STEP_0-prepare_proteomes/workflow-COPYME-prepare_proteomes/
+# Place evigene okayset files in INPUT_user/
+bash RUN-workflow.sh
+
 # STEP_1: Ingest source data
-cd STEP_1-sources/workflow-COPYME-ingest_source_data/
+cd ../../STEP_1-sources/workflow-COPYME-ingest_source_data/
 # Create INPUT_user/source_manifest.tsv with your data
 bash RUN-workflow.sh
 

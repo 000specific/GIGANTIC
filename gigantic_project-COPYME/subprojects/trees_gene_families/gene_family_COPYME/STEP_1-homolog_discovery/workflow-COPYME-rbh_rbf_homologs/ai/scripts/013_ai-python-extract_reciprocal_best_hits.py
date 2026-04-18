@@ -87,16 +87,15 @@ def load_rgs_identifiers(
                 truncated_rgs_header = parts[ 1 ]    # truncated header
                 original_full_rgs_header = parts[ 2 ] # original full header
                 
-                # Add all identifiers to check against BLAST hits
-                rgs_identifiers.append( projectdb_identifier )
+                # Only add RGS headers — NOT genome protein IDs
+                # Genome IDs (g_*) must NOT be in the set, otherwise
+                # unreplaced genome proteins pass the reciprocal filter
                 rgs_identifiers.append( truncated_rgs_header )
                 rgs_identifiers.append( original_full_rgs_header )
             elif len( parts ) >= 2:
                 # Two-column format (backward compatibility)
-                projectdb_identifier = parts[ 0 ]
                 rgs_identifier = parts[ 1 ]
                 rgs_identifiers.append( rgs_identifier )
-                rgs_identifiers.append( projectdb_identifier )
     
     if logger:
         logger.info( f"Loaded {len(rgs_identifiers)} RGS identifiers" )
@@ -139,24 +138,15 @@ def parse_reciprocal_blast_results(
             query = parts[ 0 ]
             hit = parts[ 1 ]
 
-            # Primary check: is the hit one of our RGS sequences (spliced into modified genomes)?
-            # This is the cleanest signal of a true homolog: the BGS sequence's reciprocal best hit
-            # lands on one of our reference RGS sequences. Works regardless of header truncation.
+            # Check: is the hit one of our RGS sequences (spliced into modified genomes)?
+            # This is the ONLY valid signal. The reciprocal best hit MUST land on an
+            # RGS sequence to confirm the BGS sequence is a true gene family member.
+            # Hits to unreplaced genome proteins (g_ headers) are rejected — they
+            # indicate the sequence is more similar to a non-RGS gene than to any
+            # RGS family member.
             hit_is_rgs = hit in rgs_identifiers_set
 
-            # Fallback: if hit is not directly in our RGS set, check if it's a model organism
-            # protein (the original genome contents, not our spliced-in RGS). Some legitimate
-            # homologs may reciprocally hit a paralog in the model organism rather than our
-            # specific RGS sequence.
-            is_rbh_species = False
-            if not hit_is_rgs:
-                hit_parts = hit.split( '-' )
-                if len( hit_parts ) >= 2:
-                    species_part = hit_parts[ 1 ]
-                    species_name = species_part.split( '_' )[ -1 ].lower() if '_' in species_part else species_part.lower()
-                    is_rbh_species = any( species in species_name for species in rbh_species )
-
-            if hit_is_rgs or is_rbh_species:
+            if hit_is_rgs:
                 # Keep if NOT in RGS (avoid circularity - RGS hitting itself)
                 if query not in rgs_identifiers_set:
                     keepers.append( query )

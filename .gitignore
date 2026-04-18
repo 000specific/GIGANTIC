@@ -99,3 +99,8 @@ core.*
 
 # Environment files with secrets
 .env
+
+# User-local end-user test project (Apr 2026): mechanosensitive ion channels
+# for sonogenetics (Chalasani lab, Salk). Exercises GIGANTIC_1 as an outside
+# user — not part of the public framework.
+/sono_april2026/

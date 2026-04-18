@@ -42,6 +42,7 @@
 | 014 | Species Filter | Keep only species in the keeper list |
 | 016 | Create AGS | Concatenate RGS + filtered CGS into final All Gene Set |
 | 017 | Run Log | Write pipeline execution summary |
+| 018 | Restore Full-Length RGS | Optional: swap domain-restricted RGS back to full-length in AGS (set rgs_full_length_restore in config) |
 
 **Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step (015) is needed.
 
@@ -147,7 +148,8 @@ STEP_1-homolog_discovery/
             ├── 013_ai-python-extract_reciprocal_best_hits.py
             ├── 014_ai-python-filter_species_for_tree_building.py
             ├── 016_ai-python-concatenate_sequences.py
-            └── 017_ai-python-write_run_log.py
+            ├── 017_ai-python-write_run_log.py
+            └── 018_ai-python-restore_full_length_rgs_sequences.py
 ```
 
 ---

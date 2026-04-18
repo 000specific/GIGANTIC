@@ -118,11 +118,11 @@ else:
 input_directory = output_base_directory / TARGET_STRUCTURE / '1-output'
 
 # Input files from Script 001
-input_phylogenetic_blocks_file = input_directory / f'1_ai-phylogenetic_blocks-{TARGET_STRUCTURE}.tsv'
-input_parent_child_file = input_directory / f'1_ai-parent_child_table-{TARGET_STRUCTURE}.tsv'
-input_phylogenetic_paths_file = input_directory / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
-input_clade_mappings_file = input_directory / f'1_ai-clade_mappings-{TARGET_STRUCTURE}.tsv'
-input_orthogroups_file = input_directory / '1_ai-orthogroups-gigantic_identifiers.tsv'
+input_phylogenetic_blocks_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_blocks.tsv'
+input_parent_child_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_parent_child_table.tsv'
+input_phylogenetic_paths_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
+input_clade_mappings_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
+input_orthogroups_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_orthogroups-gigantic_identifiers.tsv'
 # GIGANTIC_1 convention: no separate short→gigantic mapping file (it was a
 # GIGANTIC_0 OrthoFinder vestige). Orthogroup files already contain gigantic IDs.
 
@@ -139,9 +139,9 @@ output_directory = output_base_directory / TARGET_STRUCTURE / '2-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
 # Output files
-output_origins_file = output_directory / '2_ai-orthogroup_origins.tsv'
-output_summary_file = output_directory / '2_ai-origins_summary-orthogroups_per_clade.tsv'
-output_by_origin_directory = output_directory / '2_ai-orthogroups_by_origin'
+output_origins_file = output_directory / f'2_ai-{TARGET_STRUCTURE}_orthogroup_origins.tsv'
+output_summary_file = output_directory / f'2_ai-{TARGET_STRUCTURE}_origins_summary-orthogroups_per_clade.tsv'
+output_by_origin_directory = output_directory / f'2_ai-{TARGET_STRUCTURE}_orthogroups_by_origin'
 output_by_origin_directory.mkdir( parents = True, exist_ok = True )
 
 # Log directory

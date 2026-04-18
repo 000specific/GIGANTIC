@@ -33,7 +33,20 @@
 
 **Purpose**: Build phylogenetic trees for individual gene families across GIGANTIC species.
 
-**Current scale**: 76 gene family analyses (channels, receptors, enzymes, ligands, transporters, transcription factors, structural proteins).
+**Current scale (sono project)**: 8 mechanosensitive channel gene families for Salk sonogenetics collaboration.
+
+**The 8 Gene Families**:
+
+| Gene Family | RGS Mode | RGS Seeds | Description |
+|-------------|----------|-----------|-------------|
+| acid_sensing_ion_channel_subunits | full-length | HGNC human | ASIC channels |
+| piezo_type_mechanosensitive_ion_channel_components | full-length | HGNC human | Piezo mechanosensors |
+| potassium_two_pore_domain_channel_subfamily_k | full-length | HGNC human | KCNK channels |
+| solute_carrier_family_26 | full-length | HGNC human | SLC26 / Prestin family |
+| stomatin_family | full-length | HGNC human | Stomatin scaffold proteins |
+| tmem63_osca_flyc1_mechanosensitive | full-length | HGNC human + venus flytrap | TMEM63/OSCA/FLYC1 |
+| transmembrane_channel_like_family | full-length | HGNC human | TMC channels |
+| transient_receptor_potential_cation_channels | **subsequence** | multi-species pore regions | TRP channels (pore-region RGS) |
 
 **Three-Phase Workflow**:
 1. **RGS Preparation** - Source, curate, and format reference gene sequences in `research_notebook/`
@@ -105,6 +118,36 @@ RGS files are user-curated FASTA files with specific header and filename convent
 >rgs_phosphatases_AP_AP_AP_AP-human-ALPI-phosphatome_database-Hsap_ALPI
 ```
 
+### Two RGS Modes: Full-Length vs Subsequence
+
+STEP_1 supports two modes for RGS sequences, controlled by three config fields in `START_HERE-user_config.yaml`:
+
+```yaml
+gene_family:
+  rgs_full_length_file: "INPUT_user/rgs_channel-human-family_name.aa"   # ALWAYS required
+  rgs_sequence_is_full_length: true                                      # true (default) or false
+  rgs_subsequence_file: "INPUT_user/rgs_channel-species-family_subsequence.aa"  # Required when false
+```
+
+**Full-length mode** ( `rgs_sequence_is_full_length: true`, default, 7 of 8 families ):
+- Pipeline uses `rgs_full_length_file` for BLAST discovery
+- Script 018 does NOT run
+- Standard flow: BLAST with full-length RGS, reciprocal BLAST with full-length BGS
+
+**Subsequence mode** ( `rgs_sequence_is_full_length: false`, TRP channels ):
+- Pipeline uses `rgs_subsequence_file` for BLAST discovery (e.g., pore-region-only sequences)
+- Reciprocal BLAST uses hit-region subsequences instead of full-length BGS (prevents length mismatch bias)
+- Script 018 runs after Script 016: swaps subsequence RGS in the AGS with full-length versions from `rgs_full_length_file`
+- The restored full-length AGS goes to `18-output/` and is copied back to `16-output/` for STEP_2
+
+**Why subsequence mode exists**: Full-length TRP channel sequences contain ankyrin repeats and other conserved domains that dominate BLAST results, pulling in thousands of unrelated proteins. Using pore-region-only sequences as RGS seeds finds true TRP homologs cleanly, then full-length sequences are restored for phylogenetic analysis.
+
+**Subsequence RGS header convention**: Headers in the subsequence file must match the full-length file exactly, with `_subsequence` appended:
+```
+Full-length:   >rgs_channel-human-TRPV1-uniprot-Q8NER1
+Subsequence:   >rgs_channel-human-TRPV1-uniprot-Q8NER1_subsequence
+```
+
 ### RGS Preparation (research_notebook)
 
 RGS files are sourced, curated, and reformatted in `research_notebook/rgs_from_before/`. The flow:
@@ -130,6 +173,7 @@ See `research_notebook/README.md` for full specification.
 **Function**:
 - **Process 1**: Validate RGS FASTA file (fails fast if invalid)
 - **Processes 2-10**: BLAST RGS against project species, reciprocal BLAST to confirm homologs, filter by species keeper list, concatenate into final AGS
+- **Process 10b** (conditional): Script 018 restores full-length RGS sequences in the AGS when using subsequence mode ( `rgs_sequence_is_full_length: false` )
 - No remapping needed - BLAST v5 databases preserve full GIGANTIC identifiers
 
 **Outputs**:
@@ -158,11 +202,12 @@ trees_gene_families/
 ├── AI_GUIDE-trees_gene_families.md    # THIS FILE
 ├── README.md                          # Human documentation
 ├── RUN-clean_and_record_subproject.sh # Cleanup + session recording
-├── RUN-setup_and_submit_step1_burst.sh             # Burst: STEP_1 for original RGS set
-├── RUN-setup_and_submit_step2_burst.sh             # Burst: STEP_2 with size filter
-├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh # Burst: STEP_1 for new RGS set
-├── RUN-clean_and_record_subproject.sh              # Cleanup + AI session recording
-├── RUN-update_upload_to_server.sh                  # Update server symlinks
+├── RUN-setup_and_submit_step1_burst.sh                # Burst: STEP_1 for original RGS set
+├── RUN-setup_and_submit_step2_burst.sh                # Burst: STEP_2 with size filter
+├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh    # Burst: STEP_1 for new RGS set
+├── RUN-setup_and_submit_sono_mechanosensitive_burst.sh # Burst: STEP_1 for 8 sono gene families
+├── RUN-clean_and_record_subproject.sh                 # Cleanup + AI session recording
+├── RUN-update_upload_to_server.sh                     # Update server symlinks
 │
 ├── research_notebook/                 # RGS preparation + personal workspace
 │   └── rgs_from_before/              # RGS sources and formatted files
@@ -207,7 +252,7 @@ RUN-setup_and_submit_*_burst.sh        Automate: create gene_family dirs, popula
 gene_family-*/STEP_1/workflow-RUN_1/   INPUT_user/ populated with RGS + species keeper list
        │
        ▼
-STEP_1: Validate RGS → BLAST → Reciprocal BLAST → Filter → AGS
+STEP_1: Validate RGS → BLAST → Reciprocal BLAST → Filter → AGS [→ Restore full-length RGS if subsequence mode]
        │
        ▼
 output_to_input/<gene_family>/STEP_1-homolog_discovery/
@@ -315,8 +360,9 @@ ls output_to_input/*/STEP_2-phylogenetic_analysis/
 | `research_notebook/rgs_from_before/rgs_for_trees/` | Formatted RGS FASTA files | **YES** (source data) |
 | `RUN-setup_and_submit_step1_burst.sh` | Burst setup + submit STEP_1 (original RGS) | **YES** (SLURM settings) |
 | `RUN-setup_and_submit_new_rgs_31mar2026_burst.sh` | Burst setup + submit STEP_1 (new RGS) | **YES** (SLURM settings, RGS path) |
+| `RUN-setup_and_submit_sono_mechanosensitive_burst.sh` | Burst setup + submit STEP_1 (8 sono families) | **YES** (SLURM settings) |
 | `RUN-setup_and_submit_step2_burst.sh` | Burst setup + submit STEP_2 (with size filter) | **YES** (SLURM settings, MAX_SEQS) |
-| `gene_family_COPYME/STEP_1-*/workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, species DB | **YES** |
+| `gene_family_COPYME/STEP_1-*/workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, species DB, RGS mode | **YES** |
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
 | `gene_family_COPYME/STEP_2-*/workflow-*/START_HERE-user_config.yaml` | Tree methods, alignment settings | **YES** |

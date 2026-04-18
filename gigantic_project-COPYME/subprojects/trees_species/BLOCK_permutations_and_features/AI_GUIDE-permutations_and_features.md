@@ -34,7 +34,7 @@ Key capabilities:
 - **Topology permutations**: (2N-3)!! unrooted topologies for N unresolved clades
   (e.g., 5 clades = 105 topologies, 0 clades = single species tree mode)
 - **Clade identifier system**: Persistent CXXX identifiers across all structures
-- **Phylogenetic blocks**: Parent::Child branch identifiers with synthetic C000_Pre_Basal root
+- **Phylogenetic blocks**: Parent::Child branch identifiers (Rule 6/7 atomic form), with `C000_OOL` (Origin Of Life) as the conceptual biological parent of the species-tree root
 - **Comprehensive integration**: 24-column master table with all clade data
 - **Species-set agnostic**: Works with any species set (configured via species_set_name)
 
@@ -153,9 +153,10 @@ For the full canonical definition, see Rule 6 in the project's
 `../README.md`.
 
 ### Phylogenetic Blocks
-- Format: `Parent_ID_Name::Child_ID_Name` (e.g., `C068_Basal::C069_Bilateria`)
-- Synthetic `C000_Pre_Basal` parent for root nodes
+- Format: `Parent_Clade_ID_Name::Child_Clade_ID_Name` (Rule 6 atomic form, e.g. `C071_Basal::C072_Holomycota`)
+- `C000_OOL` (Origin Of Life) is the conceptual biological parent of the species-tree root. It is not part of the user-provided species tree; `trees_species` adds it automatically. Every real clade descends from OOL, so giving the species-tree root a `C000_OOL::<root>` incoming block is biologically accurate, not a synthetic parsing device.
 - Each internal node produces exactly 2 blocks (binary tree)
+- Tip self-loops are NOT emitted
 
 ### Single Species Tree Mode
 When 0 unresolved clades are specified, the pipeline skips permutation and outputs the

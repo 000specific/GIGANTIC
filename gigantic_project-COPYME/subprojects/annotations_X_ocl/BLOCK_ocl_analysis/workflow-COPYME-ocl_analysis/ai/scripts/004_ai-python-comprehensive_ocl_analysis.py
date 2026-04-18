@@ -1,29 +1,27 @@
-# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Generate comprehensive OCL analysis with per-subtype and all-subtypes integrated summaries
+# AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Integrate Scripts 002+003 into per-annogroup, per-clade, and per-species summaries (Rule 7 counts)
 # Human: Eric Edsinger
 
 """
-OCL Pipeline Script 004: Comprehensive OCL Analysis (TEMPLATE_03)
+OCL Pipeline Script 004: Comprehensive OCL Summaries (Rule 7 counts)
 
 Integrates results from Scripts 001-003 into comprehensive summary tables.
-
-Key difference from orthogroups_X_ocl Script 004:
-  This script produces PER-SUBTYPE summaries plus an ALL-SUBTYPES integrated
-  summary. The all-subtypes file is the primary downstream file shared via
-  output_to_input symlinks.
+Counts only -- no rates.
 
 Outputs:
-- Per-subtype complete OCL summaries (one per requested subtype)
-- All-subtypes integrated OCL summary (primary downstream file)
-- Per-clade comprehensive statistics (origins, presence, conservation rates)
-- Per-species summaries (total, conserved, species-specific annogroups)
-- Cross-validation report (Script 003 vs Script 004 consistency)
+- Per-annogroup complete OCL summary (all subtypes integrated -- primary downstream file)
+- Per-subtype complete OCL summaries (one file per annogroup subtype: single, combo, zero)
+- Per-clade comprehensive statistics (origins count, annogroups present at
+  clade, per-clade-as-parent counts: inherited / conserved / lost)
+- Per-species summaries (total, conserved-from-ancestors, species-specific)
+- Per (annogroup, species) phylogenetic path-states (Rule 7 AOPLX strings)
+- Cross-validation report (Script 003 vs Script 004 count consistency)
 
 All data needed for output comes from Scripts 001-003 outputs in OUTPUT_pipeline.
 No access to centralized trees_species data is needed (Script 003 already carries
 phylogenetic block and path annotations from Script 002).
 
 Usage:
-    python 004_ai-python-comprehensive_ocl_analysis.py --structure_id 001 --config ../../START_HERE-user_config.yaml --output_dir OUTPUT_pipeline
+    python 004_ai-python-comprehensive_ocl_analysis.py --structure_id 001 --config ../../START_HERE-user_config.yaml
 """
 
 import csv
@@ -47,7 +45,7 @@ csv.field_size_limit( sys.maxsize )
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description = 'OCL Pipeline Script 004: Generate comprehensive OCL analysis with per-subtype and all-subtypes summaries',
+        description = 'OCL Pipeline Script 004: Generate comprehensive OCL analysis',
         formatter_class = argparse.RawDescriptionHelpFormatter
     )
 
@@ -68,8 +66,8 @@ def parse_arguments():
     parser.add_argument(
         '--output_dir',
         type = str,
-        default = None,
-        help = 'Base output directory (overrides config if provided)'
+        default = 'OUTPUT_pipeline',
+        help = 'Base output directory (default: OUTPUT_pipeline)'
     )
 
     return parser.parse_args()
@@ -93,46 +91,39 @@ with open( config_path, 'r' ) as config_file:
 
 # Format structure ID
 TARGET_STRUCTURE = f"structure_{args.structure_id}"
-ANNOTATION_DATABASE = config[ 'annotation_database' ]
 ANNOGROUP_SUBTYPES = config[ 'annogroup_subtypes' ]
 
 # Input directories
-config_directory = config_path.parent
-
-if args.output_dir:
-    output_base_directory = Path( args.output_dir )
-else:
-    output_base_directory = config_directory / config[ 'output' ][ 'base_dir' ]
-
-input_directory_001 = output_base_directory / TARGET_STRUCTURE / '1-output'
-input_directory_002 = output_base_directory / TARGET_STRUCTURE / '2-output'
-input_directory_003 = output_base_directory / TARGET_STRUCTURE / '3-output'
+input_directory_001 = Path( args.output_dir ) / TARGET_STRUCTURE / '1-output'
+input_directory_002 = Path( args.output_dir ) / TARGET_STRUCTURE / '2-output'
+input_directory_003 = Path( args.output_dir ) / TARGET_STRUCTURE / '3-output'
 
 # Input files from Script 001
-input_clade_mappings_file = input_directory_001 / f'1_ai-clade_mappings-{TARGET_STRUCTURE}.tsv'
-input_phylogenetic_paths_file = input_directory_001 / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
-input_annogroup_map_file = input_directory_001 / '1_ai-annogroup_map.tsv'
+input_clade_mappings_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
+input_phylogenetic_paths_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
+input_annogroups_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_annogroups-species_identifiers.tsv'
 
 # Input files from Script 002
-input_origins_file = input_directory_002 / '2_ai-annogroup_origins.tsv'
-input_origins_summary_file = input_directory_002 / '2_ai-origins_summary-annogroups_per_clade.tsv'
+input_origins_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_annogroup_origins.tsv'
+input_origins_summary_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_origins_summary-annogroups_per_clade.tsv'
 
 # Input files from Script 003
-input_block_statistics_file = input_directory_003 / '3_ai-conservation_loss-per_block.tsv'
-input_annogroup_patterns_file = input_directory_003 / '3_ai-conservation_patterns-per_annogroup.tsv'
+input_block_statistics_file = input_directory_003 / f'3_ai-{TARGET_STRUCTURE}_conservation_loss-per_block.tsv'
+input_annogroup_patterns_file = input_directory_003 / f'3_ai-{TARGET_STRUCTURE}_conservation_patterns-per_annogroup.tsv'
 
 # Output directory
-output_directory = output_base_directory / TARGET_STRUCTURE / '4-output'
+output_directory = Path( args.output_dir ) / TARGET_STRUCTURE / '4-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
 # Output files
-output_all_types_complete_file = output_directory / '4_ai-annogroups-complete_ocl_summary-all_types.tsv'
-output_clade_statistics_file = output_directory / '4_ai-clades-comprehensive_statistics.tsv'
-output_species_summaries_file = output_directory / '4_ai-species-summaries.tsv'
-output_validation_report_file = output_directory / '4_ai-validation_report.txt'
+output_annogroup_complete_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-all_types.tsv'
+output_clade_statistics_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_clades-comprehensive_statistics.tsv'
+output_species_summaries_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_species-summaries.tsv'
+output_path_states_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_path_states-per_annogroup_per_species.tsv'
+output_validation_report_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_validation_report.txt'
 
 # Log file
-log_directory = output_base_directory / TARGET_STRUCTURE / 'logs'
+log_directory = Path( args.output_dir ) / TARGET_STRUCTURE / 'logs'
 log_directory.mkdir( parents = True, exist_ok = True )
 log_file = log_directory / f'4_ai-log-comprehensive_ocl_analysis-{TARGET_STRUCTURE}.log'
 
@@ -161,7 +152,13 @@ def load_annogroup_origins():
     Load annogroup origin data from Script 002 output.
 
     Returns:
-        dict: { annogroup_id: { 'origin_clade': str, 'subtype': str, 'species_count': int } }
+        dict: { annogroup_id: {
+            'phylogenetic_block': str,
+            'phylogenetic_block_state': str,
+            'origin_child_clade_id_name': str,
+            'annogroup_subtype': str,
+            'species_count': int
+        } }
     """
     logger.info( f"Loading annogroup origins from: {input_origins_file}" )
 
@@ -175,8 +172,8 @@ def load_annogroup_origins():
     with open( input_origins_file, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID (annogroup identifier)	Annogroup_Subtype (single or combo or zero)	Origin_Clade (...)	Origin_Clade_Phylogenetic_Block (...)	Origin_Clade_Phylogenetic_Path (...)	Shared_Clades (...)	Species_Count (...)	Sequence_Count (...)	Species_List (...)	Sequence_IDs (...)
-        # annogroup_pfam_1	single	Filozoa	C069_Holozoa::C002_Filozoa	...	42	120	Homo_sapiens,...	seq1,...
+        # Annogroup_ID	Annogroup_Subtype	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Shared_Clade_ID_Names	Species_Count	Species_List
+        # annogroup_pfam_1	single	C069_Holozoa::C002_Filozoa	C069_Holozoa::C002_Filozoa-O	...	42	Homo_sapiens,...
         header_row = next( csv_reader )  # Skip single-row header
 
         for parts in csv_reader:
@@ -185,12 +182,21 @@ def load_annogroup_origins():
 
             annogroup_id = parts[ 0 ]
             annogroup_subtype = parts[ 1 ]
-            origin_clade = parts[ 2 ]
+            phylogenetic_block = parts[ 2 ]
+            phylogenetic_block_state = parts[ 3 ]
             species_count = int( parts[ 6 ] )
 
+            # Derive child endpoint of origin block
+            if '::' in phylogenetic_block:
+                origin_child_clade_id_name = phylogenetic_block.split( '::', 1 )[ 1 ]
+            else:
+                origin_child_clade_id_name = phylogenetic_block
+
             annogroups___origins[ annogroup_id ] = {
-                'origin_clade': origin_clade,
-                'subtype': annogroup_subtype,
+                'phylogenetic_block': phylogenetic_block,
+                'phylogenetic_block_state': phylogenetic_block_state,
+                'origin_child_clade_id_name': origin_child_clade_id_name,
+                'annogroup_subtype': annogroup_subtype,
                 'species_count': species_count
             }
 
@@ -201,12 +207,10 @@ def load_annogroup_origins():
 
 def load_annogroup_patterns():
     """
-    Load conservation/loss patterns from Script 003 (TEMPLATE_03 format).
-
-    Script 003 for annotations outputs 17 columns (includes Annogroup_Subtype).
+    Load per-annogroup block-state counts from Script 003.
 
     Returns:
-        dict: { annogroup_id: { all TEMPLATE_03 metrics + annotations } }
+        dict: { annogroup_id: { block-state counts + annotations } }
     """
     logger.info( f"Loading annogroup patterns from: {input_annogroup_patterns_file}" )
 
@@ -220,7 +224,7 @@ def load_annogroup_patterns():
     with open( input_annogroup_patterns_file, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Annogroup_Subtype	Origin_Clade	...	(17 columns total)
+        # Annogroup_ID	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Annogroup_Subtype	Species_Count	Total_Scored_Blocks	Conservation_Events	Loss_Events	Continued_Absence_Events	Species_List
         header_row = next( csv_reader )
 
         for parts in csv_reader:
@@ -228,67 +232,81 @@ def load_annogroup_patterns():
                 continue
 
             annogroup_id = parts[ 0 ]
-            annogroup_subtype = parts[ 1 ]
-            origin_clade = parts[ 2 ]
-            phylogenetic_block = parts[ 3 ]
-            phylogenetic_path = parts[ 4 ]
+            phylogenetic_block = parts[ 1 ]
+            phylogenetic_block_state = parts[ 2 ]
+            phylogenetic_path = parts[ 3 ]
+            annogroup_subtype = parts[ 4 ]
             species_count = int( parts[ 5 ] )
-            total_inherited_transitions = int( parts[ 6 ] )
+            total_scored_blocks = int( parts[ 6 ] )
             conservation_events = int( parts[ 7 ] )
             loss_origin_events = int( parts[ 8 ] )
             continued_absence_events = int( parts[ 9 ] )
-            loss_coverage_events = int( parts[ 10 ] )
-            conservation_rate_percent = float( parts[ 11 ] )
-            loss_origin_rate_percent = float( parts[ 12 ] )
-            percent_tree_conserved = float( parts[ 13 ] )
-            percent_tree_loss = float( parts[ 14 ] )
-            species_list = parts[ 15 ]
-            sequence_ids = parts[ 16 ]
+            species_list = parts[ 10 ]
 
             annogroups___patterns[ annogroup_id ] = {
-                'subtype': annogroup_subtype,
-                'origin_clade': origin_clade,
                 'phylogenetic_block': phylogenetic_block,
+                'phylogenetic_block_state': phylogenetic_block_state,
                 'phylogenetic_path': phylogenetic_path,
+                'annogroup_subtype': annogroup_subtype,
                 'species_count': species_count,
-                'total_inherited_transitions': total_inherited_transitions,
+                'total_scored_blocks': total_scored_blocks,
                 'conservation_events': conservation_events,
                 'loss_origin_events': loss_origin_events,
                 'continued_absence_events': continued_absence_events,
-                'loss_coverage_events': loss_coverage_events,
-                'conservation_rate_percent': conservation_rate_percent,
-                'loss_origin_rate_percent': loss_origin_rate_percent,
-                'percent_tree_conserved': percent_tree_conserved,
-                'percent_tree_loss': percent_tree_loss,
-                'species_list': species_list,
-                'sequence_ids': sequence_ids
+                'species_list': species_list
             }
 
-    logger.info( f"Loaded TEMPLATE_03 patterns for {len( annogroups___patterns )} annogroups" )
+    logger.info( f"Loaded patterns for {len( annogroups___patterns )} annogroups" )
 
     return annogroups___patterns
 
 
-def load_annogroup_species():
-    """
-    Load species composition for each annogroup from annogroup map (Script 001 output).
+def load_clade_mappings():
+    """Load clade mappings from Script 001 output; returns bare name -> clade_id_name."""
+    logger.info( f"Loading clade mappings from: {input_clade_mappings_file}" )
 
-    Returns:
-        dict: { annogroup_id: set( species_names ) }
-    """
-    logger.info( f"Loading annogroup species from: {input_annogroup_map_file}" )
-
-    if not input_annogroup_map_file.exists():
-        logger.error( f"CRITICAL ERROR: Annogroup map file not found!" )
-        logger.error( f"Expected: {input_annogroup_map_file}" )
+    if not input_clade_mappings_file.exists():
+        logger.error( f"CRITICAL ERROR: Clade mapping not found!" )
+        logger.error( f"Expected: {input_clade_mappings_file}" )
         sys.exit( 1 )
 
-    annogroups___species = {}
+    clade_names___clade_id_names = {}
 
-    with open( input_annogroup_map_file, 'r' ) as input_file:
-        # Annogroup_ID (identifier format annogroup_{db}_N)	Annogroup_Subtype (single or combo or zero)	Annotation_Database (name of annotation database)	Annotation_Accessions (...)	Species_Count (...)	Sequence_Count (...)	Species_List (...)	Sequence_IDs (...)
-        # annogroup_pfam_1	single	pfam	PF00069	42	120	Homo_sapiens,Mus_musculus,...	XP_016856755.1,...
-        header_line = input_file.readline()  # Skip single-row header
+    with open( input_clade_mappings_file, 'r' ) as input_file:
+        # Clade_Name (bare clade name lookup key)	Clade_ID_Name (atomic clade identifier)
+        # Fonticula_alba	C001_Fonticula_alba
+        header_line = input_file.readline()
+
+        for line in input_file:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split( '\t' )
+            if len( parts ) < 2:
+                continue
+            clade_name = parts[ 0 ]
+            clade_id_name = parts[ 1 ]
+            clade_names___clade_id_names[ clade_name ] = clade_id_name
+
+    logger.info( f"Loaded {len( clade_names___clade_id_names )} clade mappings" )
+    return clade_names___clade_id_names
+
+
+def load_annogroup_species( clade_names___clade_id_names ):
+    """Load species composition for each annogroup; returns species_clade_id_name sets."""
+    logger.info( f"Loading annogroup species from: {input_annogroups_file}" )
+
+    if not input_annogroups_file.exists():
+        logger.error( f"CRITICAL ERROR: Annogroups file not found!" )
+        logger.error( f"Expected: {input_annogroups_file}" )
+        sys.exit( 1 )
+
+    annogroups___species_clade_id_names = {}
+
+    with open( input_annogroups_file, 'r' ) as input_file:
+        # Annogroup_ID	Annogroup_Subtype	Species_Count	Species_List
+        # annogroup_pfam_1	single	5	Homo_sapiens,Mus_musculus,...
+        header_line = input_file.readline()
 
         for line in input_file:
             line = line.strip()
@@ -297,28 +315,28 @@ def load_annogroup_species():
 
             parts = line.split( '\t' )
             annogroup_id = parts[ 0 ]
-            species_list_string = parts[ 6 ]
+            species_list_string = parts[ 3 ]
 
-            species_set = set()
-            for species_name in species_list_string.split( ',' ):
+            species_names = species_list_string.split( ',' )
+
+            species_clade_id_names_set = set()
+            for species_name in species_names:
                 species_name = species_name.strip()
-                if species_name:
-                    species_set.add( species_name )
+                if not species_name:
+                    continue
+                species_clade_id_name = clade_names___clade_id_names.get( species_name )
+                if species_clade_id_name is None:
+                    continue
+                species_clade_id_names_set.add( species_clade_id_name )
 
-            annogroups___species[ annogroup_id ] = species_set
+            annogroups___species_clade_id_names[ annogroup_id ] = species_clade_id_names_set
 
-    logger.info( f"Loaded species for {len( annogroups___species )} annogroups" )
-
-    return annogroups___species
+    logger.info( f"Loaded species_clade_id_names for {len( annogroups___species_clade_id_names )} annogroups" )
+    return annogroups___species_clade_id_names
 
 
 def load_origins_summary():
-    """
-    Load origins summary (annogroup counts per clade) from Script 002 output.
-
-    Returns:
-        dict: { clade_name: annogroup_count }
-    """
+    """Load origins summary from Script 002 output."""
     logger.info( f"Loading origins summary from: {input_origins_summary_file}" )
 
     if not input_origins_summary_file.exists():
@@ -326,12 +344,12 @@ def load_origins_summary():
         logger.error( f"Expected: {input_origins_summary_file}" )
         sys.exit( 1 )
 
-    clades___origin_counts = {}
+    clade_id_names___origin_counts = {}
 
     with open( input_origins_summary_file, 'r' ) as input_file:
-        # Origin_Clade (phylogenetic clade where annogroup originated)	Annogroup_Count (count of annogroups with this origin clade)	Percentage (percentage of all annogroups with this origin clade)
-        # Basal	4532	2.14
-        header_line = input_file.readline()  # Skip single-row header
+        # Origin_Phylogenetic_Block_State	Annogroup_Count	Percentage
+        # C069_Holozoa::C082_Metazoa-O	4532	2.14
+        header_line = input_file.readline()
 
         for line in input_file:
             line = line.strip()
@@ -339,23 +357,26 @@ def load_origins_summary():
                 continue
 
             parts = line.split( '\t' )
-            clade_name = parts[ 0 ]
+            phylogenetic_block_state = parts[ 0 ]
             annogroup_count = int( parts[ 1 ] )
 
-            clades___origin_counts[ clade_name ] = annogroup_count
+            # Extract child clade_id_name from block-state identifier
+            if '::' in phylogenetic_block_state and phylogenetic_block_state.endswith( '-O' ):
+                child_clade_id_name = phylogenetic_block_state.split( '::', 1 )[ 1 ][:-2]
+            elif phylogenetic_block_state == 'NA':
+                continue
+            else:
+                logger.warning( f"Unexpected block-state identifier format: {phylogenetic_block_state!r} -- skipping" )
+                continue
 
-    logger.info( f"Loaded origin counts for {len( clades___origin_counts )} clades" )
+            clade_id_names___origin_counts[ child_clade_id_name ] = annogroup_count
 
-    return clades___origin_counts
+    logger.info( f"Loaded origin counts for {len( clade_id_names___origin_counts )} clades" )
+    return clade_id_names___origin_counts
 
 
 def load_block_statistics():
-    """
-    Load per-block conservation/loss statistics from Script 003 output.
-
-    Returns:
-        list: [ { 'parent_clade': str, 'child_clade': str, ... } ]
-    """
+    """Load per-block conservation/loss statistics from Script 003 output."""
     logger.info( f"Loading block statistics from: {input_block_statistics_file}" )
 
     if not input_block_statistics_file.exists():
@@ -366,9 +387,8 @@ def load_block_statistics():
     block_statistics = []
 
     with open( input_block_statistics_file, 'r' ) as input_file:
-        # Parent_Clade (parent clade...)	Child_Clade (child clade...)	Inherited_Count (...)	Conserved_Count (...)	Lost_Count (...)	Conservation_Rate (...)	Loss_Rate (...)
-        # Opisthokonta	Holozoa	45231	43892	1339	97.04	2.96
-        header_line = input_file.readline()  # Skip single-row header
+        # Parent_Clade_ID_Name	Child_Clade_ID_Name	Inherited_Count	Conserved_Count	Lost_Count
+        header_line = input_file.readline()
 
         for line in input_file:
             line = line.strip()
@@ -377,29 +397,20 @@ def load_block_statistics():
 
             parts = line.split( '\t' )
             statistic = {
-                'parent_clade': parts[ 0 ],
-                'child_clade': parts[ 1 ],
+                'parent_clade_id_name': parts[ 0 ],
+                'child_clade_id_name': parts[ 1 ],
                 'inherited_count': int( parts[ 2 ] ),
                 'conserved_count': int( parts[ 3 ] ),
                 'lost_count': int( parts[ 4 ] ),
-                'conservation_rate': float( parts[ 5 ] ),
-                'loss_rate': float( parts[ 6 ] )
             }
-
             block_statistics.append( statistic )
 
     logger.info( f"Loaded statistics for {len( block_statistics )} blocks" )
-
     return block_statistics
 
 
 def load_phylogenetic_paths():
-    """
-    Load phylogenetic paths (root-to-tip) for each species from Script 001 output.
-
-    Returns:
-        dict: { species_name: [ clade_name_1, ..., species_name ] }
-    """
+    """Load phylogenetic paths from Script 001 output; keyed by leaf species_clade_id_name."""
     logger.info( f"Loading phylogenetic paths from: {input_phylogenetic_paths_file}" )
 
     if not input_phylogenetic_paths_file.exists():
@@ -407,12 +418,12 @@ def load_phylogenetic_paths():
         logger.error( f"Expected: {input_phylogenetic_paths_file}" )
         sys.exit( 1 )
 
-    species_names___phylogenetic_paths = {}
+    species_clade_id_names___phylogenetic_paths = {}
 
     with open( input_phylogenetic_paths_file, 'r' ) as input_file:
-        # Leaf_Clade_ID (terminal leaf clade identifier and name)	Path_Length (number of nodes in path from root to leaf)	Phylogenetic_Path (comma delimited path from root to leaf)
+        # Leaf_Clade_ID	Path_Length	Phylogenetic_Path
         # C001_Fonticula_alba	3	C068_Basal,C069_Holomycota,C001_Fonticula_alba
-        header_line = input_file.readline()  # Skip single-row header
+        header_line = input_file.readline()
 
         for line in input_file:
             line = line.strip()
@@ -422,69 +433,23 @@ def load_phylogenetic_paths():
             parts = line.split( '\t' )
             path_string = parts[ 2 ]
 
-            # Parse path (comma-separated clade IDs with names)
-            path_entries = path_string.split( ',' )
-            path = []
-            for clade_id_name in path_entries:
-                if '_' in clade_id_name:
-                    clade_name = '_'.join( clade_id_name.split( '_' )[ 1: ] )
-                    path.append( clade_name )
+            path = [ entry for entry in path_string.split( ',' ) if entry ]
 
             if path:
-                species_name = path[ -1 ]
-                species_names___phylogenetic_paths[ species_name ] = path
+                species_clade_id_name = path[ -1 ]
+                species_clade_id_names___phylogenetic_paths[ species_clade_id_name ] = path
 
-    logger.info( f"Loaded {len( species_names___phylogenetic_paths )} phylogenetic paths" )
-
-    return species_names___phylogenetic_paths
-
-
-def load_all_clade_names():
-    """
-    Load all clade names from Script 001 clade mappings.
-
-    Returns:
-        list: [ clade_name_1, clade_name_2, ... ]
-    """
-    logger.info( f"Loading clade names from: {input_clade_mappings_file}" )
-
-    if not input_clade_mappings_file.exists():
-        logger.error( f"CRITICAL ERROR: Clade mapping not found!" )
-        logger.error( f"Expected: {input_clade_mappings_file}" )
-        sys.exit( 1 )
-
-    clade_names = []
-
-    with open( input_clade_mappings_file, 'r' ) as input_file:
-        # Clade_ID (clade identifier from trees_species)	Clade_Name (clade name from phylogenetic tree)
-        # C001	Fonticula_alba
-        header_line = input_file.readline()  # Skip single-row header
-
-        for line in input_file:
-            line = line.strip()
-            if not line:
-                continue
-
-            parts = line.split( '\t' )
-            clade_name = parts[ 1 ]
-            clade_names.append( clade_name )
-
-    logger.info( f"Loaded {len( clade_names )} clade names" )
-
-    return clade_names
+    logger.info( f"Loaded {len( species_clade_id_names___phylogenetic_paths )} phylogenetic paths" )
+    return species_clade_id_names___phylogenetic_paths
 
 
 # ============================================================================
-# SECTION 2: GENERATE ANNOGROUP SUMMARIES
+# SECTION 2: GENERATE PER-ANNOGROUP COMPLETE SUMMARIES
 # ============================================================================
 
 def generate_annogroup_summaries( annogroups___origins, annogroups___patterns ):
     """
-    Generate complete per-annogroup summaries with TEMPLATE_03 dual-metric tracking.
-
-    Combines origin and conservation/loss data from Scripts 002-003. All annotation
-    data (phylogenetic block, path, species list, sequence IDs) is carried
-    forward from Script 003 output.
+    Generate complete per-annogroup summaries (Rule 7 block-state counts).
 
     Returns:
         list: Per-annogroup summary dictionaries
@@ -497,48 +462,34 @@ def generate_annogroup_summaries( annogroups___origins, annogroups___patterns ):
         origin_info = annogroups___origins[ annogroup_id ]
         pattern_info = annogroups___patterns.get( annogroup_id, {} )
 
-        # Extract TEMPLATE_03 metrics from Script 003
-        total_inherited_transitions = pattern_info.get( 'total_inherited_transitions', 0 )
+        total_scored_blocks = pattern_info.get( 'total_scored_blocks', 0 )
         conservation_events = pattern_info.get( 'conservation_events', 0 )
         loss_origin_events = pattern_info.get( 'loss_origin_events', 0 )
         continued_absence_events = pattern_info.get( 'continued_absence_events', 0 )
-        loss_coverage_events = pattern_info.get( 'loss_coverage_events', 0 )
-        conservation_rate_percent = pattern_info.get( 'conservation_rate_percent', 0.0 )
-        loss_origin_rate_percent = pattern_info.get( 'loss_origin_rate_percent', 0.0 )
-        percent_tree_conserved = pattern_info.get( 'percent_tree_conserved', 0.0 )
-        percent_tree_loss = pattern_info.get( 'percent_tree_loss', 0.0 )
 
-        # Carry forward annotation data from Script 003
-        annogroup_subtype = pattern_info.get( 'subtype', origin_info.get( 'subtype', 'NA' ) )
         phylogenetic_block = pattern_info.get( 'phylogenetic_block', 'NA' )
+        phylogenetic_block_state = pattern_info.get( 'phylogenetic_block_state', 'NA' )
         phylogenetic_path = pattern_info.get( 'phylogenetic_path', 'NA' )
+        annogroup_subtype = pattern_info.get( 'annogroup_subtype', origin_info.get( 'annogroup_subtype', 'unknown' ) )
         species_list = pattern_info.get( 'species_list', '' )
-        sequence_ids = pattern_info.get( 'sequence_ids', '' )
 
         summary = {
             'annogroup_id': annogroup_id,
             'annogroup_subtype': annogroup_subtype,
-            'origin_clade': origin_info[ 'origin_clade' ],
             'phylogenetic_block': phylogenetic_block,
+            'phylogenetic_block_state': phylogenetic_block_state,
             'phylogenetic_path': phylogenetic_path,
             'species_count': origin_info[ 'species_count' ],
-            'total_inherited_transitions': total_inherited_transitions,
+            'total_scored_blocks': total_scored_blocks,
             'conservation_events': conservation_events,
             'loss_origin_events': loss_origin_events,
             'continued_absence_events': continued_absence_events,
-            'loss_coverage_events': loss_coverage_events,
-            'conservation_rate_percent': conservation_rate_percent,
-            'loss_origin_rate_percent': loss_origin_rate_percent,
-            'percent_tree_conserved': percent_tree_conserved,
-            'percent_tree_loss': percent_tree_loss,
-            'species_list': species_list,
-            'sequence_ids': sequence_ids
+            'species_list': species_list
         }
 
         annogroup_summaries.append( summary )
 
     logger.info( f"Generated summaries for {len( annogroup_summaries )} annogroups" )
-
     return annogroup_summaries
 
 
@@ -546,89 +497,66 @@ def generate_annogroup_summaries( annogroups___origins, annogroups___patterns ):
 # SECTION 3: GENERATE PER-CLADE COMPREHENSIVE STATISTICS
 # ============================================================================
 
-def generate_clade_statistics( clade_names, clades___origin_counts, annogroups___species,
-                               species_names___phylogenetic_paths, block_statistics ):
-    """
-    Generate comprehensive statistics for each clade.
-
-    Includes:
-    - Annogroups originated at this clade
-    - Annogroups present in this clade (at least one descendant species has it)
-    - Conservation/loss statistics when clade is parent
-    - Descendant species count
-
-    Returns:
-        list: Per-clade statistic dictionaries
-    """
+def generate_clade_statistics( clade_id_names, clade_id_names___origin_counts, annogroups___species_clade_id_names,
+                               species_clade_id_names___phylogenetic_paths, block_statistics ):
+    """Generate comprehensive statistics for each clade."""
     logger.info( "Generating comprehensive clade statistics..." )
 
-    # Build clade-to-descendants mapping
-    clades___descendant_species = defaultdict( set )
-    for species_name, path in species_names___phylogenetic_paths.items():
-        for clade_name in path:
-            clades___descendant_species[ clade_name ].add( species_name )
+    # Build clade_id_name-to-descendants mapping
+    clade_id_names___descendant_species_clade_id_names = defaultdict( set )
+    for species_clade_id_name, path in species_clade_id_names___phylogenetic_paths.items():
+        for clade_id_name in path:
+            clade_id_names___descendant_species_clade_id_names[ clade_id_name ].add( species_clade_id_name )
 
-    # Build clade-to-annogroups mapping (annogroups present in clade)
-    clades___annogroups = defaultdict( set )
-    for annogroup_id, species_set in annogroups___species.items():
-        for clade_name in clade_names:
-            descendant_species = clades___descendant_species.get( clade_name, set() )
-            if species_set.intersection( descendant_species ):
-                clades___annogroups[ clade_name ].add( annogroup_id )
+    # Build clade_id_name-to-annogroups mapping
+    clade_id_names___annogroups = defaultdict( set )
+    for annogroup_id, species_clade_id_names_set in annogroups___species_clade_id_names.items():
+        for clade_id_name in clade_id_names:
+            descendant_species_clade_id_names = clade_id_names___descendant_species_clade_id_names.get( clade_id_name, set() )
+            if species_clade_id_names_set.intersection( descendant_species_clade_id_names ):
+                clade_id_names___annogroups[ clade_id_name ].add( annogroup_id )
 
     # Aggregate conservation/loss statistics per clade (as parent)
-    clades___conservation_statistics = {}
+    clade_id_names___conservation_statistics = {}
     for statistic in block_statistics:
-        parent_clade = statistic[ 'parent_clade' ]
+        parent_clade_id_name = statistic[ 'parent_clade_id_name' ]
 
-        if parent_clade not in clades___conservation_statistics:
-            clades___conservation_statistics[ parent_clade ] = {
+        if parent_clade_id_name not in clade_id_names___conservation_statistics:
+            clade_id_names___conservation_statistics[ parent_clade_id_name ] = {
                 'as_parent_inherited': 0,
                 'as_parent_conserved': 0,
                 'as_parent_lost': 0
             }
 
-        clades___conservation_statistics[ parent_clade ][ 'as_parent_inherited' ] += statistic[ 'inherited_count' ]
-        clades___conservation_statistics[ parent_clade ][ 'as_parent_conserved' ] += statistic[ 'conserved_count' ]
-        clades___conservation_statistics[ parent_clade ][ 'as_parent_lost' ] += statistic[ 'lost_count' ]
+        clade_id_names___conservation_statistics[ parent_clade_id_name ][ 'as_parent_inherited' ] += statistic[ 'inherited_count' ]
+        clade_id_names___conservation_statistics[ parent_clade_id_name ][ 'as_parent_conserved' ] += statistic[ 'conserved_count' ]
+        clade_id_names___conservation_statistics[ parent_clade_id_name ][ 'as_parent_lost' ] += statistic[ 'lost_count' ]
 
-    # Generate statistics for each clade
     clade_statistics = []
 
-    for clade_name in sorted( clade_names ):
-        origins_count = clades___origin_counts.get( clade_name, 0 )
-        annogroups_present = len( clades___annogroups.get( clade_name, set() ) )
-        descendant_species_count = len( clades___descendant_species.get( clade_name, set() ) )
+    for clade_id_name in sorted( clade_id_names ):
+        origins_count = clade_id_names___origin_counts.get( clade_id_name, 0 )
+        annogroups_present = len( clade_id_names___annogroups.get( clade_id_name, set() ) )
+        descendant_species_count = len( clade_id_names___descendant_species_clade_id_names.get( clade_id_name, set() ) )
 
-        conservation_data = clades___conservation_statistics.get( clade_name, {} )
+        conservation_data = clade_id_names___conservation_statistics.get( clade_id_name, {} )
         inherited_as_parent = conservation_data.get( 'as_parent_inherited', 0 )
         conserved_as_parent = conservation_data.get( 'as_parent_conserved', 0 )
         lost_as_parent = conservation_data.get( 'as_parent_lost', 0 )
 
-        # Handle zero inherited explicitly
-        if inherited_as_parent > 0:
-            conservation_rate = ( conserved_as_parent / inherited_as_parent ) * 100
-            loss_rate = ( lost_as_parent / inherited_as_parent ) * 100
-        else:
-            conservation_rate = 0.0
-            loss_rate = 0.0
-
         statistic = {
-            'clade_name': clade_name,
+            'clade_id_name': clade_id_name,
             'origins_count': origins_count,
             'annogroups_present': annogroups_present,
             'descendant_species_count': descendant_species_count,
             'inherited_as_parent': inherited_as_parent,
             'conserved_as_parent': conserved_as_parent,
             'lost_as_parent': lost_as_parent,
-            'conservation_rate': conservation_rate,
-            'loss_rate': loss_rate
         }
 
         clade_statistics.append( statistic )
 
     logger.info( f"Generated statistics for {len( clade_statistics )} clades" )
-
     return clade_statistics
 
 
@@ -636,40 +564,25 @@ def generate_clade_statistics( clade_names, clades___origin_counts, annogroups__
 # SECTION 4: GENERATE PER-SPECIES SUMMARIES
 # ============================================================================
 
-def generate_species_summaries( species_names___phylogenetic_paths, annogroups___species,
-                               clades___origin_counts ):
-    """
-    Generate per-species summaries.
-
-    Includes:
-    - Total annogroups present in species
-    - Annogroups conserved from ancestors
-    - Species-specific annogroups (originated at this species)
-
-    Returns:
-        list: Per-species summary dictionaries
-    """
+def generate_species_summaries( species_clade_id_names___phylogenetic_paths, annogroups___species_clade_id_names,
+                               clade_id_names___origin_counts ):
+    """Generate per-species summaries keyed by species_clade_id_name."""
     logger.info( "Generating per-species summaries..." )
 
     species_summaries = []
 
-    for species_name in sorted( species_names___phylogenetic_paths.keys() ):
-        # Find annogroups present in this species
+    for species_clade_id_name in sorted( species_clade_id_names___phylogenetic_paths.keys() ):
         annogroups_in_species = set()
-        for annogroup_id, species_set in annogroups___species.items():
-            if species_name in species_set:
+        for annogroup_id, species_set in annogroups___species_clade_id_names.items():
+            if species_clade_id_name in species_set:
                 annogroups_in_species.add( annogroup_id )
 
         total_annogroups = len( annogroups_in_species )
-
-        # Species-specific annogroups (originated at this species)
-        species_specific = clades___origin_counts.get( species_name, 0 )
-
-        # Conserved from ancestors = total - species-specific
+        species_specific = clade_id_names___origin_counts.get( species_clade_id_name, 0 )
         conserved_from_ancestors = total_annogroups - species_specific
 
         summary = {
-            'species_name': species_name,
+            'species_clade_id_name': species_clade_id_name,
             'total_annogroups': total_annogroups,
             'conserved_from_ancestors': conserved_from_ancestors,
             'species_specific': species_specific
@@ -678,8 +591,144 @@ def generate_species_summaries( species_names___phylogenetic_paths, annogroups__
         species_summaries.append( summary )
 
     logger.info( f"Generated summaries for {len( species_summaries )} species" )
-
     return species_summaries
+
+
+# ============================================================================
+# SECTION 4b: PHYLOGENETIC PATH-STATES (Rule 7)
+# ============================================================================
+
+def build_clade_descendant_species( species_clade_id_names___phylogenetic_paths ):
+    """Build per-clade descendant-species sets using the phylogenetic paths."""
+    clade_id_names___descendant_species_clade_id_names = defaultdict( set )
+    for species_clade_id_name, phylogenetic_path in species_clade_id_names___phylogenetic_paths.items():
+        for clade_id_name in phylogenetic_path:
+            clade_id_names___descendant_species_clade_id_names[ clade_id_name ].add( species_clade_id_name )
+    return clade_id_names___descendant_species_clade_id_names
+
+
+def build_clade_descendant_clades( species_clade_id_names___phylogenetic_paths ):
+    """Build per-clade descendant-clade sets using the phylogenetic paths."""
+    clade_id_names___descendant_clade_id_names = defaultdict( set )
+    for species_clade_id_name, phylogenetic_path in species_clade_id_names___phylogenetic_paths.items():
+        for position_index, clade_id_name in enumerate( phylogenetic_path ):
+            for descendant_clade_id_name in phylogenetic_path[ position_index: ]:
+                clade_id_names___descendant_clade_id_names[ clade_id_name ].add( descendant_clade_id_name )
+    return clade_id_names___descendant_clade_id_names
+
+
+def compute_phylogenetic_path_state( phylogenetic_path, annogroup_species_clade_id_names,
+                                     origin_child_clade_id_name,
+                                     clade_id_names___descendant_clade_id_names,
+                                     clade_id_names___descendant_species_clade_id_names ):
+    """
+    Compute the Rule 7 phylogenetic path-state letter string for one species
+    path and one annogroup. Returns N-letter string using {A, O, P, L, X}.
+    """
+    if len( phylogenetic_path ) < 2:
+        return ''
+
+    eligible_clade_id_names = clade_id_names___descendant_clade_id_names.get(
+        origin_child_clade_id_name, set()
+    )
+
+    def clade_is_present( clade_id_name ):
+        """Rule 7 presence: eligible AND has annogroup descendant species."""
+        if clade_id_name not in eligible_clade_id_names:
+            return False
+        descendant_species = clade_id_names___descendant_species_clade_id_names.get(
+            clade_id_name, set()
+        )
+        return bool( annogroup_species_clade_id_names & descendant_species )
+
+    letters = []
+
+    for i in range( 1, len( phylogenetic_path ) ):
+        parent_clade_id_name = phylogenetic_path[ i - 1 ]
+        child_clade_id_name = phylogenetic_path[ i ]
+
+        parent_eligible = parent_clade_id_name in eligible_clade_id_names
+        child_eligible = child_clade_id_name in eligible_clade_id_names
+
+        if not parent_eligible:
+            if child_eligible:
+                letters.append( 'O' )
+            else:
+                letters.append( 'A' )
+        else:
+            parent_has_descendants = clade_is_present( parent_clade_id_name )
+            child_has_descendants = clade_is_present( child_clade_id_name )
+
+            if parent_has_descendants and child_has_descendants:
+                letters.append( 'P' )
+            elif parent_has_descendants and ( not child_has_descendants ):
+                letters.append( 'L' )
+            else:
+                letters.append( 'X' )
+
+    return ''.join( letters )
+
+
+def generate_path_states( annogroups___species_clade_id_names,
+                          annogroups___origins,
+                          species_clade_id_names___phylogenetic_paths ):
+    """Generate per (annogroup, species) phylogenetic path-state rows."""
+    logger.info( "Generating per-annogroup per-species phylogenetic path-states..." )
+
+    clade_id_names___descendant_species_clade_id_names = build_clade_descendant_species(
+        species_clade_id_names___phylogenetic_paths
+    )
+    clade_id_names___descendant_clade_id_names = build_clade_descendant_clades(
+        species_clade_id_names___phylogenetic_paths
+    )
+
+    path_state_rows = []
+
+    sorted_annogroup_ids = sorted( annogroups___species_clade_id_names.keys() )
+    sorted_species_clade_id_names = sorted( species_clade_id_names___phylogenetic_paths.keys() )
+
+    skipped_missing_origin = 0
+
+    for annogroup_id in sorted_annogroup_ids:
+        annogroup_species_clade_id_names = annogroups___species_clade_id_names[ annogroup_id ]
+
+        origin_data = annogroups___origins.get( annogroup_id )
+        if not origin_data or origin_data.get( 'origin_child_clade_id_name' ) in ( None, 'NA', '' ):
+            skipped_missing_origin += 1
+            continue
+
+        origin_child_clade_id_name = origin_data[ 'origin_child_clade_id_name' ]
+
+        for species_clade_id_name in sorted_species_clade_id_names:
+            phylogenetic_path = species_clade_id_names___phylogenetic_paths[ species_clade_id_name ]
+
+            species_in_annogroup = species_clade_id_name in annogroup_species_clade_id_names
+
+            phylogenetic_path_state = compute_phylogenetic_path_state(
+                phylogenetic_path,
+                annogroup_species_clade_id_names,
+                origin_child_clade_id_name,
+                clade_id_names___descendant_clade_id_names,
+                clade_id_names___descendant_species_clade_id_names
+            )
+
+            phylogenetic_path_string = ','.join( phylogenetic_path )
+
+            path_state_rows.append( {
+                'annogroup_id': annogroup_id,
+                'species_clade_id_name': species_clade_id_name,
+                'species_in_annogroup': species_in_annogroup,
+                'phylogenetic_path': phylogenetic_path_string,
+                'phylogenetic_path_state': phylogenetic_path_state
+            } )
+
+    logger.info( f"Generated {len( path_state_rows )} path-state rows "
+                 f"({len( sorted_annogroup_ids ) - skipped_missing_origin} annogroups x "
+                 f"{len( sorted_species_clade_id_names )} species)" )
+    if skipped_missing_origin > 0:
+        logger.info( f"Skipped {skipped_missing_origin} annogroups lacking origin data" )
+
+    return path_state_rows
 
 
 # ============================================================================
@@ -688,25 +737,12 @@ def generate_species_summaries( species_names___phylogenetic_paths, annogroups__
 
 def cross_validate_results( annogroup_summaries, clade_statistics, species_summaries,
                             annogroups___origins, annogroups___patterns ):
-    """
-    Cross-validate results and generate QC report.
-
-    Checks:
-    1. Total annogroup counts match across outputs
-    2. Sum of origins equals total annogroups
-    3. Species annogroup count ranges are reasonable
-    4. Conservation rate sanity
-    5. Script 004 TEMPLATE_03 metrics match Script 003 exactly
-
-    Returns:
-        list: Validation report lines
-    """
+    """Cross-validate results and generate QC report."""
     logger.info( "Cross-validating results..." )
 
     validation_report = []
     validation_report.append( "=" * 80 )
     validation_report.append( "CROSS-VALIDATION AND QC REPORT" )
-    validation_report.append( f"Annotation Database: {ANNOTATION_DATABASE}" )
     validation_report.append( "=" * 80 )
     validation_report.append( "" )
 
@@ -755,55 +791,51 @@ def cross_validate_results( annogroup_summaries, clade_statistics, species_summa
 
     validation_report.append( "" )
 
-    # Check 4: Conservation rate sanity
-    validation_report.append( "CHECK 4: Conservation Rate Sanity Checks" )
-    clade_conservation_rates = [ statistic[ 'conservation_rate' ] for statistic in clade_statistics if statistic[ 'conservation_rate' ] > 0 ]
+    # Check 4: Per-clade conserved-vs-inherited sanity
+    validation_report.append( "CHECK 4: Per-Clade Conserved vs Inherited Counts" )
+    anomalies = [
+        statistic[ 'clade_id_name' ]
+        for statistic in clade_statistics
+        if statistic[ 'conserved_as_parent' ] > statistic[ 'inherited_as_parent' ]
+    ]
 
-    if clade_conservation_rates:
-        average_conservation = sum( clade_conservation_rates ) / len( clade_conservation_rates )
-        validation_report.append( f"  Average conservation rate (clades with data): {average_conservation:.2f}%" )
-        validation_report.append( "  PASS: Conservation rates within expected range" )
+    if anomalies:
+        validation_report.append( f"  FAIL: {len( anomalies )} clades have conserved_as_parent > inherited_as_parent (impossible)" )
+        for clade_id_name in anomalies[ :10 ]:
+            validation_report.append( f"    {clade_id_name}" )
     else:
-        validation_report.append( "  WARNING: No conservation rate data available" )
+        validation_report.append( "  PASS: conserved_as_parent <= inherited_as_parent for every clade" )
 
     validation_report.append( "" )
 
-    # Check 5: Script 004 matches Script 003 (critical cross-script validation)
-    validation_report.append( "CHECK 5: Script 004 Matches Script 003 (TEMPLATE_03)" )
-    validation_report.append( "  Verifying annogroup summaries match conservation patterns exactly..." )
+    # Check 5: Script 004 matches Script 003
+    validation_report.append( "CHECK 5: Script 004 Matches Script 003 (per-annogroup counts)" )
 
     mismatches = []
     for summary in annogroup_summaries:
         annogroup_id = summary[ 'annogroup_id' ]
 
-        # Get TEMPLATE_03 values from Script 004 (this script)
-        total_inherited_004 = summary[ 'total_inherited_transitions' ]
+        total_scored_blocks_004 = summary[ 'total_scored_blocks' ]
         conservation_004 = summary[ 'conservation_events' ]
         loss_origin_004 = summary[ 'loss_origin_events' ]
         continued_absence_004 = summary[ 'continued_absence_events' ]
-        loss_coverage_004 = summary[ 'loss_coverage_events' ]
 
-        # Get TEMPLATE_03 values from Script 003
         pattern_003 = annogroups___patterns.get( annogroup_id, {} )
-        total_inherited_003 = pattern_003.get( 'total_inherited_transitions', -1 )
+        total_scored_blocks_003 = pattern_003.get( 'total_scored_blocks', -1 )
         conservation_003 = pattern_003.get( 'conservation_events', -1 )
         loss_origin_003 = pattern_003.get( 'loss_origin_events', -1 )
         continued_absence_003 = pattern_003.get( 'continued_absence_events', -1 )
-        loss_coverage_003 = pattern_003.get( 'loss_coverage_events', -1 )
 
-        if ( total_inherited_004 != total_inherited_003 or
+        if ( total_scored_blocks_004 != total_scored_blocks_003 or
              conservation_004 != conservation_003 or
              loss_origin_004 != loss_origin_003 or
-             continued_absence_004 != continued_absence_003 or
-             loss_coverage_004 != loss_coverage_003 ):
+             continued_absence_004 != continued_absence_003 ):
             mismatches.append( annogroup_id )
 
     if not mismatches:
         validation_report.append( f"  PASS: All {len( annogroup_summaries )} annogroups match between Script 003 and Script 004" )
     else:
         validation_report.append( f"  FAIL: Found {len( mismatches )} mismatches!" )
-        logger.error( f"CRITICAL ERROR: Script 004 and Script 003 data do not match!" )
-        logger.error( f"Found {len( mismatches )} mismatches between scripts" )
 
     validation_report.append( "" )
 
@@ -820,7 +852,6 @@ def cross_validate_results( annogroup_summaries, clade_statistics, species_summa
     validation_report.append( "=" * 80 )
 
     logger.info( "Cross-validation completed" )
-
     return validation_report
 
 
@@ -828,105 +859,58 @@ def cross_validate_results( annogroup_summaries, clade_statistics, species_summa
 # SECTION 6: WRITE OUTPUTS
 # ============================================================================
 
-def build_annogroup_summary_header():
-    """Build the standard header columns for annogroup summary files."""
-    return [
-        'Annogroup_ID (annogroup identifier)',
-        'Annogroup_Subtype (single or combo or zero)',
-        'Origin_Clade (phylogenetic clade where annogroup originated)',
-        'Origin_Clade_Phylogenetic_Block (phylogenetic block for origin clade format Parent_Clade::Child_Clade)',
-        'Origin_Clade_Phylogenetic_Path (phylogenetic path for origin clade comma delimited from root to origin clade)',
-        'Species_Count (total unique species in annogroup)',
-        'Total_Phylogenetically_Inherited_Transitions (count of all parent to child clade transitions descended from origin clade where annogroup was phylogenetically inherited)',
-        'Conservation_Events_Actually_Present_In_Both_Parent_And_Child (count of transitions where annogroup actually present in descendant species of both parent and child clades)',
-        'Loss_At_Origin_Events_Present_In_Parent_Absent_In_Child (count of transitions where annogroup present in parent species but absent in child species representing phylogenetic origin of gene loss)',
-        'Continued_Absence_Events_Absent_In_Both_Parent_And_Child (count of transitions where annogroup absent in both parent and child species meaning loss occurred earlier and absence continues)',
-        'Loss_Coverage_Events_All_Transitions_Where_Absent_In_Child (count of all transitions where annogroup absent in child species calculated as loss at origin plus continued absence)',
-        'Conservation_Rate_Percent (percentage of inherited transitions showing conservation calculated as conservation events divided by total inherited transitions times 100)',
-        'Loss_At_Origin_Rate_Percent (percentage of inherited transitions where gene loss first occurs calculated as loss at origin events divided by total inherited transitions times 100)',
-        'Percent_Phylogenetic_Tree_With_Annogroup_Actually_Present (percentage of phylogenetic tree where annogroup is present calculated as conservation events divided by total inherited transitions times 100)',
-        'Percent_Phylogenetic_Tree_Lacking_Annogroup (percentage of phylogenetic tree where annogroup is absent calculated as loss coverage events divided by total inherited transitions times 100)',
-        'Species_List (comma delimited list of all species containing this annogroup)',
-        'Sequence_IDs (comma delimited list of sequence identifiers in this annogroup)'
-    ]
+def write_annogroup_summaries( annogroup_summaries, output_file_path, subtype_filter = None ):
+    """Write per-annogroup summaries (Rule 7 block-state counts).
 
-
-def build_annogroup_summary_row( summary ):
-    """Build an output row from an annogroup summary dictionary."""
-    return [
-        summary[ 'annogroup_id' ],
-        summary[ 'annogroup_subtype' ],
-        summary[ 'origin_clade' ],
-        summary[ 'phylogenetic_block' ],
-        summary[ 'phylogenetic_path' ],
-        summary[ 'species_count' ],
-        summary[ 'total_inherited_transitions' ],
-        summary[ 'conservation_events' ],
-        summary[ 'loss_origin_events' ],
-        summary[ 'continued_absence_events' ],
-        summary[ 'loss_coverage_events' ],
-        f"{summary[ 'conservation_rate_percent' ]:.2f}",
-        f"{summary[ 'loss_origin_rate_percent' ]:.2f}",
-        f"{summary[ 'percent_tree_conserved' ]:.2f}",
-        f"{summary[ 'percent_tree_loss' ]:.2f}",
-        summary[ 'species_list' ],
-        summary[ 'sequence_ids' ]
-    ]
-
-
-def write_per_subtype_summaries( annogroup_summaries ):
+    Args:
+        annogroup_summaries: List of summary dicts
+        output_file_path: Path to write to
+        subtype_filter: If provided, only write summaries matching this subtype
     """
-    Write per-subtype complete OCL summary files.
+    if subtype_filter:
+        filtered_summaries = [ s for s in annogroup_summaries if s[ 'annogroup_subtype' ] == subtype_filter ]
+        logger.info( f"Writing {subtype_filter} annogroup summaries ({len( filtered_summaries )}) to: {output_file_path}" )
+    else:
+        filtered_summaries = annogroup_summaries
+        logger.info( f"Writing all-types annogroup summaries ({len( filtered_summaries )}) to: {output_file_path}" )
 
-    Creates one file per subtype: 4_ai-annogroups-complete_ocl_summary-{subtype}.tsv
-    """
-    logger.info( "Writing per-subtype OCL summaries..." )
-
-    # Group summaries by subtype
-    subtypes___summaries = defaultdict( list )
-    for summary in annogroup_summaries:
-        subtype = summary[ 'annogroup_subtype' ]
-        subtypes___summaries[ subtype ].append( summary )
-
-    header_columns = build_annogroup_summary_header()
-
-    for subtype in sorted( subtypes___summaries.keys() ):
-        subtype_summaries = subtypes___summaries[ subtype ]
-        output_subtype_file = output_directory / f'4_ai-annogroups-complete_ocl_summary-{subtype}.tsv'
-
-        logger.info( f"Writing {subtype} summary to: {output_subtype_file}" )
-
-        with open( output_subtype_file, 'w', newline = '', encoding = 'utf-8' ) as output_file:
-            csv_writer = csv.writer( output_file, delimiter = '\t', quoting = csv.QUOTE_MINIMAL )
-
-            csv_writer.writerow( header_columns )
-
-            for summary in subtype_summaries:
-                csv_writer.writerow( build_annogroup_summary_row( summary ) )
-
-        logger.info( f"Wrote {len( subtype_summaries )} {subtype} annogroup summaries" )
-
-
-def write_all_types_summary( annogroup_summaries ):
-    """
-    Write the all-subtypes integrated OCL summary (primary downstream file).
-
-    This is the file shared via output_to_input symlinks:
-    4_ai-annogroups-complete_ocl_summary-all_types.tsv
-    """
-    logger.info( f"Writing all-types integrated summary to: {output_all_types_complete_file}" )
-
-    header_columns = build_annogroup_summary_header()
-
-    with open( output_all_types_complete_file, 'w', newline = '', encoding = 'utf-8' ) as output_file:
+    with open( output_file_path, 'w', newline = '', encoding = 'utf-8' ) as output_file:
         csv_writer = csv.writer( output_file, delimiter = '\t', quoting = csv.QUOTE_MINIMAL )
+
+        header_columns = [
+            'Annogroup_ID (annogroup identifier)',
+            'Annogroup_Subtype (single or combo or zero)',
+            'Origin_Phylogenetic_Block (phylogenetic block containing the origin transition format Parent_Clade_ID_Name::Child_Clade_ID_Name)',
+            'Origin_Phylogenetic_Block_State (phylogenetic transition block for origin in five-state vocabulary format Parent_Clade_ID_Name::Child_Clade_ID_Name-O where O marks Origin; five states are A=Inherited Absence O=Origin P=Inherited Presence L=Loss X=Inherited Loss)',
+            'Origin_Phylogenetic_Path (phylogenetic path from root to the child endpoint of the origin block comma delimited as clade_id_name values)',
+            'Species_Count (total unique species in annogroup)',
+            'Total_Scored_Blocks (count of phylogenetic blocks classified into block-states P L or X for this annogroup; equals P plus L plus X)',
+            'Conservation_Events (count of phylogenetic blocks in block-state P where annogroup is present at both parent and child clades)',
+            'Loss_Events (count of phylogenetic blocks in block-state L where annogroup is present at parent and absent at child)',
+            'Continued_Absence_Events (count of phylogenetic blocks in block-state X where annogroup is absent at both parent and child after an upstream loss)',
+            'Species_List (comma delimited list of all species containing this annogroup)'
+        ]
 
         csv_writer.writerow( header_columns )
 
-        for summary in annogroup_summaries:
-            csv_writer.writerow( build_annogroup_summary_row( summary ) )
+        for summary in filtered_summaries:
+            output_row = [
+                summary[ 'annogroup_id' ],
+                summary[ 'annogroup_subtype' ],
+                summary[ 'phylogenetic_block' ],
+                summary[ 'phylogenetic_block_state' ],
+                summary[ 'phylogenetic_path' ],
+                summary[ 'species_count' ],
+                summary[ 'total_scored_blocks' ],
+                summary[ 'conservation_events' ],
+                summary[ 'loss_origin_events' ],
+                summary[ 'continued_absence_events' ],
+                summary[ 'species_list' ]
+            ]
 
-    logger.info( f"Wrote {len( annogroup_summaries )} annogroup summaries (all subtypes, 17 columns)" )
+            csv_writer.writerow( output_row )
+
+    logger.info( f"Wrote {len( filtered_summaries )} annogroup summaries (11 columns)" )
 
 
 def write_clade_statistics( clade_statistics ):
@@ -934,24 +918,20 @@ def write_clade_statistics( clade_statistics ):
     logger.info( f"Writing clade statistics to: {output_clade_statistics_file}" )
 
     with open( output_clade_statistics_file, 'w' ) as output_file:
-        # Single-row GIGANTIC_1 header
-        output = 'Clade_Name (phylogenetic clade name)\t'
-        output += 'Origins_Count (number of annogroups that originated in this clade)\t'
-        output += 'Annogroups_Present (total number of annogroups present in this clade)\t'
+        output = 'Clade_ID_Name (clade identifier as clade_id_name e.g. C082_Metazoa)\t'
+        output += 'Origins_Count (number of annogroups whose origin transition block has this clade as its child endpoint)\t'
+        output += 'Annogroups_Present (total number of annogroups biologically present at this clade via its descendant species)\t'
         output += 'Descendant_Species_Count (number of species descended from this clade)\t'
-        output += 'Inherited_As_Parent (number of annogroups this clade passed to child clades)\t'
-        output += 'Conserved_As_Parent (number of annogroups conserved in child clades when this clade was parent)\t'
-        output += 'Lost_As_Parent (number of annogroups lost in child clades when this clade was parent)\t'
-        output += 'Conservation_Rate (percentage of annogroups conserved when this clade was parent calculated as conserved divided by inherited times 100)\t'
-        output += 'Loss_Rate (percentage of annogroups lost when this clade was parent calculated as lost divided by inherited times 100)\n'
+        output += 'Inherited_As_Parent (sum across this clade-as-parent blocks of annogroups biologically present at parent)\t'
+        output += 'Conserved_As_Parent (sum across this clade-as-parent blocks of annogroups in block-state P)\t'
+        output += 'Lost_As_Parent (sum across this clade-as-parent blocks of annogroups in block-state L)\n'
         output_file.write( output )
 
         for statistic in clade_statistics:
-            output = f"{statistic[ 'clade_name' ]}\t{statistic[ 'origins_count' ]}\t"
+            output = f"{statistic[ 'clade_id_name' ]}\t{statistic[ 'origins_count' ]}\t"
             output += f"{statistic[ 'annogroups_present' ]}\t{statistic[ 'descendant_species_count' ]}\t"
             output += f"{statistic[ 'inherited_as_parent' ]}\t{statistic[ 'conserved_as_parent' ]}\t"
-            output += f"{statistic[ 'lost_as_parent' ]}\t{statistic[ 'conservation_rate' ]:.2f}\t"
-            output += f"{statistic[ 'loss_rate' ]:.2f}\n"
+            output += f"{statistic[ 'lost_as_parent' ]}\n"
             output_file.write( output )
 
     logger.info( f"Wrote {len( clade_statistics )} clade statistics" )
@@ -962,19 +942,46 @@ def write_species_summaries( species_summaries ):
     logger.info( f"Writing species summaries to: {output_species_summaries_file}" )
 
     with open( output_species_summaries_file, 'w' ) as output_file:
-        # Single-row GIGANTIC_1 header
-        output = 'Species_Name (species name in Genus_species format)\t'
+        output = 'Species_Clade_ID_Name (leaf species as clade_id_name e.g. C005_Homo_sapiens)\t'
         output += 'Total_Annogroups (total number of annogroups containing this species)\t'
         output += 'Conserved_From_Ancestors (annogroups inherited from ancestral clades)\t'
         output += 'Species_Specific (annogroups that originated at this species)\n'
         output_file.write( output )
 
         for summary in species_summaries:
-            output = f"{summary[ 'species_name' ]}\t{summary[ 'total_annogroups' ]}\t"
+            output = f"{summary[ 'species_clade_id_name' ]}\t{summary[ 'total_annogroups' ]}\t"
             output += f"{summary[ 'conserved_from_ancestors' ]}\t{summary[ 'species_specific' ]}\n"
             output_file.write( output )
 
     logger.info( f"Wrote {len( species_summaries )} species summaries" )
+
+
+def write_path_states( path_state_rows ):
+    """Write per (annogroup, species) path-states to a standalone TSV file."""
+    logger.info( f"Writing phylogenetic path-states to: {output_path_states_file}" )
+
+    header_columns = [
+        'Annogroup_ID (annogroup identifier)',
+        'Species_Clade_ID_Name (atomic species clade identifier e.g. C005_Homo_sapiens)',
+        'Species_In_Annogroup (True if this species is a member of this annogroup; False otherwise)',
+        'Phylogenetic_Path (comma delimited root-to-tip path of atomic clade identifiers for this species)',
+        'Phylogenetic_Path_State (root-to-tip concatenation of Rule 7 block-state letters A O P L X one letter per phylogenetic block on the path)'
+    ]
+
+    with open( output_path_states_file, 'w' ) as output_file:
+        output_file.write( '\t'.join( header_columns ) + '\n' )
+
+        for row in path_state_rows:
+            output = (
+                row[ 'annogroup_id' ] + '\t'
+                + row[ 'species_clade_id_name' ] + '\t'
+                + ( 'True' if row[ 'species_in_annogroup' ] else 'False' ) + '\t'
+                + row[ 'phylogenetic_path' ] + '\t'
+                + row[ 'phylogenetic_path_state' ] + '\n'
+            )
+            output_file.write( output )
+
+    logger.info( f"Wrote {len( path_state_rows )} path-state rows" )
 
 
 def write_validation_report( validation_report ):
@@ -996,23 +1003,23 @@ def write_validation_report( validation_report ):
 def main():
     """Main execution function."""
     logger.info( "=" * 80 )
-    logger.info( "SCRIPT 004: COMPREHENSIVE OCL ANALYSIS (TEMPLATE_03)" )
+    logger.info( "SCRIPT 004: COMPREHENSIVE OCL SUMMARIES (Rule 7 counts)" )
     logger.info( "=" * 80 )
     logger.info( f"Started: {Path( __file__ ).name}" )
     logger.info( f"Target structure: {TARGET_STRUCTURE}" )
-    logger.info( f"Annotation database: {ANNOTATION_DATABASE}" )
-    logger.info( f"Requested subtypes: {ANNOGROUP_SUBTYPES}" )
+    logger.info( f"Annogroup subtypes: {ANNOGROUP_SUBTYPES}" )
     logger.info( "" )
 
-    # STEP 1: Load all input data
+    # STEP 1: Load all input data (all keyed by clade_id_name)
     logger.info( "STEP 1: Loading all input data..." )
+    clade_names___clade_id_names = load_clade_mappings()
     annogroups___origins = load_annogroup_origins()
     annogroups___patterns = load_annogroup_patterns()
-    annogroups___species = load_annogroup_species()
-    clades___origin_counts = load_origins_summary()
+    annogroups___species_clade_id_names = load_annogroup_species( clade_names___clade_id_names )
+    clade_id_names___origin_counts = load_origins_summary()
     block_statistics = load_block_statistics()
-    species_names___phylogenetic_paths = load_phylogenetic_paths()
-    clade_names = load_all_clade_names()
+    species_clade_id_names___phylogenetic_paths = load_phylogenetic_paths()
+    clade_id_names = list( clade_names___clade_id_names.values() )
     logger.info( "" )
 
     # STEP 2: Generate per-annogroup complete summaries
@@ -1026,10 +1033,10 @@ def main():
     # STEP 3: Generate per-clade comprehensive statistics
     logger.info( "STEP 3: Generating per-clade comprehensive statistics..." )
     clade_statistics = generate_clade_statistics(
-        clade_names,
-        clades___origin_counts,
-        annogroups___species,
-        species_names___phylogenetic_paths,
+        clade_id_names,
+        clade_id_names___origin_counts,
+        annogroups___species_clade_id_names,
+        species_clade_id_names___phylogenetic_paths,
         block_statistics
     )
     logger.info( "" )
@@ -1037,9 +1044,18 @@ def main():
     # STEP 4: Generate per-species summaries
     logger.info( "STEP 4: Generating per-species summaries..." )
     species_summaries = generate_species_summaries(
-        species_names___phylogenetic_paths,
-        annogroups___species,
-        clades___origin_counts
+        species_clade_id_names___phylogenetic_paths,
+        annogroups___species_clade_id_names,
+        clade_id_names___origin_counts
+    )
+    logger.info( "" )
+
+    # STEP 4b: Generate per (annogroup, species) phylogenetic path-states (Rule 7)
+    logger.info( "STEP 4b: Generating phylogenetic path-states..." )
+    path_state_rows = generate_path_states(
+        annogroups___species_clade_id_names,
+        annogroups___origins,
+        species_clade_id_names___phylogenetic_paths
     )
     logger.info( "" )
 
@@ -1056,10 +1072,18 @@ def main():
 
     # STEP 6: Write outputs
     logger.info( "STEP 6: Writing outputs..." )
-    write_per_subtype_summaries( annogroup_summaries )
-    write_all_types_summary( annogroup_summaries )
+
+    # All-types integrated summary (primary downstream file)
+    write_annogroup_summaries( annogroup_summaries, output_annogroup_complete_file )
+
+    # Per-subtype summaries
+    for subtype in ANNOGROUP_SUBTYPES:
+        subtype_output_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{subtype}.tsv'
+        write_annogroup_summaries( annogroup_summaries, subtype_output_file, subtype_filter = subtype )
+
     write_clade_statistics( clade_statistics )
     write_species_summaries( species_summaries )
+    write_path_states( path_state_rows )
     write_validation_report( validation_report )
     logger.info( "" )
 
@@ -1069,11 +1093,12 @@ def main():
     logger.info( f"All outputs written to: {output_directory}" )
     logger.info( "" )
     logger.info( "Output files:" )
-    logger.info( f"  {output_all_types_complete_file.name} (primary downstream file)" )
+    logger.info( f"  {output_annogroup_complete_file.name} (primary downstream file -- all subtypes)" )
     for subtype in ANNOGROUP_SUBTYPES:
-        logger.info( f"  4_ai-annogroups-complete_ocl_summary-{subtype}.tsv" )
+        logger.info( f"  4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{subtype}.tsv" )
     logger.info( f"  {output_clade_statistics_file.name}" )
     logger.info( f"  {output_species_summaries_file.name}" )
+    logger.info( f"  {output_path_states_file.name}" )
     logger.info( f"  {output_validation_report_file.name}" )
     logger.info( "=" * 80 )
 

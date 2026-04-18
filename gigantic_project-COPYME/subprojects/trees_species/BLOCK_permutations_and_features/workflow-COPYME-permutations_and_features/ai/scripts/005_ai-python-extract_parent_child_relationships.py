@@ -333,17 +333,19 @@ for newick_file in newick_files:
 
     phylogenetic_block_rows = extract_phylogenetic_block_rows( tree_root )
 
-    # Synthesize C000_Pre_Basal::root block. The tree root has no biological
-    # parent; we add a synthetic Pre_Basal edge so the root clade has an
-    # incoming block like every other clade. Without this, origin determination
-    # fails for orthogroups whose most recent common ancestor is the root.
+    # Synthesize C000_OOL::root block. The species-tree root has no parent in
+    # the user-provided tree, but biologically every real clade descends from
+    # OOL (Origin Of Life). Including C000_OOL as the conceptual parent of the
+    # species-tree root gives the root clade an incoming block like every
+    # other clade — so orthogroups with MRCA at the root have a well-defined
+    # origin phylogenetic block (C000_OOL::<root_clade_id_name>).
     root_clade_id_name = tree_root.get_clade_id_name()
     if root_clade_id_name:
-        pre_basal_clade_id_name = 'C000_Pre_Basal'
-        pre_basal_block = f"{pre_basal_clade_id_name}::{root_clade_id_name}"
+        ool_clade_id_name = 'C000_OOL'
+        ool_block = f"{ool_clade_id_name}::{root_clade_id_name}"
         phylogenetic_block_rows.insert( 0, {
-            'phylogenetic_block': pre_basal_block,
-            'parent_clade_id_name': pre_basal_clade_id_name,
+            'phylogenetic_block': ool_block,
+            'parent_clade_id_name': ool_clade_id_name,
             'child_clade_id_name': root_clade_id_name,
         } )
 

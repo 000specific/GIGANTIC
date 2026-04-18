@@ -7,7 +7,7 @@
  * GIGANTIC_1 NextFlow workflow for analyzing annotation group (annogroup) origins,
  * conservation, and loss across phylogenetic species tree structures.
  *
- * Annogroups are the annotation analog to orthogroups — sets of proteins grouped
+ * Annogroups are the annotation analog to orthogroups -- sets of proteins grouped
  * by their annotation pattern from a specific database. Each annogroup has a
  * simple ID (annogroup_{db}_N) with full details in a companion map.
  *
@@ -16,7 +16,7 @@
  * - NextFlow passes only val structure_id between processes (done signal)
  * - All paths resolved from START_HERE-user_config.yaml (relative to workflow directory)
  *
- * AI: Claude Code | Opus 4.6 | 2026 March 04
+ * AI: Claude Code | Opus 4.6 | 2026 April 18
  * Human: Eric Edsinger
  * ==============================================================================
  */

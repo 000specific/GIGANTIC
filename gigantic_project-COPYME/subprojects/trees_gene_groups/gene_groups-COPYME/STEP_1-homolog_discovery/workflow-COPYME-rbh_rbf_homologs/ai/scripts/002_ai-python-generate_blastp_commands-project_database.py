@@ -81,16 +81,17 @@ def extract_species_from_database_path( database_path: str ) -> str:
     Returns:
         Species name in format "Genus_species"
     """
-    # Extract filename from full path, then extract phyloname (everything before '-T1-proteome')
+    # Extract filename from full path, then extract phyloname
+    # Format: phyloname-TX-proteome.aa (TX = T0, T1, etc.)
     filename = Path( database_path ).name
-    parts_path = filename.split( '-T1-proteome' )
 
-    if len( parts_path ) < 2:
+    if '-proteome' not in filename:
         print( f"CRITICAL ERROR: Database path does not follow GIGANTIC cleaned proteome format: {database_path}" )
-        print( "Expected format: phyloname-T1-proteome.aa" )
+        print( "Expected format: phyloname-TX-proteome.aa (TX = T0, T1, etc.)" )
         sys.exit( 1 )
 
-    phyloname = parts_path[ 0 ]
+    # Strip -proteome suffix and everything after, then strip -TX to get phyloname
+    phyloname = filename.split( '-proteome' )[ 0 ].rsplit( '-', 1 )[ 0 ]
 
     # Split by underscore
     parts = phyloname.split( '_' )

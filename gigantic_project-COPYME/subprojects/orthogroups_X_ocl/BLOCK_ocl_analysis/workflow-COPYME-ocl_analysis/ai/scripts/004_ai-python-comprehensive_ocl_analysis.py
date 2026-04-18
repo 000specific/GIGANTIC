@@ -99,28 +99,28 @@ input_directory_002 = Path( args.output_dir ) / TARGET_STRUCTURE / '2-output'
 input_directory_003 = Path( args.output_dir ) / TARGET_STRUCTURE / '3-output'
 
 # Input files from Script 001
-input_clade_mappings_file = input_directory_001 / f'1_ai-clade_mappings-{TARGET_STRUCTURE}.tsv'
-input_phylogenetic_paths_file = input_directory_001 / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
-input_orthogroups_file = input_directory_001 / '1_ai-orthogroups-gigantic_identifiers.tsv'
+input_clade_mappings_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
+input_phylogenetic_paths_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
+input_orthogroups_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_orthogroups-gigantic_identifiers.tsv'
 
 # Input files from Script 002
-input_origins_file = input_directory_002 / '2_ai-orthogroup_origins.tsv'
-input_origins_summary_file = input_directory_002 / '2_ai-origins_summary-orthogroups_per_clade.tsv'
+input_origins_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_orthogroup_origins.tsv'
+input_origins_summary_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_origins_summary-orthogroups_per_clade.tsv'
 
 # Input files from Script 003
-input_block_statistics_file = input_directory_003 / '3_ai-conservation_loss-per_block.tsv'
-input_orthogroup_patterns_file = input_directory_003 / '3_ai-conservation_patterns-per_orthogroup.tsv'
+input_block_statistics_file = input_directory_003 / f'3_ai-{TARGET_STRUCTURE}_conservation_loss-per_block.tsv'
+input_orthogroup_patterns_file = input_directory_003 / f'3_ai-{TARGET_STRUCTURE}_conservation_patterns-per_orthogroup.tsv'
 
 # Output directory
 output_directory = Path( args.output_dir ) / TARGET_STRUCTURE / '4-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
 # Output files
-output_orthogroup_complete_file = output_directory / '4_ai-orthogroups-complete_ocl_summary.tsv'
-output_clade_statistics_file = output_directory / '4_ai-clades-comprehensive_statistics.tsv'
-output_species_summaries_file = output_directory / '4_ai-species-summaries.tsv'
-output_path_states_file = output_directory / '4_ai-path_states-per_orthogroup_per_species.tsv'
-output_validation_report_file = output_directory / '4_ai-validation_report.txt'
+output_orthogroup_complete_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_orthogroups-complete_ocl_summary.tsv'
+output_clade_statistics_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_clades-comprehensive_statistics.tsv'
+output_species_summaries_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_species-summaries.tsv'
+output_path_states_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_path_states-per_orthogroup_per_species.tsv'
+output_validation_report_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_validation_report.txt'
 
 # Log file
 log_directory = Path( args.output_dir ) / TARGET_STRUCTURE / 'logs'
@@ -219,9 +219,19 @@ def load_orthogroup_origins():
             phylogenetic_block_state = parts[ 2 ]
             species_count = int( parts[ 5 ] )
 
+            # Derive the child endpoint of the origin block (the "origin clade"
+            # in naming-convention shorthand) for downstream eligibility
+            # lookups. Per Rule 7: origin block is `parent::child`, child is
+            # the origin clade (the clade where the feature is first present).
+            if '::' in phylogenetic_block:
+                origin_child_clade_id_name = phylogenetic_block.split( '::', 1 )[ 1 ]
+            else:
+                origin_child_clade_id_name = phylogenetic_block
+
             orthogroups___origins[ orthogroup_id ] = {
                 'phylogenetic_block': phylogenetic_block,
                 'phylogenetic_block_state': phylogenetic_block_state,
+                'origin_child_clade_id_name': origin_child_clade_id_name,
                 'species_count': species_count
             }
 
@@ -748,11 +758,8 @@ def build_clade_descendant_species( species_clade_id_names___phylogenetic_paths 
     """
     Build per-clade descendant-species sets using the phylogenetic paths.
 
-    For each clade that appears anywhere in any species path, record the set
-    of leaf species whose path passes through that clade. These sets are then
-    used to decide whether an orthogroup is "present" at a given clade (a
-    clade is present for an orthogroup if any of its descendant species is
-    in the orthogroup's species set).
+    For each clade on any species path, record the set of species whose path
+    passes through that clade.
 
     Returns:
         dict: { clade_id_name: set( species_clade_id_name, ... ) }
@@ -764,67 +771,139 @@ def build_clade_descendant_species( species_clade_id_names___phylogenetic_paths 
     return clade_id_names___descendant_species_clade_id_names
 
 
+def build_clade_descendant_clades( species_clade_id_names___phylogenetic_paths ):
+    """
+    Build per-clade descendant-clade sets using the phylogenetic paths.
+
+    For each clade on any species path, record the set of clades at or below
+    it on the species tree. Derived from the path lists: for path
+    [ c_0, c_1, ..., c_N ], each clade c_i has descendants { c_i, c_{i+1},
+    ..., c_N } within that path. Unioning across all species paths yields
+    the complete descendant-clade set for every clade.
+
+    Returns:
+        dict: { clade_id_name: set( clade_id_name, ... ) }
+    """
+    clade_id_names___descendant_clade_id_names = defaultdict( set )
+    for species_clade_id_name, phylogenetic_path in species_clade_id_names___phylogenetic_paths.items():
+        for position_index, clade_id_name in enumerate( phylogenetic_path ):
+            for descendant_clade_id_name in phylogenetic_path[ position_index: ]:
+                clade_id_names___descendant_clade_id_names[ clade_id_name ].add( descendant_clade_id_name )
+    return clade_id_names___descendant_clade_id_names
+
+
 def compute_phylogenetic_path_state( phylogenetic_path, orthogroup_species_clade_id_names,
+                                     origin_child_clade_id_name,
+                                     clade_id_names___descendant_clade_id_names,
                                      clade_id_names___descendant_species_clade_id_names ):
     """
     Compute the Rule 7 phylogenetic path-state letter string for one species
     path and one orthogroup.
 
+    Presence rule (Rule 7 / Dollo-style):
+      A clade X is present for the orthogroup if BOTH of:
+        (1) X is the orthogroup's origin clade, or X is a descendant clade of
+            the origin clade (the feature has been inherited down to X's
+            lineage);
+        (2) at least one of X's descendant species is in the orthogroup (the
+            feature has not been totally lost below X).
+
+    Per-block letter mapping from (parent_present, child_present):
+      (F, F) and both NOT eligible  -> A (pre-origin on this lineage)
+      (F, T)                        -> O (origin block: parent ancestral to
+                                         origin clade, child is origin clade
+                                         or a descendant that carries the
+                                         feature)
+      (T, T)                        -> P (inherited presence)
+      (T, F) within origin subtree  -> L (loss on this block)
+      (F, F) within origin subtree  -> X (continued absence after upstream L)
+
     Args:
-        phylogenetic_path: ordered list of clade_id_names from root to tip
-                           [ c_0, c_1, ..., c_N ]
-                           Each consecutive pair (c_{i-1}, c_i) is a phylogenetic block.
-        orthogroup_species_clade_id_names: set of species_clade_id_names
-                           biologically containing this orthogroup.
-        clade_id_names___descendant_species_clade_id_names: per-clade descendant
-                           species sets from build_clade_descendant_species.
+        phylogenetic_path: list of clade_id_names from root end to species
+            end [ c_0, c_1, ..., c_N ]. Each consecutive pair (c_{i-1}, c_i)
+            is a phylogenetic block.
+        orthogroup_species_clade_id_names: set of species clade_id_names that
+            biologically contain this orthogroup.
+        origin_child_clade_id_name: child endpoint of the orthogroup's origin
+            phylogenetic block (== the origin clade under Rule 7 naming).
+        clade_id_names___descendant_clade_id_names: per-clade set of clade
+            identifiers at or below that clade on the species tree.
+        clade_id_names___descendant_species_clade_id_names: per-clade set of
+            species identifiers at or below that clade on the species tree.
 
     Returns:
-        str: N-letter string (one letter per block) using the Rule 7 alphabet
-             A/O/P/L/X in root-to-tip order.
+        str: N-letter path-state string (N = len(phylogenetic_path) - 1),
+             letters in root-end-to-species-end order using the Rule 7
+             alphabet {A, O, P, L, X}.
     """
     if len( phylogenetic_path ) < 2:
         return ''
 
+    # Eligibility set: the origin clade and its descendant clades. Clades not
+    # in this set are ancestors of (or off-lineage relative to) the origin
+    # clade — the feature has not reached them.
+    eligible_clade_id_names = clade_id_names___descendant_clade_id_names.get(
+        origin_child_clade_id_name, set()
+    )
+
+    def clade_is_present( clade_id_name ):
+        """Rule 7 presence: eligible AND has orthogroup descendant species."""
+        if clade_id_name not in eligible_clade_id_names:
+            return False
+        descendant_species = clade_id_names___descendant_species_clade_id_names.get(
+            clade_id_name, set()
+        )
+        return bool( orthogroup_species_clade_id_names & descendant_species )
+
     letters = []
-    has_seen_origin = False
-    has_seen_loss = False
 
     for i in range( 1, len( phylogenetic_path ) ):
         parent_clade_id_name = phylogenetic_path[ i - 1 ]
         child_clade_id_name = phylogenetic_path[ i ]
 
-        parent_descendant_species = clade_id_names___descendant_species_clade_id_names.get( parent_clade_id_name, set() )
-        child_descendant_species = clade_id_names___descendant_species_clade_id_names.get( child_clade_id_name, set() )
+        parent_eligible = parent_clade_id_name in eligible_clade_id_names
+        child_eligible = child_clade_id_name in eligible_clade_id_names
 
-        parent_present = bool( parent_descendant_species & orthogroup_species_clade_id_names )
-        child_present = bool( child_descendant_species & orthogroup_species_clade_id_names )
-
-        if parent_present and child_present:
-            letters.append( 'P' )
-        elif ( not parent_present ) and child_present:
-            letters.append( 'O' )
-            has_seen_origin = True
-        elif parent_present and ( not child_present ):
-            letters.append( 'L' )
-            has_seen_loss = True
-        else:
-            # Both endpoints absent. Distinguish A (pre-origin) from X (post-loss).
-            if has_seen_loss:
-                letters.append( 'X' )
+        if not parent_eligible:
+            if child_eligible:
+                # Parent is ancestral to origin clade; child is origin clade
+                # or a descendant — this is the origin boundary block.
+                letters.append( 'O' )
             else:
+                # Both endpoints ancestral to (or off-lineage relative to)
+                # origin clade. Feature has not arrived on this lineage.
                 letters.append( 'A' )
+        else:
+            # Parent is in origin's descent; child is necessarily in origin's
+            # descent too (child of an eligible clade is always eligible).
+            parent_has_descendants = clade_is_present( parent_clade_id_name )
+            child_has_descendants = clade_is_present( child_clade_id_name )
+
+            if parent_has_descendants and child_has_descendants:
+                letters.append( 'P' )
+            elif parent_has_descendants and ( not child_has_descendants ):
+                letters.append( 'L' )
+            else:
+                # Parent is eligible but has no orthogroup descendant species,
+                # so the feature was lost at or upstream of parent on this
+                # lineage. Child shares that state.
+                letters.append( 'X' )
 
     return ''.join( letters )
 
 
 def generate_path_states( orthogroups___species_clade_id_names,
+                          orthogroups___origins,
                           species_clade_id_names___phylogenetic_paths ):
     """
     Generate per (orthogroup, species) phylogenetic path-state rows.
 
-    For every orthogroup and every species in the species set of this
-    structure, compute the path-state along that species's root-to-tip path.
+    For every orthogroup and every species in the structure, compute the
+    path-state along that species's root-end-to-species-end phylogenetic path
+    using the Rule 7 presence rule (see compute_phylogenetic_path_state).
+
+    Orthogroups with no origin data are skipped — path-states are undefined
+    for them.
 
     Returns:
         list: Per-row dicts with orthogroup_id, species_clade_id_name,
@@ -836,14 +915,26 @@ def generate_path_states( orthogroups___species_clade_id_names,
     clade_id_names___descendant_species_clade_id_names = build_clade_descendant_species(
         species_clade_id_names___phylogenetic_paths
     )
+    clade_id_names___descendant_clade_id_names = build_clade_descendant_clades(
+        species_clade_id_names___phylogenetic_paths
+    )
 
     path_state_rows = []
 
     sorted_orthogroup_ids = sorted( orthogroups___species_clade_id_names.keys() )
     sorted_species_clade_id_names = sorted( species_clade_id_names___phylogenetic_paths.keys() )
 
+    skipped_missing_origin = 0
+
     for orthogroup_id in sorted_orthogroup_ids:
         orthogroup_species_clade_id_names = orthogroups___species_clade_id_names[ orthogroup_id ]
+
+        origin_data = orthogroups___origins.get( orthogroup_id )
+        if not origin_data or origin_data.get( 'origin_child_clade_id_name' ) in ( None, 'NA', '' ):
+            skipped_missing_origin += 1
+            continue
+
+        origin_child_clade_id_name = origin_data[ 'origin_child_clade_id_name' ]
 
         for species_clade_id_name in sorted_species_clade_id_names:
             phylogenetic_path = species_clade_id_names___phylogenetic_paths[ species_clade_id_name ]
@@ -853,6 +944,8 @@ def generate_path_states( orthogroups___species_clade_id_names,
             phylogenetic_path_state = compute_phylogenetic_path_state(
                 phylogenetic_path,
                 orthogroup_species_clade_id_names,
+                origin_child_clade_id_name,
+                clade_id_names___descendant_clade_id_names,
                 clade_id_names___descendant_species_clade_id_names
             )
 
@@ -867,7 +960,10 @@ def generate_path_states( orthogroups___species_clade_id_names,
             } )
 
     logger.info( f"Generated {len( path_state_rows )} path-state rows "
-                 f"({len( sorted_orthogroup_ids )} orthogroups x {len( sorted_species_clade_id_names )} species)" )
+                 f"({len( sorted_orthogroup_ids ) - skipped_missing_origin} orthogroups x "
+                 f"{len( sorted_species_clade_id_names )} species)" )
+    if skipped_missing_origin > 0:
+        logger.info( f"Skipped {skipped_missing_origin} orthogroups lacking origin data" )
 
     return path_state_rows
 
@@ -1236,6 +1332,7 @@ def main():
     logger.info( "STEP 4b: Generating phylogenetic path-states..." )
     path_state_rows = generate_path_states(
         orthogroups___species_clade_id_names,
+        orthogroups___origins,
         species_clade_id_names___phylogenetic_paths
     )
     logger.info( "" )

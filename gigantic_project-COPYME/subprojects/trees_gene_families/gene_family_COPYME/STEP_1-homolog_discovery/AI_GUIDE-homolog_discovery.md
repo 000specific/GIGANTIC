@@ -42,6 +42,7 @@
 | 014 | Species Filter | Keep only species in the keeper list |
 | 016 | Create AGS | Concatenate RGS + filtered CGS into final All Gene Set |
 | 017 | Run Log | Write pipeline execution summary |
+| 018 | Restore Full-Length RGS | Conditional: when `rgs_sequence_is_full_length` is `false`, swaps subsequence RGS back to full-length in AGS |
 
 **Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step (015) is needed.
 
@@ -53,13 +54,46 @@
 
 BLAST v5 databases preserve full GIGANTIC phyloname identifiers (the old 50-character truncation issue is resolved). No identifier remapping step is needed.
 
-### Full-Length Sequences for Reciprocal BLAST
+### Full-Length vs Subsequence RGS Mode
+
+The pipeline supports two RGS modes, controlled by three config fields in `START_HERE-user_config.yaml`:
+
+```yaml
+gene_family:
+  rgs_full_length_file: "INPUT_user/rgs_full_length.aa"         # ALWAYS required
+  rgs_sequence_is_full_length: true                              # true (default) or false
+  rgs_subsequence_file: "INPUT_user/rgs_pore_region.aa"          # Required when false
+```
+
+**Full-length mode** ( `rgs_sequence_is_full_length: true` ):
+- `rgs_full_length_file` is used for BLAST discovery
+- Reciprocal BLAST uses full-length BGS ( `fullseqs` from Script 004 )
+- Script 018 does NOT run
+- This is the default for 7 of 8 sono gene families
+
+**Subsequence mode** ( `rgs_sequence_is_full_length: false` ):
+- `rgs_subsequence_file` is used for BLAST discovery (e.g., TRP pore-region-only sequences)
+- Reciprocal BLAST uses hit-region subsequences ( `hitregions` from Script 004 ) instead of full-length BGS — this prevents BLAST from preferring full-length genome proteins over the shorter RGS sequences spliced into modified genomes
+- Script 018 runs after Script 016: replaces subsequence RGS in the AGS with full-length versions from `rgs_full_length_file`
+- Script 018 output goes to `18-output/` and is also copied back to `16-output/` so STEP_2 picks up the restored AGS
+
+**Why subsequence mode exists**: Full-length TRP channel sequences contain ankyrin repeats and other conserved domains that dominate BLAST results, pulling in thousands of unrelated proteins. Using pore-region-only sequences as RGS seeds finds true TRP homologs cleanly.
+
+**Subsequence RGS header convention**: Headers in the subsequence file must match the full-length file exactly, with `_subsequence` appended:
+```
+Full-length:   >rgs_channel-human-TRPV1-uniprot-Q8NER1
+Subsequence:   >rgs_channel-human-TRPV1-uniprot-Q8NER1_subsequence
+```
+
+### BGS Extraction: Two Sequence Versions
 
 Script 004 extracts **two** versions of candidate sequences:
-- `fullseqs` - Complete protein sequences (used for reciprocal BLAST)
-- `hitregions` - Only the BLAST hit regions (not used for reciprocal)
+- `fullseqs` - Complete protein sequences (used for reciprocal BLAST in full-length mode)
+- `hitregions` - Only the BLAST hit regions (used for reciprocal BLAST in subsequence mode)
 
-The reciprocal BLAST (scripts 011-012) uses `fullseqs` to ensure accurate best-hit determination.
+The reciprocal BLAST mode is determined by `rgs_sequence_is_full_length`:
+- `true`: reciprocal BLAST uses `fullseqs`
+- `false`: reciprocal BLAST uses `hitregions`
 
 ### No --parse_seqids in makeblastdb
 
@@ -71,7 +105,8 @@ BLAST databases are built WITHOUT the `--parse_seqids` flag because GIGANTIC phy
 
 | Input | Location | User Provides? |
 |-------|----------|----------------|
-| RGS FASTA | `INPUT_user/<rgs_file>.aa` | **YES** |
+| RGS FASTA (full-length) | `INPUT_user/<rgs_full_length_file>.aa` | **YES** (always required) |
+| RGS FASTA (subsequence) | `INPUT_user/<rgs_subsequence_file>.aa` | **YES** (only when `rgs_sequence_is_full_length: false`) |
 | Species keeper list | `INPUT_user/species_keeper_list.tsv` | **YES** |
 | RGS species map | `INPUT_user/rgs_species_map.tsv` | If RGS uses short names |
 | BLAST databases | `../../../../genomesDB/output_to_input/gigantic_T1_blastp/` | No (from genomesDB) |
@@ -101,7 +136,8 @@ OUTPUT_pipeline/
 ├── 12-output/   # Reciprocal BLAST results
 ├── 13-output/   # CGS filtered sequences
 ├── 14-output/   # Species-filtered sequences
-└── 16-output/   # Final AGS (All Gene Set)
+├── 16-output/   # Final AGS (All Gene Set)
+└── 18-output/   # Full-length-restored AGS (only when rgs_sequence_is_full_length is false)
 ```
 
 ### output_to_input
@@ -147,7 +183,8 @@ STEP_1-homolog_discovery/
             ├── 013_ai-python-extract_reciprocal_best_hits.py
             ├── 014_ai-python-filter_species_for_tree_building.py
             ├── 016_ai-python-concatenate_sequences.py
-            └── 017_ai-python-write_run_log.py
+            ├── 017_ai-python-write_run_log.py
+            └── 018_ai-python-restore_full_length_rgs_sequences.py  # Conditional: subsequence mode only
 ```
 
 ---
@@ -156,7 +193,7 @@ STEP_1-homolog_discovery/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, database paths | **YES** |
+| `workflow-*/START_HERE-user_config.yaml` | Gene family, BLAST settings, database paths, RGS mode ( `rgs_sequence_is_full_length`, `rgs_full_length_file`, `rgs_subsequence_file` ) | **YES** |
 | `workflow-*/INPUT_user/species_keeper_list.tsv` | Species to keep in final AGS | **YES** |
 | `workflow-*/INPUT_user/rgs_species_map.tsv` | Map short names to Genus_species | **YES** (if needed) |
 | `workflow-*/INPUT_user/*.aa` | RGS FASTA file | **YES** |
@@ -205,6 +242,8 @@ grep -c ">" OUTPUT_pipeline/16-output/*.aa
 | Situation | Ask |
 |-----------|-----|
 | Starting STEP_1 | "Do you have your RGS FASTA file and species keeper list ready?" |
+| Gene family with conserved domains that cause false positives | "Should we use subsequence mode? Set `rgs_sequence_is_full_length: false` and provide a subsequence RGS file with only the discriminating domain." |
+| Subsequence mode | "Do you have BOTH the full-length and subsequence RGS files? Headers must match exactly, with `_subsequence` appended in the subsequence file." |
 | Few BLAST hits | "What E-value are you using? The default 1e-3 works for most families." |
 | Species missing | "Is the species in your keeper list? And is its proteome in genomesDB?" |
 | Large gene family | "How many RGS sequences? Large families (>50 sequences) may need more BLAST threads." |

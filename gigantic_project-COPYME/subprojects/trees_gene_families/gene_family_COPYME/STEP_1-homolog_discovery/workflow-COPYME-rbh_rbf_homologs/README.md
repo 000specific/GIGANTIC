@@ -40,6 +40,11 @@ STEP_1 workflow template for discovering homologs via Reciprocal Best Hit (RBH) 
    - Concatenates RGS + CGS into final AGS (script 016)
    - Writes pipeline run log (script 017)
 
+7. **Full-Length RGS Restoration** (Process 10b, conditional)
+   - Only runs when `rgs_sequence_is_full_length: false` in config
+   - Replaces subsequence RGS in the AGS with full-length versions (script 018)
+   - Required for gene families like TRP where subsequence (e.g., pore-region) RGS was used for BLAST discovery
+
 **Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step is needed.
 
 ---
@@ -62,11 +67,21 @@ cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_02-rbh_rbf_homologs
 nano START_HERE-user_config.yaml
 ```
 
-**Example START_HERE-user_config.yaml settings:**
+**Example START_HERE-user_config.yaml settings (full-length RGS, default):**
 ```yaml
 gene_family:
   name: "innexin_pannexin"
-  rgs_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+  rgs_full_length_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+  rgs_sequence_is_full_length: true
+```
+
+**Example (subsequence RGS, e.g., TRP pore regions):**
+```yaml
+gene_family:
+  name: "transient_receptor_potential_cation_channels"
+  rgs_full_length_file: "INPUT_user/rgs_channel-species-trp_full_length.aa"
+  rgs_sequence_is_full_length: false
+  rgs_subsequence_file: "INPUT_user/rgs_channel-species-trp_pore_region_subsequence.aa"
 ```
 
 **Prepare input files:**
@@ -128,8 +143,9 @@ workflow-COPYME-rbh_rbf_homologs/
 │   ├── 12-output/                         # Reciprocal BLAST report
 │   ├── 13-output/                         # Reciprocal best hit sequences
 │   ├── 14-output/                         # Species-filtered sequences
-│   ├── 15-output/                         # Remapped CGS identifiers
-│   └── 16-output/                         # Final AGS (All Gene Set)
+│   ├── 15-output/                         # (Reserved, not used - BLAST v5 preserves identifiers)
+│   ├── 16-output/                         # Final AGS (All Gene Set)
+│   └── 18-output/                         # Full-length-restored AGS (subsequence mode only)
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
@@ -147,7 +163,8 @@ workflow-COPYME-rbh_rbf_homologs/
         ├── 013_ai-python-extract_reciprocal_best_hits.py
         ├── 014_ai-python-filter_species_for_tree_building.py
         ├── 016_ai-python-concatenate_sequences.py
-        └── 017_ai-python-write_run_log.py
+        ├── 017_ai-python-write_run_log.py
+        └── 018_ai-python-restore_full_length_rgs_sequences.py
 ```
 
 ---
@@ -169,6 +186,7 @@ workflow-COPYME-rbh_rbf_homologs/
 | CGS sequences | `13-output/13_ai-cgs-*.aa` | Candidate gene sequences |
 | Filtered sequences | `14-output/14_ai-cgs-*-filtered.aa` | Species-filtered sequences |
 | **Final AGS** | `16-output/16_ai-ags-*.aa` | **Final All Gene Set** |
+| Restored AGS | `18-output/18_ai-ags-*-full_length_rgs.aa` | AGS with full-length RGS (subsequence mode only) |
 
 ---
 

@@ -120,22 +120,22 @@ input_directory_001 = Path( args.output_dir ) / TARGET_STRUCTURE / '1-output'
 input_directory_002 = Path( args.output_dir ) / TARGET_STRUCTURE / '2-output'
 
 # Input files from Script 001
-input_clade_mappings_file = input_directory_001 / f'1_ai-clade_mappings-{TARGET_STRUCTURE}.tsv'
-input_parent_child_file = input_directory_001 / f'1_ai-parent_child_table-{TARGET_STRUCTURE}.tsv'
-input_phylogenetic_paths_file = input_directory_001 / f'1_ai-phylogenetic_paths-{TARGET_STRUCTURE}.tsv'
-input_orthogroups_file = input_directory_001 / '1_ai-orthogroups-gigantic_identifiers.tsv'
+input_clade_mappings_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
+input_parent_child_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_parent_child_table.tsv'
+input_phylogenetic_paths_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
+input_orthogroups_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_orthogroups-gigantic_identifiers.tsv'
 
 # Input files from Script 002
-input_origins_file = input_directory_002 / '2_ai-orthogroup_origins.tsv'
+input_origins_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_orthogroup_origins.tsv'
 
 # Output directory
 output_directory = Path( args.output_dir ) / TARGET_STRUCTURE / '3-output'
 output_directory.mkdir( parents = True, exist_ok = True )
 
 # Output files
-output_block_statistics_file = output_directory / '3_ai-conservation_loss-per_block.tsv'
-output_orthogroup_patterns_file = output_directory / '3_ai-conservation_patterns-per_orthogroup.tsv'
-output_summary_file = output_directory / '3_ai-conservation_loss-summary.tsv'
+output_block_statistics_file = output_directory / f'3_ai-{TARGET_STRUCTURE}_conservation_loss-per_block.tsv'
+output_orthogroup_patterns_file = output_directory / f'3_ai-{TARGET_STRUCTURE}_conservation_patterns-per_orthogroup.tsv'
+output_summary_file = output_directory / f'3_ai-{TARGET_STRUCTURE}_conservation_loss-summary.tsv'
 
 # Log file
 log_directory = Path( args.output_dir ) / TARGET_STRUCTURE / 'logs'

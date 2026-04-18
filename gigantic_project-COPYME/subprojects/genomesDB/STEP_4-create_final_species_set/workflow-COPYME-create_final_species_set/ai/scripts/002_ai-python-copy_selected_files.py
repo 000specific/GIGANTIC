@@ -79,34 +79,41 @@ def load_species_count( species_count_file: Path ) -> int:
     return count
 
 
-def find_proteome_file( proteomes_dir: Path, genus_species: str ) -> Path:
-    """Find proteome file for a given species."""
-    # Search for file containing the genus_species in the phyloname portion
-    # Format: phyloname-T1-proteome.aa
+def find_proteome_files( proteomes_dir: Path, genus_species: str ) -> list:
+    """Find all proteome files for a given species (may include T0, T1 variants)."""
+    # Search for files containing the genus_species in the phyloname portion
+    # Format: phyloname-TX-proteome.aa (TX = T0, T1, etc.)
+    matched_files = []
     for proteome_file in proteomes_dir.glob( '*.aa' ):
         filename = proteome_file.stem
-        parts_filename = filename.split( '-T1-proteome' )
-        if len( parts_filename ) >= 1:
-            phyloname = parts_filename[ 0 ]
-            parts_phyloname = phyloname.split( '_' )
-            if len( parts_phyloname ) >= 7:
-                genus = parts_phyloname[ 5 ]
-                species = '_'.join( parts_phyloname[ 6: ] )
-                file_genus_species = genus + '_' + species
-                if file_genus_species == genus_species:
-                    return proteome_file
-    return None
+        # Strip -proteome suffix, then strip -TX to get phyloname
+        if '-proteome' in filename:
+            phyloname = filename.split( '-proteome' )[ 0 ].rsplit( '-', 1 )[ 0 ]
+        else:
+            phyloname = filename
+        parts_phyloname = phyloname.split( '_' )
+        if len( parts_phyloname ) >= 7:
+            genus = parts_phyloname[ 5 ]
+            species = '_'.join( parts_phyloname[ 6: ] )
+            file_genus_species = genus + '_' + species
+            if file_genus_species == genus_species:
+                matched_files.append( proteome_file )
+    return matched_files
 
 
 def find_blastp_files( blastp_dir: Path, genus_species: str ) -> list:
     """Find all BLAST database files for a given species."""
     # BLAST databases have multiple extensions: .pdb, .phr, .pin, .psq, etc.
-    # Filenames: phyloname-T1-proteome.aa and phyloname-T1-proteome.aa.pdb etc.
+    # Filenames: phyloname-TX-proteome.aa and phyloname-TX-proteome.aa.pdb etc.
     db_files = []
     for db_file in blastp_dir.glob( '*' ):
         if db_file.is_file():
             filename = db_file.name
-            parts_filename = filename.split( '-T1-proteome' )
+            # Strip -proteome and everything after, then strip -TX to get phyloname
+            if '-proteome' in filename:
+                parts_filename = [ filename.split( '-proteome' )[ 0 ].rsplit( '-', 1 )[ 0 ] ]
+            else:
+                parts_filename = [ filename ]
             if len( parts_filename ) >= 1:
                 phyloname = parts_filename[ 0 ]
                 parts_phyloname = phyloname.split( '_' )
@@ -203,14 +210,15 @@ def main():
     logger.info( 'Copying proteomes from STEP_2...' )
     proteomes_copied = 0
     for genus_species in validated_species:
-        proteome_file = find_proteome_file( step2_proteomes_dir, genus_species )
-        if proteome_file:
-            dest_file = proteomes_output_dir / proteome_file.name
-            shutil.copy2( proteome_file, dest_file )
-            proteomes_copied += 1
+        proteome_files = find_proteome_files( step2_proteomes_dir, genus_species )
+        if proteome_files:
+            for proteome_file in proteome_files:
+                dest_file = proteomes_output_dir / proteome_file.name
+                shutil.copy2( proteome_file, dest_file )
+                proteomes_copied += 1
 
-            output = 'proteome' + '\t' + genus_species + '\t' + str( proteome_file ) + '\t' + str( dest_file )
-            manifest_entries.append( output )
+                output = 'proteome' + '\t' + genus_species + '\t' + str( proteome_file ) + '\t' + str( dest_file )
+                manifest_entries.append( output )
 
             if proteomes_copied % 10 == 0:
                 logger.info( f'  Copied {proteomes_copied} proteomes...' )

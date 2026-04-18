@@ -115,8 +115,8 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
     """
     Validate all RGS headers in FASTA file.
 
-    Expected header: >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
-    (5+ dash-separated fields, first starts with rgs_)
+    Expected header: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
+    (6+ dash-separated fields, first is exactly 'rgs')
 
     Args:
         input_file: Path to RGS FASTA file
@@ -145,10 +145,10 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
                 header = line[ 1: ].strip()
                 parts = header.split( '-' )
 
-                if len( parts ) >= 5 and parts[ 0 ].startswith( 'rgs_' ):
+                if len( parts ) >= 6 and parts[ 0 ] == 'rgs':
                     statistics[ 'valid_headers' ] += 1
-                    statistics[ 'species_found' ].add( parts[ 1 ] )
-                    statistics[ 'families_found' ].add( parts[ 0 ][ 4: ] )
+                    statistics[ 'species_found' ].add( parts[ 3 ] )
+                    statistics[ 'families_found' ].add( parts[ 2 ] )
                     sequence_ids.append( header )
                 else:
                     statistics[ 'invalid_headers' ] += 1
@@ -160,11 +160,21 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
                         logger.error( "Expected: >rgs_{{family}}-{{species}}-{{gene_symbol}}-{{source}}-{{identifier}}" )
 
     if len( statistics[ 'families_found' ] ) > 1:
-        all_valid = False
-        issue = f"Inconsistent family prefixes: {sorted( statistics[ 'families_found' ] )}"
-        statistics[ 'header_issues' ].append( issue )
-        if logger:
-            logger.error( issue )
+        # Check if all family prefixes share a common root (e.g., kinases_AGC_Akt and kinases_CAMK
+        # both start with "kinases"). Superfamily RGS files legitimately contain multiple subfamilies.
+        families_list = sorted( statistics[ 'families_found' ] )
+        common_root = families_list[ 0 ].split( '_' )[ 0 ]
+        all_share_root = all( family.startswith( common_root ) for family in families_list )
+
+        if not all_share_root:
+            all_valid = False
+            issue = f"Inconsistent family prefixes (no common root): {families_list}"
+            statistics[ 'header_issues' ].append( issue )
+            if logger:
+                logger.error( issue )
+        else:
+            if logger:
+                logger.info( f"Multiple subfamily prefixes found (common root: {common_root}): {len( families_list )} subfamilies" )
 
     id_counts = Counter( sequence_ids )
     duplicates = [ seq_id for seq_id, count in id_counts.items() if count > 1 ]

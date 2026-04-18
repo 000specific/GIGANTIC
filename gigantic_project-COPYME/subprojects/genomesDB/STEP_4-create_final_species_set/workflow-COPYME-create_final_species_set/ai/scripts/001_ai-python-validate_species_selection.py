@@ -66,9 +66,14 @@ def get_species_from_proteomes( proteomes_dir: Path ) -> set:
 
     for proteome_file in proteomes_dir.glob( '*.aa' ):
         # Extract genus_species from GIGANTIC cleaned proteome filename
-        # Format: phyloname-T1-proteome.aa
+        # Format: phyloname-TX-proteome.aa (TX = T0, T1, etc.)
         filename = proteome_file.stem
-        parts_filename = filename.split( '-T1-proteome' )
+        # Strip -proteome suffix, then strip -TX suffix to get phyloname
+        if '-proteome' in filename:
+            phyloname = filename.split( '-proteome' )[ 0 ].rsplit( '-', 1 )[ 0 ]
+        else:
+            phyloname = filename
+        parts_filename = [ phyloname ]
         if len( parts_filename ) >= 1:
             phyloname = parts_filename[ 0 ]
             parts_phyloname = phyloname.split( '_' )
@@ -92,9 +97,14 @@ def get_species_from_blastp( blastp_dir: Path ) -> set:
     # Filenames: phyloname-T1-proteome.aa.pdb
     for db_file in blastp_dir.glob( '*.pdb' ):
         # Extract genus_species from GIGANTIC filename
-        # Remove .aa.pdb suffix to get phyloname-T1-proteome
+        # Remove .aa.pdb suffix to get phyloname-TX-proteome
         filename = db_file.name
-        parts_filename = filename.split( '-T1-proteome' )
+        # Strip -proteome.aa.pdb suffix, then strip -TX to get phyloname
+        if '-proteome' in filename:
+            phyloname = filename.split( '-proteome' )[ 0 ].rsplit( '-', 1 )[ 0 ]
+        else:
+            phyloname = filename.rsplit( '.', 2 )[ 0 ]
+        parts_filename = [ phyloname ]
         if len( parts_filename ) >= 1:
             phyloname = parts_filename[ 0 ]
             parts_phyloname = phyloname.split( '_' )
