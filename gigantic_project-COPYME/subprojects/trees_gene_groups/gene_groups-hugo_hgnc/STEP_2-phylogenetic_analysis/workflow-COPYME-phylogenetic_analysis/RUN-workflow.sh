@@ -34,11 +34,11 @@ else
     echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
     echo ""
     echo "Please run the environment setup script first:"
-    echo "  cd ../../../../../../  # Go to project root (from gene_group-X/workflow-RUN_01)"
+    echo "  cd ../../../../../  # Go to project root (from gene_group-X/workflow-RUN_01)"
     echo "  bash RUN-setup_environments.sh"
     echo ""
     echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
+    echo "  mamba env create -f ../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
     echo ""
     exit 1
 fi
@@ -174,27 +174,29 @@ fi
 #   gene_groups-hugo_hgnc/
 #   ├── STEP_0-hgnc_gene_groups/           <- created by STEP_0
 #   ├── STEP_1-homolog_discovery/          <- created by STEP_1
-#   └── STEP_2-phylogenetic_analysis/      <- created here
-#       ├── gene_group-gap_junction_proteins/
-#       └── gene_group-fascin_family/
-#
-# Symlink targets are RELATIVE paths from the symlink location to
-# the real files in OUTPUT_pipeline/.
+#   ├── STEP_2-phylogenetic_analysis/      <- created here
+#   │   ├── gene_group-gap_junction_proteins/
+#   │   └── gene_group-fascin_family/
+#   └── STEP_3-tree_visualization/         <- created by STEP_3
 #
 # Directory context (from gene_group-X/workflow-RUN_01):
 #   ../           -> gene_group-X/
 #   ../../        -> STEP_2-phylogenetic_analysis/
 #   ../../../     -> gene_groups-[source]/
 #   ../../../../  -> trees_gene_groups/
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
 # ============================================================================
 
 echo ""
 echo "Creating symlinks for downstream workflows..."
 
-# Extract gene family name from config
+# Extract gene group name from config (still uses "gene_family" key for compatibility)
 GENE_FAMILY=$(grep -A5 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-# Derive directory names from the directory structure
+# Derive directory names from the trees_gene_groups directory structure:
+#   SCRIPT_DIR = .../gene_groups-<source>/STEP_2-phylogenetic_analysis/gene_group-<name>/workflow-RUN_01
 GENE_GROUP_DIR="$(basename "$(dirname "${SCRIPT_DIR}")")"
 SOURCE_DIR="$(basename "$(dirname "$(dirname "$(dirname "${SCRIPT_DIR}")")")")"
 
@@ -204,14 +206,11 @@ SYMLINK_DIR="../../../../output_to_input/${SOURCE_DIR}/STEP_2-phylogenetic_analy
 mkdir -p "${SYMLINK_DIR}"
 find "${SYMLINK_DIR}" -type l -delete 2>/dev/null
 
-# Symlink location: trees_gene_groups/output_to_input/<source>/STEP_2/gene_group-X/
-# Target location:  trees_gene_groups/<source>/STEP_2/gene_group-X/workflow-RUN_01/OUTPUT_pipeline/N-output/
-
 # Symlink alignment files
 for mafft_file in OUTPUT_pipeline/3-output/*.mafft; do
     if [ -f "$mafft_file" ]; then
         filename=$(basename "$mafft_file")
-        ln -sf "../../../../${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${mafft_file}" \
+        ln -sf "../../../../../${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${mafft_file}" \
             "${SYMLINK_DIR}/${filename}"
     fi
 done
@@ -220,7 +219,7 @@ done
 for trimmed_file in OUTPUT_pipeline/4-output/*.clipkit-smartgap; do
     if [ -f "$trimmed_file" ]; then
         filename=$(basename "$trimmed_file")
-        ln -sf "../../../../${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${trimmed_file}" \
+        ln -sf "../../../../../${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${trimmed_file}" \
             "${SYMLINK_DIR}/${filename}"
     fi
 done
@@ -231,7 +230,7 @@ for tree_dir in OUTPUT_pipeline/5_a-output OUTPUT_pipeline/5_b-output OUTPUT_pip
         for tree_file in "$tree_dir"/*.fasttree "$tree_dir"/*.treefile "$tree_dir"/*.veryfasttree "$tree_dir"/*.phylobayes.nwk; do
             if [ -f "$tree_file" ]; then
                 filename=$(basename "$tree_file")
-                ln -sf "../../../../${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${tree_file}" \
+                ln -sf "../../../../../${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${tree_file}" \
                     "${SYMLINK_DIR}/${filename}"
             fi
         done
@@ -245,10 +244,12 @@ echo "========================================================================"
 echo "SUCCESS! STEP_2 pipeline complete."
 echo ""
 echo "Research outputs (real files):"
-echo "  OUTPUT_pipeline/1-output/ through 7-output/"
+echo "  OUTPUT_pipeline/1-output/ through 5_d-output/ (tree newicks)"
 echo ""
 echo "Downstream symlinks:"
 echo "  ../../../../output_to_input/${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}/"
+echo ""
+echo "Next: STEP_3-tree_visualization renders the newicks to PDF + SVG"
 echo "========================================================================"
 echo "Completed: $(date)"
 

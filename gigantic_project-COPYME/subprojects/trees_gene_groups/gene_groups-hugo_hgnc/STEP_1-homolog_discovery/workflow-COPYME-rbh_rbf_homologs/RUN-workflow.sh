@@ -26,6 +26,9 @@ cd "${SCRIPT_DIR}"
 # Activate Environment
 # ============================================================================
 
+# Disable NextFlow telemetry/update checks (prevents curl hangs on compute nodes)
+export NXF_OFFLINE=true
+
 module load conda 2>/dev/null || true
 
 if conda activate ai_gigantic_trees_gene_families 2>/dev/null; then
@@ -34,11 +37,11 @@ else
     echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
     echo ""
     echo "Please run the environment setup script first:"
-    echo "  cd ../../../../../../  # Go to project root (from gene_group-X/workflow-RUN_01)"
+    echo "  cd ../../../../../  # Go to project root (from gene_group-X/workflow-RUN_01)"
     echo "  bash RUN-setup_environments.sh"
     echo ""
     echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
+    echo "  mamba env create -f ../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
     echo ""
     exit 1
 fi
@@ -183,14 +186,14 @@ fi
 #   │   └── gene_group-fascin_family/
 #   └── STEP_2-phylogenetic_analysis/      <- created by STEP_2
 #
-# Symlink targets are RELATIVE paths from the symlink location to
-# the real files in OUTPUT_pipeline/.
-#
 # Directory context (from gene_group-X/workflow-RUN_01):
 #   ../           -> gene_group-X/
 #   ../../        -> STEP_1-homolog_discovery/
 #   ../../../     -> gene_groups-[source]/
 #   ../../../../  -> trees_gene_groups/
+#
+# Symlink targets are RELATIVE paths from the symlink location to
+# the real files in OUTPUT_pipeline/.
 # ============================================================================
 
 echo ""
@@ -199,7 +202,8 @@ echo "Creating symlinks for downstream workflows..."
 # Extract gene family name from config
 GENE_FAMILY=$(grep -A5 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-# Derive directory names from the directory structure
+# Derive directory names from the trees_gene_groups directory structure:
+#   SCRIPT_DIR = .../gene_groups-<source>/STEP_1-homolog_discovery/gene_group-<name>/workflow-RUN_01
 GENE_GROUP_DIR="$(basename "$(dirname "${SCRIPT_DIR}")")"
 SOURCE_DIR="$(basename "$(dirname "$(dirname "$(dirname "${SCRIPT_DIR}")")")")"
 

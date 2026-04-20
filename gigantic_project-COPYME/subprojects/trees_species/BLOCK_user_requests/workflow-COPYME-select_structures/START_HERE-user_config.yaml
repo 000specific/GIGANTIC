@@ -1,0 +1,34 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This workflow queries the 105 species tree structures produced by trees_species
+# and returns structures matching specific topological features (e.g., "trees
+# where Ctenophora is sister to all other animals").
+#
+# BEFORE RUNNING:
+# 1. Edit INPUT_user/query_manifest.yaml with your topological queries.
+# 2. (Optional) Adjust run_label below.
+# 3. Run: bash RUN-workflow.sh
+#
+# AI: Claude Code | Opus 4.6 | 2026 April 18
+# Human: Eric Edsinger
+# ============================================================================
+
+# Run identification
+# run_label names the output_to_input subdirectory for this request
+# Example labels: "leonid_4_trees", "cteno_vs_porifera_hypotheses"
+run_label: "SET_NAME_HERE_user_request"
+
+# Input paths (relative to this workflow directory)
+inputs:
+  # trees_species output (phylogenetic blocks, parent-child, newicks, paths)
+  trees_species_dir: "../../output_to_input/BLOCK_permutations_and_features"
+
+  # Query manifest: YAML specifying topological features to match
+  query_manifest: "INPUT_user/query_manifest.yaml"
+
+# Output configuration
+output:
+  # Main output directory (relative to this workflow directory)
+  base_dir: "OUTPUT_pipeline"

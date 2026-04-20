@@ -122,10 +122,10 @@ def create_truncated_headers_map(
 
 def parse_rgs_header( header: str ) -> Tuple[bool, str, str, str]:
     """
-    Parse GIGANTIC_1 standardized RGS header.
+    Parse GIGANTIC standardized RGS header (5-field format).
 
-    Expected format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
-    6 dash-separated fields, first is exactly 'rgs'.
+    Expected format: >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
+    5 dash-separated fields, first starts with 'rgs_'.
 
     Args:
         header: RGS FASTA header (without >)
@@ -135,16 +135,16 @@ def parse_rgs_header( header: str ) -> Tuple[bool, str, str, str]:
     """
     parts = header.split( '-' )
 
-    if len( parts ) < 6:
+    if len( parts ) < 5:
         return False, '', '', header
 
-    # First part must be exactly 'rgs'
-    if parts[0] != 'rgs':
+    # First part must start with 'rgs_' (family embedded)
+    if not parts[0].startswith( 'rgs_' ):
         return False, '', '', header
 
-    # New index positions: rgs-IDENTIFIER-FAMILY-SPECIES-GENE-SOURCE
-    species_short_name = parts[3]
-    source = parts[5]
+    # 5-field index positions: rgs_FAMILY-SPECIES-GENE-SOURCE-IDENTIFIER
+    species_short_name = parts[1]
+    source = parts[3]
 
     return True, species_short_name, source, header
 
@@ -287,10 +287,10 @@ def create_rgs_genome_mapping(
                 rgs_query = parts[0]  # RGS sequence ID (query)
                 genome_hit = parts[1]  # Genome sequence ID (subject/hit)
                 
-                # Extract species from RGS header (fourth field: rgs-{id}-{family}-{species}-{gene}-{source})
+                # Extract species from RGS header (second field: rgs_{family}-{species}-{gene}-{source}-{identifier})
                 rgs_parts = rgs_query.split( '-' )
-                if len( rgs_parts ) >= 4:
-                    rgs_species = rgs_parts[3]
+                if len( rgs_parts ) >= 5 and rgs_parts[0].startswith( 'rgs_' ):
+                    rgs_species = rgs_parts[1]
                     
                     # Check if this RGS matches the report's model species
                     if rgs_species == report_model_species:

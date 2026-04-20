@@ -4,7 +4,9 @@ Build phylogenetic trees from homolog sequences identified in STEP_1.
 
 ## Purpose
 
-Takes the All Gene Set (AGS) from STEP_1, aligns sequences with MAFFT, trims with ClipKit, builds trees with one or more methods, and generates visualizations.
+Takes the All Gene Set (AGS) from STEP_1, aligns sequences with MAFFT, trims with ClipKit, and builds trees with one or more methods.
+
+Tree visualization (PDF/SVG rendering) is handled by the separate **STEP_3-tree_visualization** workflow, which consumes the newick files produced here.
 
 ## Quick Start
 
@@ -32,8 +34,10 @@ Enable/disable methods in `START_HERE-user_config.yaml`.
 
 ## Output
 
-Trees and visualizations are copied to:
+Alignments and tree newick files are symlinked to:
 - `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/`
+
+These are then picked up by `STEP_3-tree_visualization` for PDF/SVG rendering.
 
 ## For AI Assistants
 

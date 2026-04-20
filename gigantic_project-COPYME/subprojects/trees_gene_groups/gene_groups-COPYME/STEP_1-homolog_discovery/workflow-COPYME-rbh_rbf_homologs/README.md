@@ -67,15 +67,20 @@ cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_02-rbh_rbf_homologs
 nano START_HERE-user_config.yaml
 ```
 
-**Example START_HERE-user_config.yaml settings (full-length RGS, default):**
+**Example START_HERE-user_config.yaml settings (full-length RGS — DEFAULT, use this for most gene families/groups):**
 ```yaml
 gene_family:
   name: "innexin_pannexin"
   rgs_full_length_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
   rgs_sequence_is_full_length: true
+  # rgs_subsequence_file: <leave commented out / unset — not used in full-length mode>
 ```
 
-**Example (subsequence RGS, e.g., TRP pore regions):**
+In full-length mode, Script 018 (`restore_full_length_rgs`) is **cleanly skipped** by the NextFlow workflow. You do NOT need to provide a subsequence file or set `rgs_subsequence_file`. The final AGS from Script 016 is the authoritative output.
+
+Do not pass the same file as both `rgs_full_length_file` and `rgs_subsequence_file` — that would invoke Script 018 unnecessarily and introduce risk. The correct pattern is: set `rgs_sequence_is_full_length: true`, provide only `rgs_full_length_file`, and leave `rgs_subsequence_file` unset.
+
+**Example (subsequence RGS — use ONLY when the RGS seeds are domain/subsequence fragments rather than full-length proteins, e.g., TRP pore regions):**
 ```yaml
 gene_family:
   name: "transient_receptor_potential_cation_channels"
@@ -83,6 +88,8 @@ gene_family:
   rgs_sequence_is_full_length: false
   rgs_subsequence_file: "INPUT_user/rgs_channel-species-trp_pore_region_subsequence.aa"
 ```
+
+In subsequence mode, BOTH files are required. Headers must match between them, with `_subsequence` appended to the subsequence file's headers (Script 018 strips this suffix when restoring full-length sequences into the AGS).
 
 **Prepare input files:**
 ```bash

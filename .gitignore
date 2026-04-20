@@ -104,3 +104,8 @@ core.*
 # for sonogenetics (Chalasani lab, Salk). Exercises GIGANTIC_1 as an outside
 # user — not part of the public framework.
 /sono_april2026/
+
+# Paper drafting workspace (Apr 2026): ctenophore-vs-sponge Methods planning,
+# research sweeps, chat transcripts, and draft text. Personal/pre-publication
+# — not part of the public framework.
+/paper_cteno_vs_sponge/

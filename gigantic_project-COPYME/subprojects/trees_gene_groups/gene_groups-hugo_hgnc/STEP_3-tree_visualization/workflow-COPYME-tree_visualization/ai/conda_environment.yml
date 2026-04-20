@@ -1,0 +1,43 @@
+# GIGANTIC trees_gene_groups - STEP_3 tree_visualization environment
+# AI: Claude Code | Opus 4.7 | 2026 April 19
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-STEP conda env scoped to STEP_3-tree_visualization.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# Dependencies rationale:
+#   - python, pyyaml -- core deps
+#   - toytree, toyplot, reportlab -- rendering engine
+#     Uses toytree (pure Python, no Qt) + reportlab (native PDF support)
+#     to render newick files as PDF + SVG. This replaces ete3 which has
+#     perennial Qt/PyQt5 install issues on conda-forge.
+#
+# toytree + toyplot are pip-only (no stable conda-forge package yet),
+# so we bootstrap via pip inside the conda env.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#     conda activate aiG-trees_gene_groups-visualization
+#
+# ACTIVATION:
+#   module load conda
+#   conda activate aiG-trees_gene_groups-visualization
+
+name: aiG-trees_gene_groups-visualization
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.11
+  - pyyaml
+  - pip
+  - pip:
+    - toytree>=3.0
+    - toyplot>=2.0
+    - reportlab>=4.0

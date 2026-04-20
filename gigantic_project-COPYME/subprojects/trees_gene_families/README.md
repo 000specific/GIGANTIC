@@ -8,19 +8,20 @@ Build phylogenetic trees for individual gene families across GIGANTIC project sp
 
 This subproject takes curated reference gene sequences (RGS), finds homologs across all project species via reciprocal best hit/family (RBH/RBF) BLAST, and builds phylogenetic trees.
 
-Each gene family is a **self-contained unit** with its own copy of the two-step pipeline.
+Each gene family is a **self-contained unit** with its own copy of the three-step pipeline.
 
-The full workflow has three phases:
+The full workflow has four phases:
 
 | Phase | Where | Purpose |
 |-------|-------|---------|
 | RGS Preparation | `research_notebook/` | Source, curate, and format reference gene sequences |
 | STEP_1 | `gene_family-*/STEP_1-homolog_discovery/` | Validate RGS, find homologs via RBH/RBF BLAST |
-| STEP_2 | `gene_family-*/STEP_2-phylogenetic_analysis/` | Align, trim, build trees, visualize |
+| STEP_2 | `gene_family-*/STEP_2-phylogenetic_analysis/` | Align, trim, build trees (produces newick files) |
+| STEP_3 | `gene_family-*/STEP_3-tree_visualization/` | Render trees as PDF + SVG using toytree |
 
 ## RGS Preparation (Before the Pipeline)
 
-Before running the two-step pipeline, RGS FASTA files must be prepared in GIGANTIC standard format. This happens in `research_notebook/`.
+Before running the three-step pipeline, RGS FASTA files must be prepared in GIGANTIC standard format. This happens in `research_notebook/`.
 
 **RGS filename format**: `rgs_<category>-<source_species>-<description>.aa`
 
@@ -30,14 +31,17 @@ Within each dash-separated field, only letters, numbers, and underscores are all
 
 **RGS sources include**: HGNC gene groups, UniProt, kinase/phosphatome databases, and curated sets from prior GIGANTIC work. Conversion scripts in `research_notebook/rgs_from_before/rgs_for_trees/` reformat legacy headers to GIGANTIC standard and produce mapping TSVs for traceability.
 
-## Two-Step Pipeline
+## Three-Step Pipeline
 
 | Step | Name | Purpose |
 |------|------|---------|
 | STEP_1 | Homolog Discovery | Validate RGS, find homologs via RBH/RBF BLAST |
-| STEP_2 | Phylogenetic Analysis | Align, trim, build trees, visualize |
+| STEP_2 | Phylogenetic Analysis | Align, trim, build trees (produces newick files) |
+| STEP_3 | Tree Visualization | Render trees as PDF + SVG using toytree |
 
 **Note**: RGS validation is built into STEP_1 as its first process. If validation fails, the pipeline stops immediately before expensive BLAST runs.
+
+**Why STEP_3 is separate**: Visualization is decoupled from tree inference because (a) the newick file is the scientific artifact and a render failure should never invalidate it; (b) toytree+toyplot+reportlab replaces ete3/PyQt5, which has perennial install issues on conda-forge; (c) visualization iteration (seconds) is many orders of magnitude faster than tree rebuilding (days), so keeping them separate enables quick figure iteration without expensive recomputation.
 
 ## Directory Structure
 
@@ -46,14 +50,18 @@ trees_gene_families/
 ├── gene_family_COPYME/                    # Template (copy this for each gene family)
 │   ├── STEP_1-homolog_discovery/
 │   │   └── workflow-COPYME-rbh_rbf_homologs/
-│   └── STEP_2-phylogenetic_analysis/
-│       └── workflow-COPYME-phylogenetic_analysis/
+│   ├── STEP_2-phylogenetic_analysis/
+│   │   └── workflow-COPYME-phylogenetic_analysis/
+│   └── STEP_3-tree_visualization/
+│       └── workflow-COPYME-tree_visualization/
 │
 ├── gene_family-innexin_pannexin/          # User copy (example)
 │   ├── STEP_1-homolog_discovery/
 │   │   └── workflow-RUN_1-rbh_rbf_homologs/
-│   └── STEP_2-phylogenetic_analysis/
-│       └── workflow-RUN_1-phylogenetic_analysis/
+│   ├── STEP_2-phylogenetic_analysis/
+│   │   └── workflow-RUN_1-phylogenetic_analysis/
+│   └── STEP_3-tree_visualization/
+│       └── workflow-RUN_1-tree_visualization/
 │
 ├── output_to_input/                       # Shared outputs for downstream subprojects
 ├── upload_to_server/                      # Curated data for GIGANTIC server
@@ -88,6 +96,13 @@ cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_1-phylogenetic_analysis
 cd workflow-RUN_1-phylogenetic_analysis/
 # Edit START_HERE-user_config.yaml (set gene_family name, choose tree methods)
 bash RUN-workflow.sh
+
+# 4. Run STEP_3 (render trees as PDF + SVG)
+cd ../../STEP_3-tree_visualization/
+cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
+cd workflow-RUN_1-tree_visualization/
+# Edit START_HERE-user_config.yaml (set gene_family name - must match STEP_2)
+bash RUN-workflow.sh
 ```
 
 ## Prerequisites
@@ -106,7 +121,7 @@ cp -r gene_family_COPYME gene_family-wnt_ligands
 cp -r gene_family_COPYME gene_family-nhr_nuclear_hormone_receptors
 ```
 
-This keeps both steps together for each gene family, making it easy to manage and track progress per family.
+This keeps all three steps together for each gene family, making it easy to manage and track progress per family.
 
 ## Output Location
 
@@ -115,8 +130,9 @@ Final outputs appear in `output_to_input/` at the subproject root:
 ```
 output_to_input/
 ├── <gene_family>/
-│   ├── STEP_1-homolog_discovery/   # Homolog sequences (AGS) - symlinks to workflow outputs
-│   └── STEP_2-phylogenetic_analysis/   # Trees and visualizations - symlinks to workflow outputs
+│   ├── STEP_1-homolog_discovery/     # Homolog sequences (AGS) - symlinks to workflow outputs
+│   ├── STEP_2-phylogenetic_analysis/ # Tree newick files + alignments - symlinks
+│   └── STEP_3-tree_visualization/    # Rendered PDFs + SVGs - symlinks
 ```
 
 ## Tree Methods Available (STEP_2)
@@ -244,6 +260,12 @@ bash RUN-setup_and_submit_step2_burst.sh
 # 4. Large families (above MAX_SEQS) need dedicated SLURM with more resources
 #    Set up their workflow directories manually or with --setup-only,
 #    then submit individually with appropriate resource requests
+
+# 5. Run STEP_3 visualization (lightweight; typically runs locally, serial)
+#    Loop over each completed family and run bash RUN-workflow.sh from its
+#    STEP_3-tree_visualization/workflow-RUN_1-tree_visualization/ directory.
+#    First run creates the aiG-trees_gene_families-visualization conda env;
+#    subsequent runs reuse it.
 ```
 
 ### SLURM Logs
@@ -251,6 +273,8 @@ bash RUN-setup_and_submit_step2_burst.sh
 All burst job logs go to `slurm_logs/` at the subproject root:
 - STEP_1: `slurm_logs/step1_<gene_family>-<jobid>.log`
 - STEP_2: `slurm_logs/step2_<gene_family>-<jobid>.log`
+
+STEP_3 runs locally and writes its own logs into `gene_family-*/STEP_3-tree_visualization/workflow-RUN_1-tree_visualization/ai/logs/`.
 
 ## For AI Assistants
 

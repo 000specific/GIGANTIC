@@ -254,7 +254,19 @@ workflow {
     determine_origins( prepare_inputs.out.structure_id )
     quantify_conservation_loss( determine_origins.out.structure_id )
     comprehensive_ocl_analysis( quantify_conservation_loss.out.structure_id )
-    validate_results( comprehensive_ocl_analysis.out.structure_id )
+
+    // Barrier before validate_results: `.collect().flatten()` forces every
+    // upstream `val structure_id` emission to land in a single-item list
+    // channel, which is then flattened back to one-at-a-time dispatch. Works
+    // around a NextFlow channel-propagation issue seen in a previous run
+    // where some `val` emissions from comprehensive_ocl_analysis silently
+    // failed to reach validate_results, leaving 22 of 105 structures un-
+    // validated despite their comp_ocl tasks completing cleanly (exit 0).
+    // The collect/flatten pair ensures all 105 structure_ids accumulate
+    // before validate_results dispatches, at the cost of losing pipelining
+    // between stages 4 and 5 (validate_results starts only after ALL
+    // comp_ocl finishes).
+    validate_results( comprehensive_ocl_analysis.out.structure_id.collect().flatten() )
 
     // Write run log (FINAL STEP)
     write_run_log( validate_results.out.structure_id.collect() )

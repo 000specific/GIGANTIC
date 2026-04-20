@@ -84,7 +84,7 @@ def load_species_map( map_path ) {
 def extract_rgs_species( rgs_file_path ) {
     /*
      * Extract unique species short names from RGS FASTA headers.
-     * Header format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
+     * 5-field GIGANTIC format: >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
      */
     def species_set = [] as Set
     def rgs_file = file( rgs_file_path )
@@ -93,8 +93,8 @@ def extract_rgs_species( rgs_file_path ) {
         if ( line.startsWith( '>' ) ) {
             def header = line.substring( 1 ).trim()
             def parts = header.split( '-' )
-            if ( parts.size() >= 4 ) {
-                def species_short_name = parts[3]
+            if ( parts.size() >= 5 && parts[0].startsWith( 'rgs_' ) ) {
+                def species_short_name = parts[1]
                 if ( species_short_name && Character.isLetter( species_short_name.charAt( 0 ) ) ) {
                     species_set.add( species_short_name )
                 }

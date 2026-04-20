@@ -51,12 +51,13 @@ inputs:
 
   # trees_species output directory (phylogenetic blocks, paths, clade-species mappings)
   # Points to trees_species output_to_input via relative path
-  trees_species_dir: "../../../../trees_species/output_to_input/BLOCK_permutations_and_features"
+  trees_species_dir: "../../../trees_species/output_to_input/BLOCK_permutations_and_features"
 
-  # Annotations directory (per-species annotation files from annotations_hmms)
-  # Replace DATABASE_HERE with the annotation database name
-  # Each file is a 7-column TSV: Phyloname, Sequence_ID, Start, Stop, DB, Accession, Details
-  annotations_dir: "../../../../annotations_hmms/output_to_input/BLOCK_build_annotation_database/annotation_databases/database_DATABASE_HERE"
+  # InterProScan output directory (raw per-species InterProScan result TSVs)
+  # Points to BLOCK_interproscan combined output (4-output with 15-column TSV per species)
+  # Script 001 filters to the requested annotation_database on the fly --
+  # no pre-built per-database files needed
+  interproscan_dir: "../../../annotations_hmms/BLOCK_interproscan/workflow-RUN_1-run_interproscan/OUTPUT_pipeline/4-output"
 
 # Output configuration
 output:

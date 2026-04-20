@@ -1,0 +1,89 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# GIGANTIC STEP_3 tree_visualization - Configuration
+# AI: Claude Code | Opus 4.7 | 2026 April 19
+# Human: Eric Edsinger
+#
+# Renders gene family phylogenetic trees (produced by STEP_2) as PDF + SVG
+# using toytree. Run after STEP_2 has produced tree newick files.
+#
+# QUICK START:
+#   1. Copy this template:
+#        cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
+#   2. Edit gene_family.name below to match your STEP_2 run
+#   3. Run:
+#        bash RUN-workflow.sh
+# ============================================================================
+
+# ============================================================
+# GENE FAMILY (EDIT THIS)
+# ============================================================
+
+gene_family:
+  # Name of the gene family being analyzed (must match STEP_1/STEP_2 output)
+  name: "innexin_pannexin"
+
+# ============================================================
+# INPUT CONFIGURATION
+# ============================================================
+
+input:
+  # Path to output_to_input directory (relative to this workflow directory)
+  # Tree newick files are read from:
+  #   <output_to_input_dir>/<gene_family>/STEP_2-phylogenetic_analysis/
+  output_to_input_dir: "../../../output_to_input"
+
+# ============================================================
+# VISUALIZATION OPTIONS
+# ============================================================
+
+visualization:
+  # Tip label visibility: hide tip labels for trees with more than this many tips
+  # (tree shape remains visible; labels become illegible at high density).
+  # Override by setting a very high number (e.g., 100000) to always show labels.
+  show_tip_labels_max_tips: 500
+
+  # Color tip labels by species (parsed from GIGANTIC gene identifier format).
+  # If false, all tips use the default dark color.
+  color_tips_by_species: true
+
+  # Tip label font size in pixels
+  tip_label_font_size_px: 11
+
+  # Show branch support values (bootstrap / aLRT / posterior) if present in newick.
+  # Auto-detected per tree: if no numeric node labels, no support is shown.
+  show_branch_support: true
+
+  # Font size for branch support values
+  branch_support_font_size_px: 7
+
+  # Canvas width in pixels (fixed)
+  canvas_width_px: 1000
+
+  # Canvas height in pixels: computed as max( canvas_height_min_px, canvas_height_per_tip_px * ntips + 200 )
+  canvas_height_per_tip_px: 20
+  canvas_height_min_px: 900
+
+# ============================================================
+# OUTPUT CONFIGURATION
+# ============================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# STEP_3 is lightweight (seconds to minutes per gene family). SLURM is rarely
+# needed. Default: run locally.
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+slurm_cpus: 2
+slurm_memory_gb: 8
+slurm_time_hours: 2

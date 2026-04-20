@@ -87,16 +87,15 @@ def load_rgs_identifiers(
                 truncated_rgs_header = parts[ 1 ]    # truncated header
                 original_full_rgs_header = parts[ 2 ] # original full header
                 
-                # Add all identifiers to check against BLAST hits
-                rgs_identifiers.append( projectdb_identifier )
+                # Only add RGS headers — NOT genome protein IDs
+                # Genome IDs (g_*) must NOT be in the set, otherwise
+                # unreplaced genome proteins pass the reciprocal filter
                 rgs_identifiers.append( truncated_rgs_header )
                 rgs_identifiers.append( original_full_rgs_header )
             elif len( parts ) >= 2:
                 # Two-column format (backward compatibility)
-                projectdb_identifier = parts[ 0 ]
                 rgs_identifier = parts[ 1 ]
                 rgs_identifiers.append( rgs_identifier )
-                rgs_identifiers.append( projectdb_identifier )
     
     if logger:
         logger.info( f"Loaded {len(rgs_identifiers)} RGS identifiers" )
@@ -125,43 +124,39 @@ def parse_reciprocal_blast_results(
         List of keeper sequence identifiers
     """
     keepers = []
-    
+    rgs_identifiers_set = set( rgs_identifiers )
+
     with open( blast_report, 'r' ) as input_report, \
          open( output_filtered, 'w' ) as output_dropped:
-        
+
         for line in input_report:
             parts = line.strip().split( '\t' )
-            
+
             if len( parts ) < 2:
                 continue
-            
+
             query = parts[ 0 ]
             hit = parts[ 1 ]
-            
-            # Parse hit to extract species name
-            hit_parts = hit.split( '-' )
-            if len( hit_parts ) < 2:
-                continue
-            
-            species_part = hit_parts[ 1 ]
-            
-            # Extract species name (handle Genus_species format)
-            species_name = species_part.split( '_' )[ -1 ].lower() if '_' in species_part else species_part.lower()
-            
-            # Check if hit is to model species
-            is_rbh_species = any( species in species_name for species in rbh_species )
-            
-            if is_rbh_species:
-                # Keep if NOT in RGS (avoid circularity)
-                if query not in rgs_identifiers:
+
+            # Check: is the hit one of our RGS sequences (spliced into modified genomes)?
+            # This is the ONLY valid signal. The reciprocal best hit MUST land on an
+            # RGS sequence to confirm the BGS sequence is a true gene family member.
+            # Hits to unreplaced genome proteins (g_ headers) are rejected — they
+            # indicate the sequence is more similar to a non-RGS gene than to any
+            # RGS family member.
+            hit_is_rgs = hit in rgs_identifiers_set
+
+            if hit_is_rgs:
+                # Keep if NOT in RGS (avoid circularity - RGS hitting itself)
+                if query not in rgs_identifiers_set:
                     keepers.append( query )
             else:
                 # Log filtered sequence
                 output_dropped.write( f"{query}\t{hit}\n" )
-    
+
     if logger:
         logger.info( f"Identified {len(keepers)} keeper sequences" )
-    
+
     return keepers
 
 

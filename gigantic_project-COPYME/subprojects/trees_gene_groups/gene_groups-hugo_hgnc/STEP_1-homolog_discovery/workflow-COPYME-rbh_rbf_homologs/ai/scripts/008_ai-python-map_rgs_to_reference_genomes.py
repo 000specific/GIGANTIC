@@ -62,105 +62,61 @@ def setup_logging( log_file: Path = None ) -> logging.Logger:
 
 def create_truncated_headers_map(
     headers: List[str],
-    max_length: int = 50,  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
+    max_length: int = 50,
+    truncate_to: int = 45,
     logger: logging.Logger = None
 ) -> Dict[str, str]:
     """
     Create mapping of original headers to truncated headers (if needed).
-
-    Only truncates headers > max_length (BLAST identifier limit is 50). Builds
-    a STRUCTURED short header that preserves the 5-field dash format so
-    downstream code (especially script 013) can parse fields like species
-    (parts[1]), gene_symbol (parts[2]), source (parts[3]), and accession
-    (parts[4:]).
-
-    Original GIGANTIC RGS header format (5 dash-separated fields):
-        rgs_<family>-<species>-<gene_symbol>-<source>-<accession>
-
-    New truncated format (also 5 dash-separated fields, target output < 40 chars):
-        r<NNNN>-<species>-<gene_symbol>-<short_source>-<accession>
-
-    Where in the truncated form:
-        r<NNNN>       = 'r' + 4-digit counter (5 chars; supports up to 9999 sequences)
-        <species>     = original species short name, kept as-is (e.g., 'human', 'fly', 'worm')
-        <gene_symbol> = original gene symbol, kept as-is (e.g., 'MCOLN1')
-        <short_source> = HGNC gene group ID extracted from source field if present
-                         (e.g., 'gg249' from 'hgnc_gg249_Transient_receptor_potential...');
-                         otherwise the original source field is kept as-is.
-        <accession>   = original accession, kept as-is (e.g., 'NP_065394_1')
-
-    Example:
-        Original (129 chars):
-            rgs_transient_receptor_potential_cation_channels-human-MCOLN1-hgnc_gg249_Transient_receptor_potential_cation_channels-NP_065394_1
-        New (36 chars):
-            r0001-human-MCOLN1-gg249-NP_065394_1
-
-    The new format preserves the species field at parts[1] of the truncated
-    header, which is essential for script 013's reciprocal best hit detection
-    (it parses hit.split('-')[1] to determine if a hit is to an RBH species).
-
-    The previous (broken) implementation did dumb prefix truncation which lost
-    all dashes for headers where the first field alone exceeded 45 chars
-    (e.g., HGNC gene groups with sanitized names >= 41 chars), resulting in
-    silent failure of reciprocal best hit detection and zero homologs in the
-    final AGS output.
-
+    
+    Only truncates headers > max_length. Truncates to truncate_to chars and
+    adds a counter suffix (_001, _002, etc.) to ensure uniqueness.
+    
     Args:
         headers: List of original headers
-        max_length: Header length above which truncation is triggered (default: 50, BLAST limit)
+        max_length: Maximum allowed header length (BLAST limit: 50)
+        truncate_to: Length to truncate to before adding counter (default: 45)
         logger: Logger instance
-
+        
     Returns:
         Dictionary mapping original_header → truncated_header
     """
     original_to_truncated = {}
-    counter = 0  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
+    truncated_seen = {}  # Track truncated base → counter
+    
     for original_header in headers:
         if len( original_header ) <= max_length:
-            # No truncation needed - header is already short enough for BLAST
+            # No truncation needed
             original_to_truncated[ original_header ] = original_header
-            continue  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-        counter += 1  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-        # Parse original 5-field structure: rgs_<family>-<species>-<gene_symbol>-<source>-<accession>
-        parts = original_header.split( '-' )  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-        if len( parts ) >= 5:  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-            species = parts[ 1 ]  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-            gene_symbol = parts[ 2 ]  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-            source = parts[ 3 ]  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-            # accession field may include any trailing dashes (rejoin parts[4:])
-            accession = '-'.join( parts[ 4: ] )  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-            # Extract HGNC gene group ID from source field if present
-            # e.g., 'hgnc_gg249_Transient_receptor_potential...' -> 'gg249'
-            short_source = source  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-            if source.startswith( 'hgnc_' ):  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-                source_after_prefix = source[ 5: ]  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-                if '_' in source_after_prefix:  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-                    short_source = source_after_prefix.split( '_' )[ 0 ]  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-                else:
-                    short_source = source_after_prefix  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-            # Build new structured short header preserving 5-field dash structure
-            truncated_header = f"r{counter:04d}-{species}-{gene_symbol}-{short_source}-{accession}"  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
         else:
-            # Header doesn't have 5 fields - fall back to numeric form with placeholder fields
-            truncated_header = f"r{counter:04d}-unknown-unknown-unknown-unknown"  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-        # Warn if the new header exceeds 40 chars target (rare; long gene symbols + long accessions)
-        if len( truncated_header ) > 40:  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-            if logger:  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-                logger.warning( f"Truncated header > 40 chars target: {truncated_header} ({len(truncated_header)} chars)" )  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
-        original_to_truncated[ original_header ] = truncated_header  # MAPPING LONG RGS HEADERS TO BE UNDER 40 CHARACTERS!
-
+            # Truncate to 45 chars
+            truncated_base = original_header[:truncate_to]
+            
+            # Check if this truncated base has been seen before
+            if truncated_base not in truncated_seen:
+                truncated_seen[ truncated_base ] = 0
+            
+            # Increment counter for this base
+            truncated_seen[ truncated_base ] += 1
+            counter = truncated_seen[ truncated_base ]
+            
+            # Create unique truncated header: base + _NNN
+            truncated_header = f"{truncated_base}_{counter:03d}"
+            
+            # Verify we're still under the limit
+            if len( truncated_header ) > max_length:
+                if logger:
+                    logger.error( f"Truncated header still too long: {truncated_header} ({len(truncated_header)} chars)" )
+                # Emergency truncation - reduce base further
+                emergency_base = original_header[:( max_length - 4 )]  # Leave room for _NNN
+                truncated_header = f"{emergency_base}_{counter:03d}"
+            
+            original_to_truncated[ original_header ] = truncated_header
+    
     if logger:
         num_truncated = sum( 1 for orig, trunc in original_to_truncated.items() if orig != trunc )
         logger.info( f"Headers requiring truncation: {num_truncated} / {len(headers)}" )
-
+    
     return original_to_truncated
 
 
@@ -168,8 +124,8 @@ def parse_rgs_header( header: str ) -> Tuple[bool, str, str, str]:
     """
     Parse GIGANTIC_1 standardized RGS header.
 
-    Expected format: >rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
-    5 dash-separated fields.
+    Expected format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
+    6 dash-separated fields, first is exactly 'rgs'.
 
     Args:
         header: RGS FASTA header (without >)
@@ -179,16 +135,18 @@ def parse_rgs_header( header: str ) -> Tuple[bool, str, str, str]:
     """
     parts = header.split( '-' )
 
+    # HGNC RGS header format (5 fields): >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
+    # Example: >rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1
     if len( parts ) < 5:
         return False, '', '', header
 
-    # First part must start with rgs_
-    rgs_part = parts[0]
-    if not rgs_part.startswith( 'rgs_' ):
+    # First part must start with 'rgs_'
+    if not parts[0].startswith( 'rgs_' ):
         return False, '', '', header
 
+    # HGNC index positions: rgs_FAMILY-SPECIES-GENE-SOURCE-IDENTIFIER
     species_short_name = parts[1]
-    source = parts[3]  # source_details is the 4th field
+    source = parts[3]
 
     return True, species_short_name, source, header
 
@@ -331,9 +289,10 @@ def create_rgs_genome_mapping(
                 rgs_query = parts[0]  # RGS sequence ID (query)
                 genome_hit = parts[1]  # Genome sequence ID (subject/hit)
                 
-                # Extract species from RGS header (second field: rgs_{family}-{species}-{gene_symbol}-{source}-{id})
+                # HGNC RGS header format (5 fields): >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
+                # Extract species from second field (index 1)
                 rgs_parts = rgs_query.split( '-' )
-                if len( rgs_parts ) >= 2:
+                if len( rgs_parts ) >= 5 and rgs_parts[0].startswith( 'rgs_' ):
                     rgs_species = rgs_parts[1]
                     
                     # Check if this RGS matches the report's model species

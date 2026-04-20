@@ -249,6 +249,35 @@ process write_run_log {
 }
 
 // ============================================================================
+// PROCESS 007: AGGREGATE RUN SUMMARY
+// ============================================================================
+
+/*
+ * Process 7: Aggregate Run Summary
+ * Calls: scripts/007_ai-python-aggregate_run_summary.py
+ *
+ * Reads per-structure JSON fragments emitted by Scripts 001-005 and builds
+ * RUN_SUMMARY.md at the workflow root. This is the final step -- gives users
+ * a glanceable success/failure + key stats view without entering OUTPUT_pipeline/.
+ */
+process aggregate_run_summary {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: summary_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/007_ai-python-aggregate_run_summary.py \
+        --config ${config_path} \
+        --workflow_dir ${workflow_dir}
+    """
+}
+
+// ============================================================================
 // WORKFLOW
 // ============================================================================
 
@@ -260,8 +289,11 @@ workflow {
     comprehensive_ocl_analysis( quantify_conservation_loss.out.structure_id )
     validate_results( comprehensive_ocl_analysis.out.structure_id )
 
-    // Write run log (FINAL STEP)
+    // Write run log after all structures complete validation
     write_run_log( validate_results.out.structure_id.collect() )
+
+    // Aggregate run summary into RUN_SUMMARY.md at workflow root (FINAL STEP)
+    aggregate_run_summary( write_run_log.out.log_complete )
 }
 
 // ============================================================================

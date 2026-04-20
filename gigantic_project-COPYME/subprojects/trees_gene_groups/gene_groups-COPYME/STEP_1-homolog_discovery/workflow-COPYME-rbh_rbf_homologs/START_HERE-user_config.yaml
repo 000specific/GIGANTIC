@@ -96,12 +96,12 @@ inputs:
   # BLAST protein databases directory (REQUIRED)
   # Path to directory containing per-species .aa BLAST database files
   # From genomesDB subproject: ../../../genomesDB/output_to_input/gigantic_T1_blastp/
-  blast_databases_dir: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
+  blast_databases_dir: "../../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
   # RGS genomes directory (REQUIRED)
   # Directory containing genome .aa files for RGS species
   # Usually the same as blast_databases_dir
-  rgs_genomes_dir: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
+  rgs_genomes_dir: "../../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
 # ============================================================================
 # PROJECT SETTINGS

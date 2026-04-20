@@ -43,9 +43,7 @@ workflow-COPYME-phylogenetic_analysis/
 │   ├── 5_a-output/     # FastTree (if enabled)
 │   ├── 5_b-output/     # IQ-TREE (if enabled)
 │   ├── 5_c-output/     # VeryFastTree (if enabled)
-│   ├── 5_d-output/     # PhyloBayes (if enabled)
-│   ├── 6-output/       # Human-friendly visualizations
-│   └── 7-output/       # Computer-vision visualizations
+│   └── 5_d-output/     # PhyloBayes (if enabled)
 │
 └── ai/
     ├── AI_GUIDE-phylogenetic_analysis_workflow.md  # THIS FILE
@@ -60,9 +58,7 @@ workflow-COPYME-phylogenetic_analysis/
         ├── 005_b_ai-bash-run_iqtree.sh
         ├── 005_c_ai-bash-run_veryfasttree.sh
         ├── 005_d_ai-bash-run_phylobayes.sh
-        ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-        ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-        └── 008_ai-python-write_run_log.py
+        └── 006_ai-python-write_run_log.py
 ```
 
 ### Script Pipeline
@@ -77,10 +73,10 @@ workflow-COPYME-phylogenetic_analysis/
 | run_iqtree | 005_b | IQ-TREE ML tree (publication quality) |
 | run_veryfasttree | 005_c | VeryFastTree (multi-threaded FastTree alternative) |
 | run_phylobayes | 005_d | PhyloBayes Bayesian MCMC (2 chains + convergence) |
-| visualize_trees_human | 006 | Human-friendly tree visualizations (SVG/PDF) |
-| visualize_trees_cv | 007 | Computer-vision-friendly visualizations |
-| write_run_log | 008 | Write pipeline execution summary |
-| *(symlinks by RUN-workflow.sh)* | - | Export trees and alignments to output_to_input/<gene_family>/STEP_2-phylogenetic_analysis |
+| write_run_log | 006 | Write pipeline execution summary |
+| *(symlinks by RUN-workflow.sh)* | - | Export tree newicks and alignments to output_to_input/<gene_family>/STEP_2-phylogenetic_analysis |
+
+**Tree visualization** (PDF/SVG rendering) is handled by the separate **STEP_3-tree_visualization** workflow, which consumes the newick files produced here. This decouples scientific computation from visualization library quirks (e.g., ete3/PyQt5 instability).
 
 ### Conditional Tree Building
 
@@ -94,7 +90,7 @@ tree_methods:
   phylobayes: false     # Enable for Bayesian analysis
 ```
 
-Only enabled methods run. All enabled tree outputs are collected and passed to visualization processes.
+Only enabled methods run. All enabled tree newick files are exported to `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` for downstream consumption.
 
 ---
 
@@ -202,9 +198,6 @@ cat OUTPUT_pipeline/5_a-output/*.fasttree | head -1
 # Check IQ-TREE (if enabled)
 cat OUTPUT_pipeline/5_b-output/*.treefile | head -1
 
-# Check visualizations
-ls OUTPUT_pipeline/6-output/ OUTPUT_pipeline/7-output/
-
 # Check output_to_input export (use find -L for symlinks)
 ls -l ../../../output_to_input/*/STEP_2-phylogenetic_analysis/
 ```
@@ -271,18 +264,6 @@ phylogenetics:
     mode: "kpic-smart-gap"  # Less aggressive than smart-gap
 ```
 
-### Visualization fails
-
-**Cause**: ete3 library issue or no tree files
-
-**Diagnose**:
-```bash
-python3 -c "import ete3; print(ete3.__version__)"
-ls OUTPUT_pipeline/5_*-output/*
-```
-
-**Fix**: Check conda environment has ete3 installed.
-
 ### NextFlow errors
 
 **Clean and retry**:
@@ -317,7 +298,6 @@ iqtree2 -s trimmed.clipkit -m MFP -bb 1000 -nt AUTO
 ## After Successful Run
 
 1. **Verify**: Check tree files exist and are non-empty
-2. **Review visualizations**: Check SVG/PDF files in `6-output/`
-3. **Check output_to_input**: `ls -l ../../../output_to_input/*/STEP_2-phylogenetic_analysis/`
-4. **Compare methods**: If multiple methods ran, compare tree topologies
-5. **Done**: Trees are ready for publication or further analysis
+2. **Check output_to_input**: `ls -l ../../../output_to_input/*/STEP_2-phylogenetic_analysis/`
+3. **Compare methods**: If multiple methods ran, compare tree topologies
+4. **Run STEP_3-tree_visualization** to render trees as PDF/SVG

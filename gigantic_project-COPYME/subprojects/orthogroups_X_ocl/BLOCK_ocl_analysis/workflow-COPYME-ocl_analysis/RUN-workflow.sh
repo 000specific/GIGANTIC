@@ -343,7 +343,7 @@ for structure_dir in OUTPUT_pipeline/structure_*; do
 
         if [ -f "$summary_file" ]; then
             mkdir -p "${SHARED_DIR}/${structure_name}"
-            ln -sf "../../../BLOCK_ocl_analysis/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/4_ai-orthogroups-complete_ocl_summary.tsv" \
+            ln -sf "../../../../BLOCK_ocl_analysis/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/4_ai-orthogroups-complete_ocl_summary.tsv" \
                 "${SHARED_DIR}/${structure_name}/4_ai-orthogroups-complete_ocl_summary.tsv"
         fi
     fi

@@ -258,16 +258,14 @@ def create_modified_genome(
                     
                     if replacement_sequence:
                         # Write RGS header (use truncation map if available)
+                        # but KEEP the original genome sequence (full-length).
+                        # Only the header changes — the full-length protein stays
+                        # so reciprocal BLAST scores match properly against BGS.
                         output = f">{rgs_truncated_header}\n"
                         output_fasta.write( output )
-                        
-                        # Write RGS sequence (wrapped at 80 chars)
-                        for i in range( 0, len( replacement_sequence ), 80 ):
-                            output = replacement_sequence[i:i+80] + '\n'
-                            output_fasta.write( output )
-                        
+
                         sequences_replaced += 1
-                        writing_replacement = True
+                        writing_replacement = False  # keep reading original sequence lines
                     else:
                         # RGS sequence not found - keep original
                         output_fasta.write( line )
@@ -335,6 +333,13 @@ def main():
         type=Path,
         default=None,
         help='Path to log file (optional)'
+    )
+
+    parser.add_argument(
+        '--include-orphan-rgs',
+        action='store_true',
+        default=False,
+        help='Include orphan RGS sequences (source species not in genome set) as reciprocal BLAST targets'
     )
     
     args = parser.parse_args()
@@ -421,16 +426,68 @@ def main():
         
         modified_genomes.append( modified_genome )
     
-    # Write list of modified genomes
+    # ---- Orphan RGS: seeds whose source species has no genome in the set ----
+    orphan_rgs_headers = []
+
+    if not args.include_orphan_rgs:
+        logger.info( "\nOrphan RGS: disabled (use --include-orphan-rgs to enable)" )
+    # These RGS sequences have no genome protein mapping (their species isn't in
+    # the BLAST databases). We append them as a separate FASTA so they appear in
+    # the combined BLAST database and can be hit during reciprocal BLAST.
+    # Examples: FLYC1 (venus flytrap not in species43), TRPC2 (mouse excluded).
+
     script_output_dir = args.output_dir / "9-output"
+    script_output_dir.mkdir( parents=True, exist_ok=True )
+
+    if args.include_orphan_rgs:
+        mapped_rgs_headers = set( genome_identifiers___full_rgs_headers.values() )
+
+        for rgs_header in rgs_sequences:
+            if rgs_header not in mapped_rgs_headers:
+                orphan_rgs_headers.append( rgs_header )
+
+    if orphan_rgs_headers:
+        logger.info( f"\nFound {len( orphan_rgs_headers )} orphan RGS sequences (source species not in genome set)" )
+
+        # Write orphan RGS as a separate FASTA with truncated headers for BLAST
+        orphan_file = script_output_dir / "9_ai-orphan-rgs-sequences.aa"
+        with open( orphan_file, 'w' ) as output_orphan:
+            for rgs_header in orphan_rgs_headers:
+                sequence = rgs_sequences[ rgs_header ]
+                # Use truncated header (first 45 chars) for BLAST database compatibility
+                truncated_header = rgs_header[ :45 ]
+                output = f">{truncated_header}\n"
+                output_orphan.write( output )
+                for i in range( 0, len( sequence ), 80 ):
+                    output = sequence[ i:i + 80 ] + '\n'
+                    output_orphan.write( output )
+                logger.info( f"  Orphan RGS: {rgs_header[ :70 ]}" )
+
+        modified_genomes.append( orphan_file )
+        logger.info( f"  Written to: {orphan_file.name}" )
+        logger.info( f"  Added to modified genomes list for reciprocal BLAST" )
+
+        # Write orphan mapping file so Script 013 recognizes orphan truncated headers
+        # Format matches Script 008 mapping: placeholder_genome_id<TAB>truncated_header<TAB>original_header
+        orphan_mapping_file = script_output_dir / "9_ai-orphan-rgs-mapping.txt"
+        with open( orphan_mapping_file, 'w' ) as output_mapping:
+            for rgs_header in orphan_rgs_headers:
+                truncated_header = rgs_header[ :45 ]
+                output = f"ORPHAN_RGS\t{truncated_header}\t{rgs_header}\n"
+                output_mapping.write( output )
+        logger.info( f"  Orphan mapping: {orphan_mapping_file.name}" )
+    else:
+        logger.info( "\nNo orphan RGS sequences (all RGS species have genomes in the set)" )
+
+    # Write list of modified genomes
     modified_list_file = script_output_dir / "9_ai-list-modified-genomes.txt"
     with open( modified_list_file, 'w' ) as output_list:
         for modified_genome in modified_genomes:
             output = str( modified_genome ) + '\n'
             output_list.write( output )
-    
+
     logger.info( f"\nWrote modified genome list: {modified_list_file}" )
-    
+
     # Summary
     logger.info( "" )
     logger.info( "=" * 80 )
@@ -438,6 +495,7 @@ def main():
     logger.info( "=" * 80 )
     logger.info( f"RGS sequences: {len( rgs_sequences )}" )
     logger.info( f"Genome→RGS mappings: {len( genome_identifiers___full_rgs_headers )}" )
+    logger.info( f"Orphan RGS sequences: {len( orphan_rgs_headers )}" )
     logger.info( f"Original genomes processed: {len( genome_paths )}" )
     logger.info( f"Modified genomes created: {len( modified_genomes )}" )
     logger.info( "" )

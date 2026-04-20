@@ -4,6 +4,32 @@
 
 ---
 
+## ⚠️ CRITICAL: Zero Tolerance for Silent Artifacts in Research Results
+
+**GIGANTIC produces scientific results that get published and shape research. A false positive in a gene tree, a phantom homolog in an AGS, or a misassigned sequence is not a minor inconvenience — it is a research integrity failure. It can misdirect the field, waste other researchers' time and funding, and destroy careers.**
+
+**This is not an app. There is no "good enough." There is no "probably fine in practice."**
+
+The moment any code path is identified that could generate biological artifacts — false positives, false negatives, or misassignments in research outputs — it must be:
+
+1. **Flagged immediately and explicitly** to the user
+2. **Investigated fully** before being rationalized away
+3. **Fixed or explicitly accepted** — never silently tolerated
+
+**❌ NEVER:**
+- Reason that a known bug "probably has minimal impact in practice" without verifying
+- Apply fail-fast only to pipeline crashes, not to biological correctness
+- Decide silently that something is "close enough" for research results
+
+**✅ ALWAYS:**
+- Treat any known artifact-generating code path as a critical failure requiring investigation
+- Check actual pipeline outputs before making claims about correctness
+- Require explicit user sign-off before accepting any known source of potential artifacts
+
+**Some tolerance for slop is legitimate** — e.g., e-value thresholds, filter cutoffs are design decisions. But these must be **explicit decisions made by the user**, not something the AI silently decides is acceptable.
+
+---
+
 ## ⚠️ CRITICAL: Surface Discrepancies - No Silent Changes
 
 **The user is managing this project - you must surface discrepancies so the user can make decisions. Silent changes undermine project management.**

@@ -17,7 +17,7 @@ Phase A: Load phylogenetic tree data from trees_species (Rule 6 atomic identifie
   - Phylogenetic paths (root-to-tip for each species)
   - Clade mappings (bare Clade_Name -> atomic Clade_ID_Name)
 
-Phase B: Load per-species annotation files from annotations_hmms
+Phase B: Load annotations from raw InterProScan output (filter by database on the fly)
 
 Phase C: Create annogroups for each requested subtype (single, combo, zero)
   The 3 annogroup subtypes (each a direct protein-level evaluation):
@@ -34,7 +34,8 @@ Phase D: Write all outputs
 
 Inputs from upstream subprojects via output_to_input:
   - trees_species (phylogenetic features: blocks, parent-child, paths)
-  - annotations_hmms (per-species annotation files, 7-column TSV)
+  - annotations_hmms/BLOCK_interproscan (raw InterProScan 15-column TSV per species;
+    database filter applied on the fly from annotation_database config field)
 
 Usage:
     python 001_ai-python-create_annogroups.py --structure_id 001 --config ../../START_HERE-user_config.yaml
@@ -43,11 +44,16 @@ Usage:
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 
 import yaml
+
+# Add scripts directory to path for utility imports
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 
 # ============================================================================
@@ -113,7 +119,7 @@ ANNOGROUP_SUBTYPES = config[ 'annogroup_subtypes' ]
 config_directory = config_path.parent
 
 input_trees_species_directory = config_directory / config[ 'inputs' ][ 'trees_species_dir' ]
-input_annotations_directory = config_directory / config[ 'inputs' ][ 'annotations_dir' ]
+input_interproscan_directory = config_directory / config[ 'inputs' ][ 'interproscan_dir' ]
 
 # Input files from trees_species
 input_phylogenetic_blocks_file = input_trees_species_directory / 'Species_Phylogenetic_Blocks'
@@ -551,80 +557,117 @@ def extract_species_name_from_phyloname( phyloname ):
 
 def load_annotation_files():
     """
-    Load per-species annotation files from annotations_hmms output.
+    Load per-species annotation data from raw InterProScan output, filtering
+    to the requested annotation_database on the fly.
 
-    Each annotation file is a 7-column TSV:
-      Phyloname, Sequence_Identifier, Domain_Start, Domain_Stop,
-      Database_Name, Annotation_Identifier, Annotation_Details
+    Reads the combined InterProScan TSV files (15-column standard format, no header)
+    directly from BLOCK_interproscan output. This avoids the need for a separate
+    pre-built annotation database step -- the database filter is applied at parse time.
+
+    InterProScan 15-column format (tab-separated, no header):
+      [0] Protein_ID (GIGANTIC format: g_XXX-t_XXX-p_XXX-n_Phyloname)
+      [1] MD5
+      [2] Sequence_Length
+      [3] Analysis/Database (e.g. Pfam, Gene3D, PANTHER, SUPERFAMILY, CDD, SMART)
+      [4] Accession (e.g. PF01931, G3DSA:3.90.950.10)
+      [5] Description
+      [6] Start
+      [7] Stop
+      [8] Score/E-value
+      [9] Status (T/F)
+      [10] Date
+      [11] IPR_Accession
+      [12] IPR_Description
+      [13] GO_Terms
+      [14] Pathways
 
     Returns:
         dict: { species_name: [ { 'sequence_identifier': str, 'annotation_identifier': str, ... } ] }
     """
-    logger.info( f"Loading annotation files from: {input_annotations_directory}" )
+    logger.info( f"Loading annotations from raw InterProScan output: {input_interproscan_directory}" )
+    logger.info( f"Filtering to database: {ANNOTATION_DATABASE}" )
 
-    if not input_annotations_directory.exists():
-        logger.error( f"CRITICAL ERROR: Annotations directory not found!" )
-        logger.error( f"Expected location: {input_annotations_directory}" )
-        logger.error( f"Run annotations_hmms pipeline first to generate annotation files." )
+    if not input_interproscan_directory.exists():
+        logger.error( f"CRITICAL ERROR: InterProScan output directory not found!" )
+        logger.error( f"Expected location: {input_interproscan_directory}" )
+        logger.error( f"Run BLOCK_interproscan pipeline first to generate InterProScan results." )
         sys.exit( 1 )
 
-    # Find all annotation TSV files
-    annotation_files = list( input_annotations_directory.glob( '*.tsv' ) )
+    # Find all InterProScan result TSV files (per-species combined output)
+    interproscan_files = list( input_interproscan_directory.glob( '*_interproscan_results.tsv' ) )
 
-    if len( annotation_files ) == 0:
-        logger.error( f"CRITICAL ERROR: No annotation files found in {input_annotations_directory}!" )
+    if len( interproscan_files ) == 0:
+        logger.error( f"CRITICAL ERROR: No InterProScan result files found in {input_interproscan_directory}!" )
         sys.exit( 1 )
 
-    logger.info( f"Found {len( annotation_files )} annotation files" )
+    logger.info( f"Found {len( interproscan_files )} InterProScan result files" )
+
+    # Database name matching: InterProScan uses title case (e.g. "Pfam", "Gene3D"),
+    # config may use lowercase (e.g. "pfam", "gene3d"). Match case-insensitively.
+    target_database_lower = ANNOTATION_DATABASE.lower()
 
     species_names___annotations = {}
+    total_annotations_loaded = 0
+    total_rows_scanned = 0
 
-    for annotation_file in sorted( annotation_files ):
-        file_annotations = []
-
-        with open( annotation_file, 'r' ) as input_file:
-            # Phyloname (GIGANTIC phyloname)	Sequence_Identifier (sequence identifier)	Domain_Start (domain start position)	Domain_Stop (domain stop position)	Database_Name (annotation database name)	Annotation_Identifier (annotation accession or identifier)	Annotation_Details (annotation description or details)
-            # Metazoa_Chordata_..._Homo_sapiens	XP_016856755.1	45	230	pfam	PF00069	Protein kinase domain
-            header = input_file.readline()
-
+    for interproscan_file in sorted( interproscan_files ):
+        with open( interproscan_file, 'r' ) as input_file:
+            # g_Patl_g10-t_Patl_g10.t1-p_Patl_g10.t1-n_Holomycota...Parvularia_atlantis	d0aff...	307	Gene3D	G3DSA:3.90.950.10	-	79	224	4.6E-17	T	14-03-2026	IPR029001	Inosine triphosphate pyrophosphatase-like	-	-
+            # (no header -- raw InterProScan TSV format)
             for line in input_file:
                 line = line.strip()
                 if not line:
                     continue
+
+                total_rows_scanned += 1
 
                 parts = line.split( '\t' )
 
                 if len( parts ) < 6:
                     continue
 
-                phyloname = parts[ 0 ]
-                sequence_identifier = parts[ 1 ]
-                annotation_identifier = parts[ 5 ]
-                annotation_details = parts[ 6 ] if len( parts ) > 6 else ''
+                database_name = parts[ 3 ]
 
-                species_name = extract_species_name_from_phyloname( phyloname )
+                # Filter to requested database (case-insensitive)
+                if database_name.lower() != target_database_lower:
+                    continue
 
-                file_annotations.append( {
-                    'phyloname': phyloname,
+                sequence_identifier = parts[ 0 ]
+                annotation_identifier = parts[ 4 ]
+                annotation_details = parts[ 5 ] if parts[ 5 ] != '-' else ''
+
+                # Extract species name from GIGANTIC protein ID
+                # Format: g_XXX-t_XXX-p_XXX-n_Kingdom_Phylum_Class_Order_Family_Genus_species
+                if '-n_' in sequence_identifier:
+                    phyloname = sequence_identifier.split( '-n_' )[ 1 ]
+                    species_name = extract_species_name_from_phyloname( phyloname )
+                else:
+                    # Fallback: try extracting from the file name (phyloname is in the filename)
+                    species_name = None
+
+                if not species_name:
+                    continue
+
+                if species_name not in species_names___annotations:
+                    species_names___annotations[ species_name ] = []
+
+                species_names___annotations[ species_name ].append( {
+                    'phyloname': phyloname if '-n_' in sequence_identifier else '',
                     'sequence_identifier': sequence_identifier,
                     'annotation_identifier': annotation_identifier,
                     'annotation_details': annotation_details,
                     'species_name': species_name
                 } )
 
-        if file_annotations:
-            # Group by species name
-            for annotation in file_annotations:
-                species_name = annotation[ 'species_name' ]
-                if species_name not in species_names___annotations:
-                    species_names___annotations[ species_name ] = []
-                species_names___annotations[ species_name ].append( annotation )
+                total_annotations_loaded += 1
 
-    total_annotations = sum( len( annotations ) for annotations in species_names___annotations.values() )
-    logger.info( f"Loaded {total_annotations} annotations across {len( species_names___annotations )} species" )
+    logger.info( f"Scanned {total_rows_scanned} total InterProScan rows across {len( interproscan_files )} files" )
+    logger.info( f"Loaded {total_annotations_loaded} {ANNOTATION_DATABASE} annotations across {len( species_names___annotations )} species" )
 
     if len( species_names___annotations ) == 0:
-        logger.error( f"CRITICAL ERROR: No annotations loaded!" )
+        logger.error( f"CRITICAL ERROR: No annotations loaded for database '{ANNOTATION_DATABASE}'!" )
+        logger.error( f"Available databases in InterProScan output: check column 4 of any result file" )
+        logger.error( f"Common values: Pfam, Gene3D, PANTHER, SUPERFAMILY, CDD, SMART, PRINTS, SFLD, FunFam, NCBIfam" )
         sys.exit( 1 )
 
     return species_names___annotations
@@ -957,6 +1000,8 @@ def write_subtypes_manifest( subtypes___annogroup_data ):
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 001: CREATE ANNOTATION GROUPS (ANNOGROUPS)" )
     logger.info( "=" * 80 )
@@ -1049,6 +1094,23 @@ def main():
     for subtype, data in sorted( subtypes___annogroup_data.items() ):
         logger.info( f"  {subtype}: {len( data )}" )
     logger.info( "=" * 80 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    subtype_counts = { subtype: len( data ) for subtype, data in subtypes___annogroup_data.items() }
+    emit_run_summary_fragment(
+        script_number = 1,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'annogroups_total': len( annogroup_map_entries ),
+            'annogroups_by_subtype': subtype_counts,
+            'species_with_annotations': len( species_names___annotations ),
+            'annotation_database': ANNOTATION_DATABASE,
+            'phylogenetic_blocks_loaded': len( child_clade_id_names___block_data ),
+            'phylogenetic_paths_loaded': len( leaf_clade_ids___paths ) if leaf_clade_ids___paths else 0
+        }
+    )
 
     return 0
 

@@ -25,9 +25,10 @@ nextflow.enable.dsl=2
 // 5b. run_iqtree                   - Calls: 005_b_ai-bash-run_iqtree.sh
 // 5c. run_veryfasttree             - Calls: 005_c_ai-bash-run_veryfasttree.sh
 // 5d. run_phylobayes               - Calls: 005_d_ai-bash-run_phylobayes.sh
-// 6. visualize_trees_human         - Calls: 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-// 7. visualize_trees_computer_vision - Calls: 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-// 8. write_run_log                 - Calls: 008_ai-python-write_run_log.py
+// 6. write_run_log                 - Calls: 006_ai-python-write_run_log.py
+//
+// Visualization is handled by STEP_3-tree_visualization (separate workflow)
+// which consumes the tree newick files produced here.
 // (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
 //
 // ============================================================================
@@ -56,8 +57,8 @@ params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
 // Gene family (single gene family per workflow copy)
 params.gene_family = config.gene_family?.name ?: null
 
-// Input: STEP_1 output directory (AGS found at <dir>/gene_group-<gene_family>/)
-params.step1_output_dir = config.input?.step1_output_dir ?: '../../../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery'
+// Input: output_to_input directory (AGS found at <dir>/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/)
+params.output_to_input_dir = config.input?.output_to_input_dir ?: '../../../../output_to_input'
 
 // Project database name (for file naming)
 params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
@@ -114,17 +115,17 @@ process prepare_alignment_input {
 
     script:
     def project_db = params.project_database
-    def step1_dir = file( "${projectDir}/../${params.step1_output_dir}" ).toAbsolutePath()
+    def oti_dir = file( "${projectDir}/../${params.output_to_input_dir}" ).toAbsolutePath()
     """
     mkdir -p 1-output
 
-    # Find AGS file from STEP_1 output: .../gene_group-<gene_family>/
-    AGS_FILE=\$(find -L "${step1_dir}/gene_group-${gene_family}/" -name "*.aa" -type f | head -1)
+    # Find AGS file from output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/
+    AGS_FILE=\$(find -L "${oti_dir}/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/" -name "*.aa" -type f | head -1)
 
     if [ -z "\${AGS_FILE}" ] || [ ! -f "\${AGS_FILE}" ]; then
-        echo "ERROR: AGS file not found in: ${step1_dir}/gene_group-${gene_family}/"
-        echo "Ensure STEP_1 has completed for this gene group."
-        echo "Expected directory: ${step1_dir}/gene_group-${gene_family}/"
+        echo "ERROR: AGS file not found in: ${oti_dir}/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/"
+        echo "Ensure STEP_1 has completed and output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/ contains results."
+        echo "Expected directory: ${oti_dir}/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/"
         exit 1
     fi
 
@@ -359,96 +360,17 @@ process run_phylobayes {
     """
 }
 
-// Process 6: Visualize trees (human-friendly)
-// Calls: scripts/006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-process visualize_trees_human_friendly {
-    tag "${gene_family}"
-    label 'visualization'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
-
-    input:
-        tuple val( gene_family ), path( tree_files )
-
-    output:
-        path "6-output"
-
-    script:
-    """
-    mkdir -p 6-output
-
-    # Copy tree files to 6-output for the visualization script to find
-    for tree_file in ${tree_files}; do
-        cp "\${tree_file}" 6-output/
-    done
-
-    # Run visualization script (auto-discovers tree files in output dir)
-    export QT_QPA_PLATFORM=offscreen
-    cd 6-output
-    python3 ${projectDir}/scripts/006_ai-python-visualize_phylogenetic_trees-human_friendly.py \\
-        2>&1
-    cd ..
-
-    # Verify at least one visualization was created
-    VIZ_COUNT=\$(ls 6-output/6_ai-*.svg 2>/dev/null | wc -l)
-    if [ "\${VIZ_COUNT}" -eq 0 ]; then
-        echo "WARNING: No human-friendly visualizations were created."
-        echo "This may be expected if ete3 is not available."
-        # Create placeholder to ensure output directory is not empty
-        touch "6-output/6_ai-visualization-placeholder.txt"
-    else
-        echo "Created \${VIZ_COUNT} human-friendly tree visualizations"
-    fi
-    """
-}
-
-// Process 7: Visualize trees (computer-vision friendly)
-// Calls: scripts/007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-process visualize_trees_computer_vision {
-    tag "${gene_family}"
-    label 'visualization'
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
-
-    input:
-        tuple val( gene_family ), path( tree_files )
-
-    output:
-        path "7-output"
-
-    script:
-    """
-    mkdir -p 7-output
-
-    # Copy tree files to 7-output for the visualization script to find
-    for tree_file in ${tree_files}; do
-        cp "\${tree_file}" 7-output/
-    done
-
-    # Run visualization script (auto-discovers tree files in output dir)
-    export QT_QPA_PLATFORM=offscreen
-    cd 7-output
-    python3 ${projectDir}/scripts/007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py \\
-        2>&1
-    cd ..
-
-    # Verify at least one visualization was created
-    VIZ_COUNT=\$(ls 7-output/7_ai-*.svg 2>/dev/null | wc -l)
-    if [ "\${VIZ_COUNT}" -eq 0 ]; then
-        echo "WARNING: No computer-vision visualizations were created."
-        echo "This may be expected if ete3 is not available."
-        # Create placeholder to ensure output directory is not empty
-        touch "7-output/7_ai-visualization-placeholder.txt"
-    else
-        echo "Created \${VIZ_COUNT} computer-vision tree visualizations"
-    fi
-    """
-}
-
 /*
- * Process 8: Write Run Log
- * Calls: scripts/008_ai-python-write_run_log.py
+ * Process 6: Write Run Log
+ * Calls: scripts/006_ai-python-write_run_log.py
  *
  * Creates a timestamped log in ai/logs/ within this workflow directory
  * for transparency and reproducibility.
+ *
+ * NOTE: Visualization is handled by STEP_3-tree_visualization as a
+ * separate workflow. STEP_2 produces tree newick files; STEP_3 renders them.
+ * This decoupling keeps scientific computation (STEP_2) independent of
+ * visualization library quirks (ete3/PyQt5 instability).
  */
 process write_run_log {
     label 'local'
@@ -461,7 +383,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/008_ai-python-write_run_log.py \
+    python3 ${projectDir}/scripts/006_ai-python-write_run_log.py \
         --workflow-name "phylogenetic_analysis" \
         --subproject-name "trees_gene_families" \
         --project-name "${params.project_name}" \
@@ -484,7 +406,7 @@ workflow {
     ========================================================================
     Gene family      : ${params.gene_family}
     Project database : ${params.project_database}
-    STEP_1 output    : ${params.step1_output_dir}
+    output_to_input  : ${params.output_to_input_dir}
     Output directory : ${params.output_dir}
 
     Tree methods enabled:
@@ -546,25 +468,12 @@ workflow {
             [ gene_family, tree_files.flatten() ]
         }
 
-    // Fork tree channel for visualization processes
-    tree_collected
-        .multiMap { gene_family, tree_files ->
-            for_human_viz: [ gene_family, tree_files ]
-            for_cv_viz: [ gene_family, tree_files ]
-        }
-        .set { tree_forked }
-
-    // Process 6: Human-friendly visualization
-    visualize_trees_human_friendly( tree_forked.for_human_viz )
-
-    // Process 7: Computer-vision visualization
-    visualize_trees_computer_vision( tree_forked.for_cv_viz )
-
     // NOTE: Symlinks from output_to_input/ to OUTPUT_pipeline/ files
-    // are created by RUN-workflow.sh after pipeline completes.
+    // are created by RUN-workflow.sh after pipeline completes. Trees are then
+    // rendered by STEP_3-phylogenetic_visualization (separate workflow).
 
-    // Process 8: Write run log
-    write_run_log( visualize_trees_computer_vision.out.collect().map { true } )
+    // Process 6: Write run log (gated on trees being ready)
+    write_run_log( tree_collected.collect().map { true } )
 }
 
 // ============================================================================

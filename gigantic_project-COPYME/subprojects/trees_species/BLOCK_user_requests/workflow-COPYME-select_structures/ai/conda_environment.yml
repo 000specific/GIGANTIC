@@ -1,0 +1,44 @@
+# GIGANTIC trees_species - BLOCK_user_requests environment
+# AI: Claude Code | Opus 4.6 | 2026 April 18
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_user_requests.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# Dependencies rationale:
+#   - python, pyyaml -- Script 001 (select_structures) core deps
+#   - toytree, toyplot, reportlab -- Script 002 (visualize_structures)
+#     Uses toytree (pure Python, no Qt) + reportlab (native PDF support)
+#     to render newick files as PDF. This replaces ete3 which has
+#     perennial Qt/PyQt5 install issues on conda-forge.
+#
+# toytree + toyplot are pip-only (no stable conda-forge package yet),
+# so we bootstrap via pip inside the conda env.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#     conda activate aiG-trees_species-user_requests
+#     pip install toytree toyplot reportlab
+#
+# ACTIVATION:
+#   module load conda
+#   conda activate aiG-trees_species-user_requests
+
+name: aiG-trees_species-user_requests
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.11
+  - pyyaml
+  - pip
+  - pip:
+    - toytree>=3.0
+    - toyplot>=2.0
+    - reportlab>=4.0

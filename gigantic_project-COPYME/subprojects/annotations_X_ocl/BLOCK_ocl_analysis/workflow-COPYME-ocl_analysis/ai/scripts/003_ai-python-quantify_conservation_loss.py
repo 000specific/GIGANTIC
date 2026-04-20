@@ -48,11 +48,16 @@ import csv
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 
 import yaml
+
+# Add scripts directory to path for utility imports
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -871,6 +876,8 @@ def write_summary( block_statistics, annogroup_patterns ):
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 003: CLASSIFY PHYLOGENETIC BLOCK-STATES PER ANNOGROUP (Rule 7)" )
     logger.info( "=" * 80 )
@@ -943,6 +950,26 @@ def main():
     logger.info( f"  {output_annogroup_patterns_file.name}" )
     logger.info( f"  {output_summary_file.name}" )
     logger.info( "=" * 80 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    total_conservation = sum( p[ 'conservation_events' ] for p in annogroup_patterns )
+    total_loss = sum( p[ 'loss_origin_events' ] for p in annogroup_patterns )
+    total_continued_absence = sum( p[ 'continued_absence_events' ] for p in annogroup_patterns )
+    total_scored_blocks = sum( p[ 'total_scored_blocks' ] for p in annogroup_patterns )
+    emit_run_summary_fragment(
+        script_number = 3,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'phylogenetic_blocks': len( block_statistics ),
+            'annogroups_analyzed': len( annogroup_patterns ),
+            'total_scored_blocks': total_scored_blocks,
+            'conservation_events_P': total_conservation,
+            'loss_events_L': total_loss,
+            'continued_absence_events_X': total_continued_absence
+        }
+    )
 
     return 0
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 31 15:45 | Purpose: Set up STEP_2 phylogenetic analysis workflow directories and submit burst jobs for HGNC gene groups
+# AI: Claude Code | Opus 4.7 | 2026 April 20 | Purpose: Set up and submit STEP_2 phylogenetic analysis for HGNC gene groups
 # Human: Eric Edsinger
 
 ################################################################################
@@ -7,15 +7,17 @@
 ################################################################################
 #
 # PURPOSE:
-# For each gene_group-[name]/ directory with completed STEP_1:
-#   1. Create gene_group-[name]/ directory inside STEP_2-phylogenetic_analysis/
-#   2. Copy workflow-COPYME-phylogenetic_analysis -> workflow-RUN_01-phylogenetic_analysis
-#   3. Configure START_HERE-user_config.yaml with gene group name
-#   4. Submit SLURM job for STEP_2 phylogenetic analysis
+# For each gene group with completed STEP_1 (AGS file in output_to_input/),
+# create a STEP_2 workflow directory and submit a phylogenetic analysis job.
+#
+# Two-tier resource strategy by AGS sequence count:
+#   Small (<= 2000 AGS seqs): burst QOS, 15 CPUs, 112GB, 96hr (4-day burst limit)
+#   Large (>  2000 AGS seqs): standard QOS, 50 CPUs, 375GB, 336hr (2 weeks)
+#
+# Default tree methods: FastTree + IQ-TREE (both enabled)
 #
 # PREREQUISITES:
-#   - STEP_1 (homolog discovery) must have completed successfully
-#   - AGS FASTA files must exist in output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/
+#   - STEP_1 homolog discovery complete (AGS files in output_to_input/)
 #
 # USAGE:
 #   bash RUN-setup_and_submit_step2_burst.sh [OPTIONS]
@@ -31,14 +33,14 @@
 
 set -e
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Script directory (gene_groups-hugo_hgnc/)
+# Script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
@@ -46,24 +48,28 @@ cd "${SCRIPT_DIR}"
 # Paths
 # ============================================================================
 
-# STEP_1 completed outputs (AGS files)
 STEP1_OTI="${SCRIPT_DIR}/../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery"
-
-# STEP_2 template and target directory
 STEP2_DIR="${SCRIPT_DIR}/STEP_2-phylogenetic_analysis"
 STEP2_COPYME="${STEP2_DIR}/workflow-COPYME-phylogenetic_analysis"
-
-# Conda environment
 CONDA_ENV="ai_gigantic_trees_gene_families"
 
 # ============================================================================
-# SLURM settings for STEP_2 (phylogenetic analysis - alignment + tree building)
+# SLURM settings - two-tier based on AGS size
 # ============================================================================
 SLURM_ACCOUNT="moroz"
-SLURM_QOS="moroz-b"
-SLURM_MEM="64gb"
-SLURM_TIME="96:00:00"
-SLURM_CPUS="8"
+LARGE_AGS_THRESHOLD=2000  # AGS sequence count threshold
+
+# Small (<= threshold): burst QOS, 15 CPUs, 112GB, 4 days (burst max)
+SLURM_QOS_SMALL="moroz-b"
+SLURM_MEM_SMALL="112gb"
+SLURM_TIME_SMALL="96:00:00"
+SLURM_CPUS_SMALL="15"
+
+# Large (> threshold): standard QOS, 50 CPUs, 375GB, 2 weeks
+SLURM_QOS_LARGE="moroz"
+SLURM_MEM_LARGE="375gb"
+SLURM_TIME_LARGE="336:00:00"
+SLURM_CPUS_LARGE="50"
 
 # ============================================================================
 # Options
@@ -73,34 +79,18 @@ SETUP_ONLY=false
 SUBMIT_ONLY=false
 SINGLE_GENE_GROUP=""
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --dry-run)
-            DRY_RUN=true
-            shift
-            ;;
-        --setup-only)
-            SETUP_ONLY=true
-            shift
-            ;;
-        --submit-only)
-            SUBMIT_ONLY=true
-            shift
-            ;;
-        --gene-group)
-            SINGLE_GENE_GROUP="$2"
-            shift 2
-            ;;
+        --dry-run) DRY_RUN=true; shift ;;
+        --setup-only) SETUP_ONLY=true; shift ;;
+        --submit-only) SUBMIT_ONLY=true; shift ;;
+        --gene-group) SINGLE_GENE_GROUP="$2"; shift 2 ;;
         --help|-h)
-            head -30 "$0" | grep -E "^#" | sed 's/^# //' | sed 's/^#//'
-            exit 0
-            ;;
+            head -33 "$0" | grep -E "^#" | sed 's/^# //' | sed 's/^#//'
+            exit 0 ;;
         *)
             echo -e "${RED}ERROR: Unknown option: $1${NC}"
-            echo "Use --help to see available options."
-            exit 1
-            ;;
+            exit 1 ;;
     esac
 done
 
@@ -109,7 +99,11 @@ echo "GIGANTIC trees_gene_groups (HGNC) - STEP_2 Burst Setup & Submission"
 echo "========================================================================"
 echo ""
 echo "Started: $(date)"
-echo "SLURM: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
+echo ""
+echo "Two-tier SLURM strategy (by AGS sequence count):"
+echo "  Small (<= ${LARGE_AGS_THRESHOLD} seqs): ${SLURM_CPUS_SMALL} CPUs, ${SLURM_MEM_SMALL}, ${SLURM_TIME_SMALL}, qos=${SLURM_QOS_SMALL}"
+echo "  Large (>  ${LARGE_AGS_THRESHOLD} seqs): ${SLURM_CPUS_LARGE} CPUs, ${SLURM_MEM_LARGE}, ${SLURM_TIME_LARGE}, qos=${SLURM_QOS_LARGE}"
+echo "Tree methods: FastTree + IQ-TREE (both enabled)"
 if [ -n "${SINGLE_GENE_GROUP}" ]; then
     echo "Filter: single gene group '${SINGLE_GENE_GROUP}'"
 fi
@@ -124,40 +118,33 @@ fi
 # Validate prerequisites
 # ============================================================================
 
-if [ ! -d "${STEP2_COPYME}" ]; then
-    echo -e "${RED}ERROR: STEP_2 workflow COPYME template not found!${NC}"
-    echo "Expected at: ${STEP2_COPYME}"
-    exit 1
-fi
-
 if [ ! -d "${STEP1_OTI}" ]; then
-    echo -e "${RED}ERROR: STEP_1 output_to_input directory not found!${NC}"
-    echo "Expected at: ${STEP1_OTI}"
-    echo "STEP_1 must complete before running STEP_2."
+    echo -e "${RED}ERROR: STEP_1 output_to_input not found: ${STEP1_OTI}${NC}"
     exit 1
 fi
 
-# Create slurm_logs directory at the STEP_2 level
+if [ ! -d "${STEP2_COPYME}" ]; then
+    echo -e "${RED}ERROR: STEP_2 COPYME not found: ${STEP2_COPYME}${NC}"
+    exit 1
+fi
+
 mkdir -p "${STEP2_DIR}/slurm_logs"
 
 # ============================================================================
 # Iterate over completed STEP_1 gene groups
 # ============================================================================
-# Look for gene_group-* directories in the STEP_1 output_to_input that contain
-# AGS FASTA files (indicating STEP_1 completed successfully).
 
-# Track counts
 setup_count=0
-submit_count=0
+submit_count_small=0
+submit_count_large=0
 skip_count=0
 error_count=0
-no_ags_count=0
 total_count=0
 
-for STEP1_GENE_GROUP_DIR in "${STEP1_OTI}"/gene_group-*/; do
-    [ -d "$STEP1_GENE_GROUP_DIR" ] || continue
+for STEP1_GG_DIR in "${STEP1_OTI}"/gene_group-*/; do
+    [ -d "$STEP1_GG_DIR" ] || continue
 
-    gene_group_dir_name=$(basename "$STEP1_GENE_GROUP_DIR")
+    gene_group_dir_name=$(basename "$STEP1_GG_DIR")
     sanitized_name="${gene_group_dir_name#gene_group-}"
     total_count=$((total_count + 1))
 
@@ -169,40 +156,55 @@ for STEP1_GENE_GROUP_DIR in "${STEP1_OTI}"/gene_group-*/; do
     echo "----------------------------------------"
     echo "Gene group: ${sanitized_name}"
 
-    # Check AGS file exists (STEP_1 completed)
-    AGS_FILE=$(find -L "${STEP1_GENE_GROUP_DIR}" -name "*.aa" 2>/dev/null | head -1)
+    # Check AGS exists
+    AGS_FILE=$(find -L "${STEP1_GG_DIR}" -name "*.aa" 2>/dev/null | head -1)
     if [ -z "${AGS_FILE}" ]; then
-        echo -e "  ${YELLOW}No AGS file found in output_to_input, skipping${NC}"
-        no_ags_count=$((no_ags_count + 1))
+        echo -e "  ${YELLOW}No AGS file; skipping${NC}"
+        error_count=$((error_count + 1))
         continue
     fi
 
     ags_seq_count=$(grep -c '^>' "${AGS_FILE}")
     echo "  AGS sequences: ${ags_seq_count}"
 
-    # --- Paths for this gene group ---
-    GENE_GROUP_DIR="${STEP2_DIR}/${gene_group_dir_name}"
-    WORKFLOW_RUN="${GENE_GROUP_DIR}/workflow-RUN_01-phylogenetic_analysis"
+    # Decide tier
+    if [ "$ags_seq_count" -gt "$LARGE_AGS_THRESHOLD" ] 2>/dev/null; then
+        tier="large"
+        slurm_qos="${SLURM_QOS_LARGE}"
+        slurm_mem="${SLURM_MEM_LARGE}"
+        slurm_time="${SLURM_TIME_LARGE}"
+        slurm_cpus="${SLURM_CPUS_LARGE}"
+    else
+        tier="small"
+        slurm_qos="${SLURM_QOS_SMALL}"
+        slurm_mem="${SLURM_MEM_SMALL}"
+        slurm_time="${SLURM_TIME_SMALL}"
+        slurm_cpus="${SLURM_CPUS_SMALL}"
+    fi
+    echo "  Tier: ${tier}"
 
-    # ====================================================================
-    # SETUP PHASE
-    # ====================================================================
+    # Paths for this gene group
+    GG_DIR="${STEP2_DIR}/gene_group-${sanitized_name}"
+    WF="${GG_DIR}/workflow-RUN_01-phylogenetic_analysis"
+
+    # ---- SETUP ----
     if ! $SUBMIT_ONLY; then
-        if [ -d "${WORKFLOW_RUN}" ]; then
-            echo -e "  ${YELLOW}workflow-RUN_01 exists, skipping setup${NC}"
+        if [ -d "${WF}" ]; then
+            echo -e "  ${YELLOW}workflow-RUN_01 exists; skipping setup${NC}"
             skip_count=$((skip_count + 1))
         else
             if $DRY_RUN; then
-                echo -e "  ${BLUE}[DRY RUN] Would create: ${gene_group_dir_name}/workflow-RUN_01-phylogenetic_analysis${NC}"
+                echo -e "  ${BLUE}[DRY RUN] Would create: ${WF}${NC}"
                 setup_count=$((setup_count + 1))
             else
-                # 1. Create gene_group directory and copy workflow template
-                mkdir -p "${GENE_GROUP_DIR}"
-                cp -r "${STEP2_COPYME}" "${WORKFLOW_RUN}"
+                mkdir -p "${GG_DIR}"
+                cp -r "${STEP2_COPYME}" "${WF}"
 
-                # 2. Update config YAML - gene family name
-                CONFIG_FILE="${WORKFLOW_RUN}/START_HERE-user_config.yaml"
-                sed -i "s|name: \"innexin_pannexin\"|name: \"${sanitized_name}\"|" "${CONFIG_FILE}"
+                CONFIG="${WF}/START_HERE-user_config.yaml"
+                # Set gene family name
+                sed -i "s|name: \"innexin_pannexin\"|name: \"${sanitized_name}\"|" "${CONFIG}"
+                # Enable iqtree (default is false)
+                sed -i 's|^  iqtree: false|  iqtree: true|' "${CONFIG}"
 
                 echo -e "  ${GREEN}Created and configured STEP_2 workflow${NC}"
                 setup_count=$((setup_count + 1))
@@ -210,39 +212,39 @@ for STEP1_GENE_GROUP_DIR in "${STEP1_OTI}"/gene_group-*/; do
         fi
     fi
 
-    # ====================================================================
-    # SUBMIT PHASE
-    # ====================================================================
+    # ---- SUBMIT ----
     if ! $SETUP_ONLY; then
-        if ! $DRY_RUN && [ ! -d "${WORKFLOW_RUN}" ]; then
-            echo -e "  ${YELLOW}Workflow directory not found, skipping submit${NC}"
+        if ! $DRY_RUN && [ ! -d "${WF}" ]; then
+            echo -e "  ${YELLOW}Workflow dir not found; skipping submit${NC}"
             continue
         fi
 
         if $DRY_RUN; then
-            echo -e "  ${BLUE}[DRY RUN] Would submit SLURM job for STEP_2${NC}"
-            submit_count=$((submit_count + 1))
+            echo -e "  ${BLUE}[DRY RUN] Would submit (${tier}: ${slurm_cpus} CPUs, ${slurm_mem}, ${slurm_time}, qos=${slurm_qos})${NC}"
         else
-            JOB_NAME="s2_hgnc_${sanitized_name}"
-            # Truncate job name to 64 chars (SLURM limit)
-            JOB_NAME="${JOB_NAME:0:64}"
-
+            job_name="s2_hgnc_${sanitized_name:0:50}"
             sbatch \
-                --job-name="${JOB_NAME}" \
+                --job-name="${job_name}" \
                 --account="${SLURM_ACCOUNT}" \
-                --qos="${SLURM_QOS}" \
-                --mem="${SLURM_MEM}" \
-                --time="${SLURM_TIME}" \
-                --cpus-per-task="${SLURM_CPUS}" \
+                --qos="${slurm_qos}" \
+                --mem="${slurm_mem}" \
+                --time="${slurm_time}" \
+                --cpus-per-task="${slurm_cpus}" \
                 --output="${STEP2_DIR}/slurm_logs/step2_${sanitized_name}-%j.log" \
-                --wrap="module load conda 2>/dev/null || true; conda activate ${CONDA_ENV} || { echo 'ERROR: Failed to activate conda environment ${CONDA_ENV}'; exit 1; }; cd ${WORKFLOW_RUN} && bash RUN-workflow.sh"
+                --wrap="module load conda 2>/dev/null || true; conda activate ${CONDA_ENV} || { echo 'FATAL'; exit 1; }; cd ${WF} && bash RUN-workflow.sh"
+        fi
 
-            submit_count=$((submit_count + 1))
+        if [ "$tier" = "large" ]; then
+            submit_count_large=$((submit_count_large + 1))
+        else
+            submit_count_small=$((submit_count_small + 1))
         fi
     fi
 done
 
+# ============================================================================
 # Summary
+# ============================================================================
 echo ""
 echo "========================================================================"
 if $DRY_RUN; then
@@ -250,17 +252,18 @@ if $DRY_RUN; then
 else
     echo -e "${GREEN}SUMMARY${NC}"
 fi
-echo "STEP_1 completed gene groups found: ${total_count}"
+echo "Total gene groups with completed STEP_1: ${total_count}"
 if ! $SUBMIT_ONLY; then
     echo "Set up: ${setup_count}"
     echo "Skipped (already exist): ${skip_count}"
 fi
 if ! $SETUP_ONLY; then
-    echo "Jobs submitted: ${submit_count}"
+    echo "Jobs submitted:"
+    echo "  Small (burst): ${submit_count_small}"
+    echo "  Large (standard): ${submit_count_large}"
+    echo "  Total: $((submit_count_small + submit_count_large))"
 fi
-echo "No AGS file: ${no_ags_count}"
 echo "Errors: ${error_count}"
-echo "SLURM resources per job: ${SLURM_CPUS} CPUs, ${SLURM_MEM} RAM, ${SLURM_TIME}"
 echo ""
 echo "SLURM logs: ${STEP2_DIR}/slurm_logs/"
 echo "========================================================================"

@@ -63,7 +63,7 @@ STEP1_COPYME="${STEP1_DIR}/workflow-COPYME-rbh_rbf_homologs"
 RGS_SPECIES_MAP="${STEP1_COPYME}/INPUT_user/rgs_species_map.tsv"
 
 # genomesDB BLAST databases (for species keeper list)
-GENOMESDB_BLASTP="${SCRIPT_DIR}/../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
+GENOMESDB_BLASTP="${SCRIPT_DIR}/../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
 # Conda environment
 CONDA_ENV="ai_gigantic_trees_gene_families"
@@ -170,14 +170,14 @@ if [ ! -d "${STEP1_COPYME}" ]; then
 fi
 
 if [ ! -d "${GENOMESDB_BLASTP}" ]; then
-    echo -e "${RED}ERROR: genomesDB-species70 BLAST databases not found!${NC}"
+    echo -e "${RED}ERROR: genomesDB BLAST databases not found!${NC}"
     echo "Expected at: ${GENOMESDB_BLASTP}"
-    echo "Run the genomesDB-species70 subproject first."
+    echo "Run the genomesDB subproject first."
     exit 1
 fi
 
 # ============================================================================
-# Generate species keeper list from genomesDB-species70
+# Generate species keeper list from genomesDB
 # ============================================================================
 SPECIES_KEEPER_LIST="/tmp/gigantic_species70_keeper_list_$$.tsv"
 
@@ -186,7 +186,7 @@ ls "${GENOMESDB_BLASTP}"/*.aa 2>/dev/null | while read f; do
 done | sort -u > "${SPECIES_KEEPER_LIST}"
 
 species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
-echo "Species keeper list: ${species_count} species from genomesDB-species70"
+echo "Species keeper list: ${species_count} species from genomesDB"
 echo ""
 
 # Create slurm_logs directory
@@ -255,7 +255,7 @@ while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filenam
 
                 CONFIG_FILE="${WORKFLOW_RUN}/START_HERE-user_config.yaml"
                 sed -i "s|name: \"innexin_pannexin\"|name: \"${sanitized_name}\"|" "${CONFIG_FILE}"
-                sed -i "s|rgs_file: \"INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa\"|rgs_file: \"INPUT_user/${rgs_filename}\"|" "${CONFIG_FILE}"
+                sed -i "s|rgs_full_length_file: \"INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa\"|rgs_full_length_file: \"INPUT_user/${rgs_filename}\"|" "${CONFIG_FILE}"
 
                 setup_count=$((setup_count + 1))
             fi

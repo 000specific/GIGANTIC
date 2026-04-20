@@ -145,10 +145,11 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
                 header = line[ 1: ].strip()
                 parts = header.split( '-' )
 
-                if len( parts ) >= 6 and parts[ 0 ] == 'rgs':
+                # 5-field GIGANTIC format: rgs_{family}-{species}-{gene}-{source}-{identifier}
+                if len( parts ) >= 5 and parts[ 0 ].startswith( 'rgs_' ):
                     statistics[ 'valid_headers' ] += 1
-                    statistics[ 'species_found' ].add( parts[ 3 ] )
-                    statistics[ 'families_found' ].add( parts[ 2 ] )
+                    statistics[ 'species_found' ].add( parts[ 1 ] )
+                    statistics[ 'families_found' ].add( parts[ 0 ][ 4: ] )
                     sequence_ids.append( header )
                 else:
                     statistics[ 'invalid_headers' ] += 1
@@ -157,7 +158,7 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
                     statistics[ 'header_issues' ].append( issue )
                     if logger:
                         logger.error( issue )
-                        logger.error( "Expected: >rgs_{{family}}-{{species}}-{{gene_symbol}}-{{source}}-{{identifier}}" )
+                        logger.error( "Expected: >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}" )
 
     if len( statistics[ 'families_found' ] ) > 1:
         # Check if all family prefixes share a common root (e.g., kinases_AGC_Akt and kinases_CAMK

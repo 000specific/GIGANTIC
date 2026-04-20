@@ -34,8 +34,10 @@
 3. Multiple sequence alignment (MAFFT)
 4. Alignment trimming (ClipKit)
 5. Tree building (one or more methods)
-6. Tree visualization (human-friendly and computer-vision)
+6. Write run log
 7. Export to subproject-root output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+
+**Visualization** (PDF/SVG rendering) is the separate **STEP_3-tree_visualization** workflow. STEP_2 produces the scientific artifact (tree newick files); STEP_3 renders them. This decoupling keeps STEP_2 robust against visualization library quirks (ete3/PyQt5 instability).
 
 ---
 
@@ -82,10 +84,10 @@ OUTPUT_pipeline/
 ├── 5_a-output/     # FastTree tree (if enabled)
 ├── 5_b-output/     # IQ-TREE tree (if enabled)
 ├── 5_c-output/     # VeryFastTree tree (if enabled)
-├── 5_d-output/     # PhyloBayes tree (if enabled)
-├── 6-output/       # Human-friendly visualizations
-└── 7-output/       # Computer-vision visualizations
+└── 5_d-output/     # PhyloBayes tree (if enabled)
 ```
+
+Tree newick files are symlinked into `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` for downstream consumption (STEP_3 visualization, etc.).
 
 ### output_to_input
 
@@ -123,9 +125,7 @@ STEP_2-phylogenetic_analysis/
             ├── 005_b_ai-bash-run_iqtree.sh
             ├── 005_c_ai-bash-run_veryfasttree.sh
             ├── 005_d_ai-bash-run_phylobayes.sh
-            ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-            ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-            └── 008_ai-python-write_run_log.py
+            └── 006_ai-python-write_run_log.py
 ```
 
 ---
@@ -161,7 +161,6 @@ STEP_2-phylogenetic_analysis/
 | IQ-TREE timeout | Complex dataset | Increase time limit or use FastTree |
 | PhyloBayes not converging | Too few generations | Increase generations in config |
 | Empty tree file | Alignment had too few sequences | Check AGS has enough sequences |
-| Visualization fails | ete3 not installed | Check conda environment |
 | "ClipKit removed all columns" | Very divergent sequences | Try different ClipKit mode |
 
 ### Diagnostic Commands
@@ -179,9 +178,6 @@ grep -c ">" OUTPUT_pipeline/4-output/*.clipkit*
 
 # Check tree files
 ls OUTPUT_pipeline/5_*-output/
-
-# Check visualizations
-ls OUTPUT_pipeline/6-output/ OUTPUT_pipeline/7-output/
 ```
 
 ---

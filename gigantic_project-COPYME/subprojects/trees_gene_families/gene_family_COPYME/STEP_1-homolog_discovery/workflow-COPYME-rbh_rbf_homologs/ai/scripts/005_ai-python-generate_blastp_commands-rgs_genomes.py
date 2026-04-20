@@ -126,13 +126,13 @@ def extract_genome_identifiers_from_rgs(
                 # Parse header to extract genome identifier
                 header = line[1:].strip()
                 
-                # RGS header format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
-                # The species is the fourth part (index 3)
+                # 5-field GIGANTIC format: rgs_{family}-{species}-{gene}-{source}-{identifier}
+                # The species is the second part (index 1)
                 parts = header.split( '-' )
 
-                if len( parts ) >= 4:
-                    # The fourth part (index 3) is the species/genome identifier
-                    genome_id = parts[3]
+                if len( parts ) >= 5 and parts[ 0 ].startswith( 'rgs_' ):
+                    # The second part (index 1) is the species/genome identifier
+                    genome_id = parts[ 1 ]
                     
                     # Valid genome IDs are non-empty alphabetic strings
                     # (simple names like "worm" or Genus_species like "Homo_sapiens")

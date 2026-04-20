@@ -2,36 +2,37 @@
 
 ## structure_manifest.tsv
 
-Tab-separated file listing which phylogenetic species tree structures to analyze.
+Lists which species tree structure(s) to analyze for origin-conservation-loss.
 
-**Format:**
-```
-structure_id
-001
-002
-003
-```
+**Format**: TSV with a single column `structure_id`
 
-**Column:**
-- `structure_id`: Three-digit structure identifier (001-105) from trees_species output
+**Values**: Three-digit structure identifiers matching trees_species output
+(e.g., "001", "002", ..., "105")
 
-**Default:** Single structure `001` (the original input species tree topology).
+**Default**: Single structure "001" -- which is always the user-provided input
+species tree (trees_species script 002 reserves `structure_001` for the
+original, canonical topology).
 
 (For canonical definitions of structure, topology, and the resolved-vs-unresolved
 input species tree distinction, see
 `../../../../trees_species/README.md` Terminology section.)
 
-**To populate:** Check available structures in the trees_species output directory
-specified by `trees_species_dir` in `START_HERE-user_config.yaml`, then list the desired
-structure IDs (one per line after the header).
+**Examples**:
+- Analyze one structure: just "001"
+- Analyze all 105 permutations: list "001" through "105"
+- Analyze a subset: list specific structure IDs
 
-## Before Running
+## How to Populate
 
-1. Edit `../START_HERE-user_config.yaml` to set:
-   - `run_label` (e.g., "Species71_pfam", "Species71_deeploc")
-   - `annotation_database` (pfam, gene3d, deeploc, etc.)
-   - `annogroup_subtypes` (single, combo, zero - see config for guidance)
-   - Input paths to upstream subprojects
-2. Verify upstream subprojects have completed:
-   - `trees_species` (phylogenetic species tree structures)
-   - `annotations_hmms` (annotation database files)
+1. Check which structures are available in trees_species output:
+   `ls ../../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Phylogenetic_Blocks/`
+
+2. Edit structure_manifest.tsv to list desired structure IDs (one per line)
+
+3. Edit START_HERE-user_config.yaml to set:
+   - `run_label` for this exploration (e.g., `species70_pfam`)
+   - `species_set_name` (e.g., `species70`)
+   - `annotation_database` matching your input data (pfam, gene3d, deeploc, etc.)
+   - `annogroup_subtypes` (domain databases: single/combo/zero; simple databases: single only)
+   - `annotations_dir` pointing to the correct upstream database directory
+   - `execution_mode` (`local` or `slurm`) and if slurm, `slurm_account` / `slurm_qos`

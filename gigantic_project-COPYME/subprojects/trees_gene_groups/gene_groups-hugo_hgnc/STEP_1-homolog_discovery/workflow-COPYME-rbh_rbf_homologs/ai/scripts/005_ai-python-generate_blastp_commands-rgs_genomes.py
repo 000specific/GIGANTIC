@@ -126,12 +126,13 @@ def extract_genome_identifiers_from_rgs(
                 # Parse header to extract genome identifier
                 header = line[1:].strip()
                 
-                # RGS header format: >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
-                # The species is the second part after first dash
+                # HGNC RGS header format (5 fields): >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
+                # Example: >rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1
+                # The species is the second part (index 1)
                 parts = header.split( '-' )
-                
-                if len( parts ) >= 2:
-                    # The second part (index 1) is usually the genome identifier
+
+                if len( parts ) >= 5 and parts[0].startswith( 'rgs_' ):
+                    # The second part (index 1) is the species/genome identifier
                     genome_id = parts[1]
                     
                     # Valid genome IDs are non-empty alphabetic strings
@@ -381,7 +382,7 @@ def main():
     
     if not genome_identifiers:
         logger.error( "CRITICAL ERROR: No genome identifiers found in RGS headers!" )
-        logger.error( "RGS headers must follow format: >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}" )
+        logger.error( "RGS headers must follow format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}" )
         logger.error( "Cannot proceed without genome identifiers for RGS genome BLAST." )
         sys.exit( 1 )  # FAIL - this is a critical error
     

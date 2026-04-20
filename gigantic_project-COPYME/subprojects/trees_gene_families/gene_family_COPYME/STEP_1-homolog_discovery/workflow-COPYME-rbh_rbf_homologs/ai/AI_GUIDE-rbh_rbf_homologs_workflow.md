@@ -61,7 +61,8 @@ workflow-COPYME-rbh_rbf_homologs/
         ├── 013_ai-python-extract_reciprocal_best_hits.py
         ├── 014_ai-python-filter_species_for_tree_building.py
         ├── 016_ai-python-concatenate_sequences.py
-        └── 017_ai-python-write_run_log.py
+        ├── 017_ai-python-write_run_log.py
+        └── 018_ai-python-restore_full_length_rgs_sequences.py  # Only runs in subsequence mode
 ```
 
 ### Script Pipeline (16 Steps)
@@ -84,6 +85,69 @@ workflow-COPYME-rbh_rbf_homologs/
 | 014 | 014_ai-python | filter_species | Filter by keeper list |
 | 016 | 016_ai-python | create_ags_and_export | Create final AGS |
 | 017 | 017_ai-python | write_run_log | Write pipeline execution summary |
+| 018 | 018_ai-python | restore_full_length_rgs | Restore full-length RGS in AGS — **conditional: only runs when `rgs_sequence_is_full_length: false`** |
+
+---
+
+## RGS Modes: Full-length vs Subsequence
+
+The workflow supports two RGS input modes controlled by `rgs_sequence_is_full_length` in the config.
+
+### Full-length mode (DEFAULT — use for most gene families/groups)
+
+```yaml
+gene_family:
+  rgs_full_length_file: "INPUT_user/rgs.aa"
+  rgs_sequence_is_full_length: true
+  # rgs_subsequence_file: <unset / commented out>
+```
+
+- RGS sequences ARE the full-length proteins
+- Pipeline uses `rgs_full_length_file` directly for BLAST discovery
+- Script 018 is **cleanly skipped** by `main.nf` conditional (`if ( !params.rgs_sequence_is_full_length )`)
+- `rgs_subsequence_file` is not required and should NOT be set
+- Final AGS from Script 016 is authoritative
+
+### Subsequence mode (use ONLY when RGS seeds are domain fragments)
+
+```yaml
+gene_family:
+  rgs_full_length_file: "INPUT_user/rgs_full_length.aa"
+  rgs_sequence_is_full_length: false
+  rgs_subsequence_file: "INPUT_user/rgs_subsequence.aa"
+```
+
+- RGS subsequences (e.g., TRP pore regions) used for BLAST discovery
+- Full-length file required for restoring full sequences in the final AGS
+- Subsequence file headers must match full-length file headers exactly, with `_subsequence` appended
+- Script 018 runs after Script 016 to strip `_subsequence` suffix and swap subsequence sequences for full-length ones
+- Startup validation in `main.nf` line ~708 enforces `rgs_subsequence_file` presence when `rgs_sequence_is_full_length: false`
+
+### Anti-pattern: do NOT pass the same file as both inputs
+
+Passing `rgs_full_length_file` and `rgs_subsequence_file` as the same file to bypass validation is incorrect. It invokes Script 018 unnecessarily and risks subtle header mismatches. The correct path for standard gene families is: leave `rgs_sequence_is_full_length: true` (default) and omit `rgs_subsequence_file` entirely.
+
+---
+
+## Orphan RGS
+
+Controlled by `include_orphan_rgs` in the config. Orphan RGS are seed sequences whose source species has no genome in the BLAST database set (e.g., FLYC1 from venus flytrap, TRPC2 from mouse when mouse isn't in the species set). When enabled:
+
+- Script 009 appends orphan RGS sequences to the combined BLAST database as reciprocal targets
+- Reciprocal BLAST hits can land on orphan RGS, allowing gene assignments that would otherwise fail
+- Default: `false` (conservative)
+
+---
+
+## Header Format — Script 013 is Format-Independent
+
+Script 013 uses pure set membership (`hit in rgs_identifiers_set`) to validate reciprocal BLAST hits. This works with any RGS header format:
+
+- Old format: `rgs_family-species-gene-source-id`
+- New format: `rgs-source_id-family-species-gene-source`
+- Truncated forms from Script 008 (45-char base + `_NNN` counter) also work
+
+No header migration is needed when upgrading to the fixed Script 013. The critical bug the fix addresses: previous versions used positional parsing (`hit.split('-')[1]`) which silently dropped reciprocal hits when truncation eliminated the `-` delimiter in long-named families/groups, producing empty CGS files while the pipeline reported success.
 
 ---
 
@@ -102,12 +166,14 @@ Edit `START_HERE-user_config.yaml`:
 ```yaml
 gene_family:
   name: "innexin_pannexin"
-  rgs_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+  rgs_full_length_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+  rgs_sequence_is_full_length: true    # DEFAULT — Script 018 skipped
+  # rgs_subsequence_file: <unset for standard full-length RGS>
+  include_orphan_rgs: false
 
 inputs:
   species_keeper_list: "INPUT_user/species_keeper_list.tsv"
   blast_databases_dir: "../../../../genomesDB/output_to_input/gigantic_T1_blastp"
-  cgs_mapping_file: "../../../../genomesDB/output_to_input/gigantic_T1_blastp_header_map"
 
 project:
   database: "speciesN_T1-speciesN"
@@ -261,6 +327,21 @@ echo "Final AGS:"; grep -c ">" OUTPUT_pipeline/16-output/*.aa
 ```
 
 **Fix**: Check species keeper list includes desired species, and verify those species are in genomesDB.
+
+### Zero CGS but positive BGS — the truncation silent failure (historical, fixed)
+
+**Symptom**: BGS count > 0 but CGS count = 0, AGS contains only the original RGS sequences with no homologs.
+
+**Cause (historical)**: Pre-fix Script 013 used positional parsing (`hit.split('-')[1]`) which silently dropped reciprocal hits for gene families/groups with long names. When Script 008 truncated an RGS header to 45 chars + `_NNN` counter, the resulting truncated form sometimes had no `-` delimiter left, causing `split('-')` to return a single-element list and the hit to be silently skipped.
+
+**Fix**: Script 013 now uses `hit in rgs_identifiers_set` (pure set membership). Any gene family/group with a name long enough to trigger truncation in Script 008 MUST use the fixed Script 013. All top-level COPYMEs in GIGANTIC have been updated; verify inner per-family/per-group COPYMEs have been synced before re-running.
+
+**Verification**:
+```bash
+# Inspect Script 013 for the fixed code:
+grep -l "rgs_identifiers_set\|hit_is_rgs" ai/scripts/013_ai-python-extract_reciprocal_best_hits.py
+# Must return a match — if silent, the COPYME has the old buggy Script 013.
+```
 
 ### NextFlow errors
 

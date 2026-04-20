@@ -37,11 +37,11 @@ else
     echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
     echo ""
     echo "Please run the environment setup script first:"
-    echo "  cd ../../../../  # Go to project root"
+    echo "  cd ../../../../../  # Go to project root (from gene_group-X/workflow-RUN_01)"
     echo "  bash RUN-setup_environments.sh"
     echo ""
     echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
+    echo "  mamba env create -f ../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
     echo ""
     exit 1
 fi
@@ -175,17 +175,22 @@ fi
 # Create symlinks for output_to_input (subproject root)
 # ============================================================================
 # Real files live in OUTPUT_pipeline/16-output/ (created by NextFlow above).
-# Symlinks are organized by gene family at the subproject-root output_to_input/:
-#   ../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/
+# Symlinks are organized step-centrically at the subproject-root output_to_input/:
+#   ../../../../output_to_input/<source>/STEP_1-homolog_discovery/<gene_group>/
 #
-# Structure:
-#   output_to_input/
-#   ├── nitric_oxide_synthases/
-#   │   ├── STEP_1-homolog_discovery/   <- created here
-#   │   └── STEP_2-phylogenetic_analysis/  <- created by STEP_2
-#   └── innexin_pannexin/
-#       ├── STEP_1-homolog_discovery/
-#       └── STEP_2-phylogenetic_analysis/
+# Structure (from trees_gene_groups/output_to_input/):
+#   gene_groups-hugo_hgnc/
+#   ├── STEP_0-hgnc_gene_groups/           <- created by STEP_0
+#   ├── STEP_1-homolog_discovery/          <- created here
+#   │   ├── gene_group-gap_junction_proteins/
+#   │   └── gene_group-fascin_family/
+#   └── STEP_2-phylogenetic_analysis/      <- created by STEP_2
+#
+# Directory context (from gene_group-X/workflow-RUN_01):
+#   ../           -> gene_group-X/
+#   ../../        -> STEP_1-homolog_discovery/
+#   ../../../     -> gene_groups-[source]/
+#   ../../../../  -> trees_gene_groups/
 #
 # Symlink targets are RELATIVE paths from the symlink location to
 # the real files in OUTPUT_pipeline/.
@@ -197,22 +202,28 @@ echo "Creating symlinks for downstream workflows..."
 # Extract gene family name from config
 GENE_FAMILY=$(grep -A5 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-GENE_FAMILY_DIR="$(basename "$(dirname "$(dirname "${SCRIPT_DIR}")")")"
+# Derive directory names from the trees_gene_groups directory structure:
+#   SCRIPT_DIR = .../gene_groups-<source>/STEP_1-homolog_discovery/gene_group-<name>/workflow-RUN_01
+GENE_GROUP_DIR="$(basename "$(dirname "${SCRIPT_DIR}")")"
+SOURCE_DIR="$(basename "$(dirname "$(dirname "$(dirname "${SCRIPT_DIR}")")")")"
 
 # --- Subproject-root output_to_input ---
-SYMLINK_DIR="../../../output_to_input/${GENE_FAMILY}/STEP_1-homolog_discovery"
+# From gene_group-X/workflow-RUN_01: 4 levels up to trees_gene_groups
+SYMLINK_DIR="../../../../output_to_input/${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}"
 mkdir -p "${SYMLINK_DIR}"
 find "${SYMLINK_DIR}" -type l -delete 2>/dev/null
 
+# Symlink location: trees_gene_groups/output_to_input/<source>/STEP_1/gene_group-X/
+# Target location:  trees_gene_groups/<source>/STEP_1/gene_group-X/workflow-RUN_01/OUTPUT_pipeline/16-output/
 for ags_file in OUTPUT_pipeline/16-output/16_ai-ags-*.aa; do
     if [ -f "$ags_file" ]; then
         filename=$(basename "$ags_file")
-        ln -sf "../../../${GENE_FAMILY_DIR}/STEP_1-homolog_discovery/${WORKFLOW_DIR_NAME}/${ags_file}" \
+        ln -sf "../../../../${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${ags_file}" \
             "${SYMLINK_DIR}/${filename}"
     fi
 done
 
-echo "  output_to_input/${GENE_FAMILY}/STEP_1-homolog_discovery/ -> symlinks created"
+echo "  output_to_input/${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}/ -> symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -222,7 +233,7 @@ echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/ through 16-output/"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../../output_to_input/${GENE_FAMILY}/STEP_1-homolog_discovery/"
+echo "  ../../../../output_to_input/${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}/"
 echo ""
 echo "Next: Run STEP_2 phylogenetic analysis with AGS files"
 echo "========================================================================"

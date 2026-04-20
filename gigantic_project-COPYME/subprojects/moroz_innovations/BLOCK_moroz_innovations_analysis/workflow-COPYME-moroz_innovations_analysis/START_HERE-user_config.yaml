@@ -1,0 +1,157 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+# GIGANTIC moroz_innovations_analysis Pipeline Configuration
+#
+# PURPOSE:
+# Identify orthogroup and annogroup features associated with user-specified
+# clades under THREE distinct criteria per clade, per species tree structure:
+#
+#   1) innovations_any  (Leonid's definition)
+#      Feature present in >=1 species of target clade AND absent from
+#      every species NOT in target clade.
+#
+#   2) innovations_all  (Leonid's definition)
+#      Feature present in ALL species of target clade AND absent from
+#      every species NOT in target clade.
+#
+#   3) origins_at_clade  (GIGANTIC definition)
+#      Feature's Origin_Phylogenetic_Block ends at target clade
+#      (block Parent::Target_Clade) per GIGANTIC OCL engine.
+#
+# Innovation criteria (1, 2) are set-membership tests and do NOT depend on
+# species tree topology -- they are topology-invariant for clades whose
+# species content is stable across structures (e.g., the 6 named animal
+# clades across species70's 105 structures).
+#
+# Origin criterion (3) IS topology-dependent -- origins are MRCA-inferred
+# per-structure by the OCL engine.
+#
+# AI: Claude Code | Opus 4.7 | 2026 April 18
+# Human: Eric Edsinger
+# ============================================================================
+
+# Run identification
+# run_label names the output directory for this exploration.
+# Different COPYME copies can coexist by using different run_labels.
+run_label: "SET_NAME_HERE_CLADES_HERE"
+
+# Species set identifier (e.g., "species70")
+species_set_name: "SET_NAME_HERE"
+
+# ============================================================================
+# Target clades
+# ============================================================================
+# Clade names accepted in EITHER form:
+#   - Bare name:     "Metazoa"              (portable across structures)
+#   - Full CXXX_Name: "C082_Metazoa"        (convenient if copied from a
+#                                            species tree PDF or auto-
+#                                            generated clade label)
+# The script normalizes both forms to a bare name before matching, so it
+# does not matter which you use. Mix freely.
+#
+# For clades that GIGANTIC auto-named (no common name -- e.g.
+# "C089_Ctenophora_Subclade_1"), copy the full label straight from the PDF
+# or parent_child table.
+#
+# Default RUN_1 clades for Leonid's species70 animal-origin analysis:
+
+target_clades:
+  # Top-level animal clades
+  - "Metazoa"
+  - "Ctenophora"
+  - "Porifera"
+  - "Placozoa"
+  - "Cnidaria"
+  - "Bilateria"
+  # Ctenophora internal subclades
+  - "Ctenophora_Subclade_1"   # Beroe + Bolinopsis + Mnemiopsis
+  - "Cydippida"               # Hormiphora + Pleurobrachia
+  - "Lobata"                  # Bolinopsis + Mnemiopsis
+  # Ctenophora species
+  - "Beroe_ovata"
+  - "Bolinopsis_microptera"
+  - "Hormiphora_californensis"
+  - "Mnemiopsis_leidyi"
+  - "Pleurobrachia_bachei"
+  # Placozoa internal subclades
+  - "Trichoplacea"            # Trichoplax_adhaerens + Trichoplax_sp_H2
+  - "Hoilungea"               # Cladtertia + Hoilungia
+  # Placozoa species
+  - "Cladtertia_collaboinventa"
+  - "Hoilungia_hongkongensis_H13"
+  - "Trichoplax_adhaerens"
+  - "Trichoplax_sp_H2"
+
+# ============================================================================
+# Target species tree structures
+# ============================================================================
+# Structures to analyze. Innovations (any/all) are topology-invariant for
+# stable-content clades, so one structure is sufficient for those. Origins
+# are per-structure.
+
+target_structures:
+  - "structure_001"
+
+# ============================================================================
+# Feature sources (which OCL analyses to pull from)
+# ============================================================================
+# Inputs come through the canonical inter-subproject location:
+#   {subproject}/output_to_input/BLOCK_ocl_analysis/{run_label}/structure_NNN/
+#
+# run_label is the OCL workflow's published label (e.g. "species70_pfam",
+# "species70_X_OrthoHMM") -- you pick which upstream analysis to pull from.
+# Multiple OCL runs of the same subproject can coexist side-by-side under
+# different run_labels.
+
+feature_sources:
+
+  orthogroups:
+    enabled: true
+    output_to_input_base: "../../../orthogroups_X_ocl/output_to_input/BLOCK_ocl_analysis"
+    run_label: "species70_X_OrthoHMM"
+    # Per-structure summary file pattern (NNN = 3-digit structure index)
+    summary_filename_pattern: "structure_NNN/4_ai-orthogroups-complete_ocl_summary.tsv"
+    feature_id_column: "Orthogroup_ID"
+
+  annotations:
+    enabled: true
+    output_to_input_base: "../../../annotations_X_ocl/output_to_input/BLOCK_ocl_analysis"
+    run_label: "species70_pfam"
+    summary_filename_pattern: "structure_NNN/4_ai-structure_NNN_annogroups-complete_ocl_summary-all_types.tsv"
+    feature_id_column: "Annogroup_ID"
+
+# ============================================================================
+# Species tree source (clade -> species mapping authority)
+# ============================================================================
+# Points to trees_species output. The file
+#   Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv
+# provides Structure_ID -> Clade_ID_Name -> Descendant_Species_List for ALL
+# structures. Bare-name resolution happens against this file.
+
+species_tree_source:
+  clade_species_mappings_tsv: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
+
+# ============================================================================
+# Output configuration
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+
+execution_mode: "local"    # "local" | "slurm"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "moroz"
+slurm_qos: "moroz"
+cpus: 2
+memory_gb: 16
+time_hours: 2

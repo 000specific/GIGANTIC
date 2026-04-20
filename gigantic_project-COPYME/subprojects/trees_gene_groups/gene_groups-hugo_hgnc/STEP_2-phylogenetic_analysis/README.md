@@ -17,7 +17,7 @@ bash RUN-workflow.sh
 
 ## Prerequisites
 
-- STEP_1 must be complete for the same gene family (AGS file in output_to_input/<gene_family>/STEP_1-homolog_discovery/)
+- STEP_1 must be complete for the same gene group (AGS file in output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/)
 
 ## Tree Methods
 
@@ -33,7 +33,7 @@ Enable/disable methods in `START_HERE-user_config.yaml`.
 ## Output
 
 Trees and visualizations are copied to:
-- `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/`
+- `../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/`
 
 ## For AI Assistants
 

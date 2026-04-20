@@ -26,7 +26,7 @@
  *
  * Data Flow:
  *   Config gene_family + rgs_file → validate → all processes
- *   Final AGS fasta → OUTPUT_pipeline/16-output/ (symlinks in ../../../output_to_input/STEP_1-homolog_discovery/ by RUN-workflow.sh)
+ *   Final AGS fasta → OUTPUT_pipeline/16-output/ (symlinks in ../../../../output_to_input/gene_groups-<source>/STEP_1-homolog_discovery/ by RUN-workflow.sh)
  *
  * Script Generators:
  *   Scripts 002, 005, 011 generate bash scripts that are then executed.
@@ -84,7 +84,8 @@ def load_species_map( map_path ) {
 def extract_rgs_species( rgs_file_path ) {
     /*
      * Extract unique species short names from RGS FASTA headers.
-     * Header format: >rgs_{family}-{species}-{gene_symbol}-{source_details}-{sequence_identifier}
+     * HGNC RGS header format (5 fields): >rgs_{family}-{species}-{gene_symbol}-{source}-{accession}
+     * Species is parts[1] (e.g., 'human' in >rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1)
      */
     def species_set = [] as Set
     def rgs_file = file( rgs_file_path )
@@ -93,7 +94,7 @@ def extract_rgs_species( rgs_file_path ) {
         if ( line.startsWith( '>' ) ) {
             def header = line.substring( 1 ).trim()
             def parts = header.split( '-' )
-            if ( parts.size() >= 2 ) {
+            if ( parts.size() >= 5 && parts[0].startsWith( 'rgs_' ) ) {
                 def species_short_name = parts[1]
                 if ( species_short_name && Character.isLetter( species_short_name.charAt( 0 ) ) ) {
                     species_set.add( species_short_name )
@@ -409,15 +410,30 @@ process prepare_reciprocal_blast {
         --mapping-file 8-output/8_ai-map-rgs-to-genome-identifiers.txt \\
         --genome-list 7-output/7_ai-list-model-organism-fastas.txt \\
         --output-dir . \\
-        --log-file 9-output/9_ai-log-create-modified-genomes.log
+        --log-file 9-output/9_ai-log-create-modified-genomes.log \\
+        ${params.include_orphan_rgs ? '--include-orphan-rgs' : ''}
 
     echo "=== Step 010: Combine modified genomes and create BLAST database ==="
+    # Combine modified genomes (and orphan RGS if present)
     cat 9-output/9_ai-*.aa-rgs > 10-output/10_ai-rgs-all-genomes-combined.fasta
+    if [ -f 9-output/9_ai-orphan-rgs-sequences.aa ]; then
+        cat 9-output/9_ai-orphan-rgs-sequences.aa >> 10-output/10_ai-rgs-all-genomes-combined.fasta
+        echo "Appended orphan RGS sequences to combined database"
+    fi
 
     makeblastdb \\
         -in 10-output/10_ai-rgs-all-genomes-combined.fasta \\
         -dbtype prot \\
         -out 10-output/10_ai-rgs-all-genomes-combined-blastdb
+
+    # Append orphan RGS mappings so Script 013 and STEP_3 recognize
+    # orphan truncated headers as valid rgs- hits
+    if [ -f 9-output/9_ai-orphan-rgs-mapping.txt ]; then
+        cat 9-output/9_ai-orphan-rgs-mapping.txt >> 8-output/8_ai-map-rgs-to-genome-identifiers.txt
+        # Also append to truncation map (for STEP_3 gene assignment)
+        awk -F'\\t' '{print \$3"\\t"\$2}' 9-output/9_ai-orphan-rgs-mapping.txt >> 8-output/8_ai-header_truncation_map.txt
+        echo "Appended orphan RGS mappings to identifier mapping and truncation map"
+    fi
 
     echo "Reciprocal BLAST preparation complete for ${gene_family}"
     """
@@ -580,6 +596,43 @@ process concatenate_final_gene_set {
     """
 }
 
+// ============================================================================
+// PROCESS 10b: Restore Full-Length RGS in AGS (CONDITIONAL)
+// Script: 018
+// Only runs when rgs_sequence_is_full_length is false (subsequence RGS).
+// Replaces domain-length RGS sequences in the AGS with full-length versions
+// so the final phylogenetic tree uses full-length proteins.
+// ============================================================================
+
+process restore_full_length_rgs {
+    tag "${gene_family}"
+    label 'local'
+
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+
+    input:
+        tuple val(gene_family), path(ags_fasta)
+
+    output:
+        tuple val(gene_family),
+              path("18-output/*full_length_rgs*"),
+              emit: restored_done
+        path "18-output"
+
+    script:
+    """
+    mkdir -p 18-output
+
+    echo "Restoring full-length RGS sequences for ${gene_family}..."
+    python3 ${projectDir}/scripts/018_ai-python-restore_full_length_rgs_sequences.py \\
+        --ags-fasta ${ags_fasta} \\
+        --full-length-rgs ${projectDir}/../${params.rgs_full_length_file} \\
+        --output-dir 18-output
+
+    echo "Full-length RGS restoration complete for ${gene_family}"
+    """
+}
+
 /*
  * Process 11: Write Run Log (FINAL)
  * Calls: scripts/017_ai-python-write_run_log.py
@@ -618,7 +671,9 @@ workflow {
     GIGANTIC trees_gene_families STEP_1 - RBH/RBF Homolog Discovery
     ========================================================================
     Gene family         : ${params.gene_family}
-    RGS file            : ${params.rgs_file}
+    RGS file (for BLAST): ${params.rgs_file}
+    RGS full-length     : ${params.rgs_full_length_file}
+    RGS is full-length  : ${params.rgs_sequence_is_full_length}
     Species keeper list : ${params.species_keeper_list}
     BLAST databases     : ${params.blast_databases_dir}
     Project database    : ${params.project_database}
@@ -632,8 +687,8 @@ workflow {
     if ( !params.gene_family ) {
         error "gene_family not set in config! Edit START_HERE-user_config.yaml."
     }
-    if ( !params.rgs_file ) {
-        error "rgs_file not set in config! Edit START_HERE-user_config.yaml."
+    if ( !params.rgs_full_length_file ) {
+        error "rgs_full_length_file not set in config! Edit START_HERE-user_config.yaml."
     }
     if ( !params.blast_databases_dir ) {
         error "blast_databases_dir must be set in config. This is the path to BLAST protein databases."
@@ -648,6 +703,20 @@ workflow {
     }
     if ( !file( params.rgs_genomes_dir ).exists() ) {
         error "RGS genomes directory not found: ${params.rgs_genomes_dir}\nCheck rgs_genomes_dir in START_HERE-user_config.yaml"
+    }
+
+    // ---- Validate subsequence RGS configuration ----
+    if ( !params.rgs_sequence_is_full_length ) {
+        log.info "RGS mode: SUBSEQUENCE (rgs_sequence_is_full_length = false)"
+        log.info "  -> Reciprocal BLAST will use hit-region subsequences"
+        log.info "  -> Script 018 will restore full-length RGS in final AGS"
+        if ( !params.rgs_subsequence_file ) {
+            error "rgs_sequence_is_full_length is false but rgs_subsequence_file is not set!\n" +
+                  "When using subsequence RGS, you must provide the domain subsequence file.\n" +
+                  "Set rgs_subsequence_file in START_HERE-user_config.yaml under gene_family:"
+        }
+    } else {
+        log.info "RGS mode: FULL-LENGTH (default)"
     }
 
     log.info "BLAST databases: ${params.blast_databases_dir}"
@@ -707,9 +776,16 @@ workflow {
     prepare_reciprocal_blast( prep_input, rbh_species_channel )
 
     // ---- Process 7: Run reciprocal BLAST ----
+    // When RGS is domain-only (rgs_sequence_is_full_length = false),
+    // use hit-region subsequences for the reciprocal BLAST instead of
+    // full-length BGS. This ensures the reciprocal query length matches
+    // the subsequence RGS spliced into the modified genomes,
+    // preventing BLAST from preferring full-length genome proteins over
+    // the shorter RGS sequences.
+    def use_hitregions = !params.rgs_sequence_is_full_length
     def reciprocal_input = extract_blast_gene_sequences.out.bgs_done
         .map { gene_family, rgs_fasta, bgs_fullseqs, bgs_hitregions ->
-            [ gene_family, bgs_fullseqs ]
+            [ gene_family, use_hitregions ? bgs_hitregions : bgs_fullseqs ]
         }
         .join(
             prepare_reciprocal_blast.out.reciprocal_prep_done
@@ -752,11 +828,18 @@ workflow {
 
     concatenate_final_gene_set( concat_input )
 
+    // ---- Process 10b: Restore full-length RGS (conditional) ----
+    // Only runs when rgs_sequence_is_full_length is false (subsequence RGS).
+    // When RGS is already full-length, skip this step entirely.
+    if ( !params.rgs_sequence_is_full_length ) {
+        restore_full_length_rgs( concatenate_final_gene_set.out.ags_done )
+        write_run_log( restore_full_length_rgs.out.restored_done.map { true } )
+    } else {
+        write_run_log( concatenate_final_gene_set.out.ags_done.map { true } )
+    }
+
     // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
     // pipeline completes. Real files only live in OUTPUT_pipeline/16-output/.
-
-    // ---- Process 11: Write run log ----
-    write_run_log( concatenate_final_gene_set.out.ags_done.map { true } )
 }
 
 // ============================================================================
@@ -793,7 +876,7 @@ workflow.onComplete {
         println "  16-output/: Final AGS (All Gene Set)"
         println ""
         println "Symlinks created by RUN-workflow.sh in:"
-        println "  ../../../output_to_input/STEP_1-homolog_discovery/ags_fastas/${params.gene_family}/"
+        println "  ../../../../output_to_input/gene_groups-<source>/STEP_1-homolog_discovery/ags_fastas/${params.gene_family}/"
         println ""
         println "Next: Run STEP_2 phylogenetic analysis with AGS file"
     }

@@ -1,6 +1,6 @@
 # AI Guide: trees_gene_families Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers trees_gene_families-specific concepts and the two-step architecture.
+**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers trees_gene_families-specific concepts and the three-step architecture.
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/`
 
@@ -26,6 +26,7 @@
 | RGS preparation, naming conventions | `research_notebook/README.md` |
 | STEP_1 homolog discovery | `gene_family_COPYME/STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
 | STEP_2 phylogenetic analysis | `gene_family_COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
+| STEP_3 tree visualization | `gene_family_COPYME/STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` |
 
 ---
 
@@ -48,12 +49,19 @@
 | transmembrane_channel_like_family | full-length | HGNC human | TMC channels |
 | transient_receptor_potential_cation_channels | **subsequence** | multi-species pore regions | TRP channels (pore-region RGS) |
 
-**Three-Phase Workflow**:
+**Four-Phase Workflow**:
 1. **RGS Preparation** - Source, curate, and format reference gene sequences in `research_notebook/`
 2. **Homolog Discovery (STEP_1)** - Validate RGS, then find homologs via Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF)
-3. **Phylogenetic Analysis (STEP_2)** - Align sequences, trim, build trees, visualize
+3. **Phylogenetic Analysis (STEP_2)** - Align sequences, trim, build tree newick files (FastTree, IQ-TREE, VeryFastTree, PhyloBayes)
+4. **Tree Visualization (STEP_3)** - Render newick files as PDF + SVG using toytree (decoupled from STEP_2)
 
 **Note**: RGS validation is built into STEP_1 as its first process. If validation fails, the pipeline stops immediately before expensive BLAST runs.
+
+**STEP_2 / STEP_3 decoupling rationale** (important):
+- STEP_2's scientific artifact is the newick tree file
+- STEP_3 is PDF/SVG rendering and is explicitly **soft-fail**: a render failure writes a placeholder and exits 0, never invalidating STEP_2 trees
+- toytree + toyplot + reportlab (pure Python) replaces ete3/PyQt5, which has perennial install issues on conda-forge
+- Visualization iteration (seconds per render) is orders of magnitude faster than tree rebuilding (days for IQ-TREE), so keeping them separate enables quick figure iteration
 
 **Critical**: Run genomesDB subproject FIRST - trees_gene_families depends on genomesDB for BLAST databases and proteome files.
 
@@ -74,7 +82,7 @@
 
 ### One Gene Family Per Directory
 
-Each gene family is a **self-contained unit** with its own copy of both steps:
+Each gene family is a **self-contained unit** with its own copy of all three steps:
 
 ```bash
 # 1. Copy the gene family template
@@ -85,6 +93,7 @@ cd gene_family-innexin_pannexin/STEP_1-homolog_discovery/
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
 cd workflow-RUN_1-rbh_rbf_homologs
 # Edit START_HERE-user_config.yaml, then run
+# Repeat for STEP_2 and STEP_3
 ```
 
 To analyze multiple gene families, create multiple `gene_family-[name]` copies from the template.
@@ -163,7 +172,7 @@ See `research_notebook/README.md` for full specification.
 
 ---
 
-## Two-Step Architecture
+## Three-Step Architecture
 
 ### STEP_1-homolog_discovery
 
@@ -187,11 +196,29 @@ See `research_notebook/README.md` for full specification.
 **Function**:
 - Multiple sequence alignment (MAFFT)
 - Alignment trimming (ClipKit)
-- Tree building (FastTree, IQ-TREE, VeryFastTree, PhyloBayes)
-- Tree visualization (human-friendly and computer-vision)
+- Tree building (FastTree, IQ-TREE, VeryFastTree, PhyloBayes) — produces newick files
 
 **Outputs**:
-- `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (symlinks to workflow OUTPUT_pipeline/)
+- `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` — symlinks to alignment + tree newick files in workflow OUTPUT_pipeline/
+- Visualization is handled separately by STEP_3
+
+### STEP_3-tree_visualization
+
+**Directory**: `gene_family_COPYME/STEP_3-tree_visualization/`
+**Workflow template**: `workflow-COPYME-tree_visualization`
+
+**Function**:
+- Auto-discover tree newick files produced by STEP_2
+- Render each to PDF + SVG using `toytree` (pure Python, no Qt dependency)
+- Species color-coding, branch support overlays, auto-hidden tip labels for very large trees
+- **Soft-fail**: render failures write a placeholder and exit 0; STEP_2 newicks remain the valid artifact
+
+**Engine**: `toytree` + `toyplot` + `reportlab` (pip-installed in conda env `aiG-trees_gene_families-visualization`). Replaces ete3/PyQt5, which had recurring install-instability problems on conda-forge.
+
+**Orchestration**: Plain bash in `RUN-workflow.sh` (no NextFlow) — STEP_3 is a single lightweight process. Includes broken-env self-heal: if the conda env directory exists but is missing Python, it's rebuilt.
+
+**Outputs**:
+- `output_to_input/<gene_family>/STEP_3-tree_visualization/` (symlinks to rendered PDFs/SVGs in workflow OUTPUT_pipeline/)
 
 ---
 
@@ -219,20 +246,25 @@ trees_gene_families/
 │
 ├── output_to_input/                   # FINAL OUTPUTS for downstream (gene family first)
 │   └── <gene_family>/                # One directory per gene family
-│       ├── STEP_1-homolog_discovery/ # Symlinks to AGS homolog sequences
-│       └── STEP_2-phylogenetic_analysis/ # Symlinks to trees and visualizations
+│       ├── STEP_1-homolog_discovery/      # Symlinks to AGS homolog sequences
+│       ├── STEP_2-phylogenetic_analysis/  # Symlinks to tree newick files + alignments
+│       └── STEP_3-tree_visualization/     # Symlinks to PDF + SVG renderings
 │
 ├── gene_family_COPYME/                # TEMPLATE (copy this for each gene family)
 │   ├── STEP_1-homolog_discovery/
 │   │   └── workflow-COPYME-rbh_rbf_homologs/
-│   └── STEP_2-phylogenetic_analysis/
-│       └── workflow-COPYME-phylogenetic_analysis/
+│   ├── STEP_2-phylogenetic_analysis/
+│   │   └── workflow-COPYME-phylogenetic_analysis/
+│   └── STEP_3-tree_visualization/
+│       └── workflow-COPYME-tree_visualization/
 │
 └── gene_family-innexin_pannexin/      # USER COPY (example)
     ├── STEP_1-homolog_discovery/
     │   └── workflow-RUN_1-rbh_rbf_homologs/
-    └── STEP_2-phylogenetic_analysis/
-        └── workflow-RUN_1-phylogenetic_analysis/
+    ├── STEP_2-phylogenetic_analysis/
+    │   └── workflow-RUN_1-phylogenetic_analysis/
+    └── STEP_3-tree_visualization/
+        └── workflow-RUN_1-tree_visualization/
 ```
 
 ---
@@ -258,13 +290,19 @@ STEP_1: Validate RGS → BLAST → Reciprocal BLAST → Filter → AGS [→ Rest
 output_to_input/<gene_family>/STEP_1-homolog_discovery/
        │
        ▼
-STEP_2: Align → Trim → Build Trees → Visualize
+STEP_2: Align → Trim → Build Trees (produces newick files)
        │
        ▼
 output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
        │
        ▼
-(Downstream subprojects or publication)
+STEP_3: Render trees → PDF + SVG (toytree; soft-fail)
+       │
+       ▼
+output_to_input/<gene_family>/STEP_3-tree_visualization/
+       │
+       ▼
+(Downstream subprojects, server publishing, or publication)
 ```
 
 ---
@@ -301,14 +339,19 @@ Gene family directories are nested TWO levels deeper than standard subprojects (
 
 ---
 
-## Conda Environment
+## Conda Environments
 
-**Environment name**: `ai_gigantic_trees_gene_families`
-**Definition file**: `../../conda_environments/ai_gigantic_trees_gene_families.yml`
+Two environments are used across the three steps:
 
-**Includes**: Python, NextFlow, BLAST, MAFFT, ClipKit, FastTree, IQ-TREE, VeryFastTree, PhyloBayes-MPI, ete3
+**STEP_1 + STEP_2** — `ai_gigantic_trees_gene_families`
+- Definition file: `../../conda_environments/ai_gigantic_trees_gene_families.yml`
+- Includes: Python, NextFlow, BLAST, MAFFT, ClipKit, FastTree, IQ-TREE, VeryFastTree, PhyloBayes-MPI
 
-Both STEPs use this single environment.
+**STEP_3** — `aiG-trees_gene_families-visualization`
+- Definition file: `gene_family_COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/ai/conda_environment.yml`
+- Created on-demand by STEP_3's RUN-workflow.sh (self-heals if broken)
+- Includes: Python, PyYAML, toytree, toyplot, reportlab (all pip-installed)
+- No ete3 / PyQt5 — removes a major source of install instability
 
 ---
 
@@ -349,6 +392,9 @@ ls output_to_input/*/STEP_1-homolog_discovery/
 
 # Check STEP_2 outputs
 ls output_to_input/*/STEP_2-phylogenetic_analysis/
+
+# Check STEP_3 outputs (rendered PDFs/SVGs)
+ls output_to_input/*/STEP_3-tree_visualization/
 ```
 
 ---
@@ -366,6 +412,7 @@ ls output_to_input/*/STEP_2-phylogenetic_analysis/
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/species_keeper_list.tsv` | Species to include in final AGS | **YES** |
 | `gene_family_COPYME/STEP_1-*/workflow-*/INPUT_user/rgs_species_map.tsv` | Map RGS short names to Genus_species | **YES** (if needed) |
 | `gene_family_COPYME/STEP_2-*/workflow-*/START_HERE-user_config.yaml` | Tree methods, alignment settings | **YES** |
+| `gene_family_COPYME/STEP_3-*/workflow-*/START_HERE-user_config.yaml` | Visualization styling (tip colors, branch support, canvas size) | **YES** (gene_family name; styling optional) |
 | `gene_family-*/STEP_N-*/workflow-*/RUN-workflow.sh` | Run pipeline | No (reads from config) |
 
 ---
@@ -378,6 +425,7 @@ ls output_to_input/*/STEP_2-phylogenetic_analysis/
 | New gene families to add | "Do you have RGS FASTA files? Are they in GIGANTIC format (only letters/numbers/underscores within fields)? Do they need reformatting?" |
 | Before STEP_1 | "What gene family? Do you have a curated RGS FASTA file and species keeper list?" |
 | Before STEP_2 | "Which tree method? FastTree (fast, default), IQ-TREE (publication), VeryFastTree (large datasets), or PhyloBayes (Bayesian)?" |
+| Before STEP_3 | "Has STEP_2 completed for this gene family? Which tree methods ran? Any styling preferences (hide labels for very large trees, show branch support)?" |
 | Multiple gene families | "How many gene families? You'll need one gene_family-[name] directory per family." |
 | Error occurred | "Which step failed? What error message?" |
 

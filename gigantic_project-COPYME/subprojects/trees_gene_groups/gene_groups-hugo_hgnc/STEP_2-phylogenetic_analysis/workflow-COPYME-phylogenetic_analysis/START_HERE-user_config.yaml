@@ -20,7 +20,7 @@
 # 1. Copy the template:
 #    cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
 # 2. Edit this config file (set gene_family name)
-# 3. Ensure STEP_1 has completed (AGS files in trees_gene_families/output_to_input/STEP_1-homolog_discovery/)
+# 3. Ensure STEP_1 has completed (AGS files in trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-*/)
 # 4. Choose tree-building methods below (tree_methods section)
 # 5. Run: bash RUN-workflow.sh
 
@@ -37,16 +37,16 @@ gene_family:
 # ============================================================
 
 input:
-  # Path to STEP_1 output_to_input directory (relative to this workflow directory)
-  # AGS files are found at: <step1_output_dir>/gene_group-<gene_family>/
-  step1_output_dir: "../../../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery"
+  # Path to output_to_input directory (relative to this workflow directory)
+  # AGS files are found at: <output_to_input_dir>/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/
+  output_to_input_dir: "../../../../output_to_input"
 
 # ============================================================
 # PROJECT SETTINGS
 # ============================================================
 
 project:
-  name: "gene_families"
+  name: "gene_groups"
   database: "speciesN_T1-speciesN"
 
 # ============================================================
@@ -165,11 +165,9 @@ resources:
     memory_gb: 32
     time_hours: 336       # 14 days
 
-  # Visualization (ETE3 rendering)
-  visualization:
-    cpus: 4
-    memory_gb: 16
-    time_hours: 2
+# NOTE: Tree visualization is handled by the separate STEP_3-tree_visualization
+# workflow, which consumes the newick files produced here. This decouples
+# scientific computation from visualization library quirks.
 
 # =============================================================================
 # Execution Mode

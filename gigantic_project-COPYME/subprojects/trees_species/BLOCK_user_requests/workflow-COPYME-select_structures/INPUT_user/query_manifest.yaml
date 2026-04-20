@@ -1,0 +1,96 @@
+# ============================================================================
+# QUERY MANIFEST -- Topological queries against species tree structures
+# ============================================================================
+#
+# This YAML file specifies which species tree structures (from the 105 produced
+# by trees_species) you want to pick out based on their topology.
+#
+# Each query has up to three fields:
+#
+#   name (required):
+#     Short identifier -- used as the filename stem for output artifacts.
+#     Use underscores, no spaces.
+#
+#   description (optional):
+#     Human-readable description -- shown in the summary report.
+#
+#   require_direct_child (list of {parent, child} dicts):
+#     Asserts that a phylogenetic block exists where the named parent clade has
+#     the named child as a DIRECT child (no intervening nodes). Uses bare clade
+#     names (e.g. "Metazoa", "Ctenophora") -- not CXXX_ prefixed clade IDs.
+#
+#   require_sister (list of [A, B] pairs):
+#     Asserts that clades A and B are SISTER clades (share the same immediate
+#     parent on the species tree).
+#
+# All conditions in a query are AND-combined: a structure matches ONLY IF every
+# require_direct_child AND every require_sister condition holds.
+#
+# ============================================================================
+# EXAMPLE: Leonid's 4 trees (Ctenophora vs Porifera basal x two ParaHoxozoa arrangements)
+# ============================================================================
+# Leonid asked for 4 trees in a 2x2 matrix:
+#   - Axis 1 (basal animal): Ctenophora-sister  vs  Porifera-sister
+#   - Axis 2 (ParaHoxozoa):  Placozoa sister to (Cnid+Bil)  vs  (Plac+Cnid) sister to Bil
+#
+# Each tree is pinned by just 2 conditions:
+#   - "Metazoa::Ctenophora" direct-child -> Ctenophora-sister (since Metazoa
+#     has exactly 2 children in a binary tree, the other one contains all
+#     non-Ctenophore animals)
+#   - Sister(Cnidaria, Bilateria) -> Placozoa is sister to the Cnid+Bil clade
+#   - Sister(Placozoa, Cnidaria) -> Bilateria is sister to the Plac+Cnid clade
+# ============================================================================
+
+# ============================================================================
+# SETTINGS (optional top-level block)
+# ============================================================================
+#
+# canonical_representative:
+#   Since Leonid only specified the 5-clade animal backbone, any differences
+#   in Ichthyosporea / Filozoa / etc. internals are "don't care" and should
+#   inherit from his input tree (structure_001). When a query matches multiple
+#   structures because the unconstrained regions vary, we pick the ONE closest
+#   to structure_001 by shared-block count. This gives exactly one canonical
+#   tree per query (4 trees total for Leonid's request).
+#
+# enabled: true/false -- whether to pick canonical representatives at all
+# reference_structure: structure_001 is the user's input tree (always)
+#
+# Per-query override: set `canonical_representative: {enabled: false}` inside
+# a query to disable canonical picking for just that query.
+# ============================================================================
+
+settings:
+  canonical_representative:
+    enabled: true
+    reference_structure: structure_001
+
+queries:
+
+  - name: Tree_1_Cteno_basal_Plac_sister_to_CnidBil
+    description: "Ctenophora basal to all other animals; Placozoa sister to (Cnidaria + Bilateria)"
+    require_direct_child:
+      - { parent: Metazoa, child: Ctenophora }
+    require_sister:
+      - [ Cnidaria, Bilateria ]
+
+  - name: Tree_2_Cteno_basal_PlacCnid_sister_to_Bil
+    description: "Ctenophora basal to all other animals; (Placozoa + Cnidaria) sister to Bilateria"
+    require_direct_child:
+      - { parent: Metazoa, child: Ctenophora }
+    require_sister:
+      - [ Placozoa, Cnidaria ]
+
+  - name: Tree_3_Porifera_basal_Plac_sister_to_CnidBil
+    description: "Porifera basal to all other animals; Placozoa sister to (Cnidaria + Bilateria)"
+    require_direct_child:
+      - { parent: Metazoa, child: Porifera }
+    require_sister:
+      - [ Cnidaria, Bilateria ]
+
+  - name: Tree_4_Porifera_basal_PlacCnid_sister_to_Bil
+    description: "Porifera basal to all other animals; (Placozoa + Cnidaria) sister to Bilateria"
+    require_direct_child:
+      - { parent: Metazoa, child: Porifera }
+    require_sister:
+      - [ Placozoa, Cnidaria ]

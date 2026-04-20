@@ -33,12 +33,12 @@ STEP_2 workflow template for phylogenetic analysis with configurable tree-buildi
    - **5c. VeryFastTree** - Parallelized FastTree (large datasets only)
    - **5d. PhyloBayes** - Bayesian phylogenetic inference (Bayesian counterpoint)
 
-6. **Visualization** (Processes 6-7)
-   - Human-friendly tree visualization (script 006)
-   - Computer-vision tree visualization (script 007)
+6. **Run log** (Process 6)
+   - Writes timestamped run log to `ai/logs/` for reproducibility
 
-7. **Export** (Process 8)
-   - Symlinks alignment, trimmed alignment, and tree files to output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+**Export**: `RUN-workflow.sh` creates symlinks from `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` to the tree newick files produced here.
+
+**Visualization**: Tree rendering (PDF/SVG) is handled by the separate **STEP_3-tree_visualization** workflow, which consumes the newick files produced here. This decoupling isolates scientific computation from visualization-library instability.
 
 ---
 
@@ -109,9 +109,7 @@ workflow-COPYME-phylogenetic_analysis/
 │   ├── 5_a-output/                        # FastTree output (if enabled)
 │   ├── 5_b-output/                        # IQ-TREE output (if enabled)
 │   ├── 5_c-output/                        # VeryFastTree output (if enabled)
-│   ├── 5_d-output/                        # PhyloBayes output (if enabled)
-│   ├── 6-output/                          # Human-friendly visualizations
-│   └── 7-output/                          # Computer-vision visualizations
+│   └── 5_d-output/                        # PhyloBayes output (if enabled)
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
@@ -124,9 +122,7 @@ workflow-COPYME-phylogenetic_analysis/
         ├── 005_b_ai-bash-run_iqtree.sh
         ├── 005_c_ai-bash-run_veryfasttree.sh
         ├── 005_d_ai-bash-run_phylobayes.sh
-        ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-        ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-        └── 008_ai-python-write_run_log.py
+        └── 006_ai-python-write_run_log.py
 ```
 
 ---
@@ -143,8 +139,8 @@ workflow-COPYME-phylogenetic_analysis/
 | IQ-TREE | `5_b-output/5_b_ai-ags-*.treefile` | IQ-TREE ML phylogeny |
 | VeryFastTree | `5_c-output/5_c_ai-ags-*.veryfasttree` | VeryFastTree ML phylogeny |
 | PhyloBayes | `5_d-output/5_d_ai-ags-*.phylobayes.nwk` | PhyloBayes Bayesian consensus tree |
-| Human visualization | `6-output/6_ai-*-human_friendly.{svg,pdf}` | Human-readable tree images |
-| CV visualization | `7-output/7_ai-*-computer_vision_friendly.{svg,pdf}` | Computer-vision tree images |
+
+Tree visualizations (PDF/SVG) are produced by the separate **STEP_3-tree_visualization** workflow.
 
 ---
 

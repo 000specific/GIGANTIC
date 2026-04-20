@@ -37,11 +37,16 @@ import csv
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 
 import yaml
+
+# Add scripts directory to path for utility imports
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -866,6 +871,8 @@ def write_annogroups_by_origin( origins___annogroup_ids, clade_id_names___phylog
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 002: DETERMINE ANNOGROUP ORIGINS" )
     logger.info( "=" * 80 )
@@ -927,6 +934,26 @@ def main():
     logger.info( f"  {output_summary_file.name}" )
     logger.info( f"  {output_by_origin_directory.name}/ ({len( origins___annogroup_ids )} files)" )
     logger.info( "=" * 80 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    total_annogroups_input = len( annogroup_ids___annogroup_data )
+    origin_found_count = len( annogroup_origins )
+    single_species_count = sum( 1 for data in annogroup_origins.values() if data[ 'species_count' ] == 1 )
+    multi_species_count = origin_found_count - single_species_count
+    emit_run_summary_fragment(
+        script_number = 2,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'annogroups_input': total_annogroups_input,
+            'origins_found': origin_found_count,
+            'origins_not_found': total_annogroups_input - origin_found_count,
+            'single_species_annogroups': single_species_count,
+            'multi_species_annogroups': multi_species_count,
+            'distinct_origin_transition_blocks': len( origins___annogroup_ids )
+        }
+    )
 
     return 0
 
