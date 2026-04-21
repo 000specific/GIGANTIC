@@ -1,0 +1,27 @@
+# GIGANTIC upload_manifest.tsv — STEP_2 phylogenetic_analysis template
+# ============================================================================
+# Describes which STEP_2 output files get published to the server.
+# Tree newick files default to `yes` (scientific artifact); alignments and
+# intermediate files default to `no`. Flip as desired.
+#
+# See the workflow-COPYME-tree_visualization/upload_manifest.tsv for full
+# column documentation.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+# ----- Tree newick files (primary scientific artifacts) -----
+OUTPUT_pipeline/5_a-output/*.fasttree	yes		FastTree (newick)	tree	FastTree ML phylogeny in newick format.	10
+OUTPUT_pipeline/5_b-output/*.treefile	yes		IQ-TREE (newick)	tree	IQ-TREE ML phylogeny with UFBoot/aLRT support.	20
+OUTPUT_pipeline/5_c-output/*.veryfasttree	yes		VeryFastTree (newick)	tree	VeryFastTree ML phylogeny.	30
+OUTPUT_pipeline/5_d-output/*.phylobayes.nwk	yes		PhyloBayes consensus (newick)	tree	PhyloBayes consensus tree from MCMC chains.	40
+#
+# ----- Alignments (off by default; flip to yes for full transparency) -----
+OUTPUT_pipeline/3-output/*.mafft	no		MAFFT alignment	alignment	Multiple sequence alignment.	50
+OUTPUT_pipeline/4-output/*.clipkit-smartgap	no		ClipKit trimmed alignment	alignment	ClipKit-trimmed MAFFT alignment (used for tree building).	60
+#
+# ----- IQ-TREE companion outputs -----
+OUTPUT_pipeline/5_b-output/*.contree	no		IQ-TREE consensus (newick)	tree	Majority-rule consensus tree.	25
+OUTPUT_pipeline/5_b-output/*.iqtree	no		IQ-TREE report	qc	Run report with model selection details.	70
+#
+# ----- Run log -----
+OUTPUT_pipeline/6-output/6_ai-run_log.tsv	no		Run log	qc	Workflow execution summary.	90

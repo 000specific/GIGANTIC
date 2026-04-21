@@ -2,8 +2,9 @@
 **/software/*
 !**/software/.gitkeep
 
-# Backup/archive run directories (prefixed with x_)
-x_workflow-RUN_*/
+# Backup/archive files and directories (prefixed with x_)
+# Covers all archived runs, superseded workflows, etc.
+x_*
 
 # NextFlow execution artifacts
 work/

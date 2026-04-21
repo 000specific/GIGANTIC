@@ -73,7 +73,7 @@ output_to_input_directory = ( config_directory / config[ 'input' ][ 'output_to_i
 visualization_config = config.get( 'visualization', {} )
 show_tip_labels_max_tips = visualization_config.get( 'show_tip_labels_max_tips', 500 )
 color_tips_by_species = visualization_config.get( 'color_tips_by_species', True )
-tip_label_font_size_px = visualization_config.get( 'tip_label_font_size_px', 11 )
+tip_label_font_size_px = visualization_config.get( 'tip_label_font_size_px', 10 )
 show_branch_support = visualization_config.get( 'show_branch_support', True )
 branch_support_font_size_px = visualization_config.get( 'branch_support_font_size_px', 7 )
 canvas_width_px = visualization_config.get( 'canvas_width_px', 1000 )
@@ -191,30 +191,88 @@ def discover_trees( gene_family_step2_directory ):
 # Pattern 2 (genome proteins): g_GENE-t_TRANSCRIPT-p_PROTEIN-n_Kingdom_Phylum_..._Genus_species
 
 rgs_header_pattern = re.compile( r'^rgs_[^-]+-([^-]+)-' )
-genome_taxonomy_pattern = re.compile( r'-n_([A-Z][A-Za-z_]+)$' )
+genome_taxonomy_pattern = re.compile( r'-n_([A-Z][A-Za-z_0-9]+)$' )
+genome_gene_pattern = re.compile( r'^g_([^-]+)-' )
+rgs_gene_pattern = re.compile( r'^rgs_[^-]+-[^-]+-([^-]+)-' )
 
 
 def extract_species_from_label( tip_label ):
     """
     Extract a species identifier from a GIGANTIC tip label.
 
+    GIGANTIC phyloname format (from AI_GUIDE-project.md):
+        Kingdom_Phylum_Class_Order_Family_Genus_species
+    where the first 5 fields are taxonomy classes (positions 0-4),
+    field 5 is Genus, and fields 6+ are species (multi-token species
+    names like 'sp_m_RMFG_2023' are valid).
+
     Returns:
-        str species identifier, or 'unknown' if no pattern matches
+        str species identifier (Genus_species), or 'unknown' if no match
     """
     # RGS case: second dash-separated field is species short name
     rgs_match = rgs_header_pattern.match( tip_label )
     if rgs_match:
         return rgs_match.group( 1 )
 
-    # Genome protein case: taxonomy at end, last two underscore fields = Genus_species
+    # Genome protein case: -n_<taxonomy> at end, split by _
+    # Use GIGANTIC phyloname convention: parts[5] = Genus, parts[6:] = species
     taxonomy_match = genome_taxonomy_pattern.search( tip_label )
     if taxonomy_match:
         taxonomy_parts = taxonomy_match.group( 1 ).split( '_' )
-        if len( taxonomy_parts ) >= 2:
-            # Last two fields are Genus_species
+        if len( taxonomy_parts ) >= 7:
+            genus = taxonomy_parts[ 5 ]
+            species = '_'.join( taxonomy_parts[ 6: ] )
+            return f"{genus}_{species}"
+        elif len( taxonomy_parts ) >= 2:
+            # Fallback for short/malformed phylonames
             return f"{taxonomy_parts[ -2 ]}_{taxonomy_parts[ -1 ]}"
 
     return 'unknown'
+
+
+def shorten_tip_label( tip_label, max_length = 60 ):
+    """
+    Convert a verbose GIGANTIC identifier into a compact readable label.
+
+    Input examples:
+      g_g33157-t_g33157.t1-p_g33157.t1-n_Metazoa_Annelida_..._Urechis_unicinctus
+      rgs_aquaporins-human-AQP1-hgnc_gg305_Aquaporin-NP_001316801_1
+
+    Output:
+      Urechis_unicinctus | g33157
+      human | AQP1
+
+    Falls back to original if no pattern matches. Truncates any remaining
+    overly-long labels to max_length.
+    """
+    # Genome protein path: gene = after g_, species = last two tokens of -n_ taxonomy
+    genome_gene = genome_gene_pattern.match( tip_label )
+    genome_tax = genome_taxonomy_pattern.search( tip_label )
+    if genome_gene and genome_tax:
+        gene = genome_gene.group( 1 )
+        tax_parts = genome_tax.group( 1 ).split( '_' )
+        if len( tax_parts ) >= 2:
+            species = f"{tax_parts[ -2 ]}_{tax_parts[ -1 ]}"
+            short = f"{species} | {gene}"
+            if len( short ) > max_length:
+                short = short[ :max_length - 1 ] + '…'
+            return short
+
+    # RGS path: species short name (parts[1]), gene (parts[2])
+    rgs_gene = rgs_gene_pattern.match( tip_label )
+    rgs_species = rgs_header_pattern.match( tip_label )
+    if rgs_gene and rgs_species:
+        species = rgs_species.group( 1 )
+        gene = rgs_gene.group( 1 )
+        short = f"{species} | {gene}"
+        if len( short ) > max_length:
+            short = short[ :max_length - 1 ] + '…'
+        return short
+
+    # Fallback: truncate the original
+    if len( tip_label ) > max_length:
+        return tip_label[ :max_length - 1 ] + '…'
+    return tip_label
 
 
 # colorBlindness-friendly palette (LightBlue2DarkBlue cycled through distinct hues)
@@ -267,20 +325,41 @@ def render_tree_to_pdf_and_svg( newick_path, method_name, pdf_output_path, svg_o
 
     tip_count = tree.ntips
 
-    # Canvas sizing
+    # Pull original tip labels (these are the full GIGANTIC identifiers from the newick)
+    original_tip_labels = list( tree.get_tip_labels() )
+
+    # Build species-color mapping from original labels (species extraction needs the full identifier)
+    tip_colors = None
+    if color_tips_by_species:
+        tip_colors, _ = build_tip_colors( original_tip_labels )
+
+    # Shorten tip labels for display: "Genus_species | GENE" (~30-40 chars)
+    # toytree renders tips in the order given by get_tip_labels(), and
+    # tip_labels= accepts a list in that same order.
+    short_tip_labels = [ shorten_tip_label( lbl ) for lbl in original_tip_labels ]
+
+    # Dynamic canvas sizing:
+    #   * Height scales linearly with tip count (vertical trees can be arbitrarily tall)
+    #   * Width = tree-plot area + space for the longest tip label
+    #     so labels never get clipped regardless of length.
     canvas_height = max( canvas_height_min_px, canvas_height_per_tip_px * tip_count + 200 )
 
-    # Tip label visibility: hide labels for very large trees to keep figure legible
-    show_tip_labels = tip_count <= show_tip_labels_max_tips
+    # toytree partitions canvas_width between the tree branches and the tip-label
+    # column. To keep the tree structure readable even when long labels are shown,
+    # we reserve an explicit tree_area_width_px for branches and then add enough
+    # horizontal room on top for the actual label text so canvas_width is
+    # (tree_area + labels). The tree then gets at least tree_area_width_px, which
+    # is deliberately set >= the default canvas_width_px so labels-shown trees
+    # spread out as much (or more) than labels-hidden trees.
+    tree_area_width_px = max( canvas_width_px, 1200 )
+    label_padding_px = 80     # margin between tree and label column + right margin
+    # Approximate character width: Helvetica regular ~ 0.55 × font_size
+    approx_char_width_px = tip_label_font_size_px * 0.55
+    longest_label_chars = max( ( len( s ) for s in short_tip_labels ), default = 0 )
+    label_area_width_px = int( longest_label_chars * approx_char_width_px ) + label_padding_px
+    canvas_width = tree_area_width_px + label_area_width_px
 
-    # Tip label colors by species
-    tip_colors = None
-    species_legend = {}
-    if show_tip_labels and color_tips_by_species:
-        tip_labels = list( tree.get_tip_labels() )
-        tip_colors, species_legend = build_tip_colors( tip_labels )
-
-    # Detect whether newick contains branch support values (numeric node labels)
+    # Detect whether newick contains branch support values (numeric internal node labels)
     has_node_support = False
     if show_branch_support:
         try:
@@ -296,14 +375,21 @@ def render_tree_to_pdf_and_svg( newick_path, method_name, pdf_output_path, svg_o
         except Exception:
             has_node_support = False
 
+    # Tip labels are ALWAYS shown for gene family trees — they're rendered vertically
+    # so canvas height can grow unboundedly without readability loss. The config
+    # `show_tip_labels_max_tips` threshold is kept only as a config escape hatch
+    # (user can set it to 0 to force-hide if they ever want to).
+    show_tip_labels = show_tip_labels_max_tips <= 0 or tip_count <= show_tip_labels_max_tips
+
     # Build draw kwargs
     draw_kwargs = {
-        'width': canvas_width_px,
+        'width': canvas_width,
         'height': canvas_height,
         'tip_labels_align': True,
     }
 
     if show_tip_labels:
+        draw_kwargs[ 'tip_labels' ] = short_tip_labels
         draw_kwargs[ 'tip_labels_style' ] = { 'font-size': f'{tip_label_font_size_px}px' }
         if tip_colors:
             draw_kwargs[ 'tip_labels_colors' ] = tip_colors
@@ -325,7 +411,7 @@ def render_tree_to_pdf_and_svg( newick_path, method_name, pdf_output_path, svg_o
         if not show_tip_labels:
             title_text += "  (tip labels hidden for readability)"
         canvas.text(
-            canvas_width_px / 2, 20, title_text,
+            canvas_width / 2, 20, title_text,
             style = { 'font-size': '14px', 'text-anchor': 'middle', 'fill': '#222222', 'font-weight': 'bold' }
         )
     except Exception as draw_error:

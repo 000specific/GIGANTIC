@@ -108,8 +108,29 @@ inputs:
 # ============================================================================
 
 project:
-  # Project database name (used in output filenames)
-  database: "speciesN_T1-speciesN"
+  # Project database identifier (embedded in output filenames for provenance).
+  #
+  # Format: {blast_database}-{keeper_species_set}
+  #
+  #   {blast_database}      = the proteome set used for BLAST homolog discovery.
+  #                           Convention: speciesN_T1 where N is the species count
+  #                           and T1 means Transcript-1 (primary isoform only).
+  #                           Example: species70_T1 = 70-species GIGANTIC proteome DB, T1 isoforms.
+  #
+  #   {keeper_species_set}  = the species set retained in the final AGS after
+  #                           species_keeper_list.tsv filtering (script 014).
+  #                           Often identical to the blast_database (keep everything),
+  #                           but can differ when filtering a large DB down to a subset
+  #                           (e.g. species200_T1-species50 = searched 200, kept 50).
+  #
+  # Output files embed this in their names:
+  #   4_ai-bgs-{project.database}-{gene_family}-fullseqs.aa
+  #  13_ai-cgs-{project.database}-{gene_family}.aa
+  #  14_ai-cgs-{project.database}-{gene_family}-filtered.aa
+  #  16_ai-ags-{project.database}-{gene_family}-homologs.aa
+  #
+  # TEMPLATE PLACEHOLDER - replace speciesN_T1-speciesN with your actual values.
+  database: "speciesN_T1-speciesN"  # <-- REPLACE: set to your blastdb-keeper combo
 
 # ============================================================================
 # BLAST PARAMETERS

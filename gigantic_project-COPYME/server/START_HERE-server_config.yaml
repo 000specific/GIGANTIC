@@ -10,7 +10,7 @@
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.6 | 2026 April 02 | Purpose: GIGANTIC data server configuration
+# AI: Claude Code | Opus 4.7 | 2026 April 20 | Purpose: GIGANTIC data server configuration (drill-down hierarchy)
 # Human: Eric Edsinger
 
 # ============================================================================
@@ -24,80 +24,68 @@ project_name: "GIGANTIC DATA"
 port: 9456
 
 # Auto-refresh interval in seconds
-# How often the server re-scans server_data/ for new or changed files
+# How often the server re-scans each subproject's upload_to_server/ tree.
+# The directory tree is cached between refreshes for fast page loads.
 refresh_interval_seconds: 300
 
 # ============================================================================
-# Subprojects to Serve
+# Subproject Ordering (EXPLICIT LIST — only these are shown)
 # ============================================================================
-# Controls which subproject upload_to_server/ directories are served.
+# The landing page shows subprojects in this order.
+# Subprojects NOT listed here are not displayed (the server silently ignores
+# them even if they have upload_to_server/ data).
 #
-# Option 1: Serve ALL subprojects that have upload_to_server/ directories
-#   subprojects: "all"
-#
-# Option 2: Serve only specific subprojects (list by directory name)
-#   subprojects:
-#     - annotations_hmms
-#     - trees_gene_families
-#     - trees_species
+# This is an explicit allowlist — edit to include/exclude subprojects.
 
-subprojects: "all"
+subproject_order:
+  - gene_sizes
+  - trees_species
+  - trees_gene_families
+  - trees_gene_groups
+  - synteny
+  - annotations_X_ocl
+  - gene_sizes_X_ocl
+  - orthogroups_X_ocl
+  - trees_gene_families_X_ocl
+  - trees_gene_groups_X_ocl
+  - ocl_perspectives
+  - moroz_innovations
+
+# ============================================================================
+# Landing Page: Empty Subprojects
+# ============================================================================
+# If a listed subproject has upload_to_server/ but no files yet, should we
+# still show its card on the landing page (dimmed with "NO DATA YET")?
+#
+#   true  = show as "NO DATA YET" placeholder (keeps full mental map visible)
+#   false = hide until data appears
+
+show_empty_subprojects: true
 
 # ============================================================================
 # Display Customization
 # ============================================================================
 
-# Custom display names for subprojects (optional)
-# If not specified, directory names are auto-formatted:
-#   underscores become spaces, title case applied
+# Custom display names for subprojects and directories (optional).
+# If not listed here, directory names are auto-formatted:
+#   underscores become spaces, uppercase applied.
 #
-# display_names:
+# Example:
 #   trees_gene_families: "GENE FAMILY TREES"
 #   trees_species: "SPECIES TREES"
-#   annotations_hmms: "FUNCTIONAL ANNOTATIONS"
-#   ocl_X_annotations: "OCL x ANNOTATIONS"
 display_names: {}
-
-# Subprojects to exclude from the landing page display
-# Even if data exists in server_data/, these won't appear on the web interface.
-# Useful for infrastructure subprojects that produce internal-only data.
-#
-# exclude_from_display:
-#   - phylonames
-#   - genomesDB
-exclude_from_display: []
-
-# Custom sort order for sections within folder pages
-# Sections matching these keywords (case-insensitive) appear first.
-# Unmatched sections appear alphabetically after these.
-section_sort_order:
-  - sequence
-  - alignment
-  - tree
-  - visualization
-  - annotation
-  - database
 
 # ============================================================================
 # File Filtering
 # ============================================================================
 
 # Filenames matching these patterns are hidden from the web interface.
-# Uses simple substring matching (case-sensitive).
+# Substring match, case-sensitive.
 exclude_file_patterns:
   - ".gitignore"
   - ".DS_Store"
-  - "README.md"
-
-# Exclude files in specific subproject types by keyword (optional)
-# Format: if subproject name contains the key, exclude files containing
-# any of the listed keywords.
-#
-# subproject_file_exclusions:
-#   trees:
-#     - computer_vision
-#     - image_analysis
-subproject_file_exclusions: {}
+  - ".upload_state.tsv"
+  - ".section_metadata.tsv"
 
 # ============================================================================
 # SLURM Settings (used by RUN-start_server.sbatch)
@@ -119,4 +107,4 @@ slurm:
 
 credits:
   ai: "Claude Code"
-  human: "Your Name"
+  human: "Eric Edsinger"

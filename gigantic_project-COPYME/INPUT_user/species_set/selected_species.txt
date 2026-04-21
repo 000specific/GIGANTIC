@@ -1,25 +1,8 @@
-# GIGANTIC Project Species List
+# GIGANTIC genomesDB STEP_4 - Selected Species List
+# Species71 minus Pirum_gemmata (BUSCO 2%)
+# Result: 70 species
 #
-# This is your PROJECT-WIDE species list. All subprojects that need species
-# information will read from this file (or copies of it for archival purposes).
-#
-# FORMAT:
-#   - One species per line
-#   - Use format: Genus_species (underscore, not space)
-#   - Lines starting with # are comments
-#
-# EXAMPLES:
-#   Homo_sapiens
-#   Aplysia_californica
-#   Octopus_bimaculoides
-#
-# ADDING SPECIES:
-#   Simply add species names below this comment block.
-#   After editing, run the phylonames subproject first to generate mappings.
-#
-# ============================================================================
-# YOUR SPECIES LIST (add below this line):
-# ============================================================================
+# Format: one Genus_species per line
 Abeoforma_whisleri
 Acropora_muricata
 Adineta_vaga

@@ -236,6 +236,25 @@ process write_run_log {
     """
 }
 
+/*
+ * Process: Skip BUSCO (placeholder when busco.enabled is false)
+ * Produces empty-but-valid output files so downstream Step 6 can proceed.
+ */
+process skip_busco {
+    label 'local'
+
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+
+    output:
+        path "5-output/5_ai-busco_summary.tsv", emit: summary
+
+    script:
+    """
+    mkdir -p 5-output
+    echo '# BUSCO evaluation skipped (busco.enabled: false in START_HERE-user_config.yaml)' > 5-output/5_ai-busco_summary.tsv
+    """
+}
+
 // ============================================================================
 // WORKFLOW
 // ============================================================================
@@ -255,13 +274,19 @@ workflow {
     // Step 4: Calculate assembly statistics (depends on step 3)
     calculate_assembly_statistics(standardize_genome_annotation_phylonames.out.genomes)
 
-    // Step 5: Run BUSCO evaluation (depends on step 2)
-    run_busco_evaluation(clean_proteome_invalid_residues.out.cleaned_proteomes)
+    // Step 5: BUSCO evaluation — conditional on config (busco.enabled)
+    if ( params.busco_enabled ) {
+        run_busco_evaluation(clean_proteome_invalid_residues.out.cleaned_proteomes)
+        busco_summary_ch = run_busco_evaluation.out.summary
+    } else {
+        skip_busco()
+        busco_summary_ch = skip_busco.out.summary
+    }
 
     // Step 6: Summarize quality (depends on steps 1, 4, 5)
     summarize_quality(
         calculate_assembly_statistics.out.stats,
-        run_busco_evaluation.out.summary,
+        busco_summary_ch,
         standardize_proteome_phylonames.out.manifest
     )
 

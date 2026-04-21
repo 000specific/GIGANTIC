@@ -1,0 +1,59 @@
+# GIGANTIC upload_manifest.tsv — BLOCK_ocl_analysis template (orthogroups_X_ocl)
+# ============================================================================
+# When workflow-COPYME-ocl_analysis is copied to workflow-RUN_N-ocl_analysis,
+# this manifest travels with it and describes which files from
+# OUTPUT_pipeline/structure_*/N-output/ get published to the server.
+#
+# Upload pipeline:
+#   workflow-RUN_N/upload_manifest.tsv
+#     → build by: bash ../../RUN-update_upload_to_server.sh
+#     → symlinks populated at:
+#         ../../upload_to_server/BLOCK_ocl_analysis/workflow-RUN_N/structure_NNN/N-output/
+#
+# ============================================================================
+# COLUMNS (TAB-separated — mind the tab count; header row REQUIRED):
+#   source_path     Path to file(s). Relative to this manifest's directory.
+#                   Globs allowed (e.g., OUTPUT_pipeline/structure_*/4-output/*.tsv).
+#   include         yes | no  — toggle publication.
+#   dest_name       (optional) Override filename in upload_to_server/.
+#   display_label   (optional) Human-readable title shown in the web UI.
+#   file_category   (optional) Grouping label: visualization | tree | alignment
+#                   | data | summary | qc | log.
+#   description     (optional) One-line tooltip / subtitle.
+#   order           (optional) Integer sort key within category (default 100).
+# ============================================================================
+#
+# This COPYME template has every line set to `no` — in the actual RUN_N copy,
+# flip to `yes` for files you want published. Glob patterns span all 105
+# candidate species-tree structures at once.
+#
+# Tiering scheme:
+#   Tier 3 = interpretable OCL results (the scientific deliverables)
+#   Tier 4 = raw/massive per-structure reference tables
+#
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+#
+# ----- Tier 3 -- interpretable OCL results (per structure, all 105) -----
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_orthogroups-complete_ocl_summary.tsv	no		Orthogroups — complete OCL summary	summary	Per-orthogroup conservation/loss summary across the species tree.	10
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_path_states-per_orthogroup_per_species.tsv	no		Path states (per orthogroup × species)	data	Path-state matrix — the novel biological deliverable of this analysis.	20
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_clades-comprehensive_statistics.tsv	no		Clades — comprehensive statistics	data	Per-clade orthogroup/conservation/loss statistics.	30
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_species-summaries.tsv	no		Species summaries	data	Per-species orthogroup-presence summary.	40
+OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_loss-per_block.tsv	no		Conservation/loss per phylogenetic block	data	Conservation and loss events per parent::child edge.	50
+OUTPUT_pipeline/structure_*/2-output/2_ai-structure_*_orthogroup_origins.tsv	no		Orthogroup origins	data	Inferred origin clade for each orthogroup.	60
+OUTPUT_pipeline/structure_*/5-output/5_ai-structure_*_validation_report.txt	no		Validation report	qc	Integrity checks for the OCL analysis.	70
+#
+# ----- Tier 4 -- raw / massive per-structure reference tables -----
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_orthogroups-gigantic_identifiers.tsv	no		Orthogroups — GIGANTIC identifiers	data	Raw orthogroup → GIGANTIC-identifier mapping (~170 MB each).	80
+OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_patterns-per_orthogroup.tsv	no		Conservation patterns per orthogroup	data	Full per-orthogroup conservation-pattern table (~232 MB each).	82
+OUTPUT_pipeline/structure_*/2-output/*_orthogroups_by_origin/*.txt	no		Orthogroups by origin (per-clade lists)	data	Per-origin orthogroup ID lists — one .txt per origin clade.	84
+#
+# ----- Phylogenetic substrate (species-tree inputs) — NOT hosted here -----
+# Policy: each subproject hosts only its OWN outputs. These files are inputs
+# copied from trees_species outputs; they belong under /trees_species/ on
+# the server. Leave these lines as `no` — they document what NOT to publish.
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_parent_child_table.tsv	no		Parent-child table (species tree)	data	Input from trees_species; hosted there.	90
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_phylogenetic_blocks.tsv	no		Phylogenetic blocks (species tree)	data	Input from trees_species; hosted there.	92
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_phylogenetic_paths.tsv	no		Phylogenetic paths (species tree)	data	Input from trees_species; hosted there.	94
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_clade_mappings.tsv	no		Clade mappings (species tree)	data	Input from trees_species; hosted there.	96

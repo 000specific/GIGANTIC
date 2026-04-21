@@ -1,0 +1,38 @@
+# GIGANTIC upload_manifest.tsv — STEP_3 tree_visualization template
+# ============================================================================
+# When workflow-COPYME-tree_visualization is copied to workflow-RUN_N-tree_visualization,
+# this manifest travels with it and describes which terminal files from
+# OUTPUT_pipeline/N-output/ get published to the server.
+#
+# The surrounding hierarchy (subproject / gene_family / step / workflow)
+# is INFERRED from the manifest's location by RUN-update_upload_to_server.sh.
+# You only describe files in this manifest.
+#
+# ============================================================================
+# COLUMNS (TAB-separated — mind the tab count; header row REQUIRED):
+#   source_path     Path to file(s). Relative to this manifest's directory.
+#                   Globs allowed (e.g., OUTPUT_pipeline/1-output/*.pdf).
+#   include         yes | no  — toggle publication.
+#   dest_name       (optional) Override the filename in upload_to_server/.
+#                   Blank = use source basename.
+#   display_label   (optional) Human-readable title shown in the web UI.
+#                   Blank = use filename.
+#   file_category   (optional) Grouping label. Files in the same category
+#                   are grouped under the same subsection.
+#                   Suggested: visualization, tree, alignment, summary, qc, log.
+#   description     (optional) One-line tooltip / subtitle.
+#   order           (optional) Integer sort key within category (default 100).
+#                   Lower = earlier.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/1-output/*-fasttree.pdf	yes		FastTree tree (PDF)	visualization	Annotated phylogenetic tree from FastTree.	10
+OUTPUT_pipeline/1-output/*-iqtree.pdf	yes		IQ-TREE tree (PDF)	visualization	Annotated phylogenetic tree from IQ-TREE.	20
+OUTPUT_pipeline/1-output/*-veryfasttree.pdf	yes		VeryFastTree tree (PDF)	visualization	Annotated phylogenetic tree from VeryFastTree.	30
+OUTPUT_pipeline/1-output/*-phylobayes.pdf	yes		PhyloBayes tree (PDF)	visualization	Annotated phylogenetic tree from PhyloBayes.	40
+OUTPUT_pipeline/1-output/*-fasttree.svg	yes		FastTree tree (SVG)	visualization	Vector SVG (editable in Inkscape/Illustrator).	11
+OUTPUT_pipeline/1-output/*-iqtree.svg	yes		IQ-TREE tree (SVG)	visualization	Vector SVG (editable in Inkscape/Illustrator).	21
+OUTPUT_pipeline/1-output/*-veryfasttree.svg	yes		VeryFastTree tree (SVG)	visualization		31
+OUTPUT_pipeline/1-output/*-phylobayes.svg	yes		PhyloBayes tree (SVG)	visualization		41
+OUTPUT_pipeline/1-output/1_ai-visualization_summary.md	yes		Visualization summary	summary	Per-method render status and file list.	90
+OUTPUT_pipeline/1-output/1_ai-visualization-placeholder.txt	no		Render failure placeholder	qc	Present only if toytree rendering soft-failed.	95

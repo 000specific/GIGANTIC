@@ -1,0 +1,53 @@
+# GIGANTIC upload_manifest.tsv — BLOCK_ocl_analysis template (annotations_X_ocl)
+# ============================================================================
+# Publishes OCL results keyed on functional annotation groups (annogroups)
+# rather than orthogroups. Mirrors the orthogroups_X_ocl manifest structure.
+#
+# When workflow-COPYME-ocl_analysis is copied to workflow-RUN_N-ocl_analysis,
+# this manifest travels with it. Flip lines to `yes` to publish.
+# ============================================================================
+# Destination (auto-derived by shared helper):
+#   upload_to_server/BLOCK_ocl_analysis/workflow-RUN_N/structure_NNN/N-output/
+#
+# Policy: each subproject hosts its OWN outputs only. The phylogenetic
+# substrate files (parent_child_table, phylogenetic_blocks, phylogenetic_paths,
+# clade_mappings) are INPUTS copied from trees_species; they are hosted under
+# /trees_species/ on the server, NOT here.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+#
+# ----- Annogroup input maps (per-structure, published as scientific context) -----
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_annogroup_map.tsv	no		Annogroup map	data	Annogroup ID → annotation identifier mapping.	10
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_annogroup_subtypes_manifest.tsv	no		Annogroup subtypes manifest	data	Classification of annogroups into combo/single/zero subtypes.	12
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_annogroups-combo.tsv	no		Annogroups — combo	data	Combo-subtype annogroup table.	14
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_annogroups-single.tsv	no		Annogroups — single	data	Single-subtype annogroup table.	16
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_annogroups-zero.tsv	no		Annogroups — zero	data	Zero-subtype annogroup table.	18
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_annogroups-species_identifiers.tsv	no		Annogroups — species identifiers	data	Species-identifier mapping within each annogroup.	19
+#
+# ----- Tier 3 -- interpretable OCL results (per structure, all 105) -----
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_annogroups-complete_ocl_summary-all_types.tsv	no		Annogroups OCL summary — all types	summary	Full OCL summary across all annogroup subtypes.	30
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_annogroups-complete_ocl_summary-combo.tsv	no		Annogroups OCL summary — combo	summary	OCL summary restricted to combo-subtype annogroups.	32
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_annogroups-complete_ocl_summary-single.tsv	no		Annogroups OCL summary — single	summary	OCL summary restricted to single-subtype annogroups.	34
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_annogroups-complete_ocl_summary-zero.tsv	no		Annogroups OCL summary — zero	summary	OCL summary restricted to zero-subtype annogroups.	36
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_path_states-per_annogroup_per_species.tsv	no		Path states (annogroup × species)	data	Path-state matrix per annogroup per species — the novel biological deliverable.	40
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_clades-comprehensive_statistics.tsv	no		Clades — comprehensive statistics	data	Per-clade annogroup/conservation/loss statistics.	42
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_species-summaries.tsv	no		Species summaries	data	Per-species annogroup-presence summary.	44
+OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_loss-per_block.tsv	no		Conservation/loss per phylogenetic block	data	Conservation and loss events per parent::child edge.	50
+OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_loss-summary.tsv	no		Conservation/loss summary	summary	Aggregated conservation/loss metrics.	52
+OUTPUT_pipeline/structure_*/2-output/2_ai-structure_*_annogroup_origins.tsv	no		Annogroup origins	data	Inferred origin clade for each annogroup.	60
+OUTPUT_pipeline/structure_*/2-output/2_ai-structure_*_origins_summary-annogroups_per_clade.tsv	no		Origins summary (annogroups per clade)	summary	Count of annogroups originating at each clade.	62
+OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_validation_report.txt	no		Validation report	qc	Integrity checks for the OCL analysis.	70
+OUTPUT_pipeline/structure_*/5-output/5_ai-structure_*_qc_metrics.tsv	no		QC metrics	qc	Final QC metrics for this structure's OCL analysis.	72
+#
+# ----- Tier 4 -- raw / massive per-structure reference tables -----
+OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_patterns-per_annogroup.tsv	no		Conservation patterns per annogroup	data	Full per-annogroup conservation-pattern table.	80
+OUTPUT_pipeline/structure_*/2-output/*_annogroups_by_origin/*.txt	no		Annogroups by origin (per-clade lists)	data	Per-origin annogroup ID lists — one .txt per origin clade.	84
+#
+# ----- Phylogenetic substrate (species-tree inputs) — NOT hosted here -----
+# Policy: each subproject hosts only its OWN outputs. These are inputs copied
+# from trees_species outputs; they belong under /trees_species/ on the server.
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_parent_child_table.tsv	no		Parent-child table (species tree)	data	Input from trees_species; hosted there.	90
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_phylogenetic_blocks.tsv	no		Phylogenetic blocks (species tree)	data	Input from trees_species; hosted there.	92
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_phylogenetic_paths.tsv	no		Phylogenetic paths (species tree)	data	Input from trees_species; hosted there.	94
+OUTPUT_pipeline/structure_*/1-output/1_ai-structure_*_clade_mappings.tsv	no		Clade mappings (species tree)	data	Input from trees_species; hosted there.	96

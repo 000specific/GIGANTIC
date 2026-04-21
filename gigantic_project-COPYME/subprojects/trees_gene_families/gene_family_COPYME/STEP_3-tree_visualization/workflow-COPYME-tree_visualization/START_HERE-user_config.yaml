@@ -40,17 +40,19 @@ input:
 # ============================================================
 
 visualization:
-  # Tip label visibility: hide tip labels for trees with more than this many tips
-  # (tree shape remains visible; labels become illegible at high density).
-  # Override by setting a very high number (e.g., 100000) to always show labels.
-  show_tip_labels_max_tips: 500
+  # Tip label visibility: hide tip labels for trees with more than this many tips.
+  # Labels are auto-shortened to "Genus_species | GENE" (~30-40 chars) before
+  # rendering, so they're readable even at high tip counts. The threshold exists
+  # only as an escape hatch for very large trees (thousands of tips) where even
+  # short labels overlap.
+  show_tip_labels_max_tips: 5000
 
   # Color tip labels by species (parsed from GIGANTIC gene identifier format).
   # If false, all tips use the default dark color.
   color_tips_by_species: true
 
   # Tip label font size in pixels
-  tip_label_font_size_px: 11
+  tip_label_font_size_px: 10
 
   # Show branch support values (bootstrap / aLRT / posterior) if present in newick.
   # Auto-detected per tree: if no numeric node labels, no support is shown.
