@@ -32,8 +32,18 @@ echo "  Downloading ${SPECIES}..."
 
 # Download genome ZIP (9_final_genome_files.zip)
 echo "  Downloading genome ZIP..."
-wget -q -L -O "${TEMP_DIR}/genome.zip" "${GENOME_URL}"
-unzip -q -o "${TEMP_DIR}/genome.zip" -d "${TEMP_DIR}/genome_extract"
+wget -q -L --no-check-certificate -O "${TEMP_DIR}/genome.zip" "${GENOME_URL}" 2>/dev/null || true
+if [ ! -s "${TEMP_DIR}/genome.zip" ]; then
+  echo "  WARNING: Genome ZIP download failed or is empty (Dryad may block automated downloads)."
+  echo "  *** USER INPUT NEEDED for ${SPECIES} ***"
+  echo "  Please download genome ZIP manually from: ${REPOSITORY_URL}"
+  echo "  Place genome.fasta into: ${OUTPUT_DIRECTORY}/"
+  echo "USER INPUT NEEDED: Dryad download blocked (403 Forbidden)" >> "${LOG_FILE}"
+  echo "Manual download URL: ${REPOSITORY_URL}" >> "${LOG_FILE}"
+  echo "  Download log: ${LOG_FILE}"
+  exit 0
+fi
+unzip -q -o "${TEMP_DIR}/genome.zip" -d "${TEMP_DIR}/genome_extract" 2>/dev/null || true
 
 # Find genome FASTA (*.fa or *.fasta)
 GENOME_FILE=$( find "${TEMP_DIR}/genome_extract" -type f \( -name "*.fa" -o -name "*.fasta" \) 2>/dev/null | head -1 )

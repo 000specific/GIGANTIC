@@ -59,10 +59,11 @@ else
   echo "Annotation: not found in archive" >> "${LOG_FILE}"
 fi
 
-# Find protein (pep or protein in name; exclude cds)
-PROTEIN_FILE=$( find "${TEMP_DIR}" -type f \( -name "*pep*" -o -name "*protein*" \) -name "*.fasta" 2>/dev/null | grep -v -i "cds" | head -1 )
+# Find protein (pep or protein in name; MUST be FASTA format: .fasta, .fa, .faa, .pep; exclude .gff/.gff3/.gtf)
+PROTEIN_FILE=$( find "${TEMP_DIR}" -type f \( -name "*pep*" -o -name "*protein*" \) \( -name "*.fasta" -o -name "*.fa" -o -name "*.faa" -o -name "*.pep" \) 2>/dev/null | grep -v -i "cds" | grep -v -i "\.gff" | head -1 || true )
 if [ -z "${PROTEIN_FILE}" ]; then
-  PROTEIN_FILE=$( find "${TEMP_DIR}" -type f \( -name "*pep*" -o -name "*protein*" \) 2>/dev/null | grep -v -i "cds" | head -1 )
+  # Broader search: any FASTA-like file with protein/pep keywords (exclude GFF annotations)
+  PROTEIN_FILE=$( find "${TEMP_DIR}" -type f \( -name "*.fasta" -o -name "*.fa" -o -name "*.faa" -o -name "*.pep" \) 2>/dev/null | grep -i -E "pep|protein|correctedprotein" | grep -v -i "cds" | head -1 || true )
 fi
 if [ -n "${PROTEIN_FILE}" ] && [ -f "${PROTEIN_FILE}" ]; then
   cp "${PROTEIN_FILE}" "${OUTPUT_DIRECTORY}/protein.faa"

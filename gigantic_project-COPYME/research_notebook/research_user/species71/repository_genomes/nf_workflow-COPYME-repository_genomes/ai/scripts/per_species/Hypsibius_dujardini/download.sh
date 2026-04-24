@@ -91,6 +91,22 @@ if [ "${PROTEIN_FOUND}" = false ]; then
         NCBI_PROTEIN=$( find "${TEMP_DIR}/ncbi_data" -type f \( -name "*.faa" -o -name "*protein*" \) 2>/dev/null | head -1 )
       fi
 
+      # Always try to copy genome from NCBI package
+      NCBI_GENOME=$( find "${TEMP_DIR}/ncbi_data" -type f -name "*.fna" 2>/dev/null | head -1 )
+      if [ -n "${NCBI_GENOME}" ] && [ -s "${NCBI_GENOME}" ]; then
+        cp "${NCBI_GENOME}" "${OUTPUT_DIRECTORY}/genome.fasta"
+        echo "Genome source: NCBI datasets ${NCBI_ACCESSION}" >> "${LOG_FILE}"
+        echo "  Genome downloaded from NCBI"
+      fi
+
+      # Always try to copy annotation from NCBI package
+      NCBI_ANNOT=$( find "${TEMP_DIR}/ncbi_data" -type f -name "genomic.gff" 2>/dev/null | head -1 )
+      if [ -n "${NCBI_ANNOT}" ] && [ -s "${NCBI_ANNOT}" ]; then
+        cp "${NCBI_ANNOT}" "${OUTPUT_DIRECTORY}/annotation.gff3"
+        echo "Annotation source: NCBI datasets ${NCBI_ACCESSION}" >> "${LOG_FILE}"
+        echo "  Annotation downloaded from NCBI"
+      fi
+
       if [ -n "${NCBI_PROTEIN}" ] && [ -s "${NCBI_PROTEIN}" ]; then
         cp "${NCBI_PROTEIN}" "${OUTPUT_DIRECTORY}/protein.faa"
         echo "Protein source: NCBI datasets ${NCBI_ACCESSION} (Hypsibius exemplaris)" >> "${LOG_FILE}"
@@ -100,13 +116,6 @@ if [ "${PROTEIN_FOUND}" = false ]; then
       else
         echo "  NCBI download succeeded but no protein file found in package"
         echo "NCBI: downloaded but no protein.faa found" >> "${LOG_FILE}"
-        # Try to get genome at least
-        NCBI_GENOME=$( find "${TEMP_DIR}/ncbi_data" -type f -name "*.fna" 2>/dev/null | head -1 )
-        if [ -n "${NCBI_GENOME}" ] && [ -s "${NCBI_GENOME}" ]; then
-          cp "${NCBI_GENOME}" "${OUTPUT_DIRECTORY}/genome.fasta"
-          echo "Genome source: NCBI datasets ${NCBI_ACCESSION}" >> "${LOG_FILE}"
-          echo "  Genome downloaded from NCBI (no protein available)"
-        fi
         echo "=== NCBI package contents ===" >> "${LOG_FILE}"
         find "${TEMP_DIR}/ncbi_data" -type f | head -20 >> "${LOG_FILE}"
         echo "=== End NCBI contents ===" >> "${LOG_FILE}"

@@ -44,11 +44,16 @@ else
   wget -q -L --no-check-certificate -O "${CACHE_DIR}/genomes.tar.gz" "${ARCHIVE_URL}"
   # Validate download is not empty
   if [ ! -s "${CACHE_DIR}/genomes.tar.gz" ]; then
-    echo "  ERROR: Downloaded genomes.tar.gz is 0 bytes!"
-    echo "ERROR: Downloaded archive is 0 bytes" >> "${LOG_FILE}"
-    echo "  The Dryad URL may require different access method or may have changed."
-    echo "  URL attempted: ${ARCHIVE_URL}"
-    exit 1
+    echo "  WARNING: Downloaded genomes.tar.gz is 0 bytes!"
+    echo "  Dryad may block automated downloads (403 Forbidden)."
+    echo "  *** USER INPUT NEEDED for ${SPECIES} ***"
+    echo "  Please download manually from: ${REPOSITORY_URL}"
+    echo "  Place genomes.tar.gz into: ${CACHE_DIR}/"
+    echo "  Then re-run this pipeline."
+    echo "USER INPUT NEEDED: Dryad download blocked (403 Forbidden)" >> "${LOG_FILE}"
+    echo "Manual download URL: ${REPOSITORY_URL}" >> "${LOG_FILE}"
+    rm -f "${CACHE_DIR}/genomes.tar.gz"
+    exit 0
   fi
   ARCHIVE_SIZE=$( stat --format=%s "${CACHE_DIR}/genomes.tar.gz" 2>/dev/null || stat -f%z "${CACHE_DIR}/genomes.tar.gz" 2>/dev/null || echo "unknown" )
   echo "  Downloaded archive size: ${ARCHIVE_SIZE} bytes"

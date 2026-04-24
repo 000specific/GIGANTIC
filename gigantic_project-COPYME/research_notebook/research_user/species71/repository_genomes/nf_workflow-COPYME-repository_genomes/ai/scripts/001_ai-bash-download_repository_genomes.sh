@@ -37,7 +37,7 @@
 #   1-output/{genus_species}/  (one directory per species with downloaded files)
 # =============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 SCRIPTS_DIRECTORY="$1"
 MANIFEST_PATH="$2"
