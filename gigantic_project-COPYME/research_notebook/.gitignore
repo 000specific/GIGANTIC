@@ -13,3 +13,41 @@
 
 # Keep .gitkeep files (preserve directory structure)
 !.gitkeep
+
+# ============================================================================
+# Pipeline methodology exceptions
+# ----------------------------------------------------------------------------
+# Track pipeline CODE and workflow definitions so other labs can clone this
+# repo and reproduce or adapt the pipelines for their own research.
+# User data (sequences, annotations, intermediate outputs) stays ignored —
+# only methodology is shared.
+# ============================================================================
+
+# NextFlow workflow definitions and config. The `**/` prefix lets the pattern
+# match at any depth under research_notebook/, since workflows live several
+# levels deep (research_user/{species_set}/{source}/nf_workflow-*/...).
+!**/nf_workflow-*/ai/*.nf
+!**/nf_workflow-*/ai/*.config
+
+# Pipeline scripts (Python and shell), including per-species subdirs
+!**/nf_workflow-*/ai/scripts/*.py
+!**/nf_workflow-*/ai/scripts/*.sh
+!**/nf_workflow-*/ai/scripts/per_species/*/*.sh
+!**/nf_workflow-*/ai/scripts/per_species/*/*.py
+
+# Workflow entry points (local + SLURM)
+!**/nf_workflow-*/RUN_*.sh
+!**/nf_workflow-*/RUN_*.sbatch
+!**/nf_workflow-*/SLURM_*.sbatch
+
+# Methodology documentation inside workflow directories
+!**/nf_workflow-*/DOCUMENTATION*.md
+
+# ============================================================================
+# Archive directories: anything starting with x_ is a disposable archive and
+# must stay ignored even if it contains files that would otherwise be tracked
+# (e.g., .gitkeep files moved during archival). Place AFTER exceptions so this
+# rule wins for x_-prefixed paths.
+# ============================================================================
+x_*
+**/x_*
