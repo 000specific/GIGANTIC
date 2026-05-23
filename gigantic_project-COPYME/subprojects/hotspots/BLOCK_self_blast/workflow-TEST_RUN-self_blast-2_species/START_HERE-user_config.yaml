@@ -1,0 +1,143 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# GIGANTIC hotspots - BLOCK_self_blast Configuration
+# AI: Claude Code | Opus 4.7 | 2026 May 04
+# Human: Eric Edsinger
+#
+# Edit the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh        # local
+#     sbatch RUN-workflow.sbatch  # SLURM
+#
+# ============================================================================
+# WHAT THIS WORKFLOW DOES
+# ============================================================================
+#
+# Runs blastp of each species' proteome against itself (self-BLAST). Output
+# is one tabular blast report per species, used downstream by
+# BLOCK_identify_hotspots to detect chromosomal clusters of paralogs.
+#
+# DESIGN NOTE - blast e-value vs hotspot e-value:
+#   The BLAST step here is run at a GENEROUS e-value (default 1e-3) so the
+#   reports remain reusable for any downstream filtering threshold. The strict
+#   paper-default cutoff (1e-60) is applied later in BLOCK_identify_hotspots
+#   as the hotspot-membership filter. This matches the GIGANTIC_0 production
+#   pattern.
+#
+# ============================================================================
+
+# ============================================================================
+# EXECUTION MODE
+# ============================================================================
+# "slurm" : per-chunk blastp tasks dispatched as SLURM array on burst QOS
+# "local" : every process runs on the calling machine (good for testing)
+
+execution_mode: "local"
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+# These map directly to NextFlow params.* (flat keys for -params-file).
+
+# Path to GIGANTIC proteomes directory (one .aa file per species).
+proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+# Path to GIGANTIC BLAST databases directory (per-species blastp DBs).
+blast_db_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
+
+# Path to GIGANTIC species list (one Genus_species per line).
+gigantic_species_list: "INPUT_user/gigantic_species_list.txt"
+
+# ============================================================================
+# OUTPUT
+# ============================================================================
+
+output_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# BLAST PARAMETERS
+# ============================================================================
+
+# Generous e-value to keep reports reusable (see DESIGN NOTE above).
+evalue: "1e-3"
+
+# Tabular outfmt 6 columns:
+#   qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore
+outfmt: "6"
+
+# Per-chunk thread count. blastp gains diminishing returns past ~5 threads.
+num_threads: 5
+
+# ============================================================================
+# CHUNKING (controls fan-out parallelism)
+# ============================================================================
+
+# Sequences per chunk. Each chunk becomes one SLURM array task.
+# ~50 chunks per species at ~30k sequences/proteome
+# → ~3500 total tasks for species70
+# With queueSize 200 × 5 cpus = ~1000 concurrent CPUs (under burst budget).
+sequences_per_chunk: 600
+
+# ============================================================================
+# PROJECT METADATA
+# ============================================================================
+
+project_name: "GIGANTIC"
+
+# ============================================================================
+# CONDA ENVIRONMENT
+# ============================================================================
+# Required tools: blast (blastp), python3, nextflow.
+# Created with:
+#   module load conda
+#   mamba create -n ai_gigantic_hotspots -c bioconda -c conda-forge blast nextflow python=3.11 -y
+
+conda_environment: "ai_gigantic_hotspots"
+
+# ============================================================================
+# SLURM (used only when execution_mode == "slurm")
+# ============================================================================
+# These are parsed by RUN-workflow.sh and exported as env vars; nextflow.config
+# reads them via System.getenv. They do NOT go through -params-file.
+
+# Account/QOS for the driver job (validate, chunk, merge, log)
+slurm_account: "moroz"
+slurm_qos: "moroz"
+
+# Account/QOS for the burst-mode fan-out (per-chunk blastp tasks)
+slurm_burst_account: "moroz"
+slurm_burst_qos: "moroz-b"
+
+# Concurrency cap for SLURM submissions. SLURM rejects if
+# queueSize × cpus_per_task exceeds burst CPU pool.
+slurm_queue_size: 200
+
+# ============================================================================
+# SLURM RESOURCES (per-process)
+# ============================================================================
+# Parsed by RUN-workflow.sh into env vars (not params). HiPerGator convention:
+# max memory_gb = 7.5 × cpus.
+
+resources:
+  # Per-chunk blastp task (the fan-out workhorse)
+  blastp_chunk:
+    cpus: 5
+    memory_gb: 30
+    time_hours: 5
+
+  # Driver-side lightweight steps (validate, chunk, merge, log)
+  local_step:
+    cpus: 4
+    memory_gb: 30
+    time_hours: 2
+
+# ============================================================================
+# RESUME
+# ============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks.
+# Default: false — stale-cache surprises have caused incorrect results, so
+# explicit opt-in is safer for research reproducibility.
+
+resume: false

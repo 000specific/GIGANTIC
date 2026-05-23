@@ -1,0 +1,27 @@
+# GIGANTIC upload_manifest.tsv — analyze_gene_sizes Tier 2 (gene_vs_protein)
+# ============================================================================
+# Publishes the broad-coverage Tier 2 outputs of the gene_sizes pipeline.
+# Tier 2 = every species with extractable gene + CDS records (no UTR or full
+# exon records required). 64 species (superset of the 40 Tier 1 species),
+# 4 universally-comparable metrics: Gene_Size, CDS_Size, Protein_Size,
+# CDS_Segment_Count.
+#
+# Source globs are relative to this manifest directory (workflow-RUN_*).
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+# ----- Top-level workflow documentation -----
+README.md	yes		Tier 2 workflow README	summary	Tier 2 (gene_vs_protein) workflow purpose, input format (9-col gene-coordinates TSV), output structure, and how to run.	10
+START_HERE-user_config.yaml	no		Tier 2 user config	summary	User-editable workflow configuration. Off by default.	20
+#
+# ----- Cross-species 4-metric summary (the headline Tier 2 deliverable) -----
+OUTPUT_pipeline/4-output/4_ai-cross_species_summary.tsv	yes		Cross-species 4-metric summary	summary	Wide-format table: one row per processed species; columns are 5 stats (gene_count median mean min max) for each of 4 metrics (Gene_Size CDS_Size Protein_Size CDS_Segment_Count). The broad-coverage deliverable.	100
+#
+# ----- Species processing status (drops + reasons) -----
+OUTPUT_pipeline/4-output/4_ai-species_processing_status.tsv	yes		Species processing status	qc	Per-species PROCESSED or SKIPPED_NO_DATA classification. Documents the 64-species Tier 2 set and the 6 permanently dropped species.	110
+#
+# ----- Ranked gene metrics: {descriptor} (the underlying granular data) -----
+OUTPUT_pipeline/4-output/species64_gigantic_gene_metrics/3_ai-ranked_gene_metrics-*.tsv	yes		Ranked gene metrics: {descriptor}	summary	Per-gene metrics with within-genome quantile ranks (11 columns per file). One file per species in Tier 2.	200
+#
+# ----- Genome summary: {descriptor} (per-metric distribution stats) -----
+OUTPUT_pipeline/4-output/species64_gigantic_gene_sizes_summary/3_ai-genome_summary-*.tsv	yes		Genome summary: {descriptor}	summary	Per-species per-metric distribution stats (gene_count mean median min max p25 p75) for the 4 Tier 2 metrics.	300

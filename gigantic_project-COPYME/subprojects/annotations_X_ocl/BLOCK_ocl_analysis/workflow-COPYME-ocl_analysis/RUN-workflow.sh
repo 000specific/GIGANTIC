@@ -342,9 +342,14 @@ case "${PARALLELISM_MODE}" in
 esac
 echo "  parallelism_mode: ${PARALLELISM_MODE} (nextflow ${PROFILE_FLAG})"
 
-# Pipe SLURM account/QOS from START_HERE-user_config.yaml into nextflow.config
+# Pipe SLURM account/QOS + resource sizing from START_HERE-user_config.yaml into nextflow.config
+# cpus + memory_gb drive both the SLURM job allocation AND the local executor
+# concurrency cap (params.cpus / params.memory_gb in nextflow.config) so that
+# parallelism_mode=local runs inside a SLURM allocation can use the full box.
 NEXTFLOW_SLURM_ACCOUNT=$(read_config "slurm_account" "")
 NEXTFLOW_SLURM_QOS=$(read_config "slurm_qos" "")
+NEXTFLOW_CPUS=$(read_config "cpus" "4")
+NEXTFLOW_MEMORY_GB=$(read_config "memory_gb" "16")
 NEXTFLOW_PARAMS=""
 if [ -n "${NEXTFLOW_SLURM_ACCOUNT}" ]; then
     NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_account=${NEXTFLOW_SLURM_ACCOUNT}"
@@ -352,6 +357,7 @@ fi
 if [ -n "${NEXTFLOW_SLURM_QOS}" ]; then
     NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_qos=${NEXTFLOW_SLURM_QOS}"
 fi
+NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --cpus=${NEXTFLOW_CPUS} --memory_gb=${NEXTFLOW_MEMORY_GB}"
 
 nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} ${NEXTFLOW_PARAMS}
 

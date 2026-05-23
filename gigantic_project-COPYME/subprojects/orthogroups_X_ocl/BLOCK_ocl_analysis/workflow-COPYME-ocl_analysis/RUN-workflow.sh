@@ -67,6 +67,71 @@ read_config() {
 EXECUTION_MODE=$(read_config "execution_mode" "local")
 
 # ============================================================================
+# Initialize RUN_SUMMARY.md placeholder (before SLURM submit)
+# ============================================================================
+# Write an initial placeholder RUN_SUMMARY.md so the user immediately sees
+# that a run has been requested, even before SLURM schedules the job. The
+# placeholder is overwritten later:
+#   - on compute-node start: "IN PROGRESS" (below, inside actual work block)
+#   - on pipeline completion: full aggregated summary (Script 007)
+#
+# Also clear stale fragments from any previous run so the aggregator sees
+# only this run's data.
+
+RUN_LABEL_FOR_SUMMARY=$(read_config "run_label" "")
+ORTHOGROUP_TOOL_FOR_SUMMARY=$(read_config "orthogroup_tool" "")
+SPECIES_SET_FOR_SUMMARY=$(read_config "species_set_name" "")
+PARALLELISM_MODE_FOR_SUMMARY=$(read_config "parallelism_mode" "local")
+MANIFEST_FOR_SUMMARY="INPUT_user/structure_manifest.tsv"
+STRUCTURE_COUNT_FOR_SUMMARY=0
+if [ -f "${MANIFEST_FOR_SUMMARY}" ]; then
+    STRUCTURE_COUNT_FOR_SUMMARY=$(tail -n +2 "${MANIFEST_FOR_SUMMARY}" | grep -v '^$' | wc -l)
+fi
+
+SUMMARY_FILE="RUN_SUMMARY.md"
+FRAGMENTS_DIR="ai/logs/run_summary_fragments"
+
+# Clear fragments only on login-node entry (not when inside SLURM job).
+# The SLURM job re-runs this script, and we don't want to clear fragments
+# that may have just been written by early parallel tasks.
+if [ -z "${SLURM_JOB_ID}" ]; then
+    if [ -d "${FRAGMENTS_DIR}" ]; then
+        rm -f "${FRAGMENTS_DIR}"/*.json 2>/dev/null
+    fi
+    mkdir -p "${FRAGMENTS_DIR}"
+fi
+
+# Status for the placeholder: QUEUED before submit, IN PROGRESS when running
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    STATUS_EMOJI="⏳"
+    STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
+    STATUS_NOTE="Waiting for SLURM to schedule the job. Once it starts, this file will update to IN PROGRESS, then to the final aggregated summary when the pipeline completes."
+else
+    STATUS_EMOJI="🔄"
+    STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
+    STATUS_NOTE="This run is currently executing. Script 007 will replace this placeholder with aggregate per-script stats and a final success/failure verdict when the pipeline completes. If this file still shows IN PROGRESS after the pipeline has finished, something may have gone wrong -- check slurm_logs/ or the NextFlow execution trace for errors."
+fi
+
+cat > "${SUMMARY_FILE}" <<EOF
+# Workflow Run Summary: ${RUN_LABEL_FOR_SUMMARY}
+
+**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
+
+**Run label**: \`${RUN_LABEL_FOR_SUMMARY}\`
+**Orthogroup tool**: \`${ORTHOGROUP_TOOL_FOR_SUMMARY}\`
+**Species set**: \`${SPECIES_SET_FOR_SUMMARY}\`
+**Structures requested**: ${STRUCTURE_COUNT_FOR_SUMMARY}
+**Execution mode**: ${EXECUTION_MODE} / parallelism: ${PARALLELISM_MODE_FOR_SUMMARY}
+
+${STATUS_NOTE}
+EOF
+
+# Also copy the placeholder to the external billboard so the BLOCK-level
+# view is updated immediately on submission
+SCRIPT_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+cp "${SUMMARY_FILE}" "../${SCRIPT_DIR_NAME}-run_summary.md" 2>/dev/null || true
+
+# ============================================================================
 # SLURM submission (if execution_mode is "slurm" and not already inside a job)
 # ============================================================================
 # Self-submits as a SLURM job so heavy work (conda env creation, NextFlow
@@ -277,14 +342,20 @@ case "${PARALLELISM_MODE}" in
 esac
 echo "  parallelism_mode: ${PARALLELISM_MODE} (nextflow ${PROFILE_FLAG})"
 
-# Pipe SLURM account/QOS from START_HERE-user_config.yaml into nextflow.config
-# via --param CLI args so nextflow.config never needs hand-edited duplicates.
-# (nextflow.config's params.slurm_account / params.slurm_qos default to empty
-# to fail fast if this plumbing breaks.)
+# Pipe SLURM account/QOS + resource sizing from START_HERE-user_config.yaml
+# into nextflow.config via --param CLI args so nextflow.config never needs
+# hand-edited duplicates. (nextflow.config's params.slurm_account / params.slurm_qos
+# default to empty to fail fast if this plumbing breaks.)
+# cpus + memory_gb also drive local-executor concurrency (params.cpus /
+# params.memory_gb in nextflow.config) so parallelism_mode=local inside a
+# SLURM allocation can use the full box instead of being capped at a stale
+# hardcoded 4 CPUs.
 # Re-read here because the outer SLURM_ACCOUNT/SLURM_QOS shell vars (if set)
 # only exist in the self-submitting branch above, not when re-invoked by sbatch.
 NEXTFLOW_SLURM_ACCOUNT=$(read_config "slurm_account" "")
 NEXTFLOW_SLURM_QOS=$(read_config "slurm_qos" "")
+NEXTFLOW_CPUS=$(read_config "cpus" "4")
+NEXTFLOW_MEMORY_GB=$(read_config "memory_gb" "16")
 NEXTFLOW_PARAMS=""
 if [ -n "${NEXTFLOW_SLURM_ACCOUNT}" ]; then
     NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_account=${NEXTFLOW_SLURM_ACCOUNT}"
@@ -292,6 +363,7 @@ fi
 if [ -n "${NEXTFLOW_SLURM_QOS}" ]; then
     NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_qos=${NEXTFLOW_SLURM_QOS}"
 fi
+NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --cpus=${NEXTFLOW_CPUS} --memory_gb=${NEXTFLOW_MEMORY_GB}"
 
 nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} ${NEXTFLOW_PARAMS}
 
@@ -336,14 +408,20 @@ for old_link in "${SHARED_DIR}"/structure_*; do
 done
 
 # Create symlinks for each structure directory
+# Source filename includes the structure_NNN infix (Script 004's naming convention):
+#   4_ai-structure_NNN_orthogroups-complete_ocl_summary.tsv
+# Symlink name is the clean infix-free form so downstream subprojects can use a
+# stable path: output_to_input/.../structure_NNN/4_ai-orthogroups-complete_ocl_summary.tsv
 for structure_dir in OUTPUT_pipeline/structure_*; do
     if [ -d "$structure_dir" ]; then
         structure_name=$(basename "$structure_dir")
-        summary_file="${structure_dir}/4-output/4_ai-orthogroups-complete_ocl_summary.tsv"
+        structure_num="${structure_name#structure_}"
+        source_filename="4_ai-structure_${structure_num}_orthogroups-complete_ocl_summary.tsv"
+        summary_file="${structure_dir}/4-output/${source_filename}"
 
         if [ -f "$summary_file" ]; then
             mkdir -p "${SHARED_DIR}/${structure_name}"
-            ln -sf "../../../../BLOCK_ocl_analysis/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/4_ai-orthogroups-complete_ocl_summary.tsv" \
+            ln -sf "../../../../BLOCK_ocl_analysis/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/${source_filename}" \
                 "${SHARED_DIR}/${structure_name}/4_ai-orthogroups-complete_ocl_summary.tsv"
         fi
     fi
@@ -370,6 +448,20 @@ echo "Run Label: ${RUN_LABEL}"
 echo "Structures processed: ${STRUCTURE_COUNT}"
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Copy RUN_SUMMARY.md to external billboard at BLOCK level
+# ============================================================================
+# Inside the workflow dir: RUN_SUMMARY.md (built by Script 007)
+# Sibling at BLOCK level:  workflow-RUN_XX-run_summary.md (copy for at-a-glance status)
+# The copy gives users visibility into run status without cd'ing into the workflow dir.
+
+if [ -f "${SUMMARY_FILE}" ]; then
+    EXTERNAL_BILLBOARD="../${WORKFLOW_DIR_NAME}-run_summary.md"
+    cp "${SUMMARY_FILE}" "${EXTERNAL_BILLBOARD}"
+    echo ""
+    echo "Run summary copied to BLOCK level: ${EXTERNAL_BILLBOARD}"
+fi
 
 # ============================================================================
 # Deactivate Conda Environment

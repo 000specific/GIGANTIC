@@ -3,17 +3,25 @@
 # source_path is relative to subproject root
 # Glob patterns are supported (e.g., *.csv)
 #
-# DeepLoc subcellular localization predictions (70 species)
-output_to_input/BLOCK_deeploc/*.csv	yes
+# Current publication policy (2026-05-05): InterProScan-only on the server.
+# DeepLoc and MetaPredict are temporarily disabled while the per-tool
+# InterProScan parser is the canonical entry point for collaborator browsing.
 #
-# MetaPredict intrinsic disorder predictions (70 species, 2 files each)
-output_to_input/BLOCK_metapredict/*.tsv	yes
+# DeepLoc subcellular localization predictions (70 species) - TEMPORARILY DISABLED
+output_to_input/BLOCK_deeploc/*.csv	no
+#
+# MetaPredict intrinsic disorder predictions (70 species, 2 files each) - TEMPORARILY DISABLED
+output_to_input/BLOCK_metapredict/*.tsv	no
+#
+# InterProScan domain annotations (parsed per-tool, 70 species x 10 sub-databases)
+# Published via per-tool subdirectories of upload_to_server/. The bash
+# upload-to-server script (this file) does not preserve directory structure
+# (it flattens to the upload_to_server root via maxdepth=1), so the per-tool
+# layout is created by a sidecar script:
+#   research_notebook/parse_interproscan-by_tool/002_ai-bash-symlink_parsed_to_upload.sh
+# Run that script after this manifest is processed, OR run it standalone --
+# the two are independent (no manifest entry overlaps the parsed dirs).
 #
 # SignalP signal peptide predictions (incomplete - only 2 species so far)
 # output_to_input/BLOCK_signalp/*.tsv	no
 #
-# InterProScan domain annotations (not yet consolidated)
-# output_to_input/BLOCK_interproscan/*.tsv	no
-#
-# tmbed transmembrane predictions (not yet run)
-# output_to_input/BLOCK_tmbed/*.tsv	no

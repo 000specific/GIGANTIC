@@ -10,7 +10,7 @@ Reads standardized output from script 004.
 
 Input:
     --proteome-list: Path to 1_ai-proteome_list.tsv from script 001
-    --orthogroups-file: Path to 4_ai-orthogroups_gigantic_ids.tsv from script 004
+    --orthogroups-file: Path to 4_ai-orthologous_groups-gigantic_ids.tsv from script 004
 
 Output:
     OUTPUT_pipeline/5-output/5_ai-summary_statistics.tsv
@@ -22,7 +22,7 @@ Output:
 Usage:
     python3 005_ai-python-generate_summary_statistics.py \\
         --proteome-list OUTPUT_pipeline/1-output/1_ai-proteome_list.tsv \\
-        --orthogroups-file OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv
+        --orthogroups-file OUTPUT_pipeline/4-output/4_ai-orthologous_groups-gigantic_ids.tsv
 """
 
 import argparse
@@ -98,14 +98,25 @@ def calculate_statistics(
 ) -> dict:
     """
     Calculate summary statistics from orthogroup data.
+
+    Fail-fast: empty inputs (no orthogroups, no sequences) indicate an
+    upstream failure (broccoli produced nothing or proteome list is empty).
+    Statistics on empty data would silently propagate the failure.
     """
+
+    if total_sequences <= 0:
+        logger.error( "CRITICAL ERROR: total_sequences is zero — proteome list (script 001) was empty." )
+        sys.exit( 1 )
+
+    if not orthogroups___genes:
+        logger.error( "CRITICAL ERROR: no orthogroups in input — broccoli (script 003) produced nothing usable." )
+        logger.error( "Investigate: did broccoli step 3 actually identify any orthogroups? Did script 004 translate any rows?" )
+        sys.exit( 1 )
 
     statistics = {}
 
-    # Basic counts
     statistics[ 'total_orthogroups' ] = len( orthogroups___genes )
 
-    # Genes in orthogroups
     genes_in_orthogroups = set()
     for orthogroup_id in orthogroups___genes:
         genes = orthogroups___genes[ orthogroup_id ]
@@ -114,28 +125,15 @@ def calculate_statistics(
 
     statistics[ 'genes_in_orthogroups' ] = len( genes_in_orthogroups )
     statistics[ 'genes_not_in_orthogroups' ] = total_sequences - len( genes_in_orthogroups )
+    statistics[ 'coverage_percent' ] = ( len( genes_in_orthogroups ) / total_sequences ) * 100
 
-    # Coverage percentage
-    if total_sequences > 0:
-        statistics[ 'coverage_percent' ] = ( len( genes_in_orthogroups ) / total_sequences ) * 100
-    else:
-        statistics[ 'coverage_percent' ] = 0.0
-
-    # Orthogroup size statistics
     orthogroup_sizes = [ len( genes ) for genes in orthogroups___genes.values() ]
 
-    if orthogroup_sizes:
-        statistics[ 'min_orthogroup_size' ] = min( orthogroup_sizes )
-        statistics[ 'max_orthogroup_size' ] = max( orthogroup_sizes )
-        statistics[ 'mean_orthogroup_size' ] = sum( orthogroup_sizes ) / len( orthogroup_sizes )
-        statistics[ 'median_orthogroup_size' ] = sorted( orthogroup_sizes )[ len( orthogroup_sizes ) // 2 ]
-    else:
-        statistics[ 'min_orthogroup_size' ] = 0
-        statistics[ 'max_orthogroup_size' ] = 0
-        statistics[ 'mean_orthogroup_size' ] = 0.0
-        statistics[ 'median_orthogroup_size' ] = 0
+    statistics[ 'min_orthogroup_size' ] = min( orthogroup_sizes )
+    statistics[ 'max_orthogroup_size' ] = max( orthogroup_sizes )
+    statistics[ 'mean_orthogroup_size' ] = sum( orthogroup_sizes ) / len( orthogroup_sizes )
+    statistics[ 'median_orthogroup_size' ] = sorted( orthogroup_sizes )[ len( orthogroup_sizes ) // 2 ]
 
-    # Singleton orthogroups (size 1)
     statistics[ 'singleton_orthogroups' ] = sum( 1 for size in orthogroup_sizes if size == 1 )
 
     return statistics
@@ -159,7 +157,7 @@ def main():
         '--orthogroups-file',
         type = str,
         required = True,
-        help = 'Path to 4_ai-orthogroups_gigantic_ids.tsv from script 004'
+        help = 'Path to 4_ai-orthologous_groups-gigantic_ids.tsv from script 004'
     )
 
     parser.add_argument(

@@ -78,15 +78,15 @@ LARGE_THRESHOLD=50  # RGS sequence count threshold
 
 # Small gene groups (<= threshold): many per block, lower resources
 SLURM_MEM_SMALL="30gb"
-SLURM_TIME_SMALL="96:00:00"
+SLURM_TIME_SMALL="24:00:00"
 SLURM_CPUS_SMALL="4"
-BLOCK_SIZE_SMALL=100
+BLOCK_SIZE_SMALL=10
 
 # Large gene groups (> threshold): fewer per block, higher resources
 SLURM_MEM_LARGE="112gb"
-SLURM_TIME_LARGE="96:00:00"
+SLURM_TIME_LARGE="24:00:00"
 SLURM_CPUS_LARGE="15"
-BLOCK_SIZE_LARGE=25
+BLOCK_SIZE_LARGE=3
 
 # ============================================================================
 # Options
@@ -266,6 +266,15 @@ done < <(tail -n +2 "${STEP0_SUMMARY}")
 
 # Clean up species keeper list
 rm -f "${SPECIES_KEEPER_LIST}"
+
+# Shuffle gene group lists so slow groups are spread evenly across blocks
+# (alphabetical order can cluster slow groups into the same block, creating tail outliers)
+if [ "${#SMALL_GENE_GROUPS[@]}" -gt 0 ]; then
+    SMALL_GENE_GROUPS=($(printf '%s\n' "${SMALL_GENE_GROUPS[@]}" | shuf))
+fi
+if [ "${#LARGE_GENE_GROUPS[@]}" -gt 0 ]; then
+    LARGE_GENE_GROUPS=($(printf '%s\n' "${LARGE_GENE_GROUPS[@]}" | shuf))
+fi
 
 if ! $SUBMIT_ONLY; then
     echo "Setup: ${setup_count} new, ${skip_count} already exist, ${error_count} errors"

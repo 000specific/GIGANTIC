@@ -1,0 +1,153 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# GIGANTIC hotspots - BLOCK_identify_hotspots Configuration
+# AI: Claude Code | Opus 4.7 | 2026 May 04
+# Human: Eric Edsinger
+#
+# This workflow runs after BLOCK_self_blast. It consumes the per-species
+# self-BLAST reports plus user-provided gene coordinate TSVs and produces
+# per-species lists of "hotspots" — chromosomal clusters of paralogous gene
+# copies, as defined in Edsinger 2024 (Frontiers in Marine Science,
+# doi:10.3389/fmars.2024.1434130).
+#
+# Method (modernized from the GIGANTIC_0 hotspots-paper code):
+#   1. Filter self-BLAST hits by stringent e-value (default 1e-60)
+#   2. For each retained hit, check if query and subject sit within a
+#      window of N gene-positions on the same chromosome (default 20 genes
+#      total, i.e. ±10 around query)
+#   3. Build a paralog graph: nodes = genes, edges = (query, subject) pairs
+#      that satisfy step 2
+#   4. Connected components of the graph = hotspots
+#
+# ============================================================================
+# REQUIRED USER INPUT - GENE COORDINATES
+# ============================================================================
+#
+# This workflow consumes per-species gene-coordinate TSVs that the user
+# prepares from species-specific GFF/GTF files. GFF formats vary too much
+# across sources (NCBI vs Kim vs assembly-hub vs custom) for GIGANTIC to
+# parse them generically — that work belongs to the user, in
+# research_notebook/research_user/, where freeform parsing is welcome.
+#
+# Format (TSV; one row per protein-coding gene; matches gene_sizes subset):
+#
+#   Source_Gene_ID  Seqid  Gene_Start  Gene_End  Strand  [...optional cols ignored...]
+#   ENSG00000139618 chr13  32315474    32400266  +
+#   ...
+#
+# - Source_Gene_ID: must match the g_ field in the GIGANTIC proteome
+#   FASTA header (the proteome was built with this ID as the gene anchor).
+# - Seqid: chromosome / scaffold identifier from your GFF.
+# - Gene_Start / Gene_End: 1-based inclusive genomic coordinates.
+# - Strand: + or -.
+# - Filename convention: <Genus_species>-gene_coordinates.tsv
+#   (same convention as gene_sizes — files can be reused/symlinked.)
+#
+# ============================================================================
+
+# ============================================================================
+# EXECUTION MODE
+# ============================================================================
+# "local" : runs on the calling machine. Fine for this BLOCK — the per-
+#           species hotspot computation is fast (seconds to a minute each).
+# "slurm" : per-species fan-out as SLURM tasks; useful only at much larger
+#           species counts than the current 70.
+
+execution_mode: "local"
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  # Per-species self-BLAST reports from BLOCK_self_blast.
+  # Default: the symlinked output_to_input/ location (no copy needed).
+  self_blast_reports_dir: "../../output_to_input/BLOCK_self_blast/self_blast_reports"
+
+  # User-provided per-species gene coordinate TSVs.
+  # Default points at the user's research notebook for hotspots; the user
+  # creates these out of GIGANTIC proper from their per-species GFF/GTF.
+  gene_coordinates_dir: "../../research_notebook/research_user/gene_coordinates"
+
+  # Per-species GIGANTIC proteome files.
+  # Used to map full-GIGANTIC IDs in the BLAST report (g_<source_id>-t_..-p_..-n_..)
+  # back to the bare Source_Gene_IDs in the gene_coordinates TSVs.
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+  # GIGANTIC species list. Workflow processes only these species; missing
+  # inputs are recorded in the excluded-species TSV with a reason.
+  gigantic_species_list: "INPUT_user/gigantic_species_list.txt"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# HOTSPOT PARAMETERS
+# ============================================================================
+
+hotspot:
+  # Strict e-value filter applied to BLAST hits before hotspot detection.
+  # The paper headline: 1e-60. The BLOCK_self_blast step ran BLAST at a
+  # generous 1e-3 so reports are reusable; this is the actual hotspot cut.
+  evalue_threshold: "1e-60"
+
+  # Total gene-position window around each query gene. Hits whose subject
+  # falls within ±(window_size/2) positions of the query (on the same
+  # chromosome) are considered candidate hotspot links.
+  #
+  # The paper text says 20 genes total (±10). The GIGANTIC_0 production
+  # code used 200 (±100); the published filenames reflect 200. The default
+  # below uses 20 per the paper text and the user's stated preference for
+  # the first run. Set to 200 to reproduce the GIGANTIC_0 production runs.
+  window_size: 20
+
+  # Minimum number of genes required for a connected component to be
+  # called a hotspot. Singletons (1 gene) are never reported. Pairs (2)
+  # are by default reported.
+  minimum_paralog_count: 2
+
+# ============================================================================
+# SLURM (only used if execution_mode == "slurm" — typically not needed)
+# ============================================================================
+
+slurm_account: "moroz"
+slurm_qos: "moroz"
+slurm_queue_size: 70
+
+resources:
+  identify_hotspots_per_species:
+    cpus: 2
+    memory_gb: 8
+    time_hours: 1
+
+  local_step:
+    cpus: 4
+    memory_gb: 30
+    time_hours: 2
+
+# ============================================================================
+# CONDA ENVIRONMENT
+# ============================================================================
+
+conda:
+  # Reuses the BLOCK_self_blast env. Required: python3, nextflow.
+  environment: "ai_gigantic_hotspots"
+
+# ============================================================================
+# PROJECT METADATA
+# ============================================================================
+
+project:
+  name: "GIGANTIC"
+
+# ============================================================================
+# RESUME
+# ============================================================================
+
+resume: false

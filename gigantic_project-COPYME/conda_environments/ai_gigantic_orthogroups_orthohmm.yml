@@ -24,7 +24,7 @@ dependencies:
   # Pin Python <3.12 because OrthoHMM uses distutils (removed in 3.12+)
   - python>=3.11,<3.12
   - setuptools
-  - nextflow>=23.0
+  - nextflow>=23.0,<26.0   # <26 because NextFlow 26.x dropped top-level `import` in nextflow.config (breaks our SnakeYAML loader pattern)
 
   # HMMER suite (required by OrthoHMM for profile HMM searches)
   - hmmer

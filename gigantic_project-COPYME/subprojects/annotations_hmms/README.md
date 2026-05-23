@@ -7,24 +7,25 @@
 
 ## Purpose
 
-Build a comprehensive functional annotation database for all species proteomes using five independent annotation tools. Each tool predicts different functional properties (protein domains, subcellular localization, signal peptides, transmembrane topology, intrinsic disorder), and their results are parsed into a standardized 7-column database format for downstream analyses.
+Build a comprehensive functional annotation database for all species proteomes using four independent annotation tools. Each tool predicts different functional properties (protein domains, subcellular localization + membrane topology, signal peptides, intrinsic disorder), and their results are parsed into a standardized 7-column database format for downstream analyses.
 
 ---
 
 ## Architecture
 
-Six independent, self-contained projects:
+Five independent, self-contained projects:
 
 | Project | Tool | What It Predicts |
 |---------|------|-----------------|
 | `BLOCK_interproscan/` | InterProScan 5 | Protein domains, families, GO terms (19 component databases) |
-| `BLOCK_deeploc/` | DeepLoc 2.1 | Subcellular localization (GPU) |
+| `BLOCK_deeploc/` | DeepLoc 2.1 | Subcellular localization + TM/lipid/peripheral/soluble probabilities (GPU) |
 | `BLOCK_signalp/` | SignalP 6 | Signal peptides and cleavage sites |
-| `BLOCK_tmbed/` | tmbed | Transmembrane topology (GPU) |
 | `BLOCK_metapredict/` | MetaPredict | Intrinsic disorder regions |
 | `BLOCK_build_annotation_database/` | Integration | Parses all tool outputs into standardized database, statistics, analyses |
 
-BLOCKs 1-5 are independent (run in any order, any subset). BLOCK 6 auto-discovers which tool outputs are available and builds the database from whatever is present.
+BLOCKs 1-4 are independent (run in any order, any subset). BLOCK 5 auto-discovers which tool outputs are available and builds the database from whatever is present.
+
+> **Note on transmembrane topology**: DeepLoc 2 reports per-protein TM / lipid-anchor / peripheral / soluble probabilities, so a dedicated TM-topology BLOCK is not separately included.
 
 ---
 
@@ -52,7 +53,7 @@ bash RUN-workflow.sh       # Local
 sbatch RUN-workflow.sbatch # SLURM (edit account/qos first)
 ```
 
-Same pattern for all 6 BLOCKs. Run tool BLOCKs first, then BLOCK_build_annotation_database.
+Same pattern for all 5 BLOCKs. Run tool BLOCKs first, then BLOCK_build_annotation_database.
 
 **Note:** Each `RUN-workflow.sh` automatically activates and deactivates its own conda environment. No manual activation required.
 
@@ -72,7 +73,7 @@ All tool outputs are parsed into a common 7-column TSV format:
 | `Annotation_Identifier` | Annotation ID (e.g., PF00001, SP, TM) |
 | `Annotation_Details` | Human-readable description |
 
-24 database subdirectories are produced: pfam, gene3d, superfamily, smart, panther, cdd, prints, prositepatterns, prositeprofiles, hamap, sfld, funfam, ncbifam, pirsf, coils, mobidblite, antifam, interproscan, go, deeploc, signalp, tmbed, metapredict.
+23 database subdirectories are produced: pfam, gene3d, superfamily, smart, panther, cdd, prints, prositepatterns, prositeprofiles, hamap, sfld, funfam, ncbifam, pirsf, coils, mobidblite, antifam, interproscan, go, deeploc, signalp, metapredict.
 
 ---
 
@@ -90,7 +91,6 @@ annotations_hmms/
 │   ├── BLOCK_interproscan/                  #   InterProScan results (symlinked)
 │   ├── BLOCK_deeploc/                       #   DeepLoc results (symlinked)
 │   ├── BLOCK_signalp/                       #   SignalP results (symlinked)
-│   ├── BLOCK_tmbed/                         #   tmbed results (symlinked)
 │   ├── BLOCK_metapredict/                   #   MetaPredict results (symlinked)
 │   └── BLOCK_build_annotation_database/     #   Integrated database (symlinked)
 │
@@ -118,14 +118,6 @@ annotations_hmms/
 │       ├── RUN-workflow.sbatch
 │       └── START_HERE-user_config.yaml
 │
-├── BLOCK_tmbed/                             # tmbed (2 scripts)
-│   ├── AI_GUIDE-tmbed.md
-│   └── workflow-COPYME-run_tmbed/
-│       ├── ai/ (main.nf, nextflow.config, scripts/)
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
-│
 ├── BLOCK_metapredict/                       # MetaPredict (2 scripts)
 │   ├── AI_GUIDE-metapredict.md
 │   └── workflow-COPYME-run_metapredict/
@@ -134,7 +126,7 @@ annotations_hmms/
 │       ├── RUN-workflow.sbatch
 │       └── START_HERE-user_config.yaml
 │
-└── BLOCK_build_annotation_database/         # Database builder (16 scripts)
+└── BLOCK_build_annotation_database/         # Database builder (15 scripts)
     ├── AI_GUIDE-build_annotation_database.md
     └── workflow-COPYME-build_annotation_database/
         ├── ai/ (main.nf, nextflow.config, scripts/)

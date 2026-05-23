@@ -263,12 +263,32 @@ def apply_manifest( manifest_path: Path,
                 full_dest_file.symlink_to( src_path )
                 files_linked += 1
 
+            # Expand per-file placeholders in display_label and description.
+            # Supported tokens (only relevant when one manifest entry's glob
+            # matches multiple files and you want each file disambiguated):
+            #   {stem}        — dest_filename minus the final extension
+            #                   e.g.  3_ai-genome_summary-Homo_sapiens
+            #   {descriptor}  — text after the last '-' in {stem}
+            #                   e.g.  Homo_sapiens
+            # Manifests without placeholders are unchanged.
+            stem = Path( dest_filename ).stem
+            descriptor = stem.rsplit( '-', 1 )[ -1 ] if '-' in stem else stem
+            # {structure} = "structure_NNN" if present anywhere in the stem, else empty.
+            structure_match = re.search( r'(structure_\d+)', stem )
+            structure_token = structure_match.group( 1 ) if structure_match else ''
+            placeholders = { 'stem': stem, 'descriptor': descriptor, 'structure': structure_token }
+            display_label_expanded = entry.display_label
+            description_expanded = entry.description
+            for token, value in placeholders.items():
+                display_label_expanded = display_label_expanded.replace( '{' + token + '}', value )
+                description_expanded = description_expanded.replace( '{' + token + '}', value )
+
             # Record metadata for sidecar
             dir_to_metadata.setdefault( full_dest_dir, [] ).append( {
                 'filename': dest_filename,
-                'display_label': entry.display_label,
+                'display_label': display_label_expanded,
                 'file_category': entry.file_category,
-                'description': entry.description,
+                'description': description_expanded,
                 'order': str( entry.order ),
             } )
 

@@ -7,7 +7,7 @@
 
 ## Purpose
 
-STEP_2 workflow template for phylogenetic analysis with configurable tree-building methods for **one gene family per workflow copy**.
+STEP_2 workflow template for phylogenetic analysis with configurable tree-building methods for **one gene group per workflow copy**.
 
 **Part of**: STEP_2-phylogenetic_analysis (see `../README.md`)
 
@@ -16,7 +16,7 @@ STEP_2 workflow template for phylogenetic analysis with configurable tree-buildi
 ## What This Workflow Does
 
 1. **Prepare Input** (Process 1)
-   - Stages AGS sequences from subproject output_to_input/<gene_family>/STEP_1-homolog_discovery/
+   - Stages AGS sequences from subproject output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/
 
 2. **Clean Sequences** (Process 2)
    - Removes leading/trailing dashes from sequences
@@ -33,18 +33,18 @@ STEP_2 workflow template for phylogenetic analysis with configurable tree-buildi
    - **5c. VeryFastTree** - Parallelized FastTree (large datasets only)
    - **5d. PhyloBayes** - Bayesian phylogenetic inference (Bayesian counterpoint)
 
-6. **Visualization** (Processes 6-7)
-   - Human-friendly tree visualization (script 006)
-   - Computer-vision tree visualization (script 007)
+6. **Run log** (Process 6)
+   - Writes timestamped run log to `ai/logs/` for reproducibility
 
-7. **Export** (Process 8)
-   - Symlinks alignment, trimmed alignment, and tree files to output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+**Export**: `RUN-workflow.sh` creates symlinks from `output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/` to the tree newick files produced here.
+
+**Visualization**: Tree rendering (PDF/SVG) is handled by the separate **STEP_3-tree_visualization** workflow, which consumes the newick files produced here. This decoupling isolates scientific computation from visualization-library instability.
 
 ---
 
 ## Usage
 
-**Copy this template for each gene family:**
+**Copy this template for each gene group:**
 ```bash
 # For innexin_pannexin:
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_01-phylogenetic_analysis
@@ -87,8 +87,8 @@ bash RUN-workflow.sh
 
 ## Prerequisites
 
-- **STEP_1-homolog_discovery** complete for this gene family (AGS file in `trees_gene_families/output_to_input/<gene_family>/STEP_1-homolog_discovery/`)
-- **Conda environment** `ai_gigantic_trees_gene_families` with `mafft`, `clipkit`, `fasttree`, and optionally `iqtree`, `VeryFastTree`, `phylobayes`
+- **STEP_1-homolog_discovery** complete for this gene group (AGS file in `trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/`)
+- **Conda environment** `ai_gigantic_trees_gene_groups` with `mafft`, `clipkit`, `fasttree`, and optionally `iqtree`, `VeryFastTree`, `phylobayes`
 - **NextFlow** installed and available in PATH
 
 ---
@@ -109,9 +109,7 @@ workflow-COPYME-phylogenetic_analysis/
 │   ├── 5_a-output/                        # FastTree output (if enabled)
 │   ├── 5_b-output/                        # IQ-TREE output (if enabled)
 │   ├── 5_c-output/                        # VeryFastTree output (if enabled)
-│   ├── 5_d-output/                        # PhyloBayes output (if enabled)
-│   ├── 6-output/                          # Human-friendly visualizations
-│   └── 7-output/                          # Computer-vision visualizations
+│   └── 5_d-output/                        # PhyloBayes output (if enabled)
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
@@ -124,9 +122,7 @@ workflow-COPYME-phylogenetic_analysis/
         ├── 005_b_ai-bash-run_iqtree.sh
         ├── 005_c_ai-bash-run_veryfasttree.sh
         ├── 005_d_ai-bash-run_phylobayes.sh
-        ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-        ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-        └── 008_ai-python-write_run_log.py
+        └── 006_ai-python-write_run_log.py
 ```
 
 ---
@@ -143,8 +139,8 @@ workflow-COPYME-phylogenetic_analysis/
 | IQ-TREE | `5_b-output/5_b_ai-ags-*.treefile` | IQ-TREE ML phylogeny |
 | VeryFastTree | `5_c-output/5_c_ai-ags-*.veryfasttree` | VeryFastTree ML phylogeny |
 | PhyloBayes | `5_d-output/5_d_ai-ags-*.phylobayes.nwk` | PhyloBayes Bayesian consensus tree |
-| Human visualization | `6-output/6_ai-*-human_friendly.{svg,pdf}` | Human-readable tree images |
-| CV visualization | `7-output/7_ai-*-computer_vision_friendly.{svg,pdf}` | Computer-vision tree images |
+
+Tree visualizations (PDF/SVG) are produced by the separate **STEP_3-tree_visualization** workflow.
 
 ---
 
@@ -162,7 +158,7 @@ workflow-COPYME-phylogenetic_analysis/
 ## Data Flow
 
 ```
-trees_gene_families/output_to_input/<gene_family>/STEP_1-homolog_discovery/
+trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/
        │
        ▼
 Process 1: Stage AGS → 1-output/
@@ -185,7 +181,7 @@ Process 4: ClipKit → 4-output/
      Processes 6-7: Visualizations
               │
               ▼
-     Process 8: trees_gene_families/output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+     Process 8: trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
 ```
 
 ---
@@ -194,5 +190,5 @@ Process 4: ClipKit → 4-output/
 
 After this workflow completes, phylogenetic trees are available in:
 ```
-trees_gene_families/output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
 ```

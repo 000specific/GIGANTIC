@@ -8,21 +8,48 @@ nextflow.enable.dsl = 2
 // SignalP Signal Peptide Prediction Pipeline
 // =============================================================================
 //
-// Two-step pipeline:
-//   1. Validate proteome manifest and check all files exist
-//   2. Run SignalP 6 signal peptide prediction on each species proteome (parallel)
+// Three-step pipeline:
+//   0. Preprocess proteomes - filter out records whose FASTA header line exceeds
+//      a filesystem-safe length (default 253 chars). Avoids SignalP6's
+//      "File name too long" failure when per-protein output filenames would
+//      exceed the 255-byte Linux limit (e.g., for EvidentialGene multi-locus
+//      concatenated identifiers).
+//   1. Validate the FILTERED proteome manifest (paths exist, FASTA parseable).
+//   2. Run SignalP 6 signal peptide prediction on each (filtered) species
+//      proteome - per-species sub-jobs via the SLURM executor.
 //
-// Symlinks for output_to_input/BLOCK_signalp/ are created by RUN-workflow.sh after pipeline completes
+// Symlinks for output_to_input/BLOCK_signalp/ are created by RUN-workflow.sh
+// after pipeline completes.
 // =============================================================================
 
 // Script directory
 scripts_dir = "${projectDir}/scripts"
 
+process preprocess_proteomes_filter_long_headers {
+    publishDir "${params.output_dir}/0-output", mode: 'copy'
+
+    input:
+        val input_manifest_path
+
+    output:
+        path '0_ai-filtered_proteome_manifest.tsv', emit: filtered_manifest
+        path '0_ai-log-filter_proteome_long_headers.log'
+        path 'filtered_proteomes/**'
+
+    script:
+    """
+    python3 ${scripts_dir}/000_ai-python-filter_proteome_long_headers.py \
+        --input-manifest ${input_manifest_path} \
+        --output-dir . \
+        --max-header-length ${params.max_header_length ?: 253}
+    """
+}
+
 process validate_proteome_manifest {
     publishDir "${params.output_dir}/1-output", mode: 'copy'
 
     input:
-        val manifest_path
+        path manifest_path
 
     output:
         path '1_ai-validated_manifest.tsv', emit: validated_manifest
@@ -91,8 +118,12 @@ process write_run_log {
 // real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================
 workflow {
-    // Step 1: Validate proteome manifest
-    validate_proteome_manifest( params.proteome_manifest )
+    // Step 0: Filter proteome FASTAs - drop records with overlong header lines.
+    // Emits a NEW manifest pointing at filtered local copies (absolute paths).
+    preprocess_proteomes_filter_long_headers( params.proteome_manifest )
+
+    // Step 1: Validate the FILTERED manifest (not the original user manifest).
+    validate_proteome_manifest( preprocess_proteomes_filter_long_headers.out.filtered_manifest )
 
     // Step 2: Parse validated manifest into per-species channel, then run SignalP
     // Validated manifest columns (tab-separated):

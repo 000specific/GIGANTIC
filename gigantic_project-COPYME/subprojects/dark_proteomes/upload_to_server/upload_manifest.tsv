@@ -1,0 +1,64 @@
+# GIGANTIC Upload Manifest - dark_proteome subproject
+# Format: source_path<TAB>include
+# source_path is relative to subproject root
+# Glob patterns supported (e.g., *.tsv)
+# Lines starting with # are comments
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 05
+# Human: Eric Edsinger
+#
+# WHAT THIS PUBLISHES:
+# Per-species three-axis dark proteome classifications (Edsinger 2024).
+# A gene is DARK iff all three axes fail:
+#   axis_a — reference BLAST (default: human/Drosophila/C. elegans)
+#   axis_b — reference orthogroup (OG containing reference species member)
+#   axis_c — HMM annotation (default: Pfam + PANTHER)
+#
+# RUN_1 = full species70 set, 0 excluded.
+# Project total: 1,375,926 genes, 280,494 dark (20.39%).
+# Reference species (Human, Drosophila, C. elegans) yield 0% dark by
+# construction (their orthogroups contain themselves). Top dark % goes to
+# early-branching / divergent organisms (Sphaeroforma 53%, acoels ~49%,
+# Pleurobrachia 38%).
+#
+# WHAT THIS DOES NOT PUBLISH:
+# The 1.37M-row per-gene orthogroup membership index
+#   BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/2-output/2_ai-orthogroup_membership_index.tsv
+# is a large internal lookup table used by axis-b. The same information
+# can be reconstructed from orthogroups/output_to_input/ + the published
+# 2_ai-reference_orthogroups.tsv file.
+#
+# ============================================================================
+# BLOCK_classify_dark_proteome — primary deliverables
+# ============================================================================
+
+# Per-species dark proteome classifications (full per-gene rows; 70 files)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/3-output/3_ai-dark_proteome-*.tsv	yes
+
+# Per-species dark proteome summaries (one-row summary per species; 70 files)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/3-output/3_ai-dark_proteome_summary-*.tsv	yes
+
+# Cross-species dark proteome summary (one row per species + status)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/4-output/4_ai-cross_species_dark_proteome_summary.tsv	yes
+
+# Project-level totals (single-row summary across species70)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/4-output/4_ai-project_dark_proteome_summary.tsv	yes
+
+# Reference orthogroup list (orthogroups containing reference species genes)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/2-output/2_ai-reference_orthogroups.tsv	yes
+
+# Reference orthogroup summary (project-wide totals over orthogroups TSV)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/2-output/2_ai-reference_orthogroup_summary.tsv	yes
+
+# Reference species audit (which configured reference species are present in proteomes_dir)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/1-output/1_ai-reference_species_audit.tsv	yes
+
+# Excluded species (typically 0 for this subproject; included for transparency)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/1-output/1_ai-excluded_species.tsv	yes
+
+# ============================================================================
+# Internal index (NOT published)
+# ============================================================================
+
+# Per-gene orthogroup membership index (1.37M rows, large internal lookup)
+BLOCK_classify_dark_proteome/workflow-RUN_1-classify_dark_proteome-species70/OUTPUT_pipeline/2-output/2_ai-orthogroup_membership_index.tsv	no

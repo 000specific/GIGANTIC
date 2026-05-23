@@ -1,0 +1,214 @@
+#!/bin/bash
+# AI: Claude Code | Opus 4.6 | 2026 March 04 | Purpose: Run gene_sizes analysis workflow locally
+# Human: Eric Edsinger
+
+################################################################################
+# GIGANTIC gene_sizes - Analyze Gene Sizes (Local)
+################################################################################
+#
+# PURPOSE:
+# Compute gene structure metrics from user-provided CDS interval data and
+# produce genome-wide statistics, relative size ranks, and cross-species summaries.
+#
+# USAGE:
+#   bash RUN-workflow.sh
+#
+# BEFORE RUNNING:
+# 1. Provide per-species gene structure TSV files in INPUT_user/
+#    (see START_HERE-user_config.yaml for format details)
+# 2. Copy or symlink the GIGANTIC species list to INPUT_user/gigantic_species_list.txt
+# 3. Edit START_HERE-user_config.yaml to verify paths
+# 4. (Optional) Set proteome_dir in config for GIGANTIC ID linkage
+#
+# FOR SLURM CLUSTERS:
+# Use the SLURM version instead:
+#   sbatch RUN-workflow.sbatch
+#
+# WHAT THIS DOES:
+# 1. Validates user-provided gene structure files against the GIGANTIC species set
+#    - Species with valid data: PROCESSED
+#    - Species without files: SKIPPED_NO_DATA (graceful)
+#    - Species with incomplete data: SKIPPED_INCOMPLETE (graceful)
+# 2. Extracts per-gene metrics: gene length, exonic/intronic length, exon count, protein size
+# 3. Computes genome-wide statistics and relative rank (quantile) per species
+# 4. Compiles cross-species summary tables with processing status
+# 5. Creates output_to_input/BLOCK_analyze_gene_sizes/ symlinks for downstream subprojects
+#
+# OUTPUT:
+# Results in OUTPUT_pipeline/1-output through 4-output/
+# Downstream symlinks in ../../output_to_input/BLOCK_analyze_gene_sizes/
+#
+################################################################################
+
+echo "========================================================================"
+echo "GIGANTIC gene_sizes Pipeline (Local)"
+echo "========================================================================"
+echo ""
+echo "Started: $(date)"
+echo ""
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "${SCRIPT_DIR}"
+
+# ============================================================================
+# Activate GIGANTIC Environment
+# ============================================================================
+
+# Load conda module (required on HPC systems like HiPerGator)
+module load conda 2>/dev/null || true
+
+# Activate the gene_sizes environment
+if conda activate ai_gigantic_gene_sizes 2>/dev/null; then
+    echo "Activated conda environment: ai_gigantic_gene_sizes"
+else
+    # Check if nextflow is already available in PATH
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: Environment 'ai_gigantic_gene_sizes' not found!"
+        echo ""
+        echo "Please run the environment setup script first:"
+        echo ""
+        echo "  cd ../../../../  # Go to project root"
+        echo "  bash RUN-setup_environments.sh"
+        echo ""
+        exit 1
+    fi
+    echo "Using NextFlow from PATH (environment not activated)"
+fi
+echo ""
+
+# ============================================================================
+# Validate Prerequisites
+# ============================================================================
+
+echo "Validating prerequisites..."
+echo ""
+
+# Check config file exists
+if [ ! -f "START_HERE-user_config.yaml" ]; then
+    echo "ERROR: Configuration file not found!"
+    echo "Expected: START_HERE-user_config.yaml"
+    exit 1
+fi
+echo "  [OK] Configuration file found"
+
+# Check INPUT_user directory exists
+if [ ! -d "INPUT_user" ]; then
+    echo "ERROR: INPUT_user/ directory not found!"
+    echo "  Create it and add per-species gene structure TSV files."
+    echo "  See START_HERE-user_config.yaml for format details."
+    exit 1
+fi
+echo "  [OK] INPUT_user/ directory found"
+
+echo ""
+
+# ============================================================================
+# Run NextFlow Pipeline
+# ============================================================================
+
+echo "Running NextFlow pipeline..."
+echo ""
+
+# Optionally resume from cached work/ if user enabled it in config
+# (inline yaml-read since this older workflow lacks the read_config helper)
+RESUME=$(grep "^resume:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+RESUME_FLAG=""
+if [ "${RESUME}" == "true" ]; then
+    RESUME_FLAG="-resume"
+    echo "  resume: enabled (using NextFlow work/ cache)"
+fi
+
+nextflow run ai/main.nf ${RESUME_FLAG}
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "========================================================================"
+    echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
+    echo "Check the logs above for error details."
+    echo "========================================================================"
+    exit $EXIT_CODE
+fi
+
+# ============================================================================
+# Create symlinks for output_to_input directories
+# ============================================================================
+# Real files live in OUTPUT_pipeline/4-output/ (created by NextFlow above).
+# Symlinks are created in a tier-specific subdirectory at the subproject root:
+#   ../../output_to_input/BLOCK_analyze_gene_sizes/${TIER}/
+#
+# The tier (all_inclusive | gene_vs_protein) is derived from this workflow's
+# own directory name so each tier writes to its own subdir and the two tiers
+# never clobber each other. Symlink targets use absolute paths so they always
+# resolve regardless of how this directory was renamed (COPYME vs RUN_N).
+#
+# gene_sizes creates per-species directories (speciesN_gigantic_gene_metrics,
+# speciesN_gigantic_gene_sizes_summary) which are discovered dynamically.
+# ============================================================================
+
+echo ""
+echo "Creating symlinks for downstream subprojects..."
+
+# Derive tier name from this workflow directory's basename.
+# Examples:
+#   workflow-COPYME-analyze_gene_sizes-all_inclusive   -> all_inclusive
+#   workflow-RUN_1-analyze_gene_sizes-gene_vs_protein  -> gene_vs_protein
+WORKFLOW_NAME=$(basename "${SCRIPT_DIR}")
+TIER=$(echo "${WORKFLOW_NAME}" | sed 's/.*-analyze_gene_sizes-//')
+
+if [ -z "${TIER}" ] || [ "${TIER}" == "${WORKFLOW_NAME}" ]; then
+    echo "ERROR: Could not derive tier name from workflow directory: ${WORKFLOW_NAME}"
+    echo "  Expected pattern: workflow-<COPYME|RUN_N>-analyze_gene_sizes-<tier>"
+    exit 1
+fi
+
+echo "  Tier: ${TIER}"
+
+# --- Subproject-root output_to_input/BLOCK_analyze_gene_sizes/${TIER}/ ---
+SHARED_DIR="../../output_to_input/BLOCK_analyze_gene_sizes/${TIER}"
+mkdir -p "${SHARED_DIR}"
+
+# Remove any stale symlinks from previous runs (within this tier subdir only)
+for old_link in "${SHARED_DIR}"/species*_gigantic_gene_*; do
+    if [ -L "$old_link" ]; then
+        rm "$old_link"
+    fi
+done
+
+# Create symlinks for each species directory in 4-output/.
+# Use absolute paths (via SCRIPT_DIR) so symlinks always resolve.
+for species_dir in OUTPUT_pipeline/4-output/species*_gigantic_*; do
+    if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
+        dir_name=$(basename "$species_dir")
+        ln -sf "${SCRIPT_DIR}/OUTPUT_pipeline/4-output/${dir_name}" \
+            "${SHARED_DIR}/${dir_name}"
+    fi
+done
+
+echo "  output_to_input/BLOCK_analyze_gene_sizes/${TIER}/ -> symlinks created"
+
+echo ""
+echo "========================================================================"
+echo "SUCCESS! gene_sizes pipeline complete."
+echo ""
+echo "Research outputs (real files):"
+echo "  OUTPUT_pipeline/1-output/  Species processing status"
+echo "  OUTPUT_pipeline/2-output/  Per-species gene metrics"
+echo "  OUTPUT_pipeline/3-output/  Ranked metrics and genome summaries"
+echo "  OUTPUT_pipeline/4-output/  Cross-species summary and downstream dirs"
+echo ""
+echo "Downstream symlinks:"
+echo "  ../../output_to_input/BLOCK_analyze_gene_sizes/  (for downstream subprojects)"
+echo ""
+echo "Published directories:"
+echo "  speciesN_gigantic_gene_metrics/         Per-species ranked gene metrics"
+echo "  speciesN_gigantic_gene_sizes_summary/   Cross-species summary statistics"
+echo "========================================================================"
+echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

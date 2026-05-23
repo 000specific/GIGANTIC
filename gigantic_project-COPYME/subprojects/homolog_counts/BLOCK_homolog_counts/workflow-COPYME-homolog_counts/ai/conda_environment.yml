@@ -1,0 +1,14 @@
+# GIGANTIC homolog_counts - workflow conda environment
+# Per-BLOCK conda env scoped to BLOCK_homolog_counts.
+# Auto-created from this file on first run by RUN-workflow.sh
+# (mamba preferred; conda fallback).
+name: aiG-homolog_counts-homolog_counts
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - pandas
+  - nextflow

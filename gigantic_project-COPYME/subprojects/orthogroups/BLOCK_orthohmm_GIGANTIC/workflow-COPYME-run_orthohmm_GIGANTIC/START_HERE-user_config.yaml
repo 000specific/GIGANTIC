@@ -1,0 +1,145 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.7 | 2026 April 26 | Purpose: OrthoHMM GIGANTIC parallel-phmmer pipeline configuration
+# Human: Eric Edsinger
+
+# ============================================================================
+# WHAT THIS WORKFLOW DOES
+# ============================================================================
+#
+# Runs OrthoHMM orthogroup detection with the slow phmmer all-vs-all step
+# parallelized across burst SLURM jobs (one job per species pair).
+#
+# Pipeline stages:
+#   1. Validate proteomes from genomesDB
+#   2. Convert GIGANTIC headers to OrthoHMM-compatible short IDs
+#   3. Extract OrthoHMM's phmmer commands via 'orthohmm --stop prepare'
+#      (ensures bit-identical phmmer invocation as native OrthoHMM)
+#   4. Run each phmmer pair as its own SLURM job in burst mode
+#   5. Pool and verify all phmmer outputs
+#   6. Run OrthoHMM with '--start search_res' (skips phmmer, runs Steps 2-5)
+#   7. Restore GIGANTIC identifiers in final output
+#   8. Generate summary statistics and per-species QC
+#   9. Write timestamped run log
+#
+# ============================================================================
+
+# ============================================================================
+# PROJECT
+# ============================================================================
+project:
+  name: "species70"
+
+# ============================================================================
+# INPUT
+# ============================================================================
+inputs:
+  # Proteomes directory from genomesDB STEP_4
+  # Path is relative to this workflow root directory.
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+# ============================================================================
+# OUTPUT
+# ============================================================================
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# ORTHOHMM PARAMETERS
+# ============================================================================
+orthohmm:
+  evalue: "0.0001"
+  single_copy_threshold: "0.5"
+
+# ============================================================================
+# RESOURCES (per process label)
+# ============================================================================
+# HiPerGator convention: max memory_gb = 7.5 × cpus.
+# If memory is the binding constraint, increase cpus to unlock more memory.
+# ============================================================================
+resources:
+
+  # Phmmer parallel pairs (one SLURM job per pair, ~4,830 jobs in burst mode).
+  # Phmmer scales poorly past ~8 cpus per HMMER docs; 5 cpus is a safe per-pair sweet spot.
+  phmmer_pair:
+    cpus: 10                 # bumped 5→10: covers big-vs-big pairs (e.g., Halichondria × Sycon) that OOM'd at 37 GB
+    memory_gb: 75            # 10 × 7.5; 2× the previously-OOM'ing 37 GB
+    time_hours: 24           # well below the 96h burst cap; no cost if unused; ample margin for any pathological pair
+
+  # OrthoHMM finalization (--start search_res, runs Steps 2-5 in one process).
+  # Sized to cover RUN_4's peak memory observation (216 GB) with margin.
+  orthohmm_finalize:
+    cpus: 40
+    memory_gb: 300           # 40 × 7.5
+    time_hours: 24
+
+  # Local processes (validation, header conversion, command extraction, pooling,
+  # restore, summary, QC, log). Lightweight; runs inside the driver SLURM job.
+  local_step:
+    cpus: 4
+    memory_gb: 30            # 4 × 7.5
+    time_hours: 2
+
+# ============================================================================
+# EXECUTION MODE & SLURM SETTINGS
+# ============================================================================
+# execution_mode:
+#   "local" - runs nextflow directly on the calling node (login node OK for
+#             small test runs only; long runs should use slurm)
+#   "slurm" - submits the workflow driver as a SLURM job (recommended for HPC)
+# ============================================================================
+execution_mode: "slurm"
+
+# Driver job (orchestrates NextFlow, runs local-executor processes).
+# Long walltime so the driver does not time out while waiting for the burst array.
+slurm_account: "moroz"
+slurm_qos: "moroz"
+slurm_cpus: 4
+slurm_memory_gb: 30
+slurm_time_hours: 240        # 10 days
+
+# Burst settings — used by phmmer_pair processes (4,830 parallel SLURM jobs).
+slurm_burst_account: "moroz"
+slurm_burst_qos: "moroz-b"
+
+# Maximum number of phmmer_pair tasks NextFlow keeps in-flight at once.
+# SLURM will reject submissions with QOSGrpCpuLimit if (queue_size × cpus_per_task)
+# exceeds the group's burst CPU pool. For moroz at HiPerGator the burst pool is
+# investment_cpus × 9 = 255 × 9 ≈ 2,295 cpus. Sized conservatively below that,
+# leaving headroom for other group members:
+#   queue_size × resources.phmmer_pair.cpus  ≤  ~2,000   (recommended)
+slurm_queue_size: 200
+
+# Optional SLURM email notifications for the driver job.
+# Leave slurm_mail_user empty ("") to disable email.
+# slurm_mail_type values: BEGIN, END, FAIL, ALL, REQUEUE, ... (comma-separated).
+slurm_mail_user: ""
+slurm_mail_type: "END,FAIL"
+
+# ============================================================================
+# CONDA
+# ============================================================================
+conda:
+  environment: "ai_gigantic_orthogroups_orthohmm"
+
+# ============================================================================
+# RESUME
+# ============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+# ============================================================================
+resume: false

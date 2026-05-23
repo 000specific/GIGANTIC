@@ -46,6 +46,8 @@ INPUT_DIR="OUTPUT_pipeline/2-output/short_header_proteomes"
 OUTPUT_DIR="OUTPUT_pipeline/3-output"
 CPUS=8
 TREE_METHOD="nj"  # nj (neighbor joining), me (minimum evolution), or ml (maximum likelihood)
+PROTEOME_EXT=".aa"   # extension of input proteomes (matches script 002 output)
+STEPS="1,2,3,4"      # broccoli steps to run; comma-separated, must be consecutive
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -64,6 +66,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --tree-method)
             TREE_METHOD="$2"
+            shift 2
+            ;;
+        --proteome-ext)
+            PROTEOME_EXT="$2"
+            shift 2
+            ;;
+        --steps)
+            STEPS="$2"
             shift 2
             ;;
         *)
@@ -114,7 +124,9 @@ log_message "Input directory: ${INPUT_DIR}"
 log_message "Proteome count: ${PROTEOME_COUNT}"
 log_message "Output directory: ${OUTPUT_DIR}"
 log_message "CPUs: ${CPUS}"
-log_message "Tree method: ${TREE_METHOD}"
+log_message "Tree method (broccoli flag: -phylogenies): ${TREE_METHOD}"
+log_message "Proteome extension: ${PROTEOME_EXT}"
+log_message "Steps: ${STEPS}"
 
 # Create output directory
 mkdir -p "${OUTPUT_DIR}"
@@ -128,52 +140,103 @@ fi
 # =============================================================================
 # RUN BROCCOLI
 # =============================================================================
+#
+# Canonical Broccoli flags (verified against broccoli.py source):
+#   -dir          input directory of proteome files
+#   -ext          file extension (default '.fasta'; we override to .aa)
+#   -threads      number of threads
+#   -phylogenies  tree method: nj | me | ml  (NOT '-tree_method'!)
+#   -steps        comma-separated list of steps to run (default '1,2,3,4')
+#   -e_value      e-value threshold for similarity search (default 0.001)
+#   -kmer_size    kmer length (default 100)
+#
+# Output structure (from broccoli source):
+#   dir_step1/   kmer clusters
+#   dir_step2/   per-protein phylomes (DIAMOND + FastTree)
+#   dir_step3/   orthologous_groups.txt, table_OGs_protein_counts.txt,
+#                table_OGs_protein_names.txt, chimeric_proteins.txt,
+#                statistics_per_OG.txt, statistics_per_species.txt, etc.
+#   dir_step4/   orthologous_pairs.txt
+# =============================================================================
 
 log_message ""
 log_message "Starting Broccoli orthogroup detection..."
-log_message "This may take several hours depending on dataset size."
+log_message "Step 2 (DIAMOND + per-protein phylogenies) is the dominant cost."
 log_message ""
-
-# Broccoli takes a directory of FASTA files as input
-# The exact command depends on the Broccoli installation method
-# Common invocations:
-#   python3 broccoli.py -dir INPUT_DIR -threads CPUS
-#   broccoli -dir INPUT_DIR -threads CPUS
 
 # Try broccoli command first, fall back to python3 broccoli.py
 if command -v broccoli &> /dev/null; then
-    log_message "Running: broccoli -dir ${INPUT_DIR} -threads ${CPUS} -tree_method ${TREE_METHOD}"
-
-    broccoli \
-        -dir "${INPUT_DIR}" \
-        -threads "${CPUS}" \
-        -tree_method "${TREE_METHOD}" \
-        2>&1 | tee -a "${LOG_FILE}"
+    BROCCOLI_INVOCATION="broccoli"
 else
-    # Look for broccoli.py in conda environment
+    # Find broccoli.py in conda environment
     BROCCOLI_SCRIPT=$(find "$(conda info --base 2>/dev/null || echo /dev/null)" -name "broccoli.py" 2>/dev/null | head -1)
 
     if [ -z "${BROCCOLI_SCRIPT}" ]; then
         log_message "CRITICAL ERROR: Broccoli not found!"
-        log_message "Ensure conda environment ai_gigantic_orthogroups is activated."
-        log_message "Run: conda activate ai_gigantic_orthogroups"
+        log_message "Ensure the broccoli env (e.g., ai_gigantic_orthogroups_broccoli) is activated."
         exit 1
     fi
-
-    log_message "Running: python3 ${BROCCOLI_SCRIPT} -dir ${INPUT_DIR} -threads ${CPUS} -tree_method ${TREE_METHOD}"
-
-    python3 "${BROCCOLI_SCRIPT}" \
-        -dir "${INPUT_DIR}" \
-        -threads "${CPUS}" \
-        -tree_method "${TREE_METHOD}" \
-        2>&1 | tee -a "${LOG_FILE}"
+    BROCCOLI_INVOCATION="python3 ${BROCCOLI_SCRIPT}"
 fi
 
-# Broccoli outputs to dir_step4 by default - move results to our output directory
-if [ -d "dir_step4" ]; then
-    log_message "Moving Broccoli results from dir_step4/ to ${OUTPUT_DIR}/"
-    cp -r dir_step4/* "${OUTPUT_DIR}/" 2>/dev/null || true
+log_message "Running: ${BROCCOLI_INVOCATION} -dir ${INPUT_DIR} -ext ${PROTEOME_EXT} -threads ${CPUS} -phylogenies ${TREE_METHOD} -steps ${STEPS}"
+
+${BROCCOLI_INVOCATION} \
+    -dir "${INPUT_DIR}" \
+    -ext "${PROTEOME_EXT}" \
+    -threads "${CPUS}" \
+    -phylogenies "${TREE_METHOD}" \
+    -steps "${STEPS}" \
+    2>&1 | tee -a "${LOG_FILE}"
+
+# =============================================================================
+# COPY OUTPUTS TO OUTPUT_DIR (fail-fast — every listed file must exist)
+# =============================================================================
+# Broccoli produces dir_step1 .. dir_step4 in the current working directory.
+# Step 3 contains the main user-facing outputs; step 4 contains pairwise
+# orthologs. Per the broccoli source (broccoli_step3.py / broccoli_step4.py),
+# every file listed below is ALWAYS produced when the steps run successfully.
+# Missing = real failure. We copy with the GIGANTIC `3_ai-` prefix so files
+# trace cleanly back to broccoli's documented names.
+
+if [ ! -d "dir_step3" ]; then
+    log_message "CRITICAL ERROR: dir_step3/ not found — broccoli step 3 did not run."
+    exit 1
 fi
+
+REQUIRED_STEP3_FILES=(
+    orthologous_groups.txt
+    table_OGs_protein_counts.txt
+    table_OGs_protein_names.txt
+    chimeric_proteins.txt
+    unclassified_proteins.txt
+    statistics_per_OG.txt
+    statistics_per_species.txt
+    statistics_nb_OGs_VS_nb_species.txt
+)
+
+log_message "Copying Broccoli step 3 outputs to ${OUTPUT_DIR}/ with 3_ai- prefix"
+for f in "${REQUIRED_STEP3_FILES[@]}"; do
+    if [ ! -f "dir_step3/$f" ]; then
+        log_message "CRITICAL ERROR: required broccoli output missing: dir_step3/$f"
+        log_message "Per broccoli's source, this file is always produced. Its absence indicates a real failure in step 3."
+        exit 1
+    fi
+    cp "dir_step3/$f" "${OUTPUT_DIR}/3_ai-$f"
+done
+
+if [ ! -d "dir_step4" ]; then
+    log_message "CRITICAL ERROR: dir_step4/ not found — broccoli step 4 did not run."
+    exit 1
+fi
+
+if [ ! -f "dir_step4/orthologous_pairs.txt" ]; then
+    log_message "CRITICAL ERROR: required broccoli output missing: dir_step4/orthologous_pairs.txt"
+    exit 1
+fi
+
+cp "dir_step4/orthologous_pairs.txt" "${OUTPUT_DIR}/3_ai-orthologous_pairs.txt"
+log_message "Copied dir_step4/orthologous_pairs.txt to ${OUTPUT_DIR}/3_ai-orthologous_pairs.txt"
 
 # =============================================================================
 # VALIDATE OUTPUT
@@ -182,31 +245,14 @@ fi
 log_message ""
 log_message "Validating Broccoli output..."
 
-# Check critical output file
-if [ ! -f "${OUTPUT_DIR}/orthologous_groups.txt" ]; then
-    log_message "CRITICAL ERROR: orthologous_groups.txt not found!"
-    log_message "Broccoli did not produce expected output."
-    log_message "Check the Broccoli log above for errors."
-    exit 1
-fi
-
-ORTHOGROUP_COUNT=$(wc -l < "${OUTPUT_DIR}/orthologous_groups.txt")
+ORTHOGROUP_COUNT=$(wc -l < "${OUTPUT_DIR}/3_ai-orthologous_groups.txt")
 log_message "Orthogroups identified: ${ORTHOGROUP_COUNT}"
 
-# Check for other output files
-if [ -f "${OUTPUT_DIR}/table_OGs_protein_counts.txt" ]; then
-    log_message "Protein counts table: present"
-fi
+CHIMERIC_COUNT=$(wc -l < "${OUTPUT_DIR}/3_ai-chimeric_proteins.txt")
+log_message "Chimeric proteins detected: ${CHIMERIC_COUNT}"
 
-if [ -f "${OUTPUT_DIR}/chimeric_proteins.txt" ]; then
-    CHIMERIC_COUNT=$(wc -l < "${OUTPUT_DIR}/chimeric_proteins.txt")
-    log_message "Chimeric proteins detected: ${CHIMERIC_COUNT}"
-fi
-
-if [ -f "${OUTPUT_DIR}/orthologous_pairs.txt" ]; then
-    PAIRS_COUNT=$(wc -l < "${OUTPUT_DIR}/orthologous_pairs.txt")
-    log_message "Orthologous pairs: ${PAIRS_COUNT}"
-fi
+PAIRS_COUNT=$(wc -l < "${OUTPUT_DIR}/3_ai-orthologous_pairs.txt")
+log_message "Orthologous pairs: ${PAIRS_COUNT}"
 
 # =============================================================================
 # COMPLETION

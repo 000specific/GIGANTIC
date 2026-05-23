@@ -1,0 +1,138 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC gene_sizes - Analyze Gene Sizes Configuration
+# AI: Claude Code | Opus 4.6 | 2026 March 04
+# Human: Eric Edsinger
+#
+# ============================================================================
+# HOW TO USE THIS FILE
+# ============================================================================
+#
+# This configuration file controls how the gene_sizes workflow runs.
+# Edit the paths below to match your project setup.
+#
+# After editing, run: bash RUN-workflow.sh
+#
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  # Path to INPUT_user/ directory containing per-species gene structure TSV files.
+  # This is the Tier 1 (all_inclusive) workflow — files must follow the
+  # 15-column Tier 1 layout:
+  #   Source_Gene_ID  Seqid  Gene_Start  Gene_End  Strand  Gene_Size
+  #   Exon_Intervals  Transcript_Size  CDS_Intervals  CDS_Size  Protein_Size
+  #   UTR_5prime_Intervals  UTR_5prime_Size  UTR_3prime_Intervals  UTR_3prime_Size
+  # Filename pattern: Genus_species-gene_coordinates_all_inclusive.tsv
+  # The user creates these files by parsing species-specific GFF/GTF
+  # annotations (see research_notebook/research_user/<speciesN>/gene_coordinates/
+  # for canonical NCBI / Kim_2025 / repository extractors). Only species whose
+  # source annotation provides UTR-bearing exon records for ≥50% of genes
+  # qualify for Tier 1 — others are processed by the Tier 2 workflow
+  # (../workflow-COPYME-analyze_gene_sizes-gene_vs_protein/).
+  input_user_dir: "INPUT_user"
+
+  # Path to GIGANTIC species list (all species in the species set)
+  # One species name per line (Genus_species format)
+  # From genomesDB: output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_species_list/species_list.txt
+  gigantic_species_list: "INPUT_user/gigantic_species_list.txt"
+
+  # Path to directory containing GIGANTIC proteome files for ID linkage (optional)
+  # Files named: Genus_species.aa (symlinks or copies)
+  # If provided, Source_Gene_IDs are linked to GIGANTIC identifiers via g_ prefix
+  # Leave empty to skip ID linkage
+  proteome_dir: ""
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  # Main output directory
+  base_dir: "OUTPUT_pipeline"
+
+# Optional project name used in run-log labelling (script 005). Leave empty
+# unless you want a specific identifier in ai/logs/run_*.log files.
+project_name: ""
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# WORKFLOW PURPOSE:
+# Compute Tier 1 (all_inclusive) gene structure metrics from user-provided
+# 15-column gene-coordinate TSVs. This is the methodology-strict tier;
+# the parallel Tier 2 (gene_vs_protein) workflow handles the broader species
+# set on a smaller universally-comparable metric subset.
+#
+# HOW IT WORKS:
+# 1. Script 001 validates 15-col Tier 1 TSVs against the GIGANTIC species set
+#    - Species with valid data: PROCESSED
+#    - Species without files: SKIPPED_NO_DATA
+#    - Species with incomplete files: SKIPPED_INCOMPLETE
+# 2. Script 002 reads exon + CDS intervals and computes per-gene metrics
+#    (gene size, transcript size, CDS size, protein size, exon count, intron
+#    total size, UTR total size). Optionally links Source_Gene_IDs to GIGANTIC
+#    identifiers via proteome.
+# 3. Script 003 computes genome-wide statistics and 6 relative ranks per species
+# 4. Script 004 compiles a cross-species 7-metric summary with processing status
+# 5. Script 005 writes a timestamped run-success log to ai/logs/
+#
+# USER INPUT FORMAT (15 columns, Tier 1):
+#   One TSV per species in INPUT_user/, named
+#   Genus_species-gene_coordinates_all_inclusive.tsv:
+#
+#   Source_Gene_ID  Seqid  Gene_Start  Gene_End  Strand  Gene_Size
+#   Exon_Intervals  Transcript_Size  CDS_Intervals  CDS_Size  Protein_Size
+#   UTR_5prime_Intervals  UTR_5prime_Size  UTR_3prime_Intervals  UTR_3prime_Size
+#
+#   Source_Gene_ID:           Must match the g_ field in GIGANTIC proteome headers
+#   Exon_Intervals:           Comma-separated start-end pairs for the T1 transcript's exons
+#   CDS_Intervals:            Comma-separated start-end pairs for the T1 transcript's CDS features
+#   UTR_5prime_Intervals:     Set difference (merged_exons − merged_cds), strand-aware 5′ UTR
+#   UTR_3prime_Intervals:     Set difference (merged_exons − merged_cds), strand-aware 3′ UTR
+#   Pre-computed size fields are conveniences — script 002 re-derives them
+#   from the intervals to stay self-consistent.
+#
+# METRICS COMPUTED (Tier 1 — 7 metrics, biologically-correct, per-gene):
+#   Gene_Size            - Genomic span (gene_end - gene_start + 1)
+#   Transcript_Size      - Length of mature mRNA = sum of merged exon intervals
+#   CDS_Size             - Length of protein-coding region = sum of merged CDS intervals
+#   Protein_Size         - Estimated amino acids = CDS_Size / 3
+#   Exon_Count           - Number of merged exon intervals (true exon count of T1)
+#   Intron_Total_Size    - Total intronic span = Gene_Size - Transcript_Size
+#   UTR_Total_Size       - Total UTR length = Transcript_Size - CDS_Size
+#
+# Overlapping intervals (e.g., from collapsed isoforms in user input) are merged before computing metrics.
+#
+# OUTPUT STRUCTURE:
+#   output_to_input/BLOCK_analyze_gene_sizes/all_inclusive/speciesN_gigantic_gene_metrics/        - Per-species ranked metrics
+#   output_to_input/BLOCK_analyze_gene_sizes/all_inclusive/speciesN_gigantic_gene_sizes_summary/  - Cross-species summary
+#
+# Where N = count of Tier 1 processable species (typically ~40).
+#
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+
+resume: false

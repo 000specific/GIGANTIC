@@ -1,0 +1,142 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.7 | 2026 April 27 | Purpose: OrthoFinder GIGANTIC parallel-DIAMOND pipeline configuration
+# Human: Eric Edsinger
+
+# ============================================================================
+# WHAT THIS WORKFLOW DOES
+# ============================================================================
+#
+# Runs OrthoFinder orthogroup detection with the slow DIAMOND/BLAST all-vs-all
+# search step parallelized across burst SLURM jobs (one job per species pair).
+#
+# Pipeline stages:
+#   1. Validate proteomes from genomesDB
+#   2. Prepare proteomes for OrthoFinder input format
+#   3. Extract OrthoFinder's DIAMOND commands via 'orthofinder -op'
+#      (ensures bit-identical search invocation as native OrthoFinder)
+#   4. Run each DIAMOND pair as its own SLURM array task in burst mode
+#   5. Pool and verify all DIAMOND outputs
+#   6. Run OrthoFinder with '-b <pooled_dir>' (skips search, runs clustering +
+#      tree inference + reconciliation)
+#   7. Standardize OrthoFinder output to GIGANTIC format
+#   8. Generate summary statistics and per-species QC
+#   9. Write timestamped run log
+#
+# ============================================================================
+
+# ============================================================================
+# PROJECT
+# ============================================================================
+project:
+  name: "species70"
+
+# ============================================================================
+# INPUT
+# ============================================================================
+inputs:
+  # Proteomes directory from genomesDB STEP_4
+  # Path is relative to this workflow root directory.
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+# ============================================================================
+# OUTPUT
+# ============================================================================
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# ORTHOFINDER PARAMETERS
+# ============================================================================
+orthofinder:
+  # Sequence search method: "diamond" (default, fast) or "blast" (slower, more sensitive)
+  search_method: "diamond"
+  # MCL inflation parameter for clustering (default 1.5)
+  mcl_inflation: "1.5"
+
+# ============================================================================
+# RESOURCES (per process label)
+# ============================================================================
+# HiPerGator convention: max memory_gb = 7.5 × cpus.
+# If memory is the binding constraint, increase cpus to unlock more memory.
+# ============================================================================
+resources:
+
+  # DIAMOND parallel pairs (one SLURM array task per pair, ~4,830 in burst mode).
+  # DIAMOND scales reasonably to multi-threading and is much faster per call
+  # than phmmer; 2 cpus per pair is sufficient.
+  diamond_pair:
+    cpus: 2
+    memory_gb: 15            # 2 × 7.5
+    time_hours: 2            # generous safety margin per pair
+
+  # OrthoFinder finalization (-b resume): clustering + gene-tree inference +
+  # species tree + reconciliation. The tree-inference stage on K orthogroups
+  # is the new dominant cost and benefits from many cores.
+  orthofinder_finalize:
+    cpus: 48
+    memory_gb: 360           # 48 × 7.5
+    time_hours: 96           # 4 days
+
+  # Local processes (validate, prepare, extract commands, pool, standardize,
+  # summary, QC, log). Lightweight; runs inside the driver SLURM job.
+  local_step:
+    cpus: 4
+    memory_gb: 30            # 4 × 7.5
+    time_hours: 2
+
+# ============================================================================
+# EXECUTION MODE & SLURM SETTINGS
+# ============================================================================
+# execution_mode:
+#   "local" - runs nextflow directly on the calling node (login node OK for
+#             small test runs only; long runs should use slurm)
+#   "slurm" - submits the workflow driver as a SLURM job (recommended for HPC)
+# ============================================================================
+execution_mode: "slurm"
+
+# Driver job (orchestrates NextFlow, runs local-executor processes).
+# Long walltime so the driver does not time out while waiting for the burst array.
+slurm_account: "moroz"
+slurm_qos: "moroz"
+slurm_cpus: 4
+slurm_memory_gb: 30
+slurm_time_hours: 240        # 10 days
+
+# Burst settings — used by diamond_pair processes (parallel SLURM array).
+slurm_burst_account: "moroz"
+slurm_burst_qos: "moroz-b"
+
+# Optional SLURM email notifications for the driver job.
+# Leave slurm_mail_user empty ("") to disable email.
+# slurm_mail_type values: BEGIN, END, FAIL, ALL, REQUEUE, ... (comma-separated).
+slurm_mail_user: ""
+slurm_mail_type: "END,FAIL"
+
+# ============================================================================
+# CONDA
+# ============================================================================
+conda:
+  environment: "ai_gigantic_orthogroups"
+
+# ============================================================================
+# RESUME
+# ============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility. Flip to true
+# when you intentionally want to resume after a known interruption.
+# ============================================================================
+resume: false

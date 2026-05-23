@@ -5,55 +5,164 @@
 # =============================================================================
 # RUN-workflow.sh
 # =============================================================================
-# Runs the Broccoli orthogroup detection Nextflow pipeline.
+# Runs the Broccoli orthogroup detection NextFlow pipeline.
+# Supports both local and SLURM execution via START_HERE-user_config.yaml.
 #
 # Usage:
 #   bash RUN-workflow.sh
 #
-# FOR SLURM CLUSTERS:
-#   sbatch RUN-workflow.sbatch
+# Set execution_mode in START_HERE-user_config.yaml:
+#   "local" - runs directly on this machine
+#   "slurm" - submits as a SLURM driver job with resources from config
 # =============================================================================
 
 set -e
-
-echo "========================================================================"
-echo "Starting Broccoli Orthogroup Detection Pipeline"
-echo "========================================================================"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
+echo "========================================================================"
+echo "Starting Broccoli Orthogroup Detection Pipeline"
+echo "========================================================================"
+
 # ============================================================================
-# Activate GIGANTIC Environment
+# Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
+# The environment is created automatically on first run from the yml spec
+# in conda_environments/. You can also pre-create all environments at once:
+#   cd ../../../../ && bash RUN-setup_environments.sh
+# ============================================================================
+
+ENV_NAME="ai_gigantic_orthogroups_broccoli"
+ENV_YML="../../../../conda_environments/${ENV_NAME}.yml"
 
 module load conda 2>/dev/null || true
 
-if conda activate ai_gigantic_orthogroups 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_orthogroups"
-else
-    if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_orthogroups' not found!"
-        echo ""
-        echo "Please run the environment setup script first:"
-        echo ""
-        echo "  cd ../../../../  # Go to project root"
-        echo "  bash RUN-setup_environments.sh"
-        echo ""
-        echo "Or create this environment manually:"
-        echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_orthogroups.yml"
-        echo ""
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
+    echo "On HPC (HiPerGator): module load conda"
+    exit 1
+fi
+
+# Create environment on-demand if it does not exist
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Environment '${ENV_NAME}' not found. Creating on-demand..."
+    echo ""
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    echo ""
+    echo "Environment '${ENV_NAME}' created successfully."
+    echo ""
+fi
+
+# Activate the environment
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+# Ensure NextFlow is available (conda env or system module)
+if ! command -v nextflow &> /dev/null; then
+    echo "NextFlow not found in conda env. Trying system module..."
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available!"
+        exit 1
+    fi
+    echo "Using NextFlow from system module"
+else
+    echo "NextFlow available"
 fi
 echo ""
 
-# Run Nextflow pipeline
+# ============================================================================
+# Read execution mode from START_HERE-user_config.yaml
+# ============================================================================
+# Uses grep+sed to parse flat YAML keys (no Python dependency required).
+
+read_config() {
+    # Read a flat YAML key from START_HERE-user_config.yaml (no Python dependency)
+    # Pipeline:
+    #   1. grep the line beginning with the key
+    #   2. strip "key: " prefix
+    #   3. strip trailing inline yaml comments ("# ...") and trailing whitespace
+    #   4. strip wrapping double-quotes
+    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null \
+        | head -1 \
+        | sed 's/^[^:]*: *//' \
+        | sed 's/[[:space:]]*#.*$//' \
+        | sed 's/[[:space:]]*$//' \
+        | sed 's/^"//;s/"$//')
+    echo "${value:-$2}"
+}
+
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+
+# ============================================================================
+# SLURM submission (if execution_mode is "slurm" and not already inside a job)
+# ============================================================================
+
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    echo "Execution mode: SLURM (submitting driver job)"
+    echo ""
+
+    SLURM_CPUS=$(read_config "slurm_cpus" "4")
+    SLURM_MEM=$(read_config "slurm_memory_gb" "30")
+    SLURM_TIME=$(read_config "slurm_time_hours" "240")
+    SLURM_ACCOUNT=$(read_config "slurm_account" "")
+    SLURM_QOS=$(read_config "slurm_qos" "")
+    SLURM_MAIL_USER=$(read_config "slurm_mail_user" "")
+    SLURM_MAIL_TYPE=$(read_config "slurm_mail_type" "END,FAIL")
+
+    mkdir -p slurm_logs
+
+    SBATCH_ARGS="--job-name=broccoli"
+    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/broccoli-%j.log"
+
+    if [ -n "${SLURM_ACCOUNT}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+    fi
+    if [ -n "${SLURM_QOS}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+    fi
+    if [ -n "${SLURM_MAIL_USER}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --mail-user=${SLURM_MAIL_USER}"
+        SBATCH_ARGS="${SBATCH_ARGS} --mail-type=${SLURM_MAIL_TYPE}"
+    fi
+
+    echo "Submitting with: sbatch ${SBATCH_ARGS}"
+    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+    echo ""
+    echo "Driver job submitted. Check slurm_logs/ for output."
+    conda deactivate 2>/dev/null || true
+    exit 0
+fi
+
+# ============================================================================
+# Run Nextflow pipeline (local execution or inside SLURM driver job)
+# ============================================================================
+
+if [ -n "${SLURM_JOB_ID}" ]; then
+    echo "Running inside SLURM driver job ${SLURM_JOB_ID}"
+else
+    echo "Execution mode: local"
+fi
+
 # Optionally resume from cached work/ if user enabled it in config
-# (inline yaml-read since this older workflow lacks the read_config helper)
-RESUME=$(grep "^resume:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+RESUME=$(read_config "resume" "false")
 RESUME_FLAG=""
 if [ "${RESUME}" == "true" ]; then
     RESUME_FLAG="-resume"
@@ -95,10 +204,10 @@ mkdir -p "${SUBPROJECT_SHARED_DIR}"
 # Remove any stale symlinks from previous runs
 find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null
 
-ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv" \
-    "${SUBPROJECT_SHARED_DIR}/orthogroups_gigantic_ids.tsv"
-ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/4_ai-gene_count_gigantic_ids.tsv" \
-    "${SUBPROJECT_SHARED_DIR}/gene_count_gigantic_ids.tsv"
+ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/4_ai-orthologous_groups-gigantic_ids.tsv" \
+    "${SUBPROJECT_SHARED_DIR}/orthologous_groups-gigantic_ids.tsv"
+ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/3-output/3_ai-table_OGs_protein_counts.txt" \
+    "${SUBPROJECT_SHARED_DIR}/table_OGs_protein_counts.txt"
 ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/5_ai-summary_statistics.tsv" \
     "${SUBPROJECT_SHARED_DIR}/summary_statistics.tsv"
 ln -sf "../../BLOCK_broccoli/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/6-output/6_ai-per_species_summary.tsv" \

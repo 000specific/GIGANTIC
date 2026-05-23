@@ -40,11 +40,16 @@ import csv
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 
 import yaml
+
+# Add scripts directory to path for utility imports (RUN_SUMMARY fragment emission)
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -858,7 +863,14 @@ def process_orthogroups( orthogroup_ids___orthogroup_data, species_clade_id_name
         logger.error( f"CRITICAL ERROR: No orthogroup origins found!" )
         sys.exit( 1 )
 
-    return orthogroup_origins, origins___orthogroup_ids
+    stats = {
+        'origin_found_count': origin_found_count,
+        'origin_not_found_count': origin_not_found_count,
+        'single_species_count': single_species_count,
+        'multi_species_count': multi_species_count,
+        'processed_count': processed_count,
+    }
+    return orthogroup_origins, origins___orthogroup_ids, stats
 
 
 # ============================================================================
@@ -1021,6 +1033,8 @@ def write_orthogroups_by_origin( origins___orthogroup_ids, clade_id_names___phyl
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 002: DETERMINE ORTHOGROUP ORIGINS" )
     logger.info( "=" * 80 )
@@ -1071,7 +1085,7 @@ def main():
     # Step 6: Determine origins for all orthogroups
     logger.info( "" )
     logger.info( "STEP 6: Determining phylogenetic origins..." )
-    orthogroup_origins, origins___orthogroup_ids = process_orthogroups(
+    orthogroup_origins, origins___orthogroup_ids, process_stats = process_orthogroups(
         orthogroup_ids___orthogroup_data,
         species_clade_id_names___phylogenetic_paths,
         parents___children,
@@ -1098,6 +1112,22 @@ def main():
     logger.info( f"  {output_summary_file.name}" )
     logger.info( f"  {output_by_origin_directory.name}/ ({len( origins___orthogroup_ids )} files)" )
     logger.info( "=" * 80 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    emit_run_summary_fragment(
+        script_number = 2,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'orthogroups_input': process_stats[ 'processed_count' ],
+            'origins_found': process_stats[ 'origin_found_count' ],
+            'origins_not_found': process_stats[ 'origin_not_found_count' ],
+            'single_species_orthogroups': process_stats[ 'single_species_count' ],
+            'multi_species_orthogroups': process_stats[ 'multi_species_count' ],
+            'distinct_origin_transition_blocks': len( origins___orthogroup_ids ),
+        }
+    )
 
     return 0
 

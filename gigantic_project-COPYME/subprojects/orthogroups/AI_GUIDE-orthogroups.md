@@ -6,8 +6,10 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | Orthogroups subproject concepts | This file |
-| OrthoFinder details | `BLOCK_orthofinder/AI_GUIDE-orthofinder.md` |
-| OrthoHMM details | `BLOCK_orthohmm/AI_GUIDE-orthohmm.md` |
+| OrthoFinder details (standard) | `BLOCK_orthofinder/AI_GUIDE-orthofinder.md` |
+| **OrthoFinder details (parallel-DIAMOND fan-out, ≥30 species)** | `BLOCK_orthofinder_array/AI_GUIDE-orthofinder_array.md` |
+| OrthoHMM details (standard) | `BLOCK_orthohmm/AI_GUIDE-orthohmm.md` |
+| **OrthoHMM details (parallel-phmmer fan-out, ≥30 species)** | `BLOCK_orthohmm_GIGANTIC/AI_GUIDE-orthohmm_GIGANTIC.md` |
 | Broccoli details | `BLOCK_broccoli/AI_GUIDE-broccoli.md` |
 | Comparison details | `BLOCK_comparison/AI_GUIDE-comparison.md` |
 | Running a specific workflow | `BLOCK_{tool}/workflow-COPYME-run_{tool}/ai/AI_GUIDE-{tool}_workflow.md` |
@@ -20,19 +22,41 @@ The orthogroups subproject identifies orthologous gene groups across species usi
 
 ## Architecture
 
-The orthogroups subproject contains **four equivalent, self-contained projects** that mirror the genomesDB STEP pattern:
+The orthogroups subproject contains **multiple equivalent, self-contained projects** that mirror the genomesDB STEP pattern:
 
 ```
-orthogroups/                          # Subproject root (mirrors genomesDB root)
-├── BLOCK_orthofinder/                      # Tool project (mirrors a genomesDB STEP)
-├── BLOCK_orthohmm/                         # Tool project
-├── BLOCK_broccoli/                         # Tool project
-└── BLOCK_comparison/                       # Cross-method comparison project
+orthogroups/                                    # Subproject root (mirrors genomesDB root)
+├── BLOCK_orthofinder/                                  # Standard OrthoFinder (smaller species sets)
+├── BLOCK_orthofinder_array/                            # Parallel-DIAMOND fan-out for ≥30 species
+├── BLOCK_orthohmm/                                     # Standard OrthoHMM (smaller species sets)
+├── BLOCK_orthohmm_GIGANTIC/                            # Parallel-phmmer fan-out for ≥30 species
+├── BLOCK_broccoli/                                     # Tool project
+└── BLOCK_comparison/                                   # Cross-method comparison project
 ```
 
-Each tool project is fully self-contained: it validates inputs, runs its tool, standardizes output, generates statistics, and performs QC. The comparison project reads standardized output from all three tools.
+Each tool project is fully self-contained: it validates inputs, runs its tool, standardizes output, generates statistics, and performs QC. The comparison project reads standardized output from any tool BLOCK (standard or array).
 
-**Design principle**: Adding a new orthogroup tool = copy any tool project, replace the tool execution script (003), adjust the output parser (004). Everything else (validation, stats, QC, project structure) works as-is.
+**Design principle**: Adding a new orthogroup tool = copy any tool project, replace the tool execution script (003), adjust the output parser. Everything else (validation, stats, QC, project structure) works as-is.
+
+### Standard vs Array Variants
+
+For each search-based tool (OrthoFinder, OrthoHMM) there are two BLOCK
+variants:
+
+- **Standard** (`BLOCK_orthofinder/`, `BLOCK_orthohmm/`) — single-process
+  invocation, simpler to set up. Use for small species sets (< ~20).
+- **Array** (`BLOCK_orthofinder_array/`, `BLOCK_orthohmm_GIGANTIC/`) —
+  the slow all-vs-all search step is parallelized across SLURM burst
+  job arrays via `process.array = 100`. Each pair is its own task,
+  ~4,830 tasks bundled into ~49 array submissions. Etiquette-correct
+  on shared HPC. Use for ≥ 30 species where standard would take days.
+
+Both variants produce **identical biological output** (same orthogroup
+table format, same downstream consumability). The array variants use the
+tools' built-in escape hatches (`--stop prepare` / `-op` to extract
+canonical search commands; `--start search_res` / `-b` to resume from
+pre-computed search results) — phmmer/DIAMOND invocations are bit-identical
+to what the standard tools would have run.
 
 ---
 

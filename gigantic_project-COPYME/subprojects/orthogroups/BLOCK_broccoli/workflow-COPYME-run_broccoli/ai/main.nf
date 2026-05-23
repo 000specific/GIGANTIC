@@ -66,8 +66,15 @@ process run_broccoli {
         path short_header_proteomes
 
     output:
-        path 'orthologous_groups.txt', emit: orthogroups
-        path 'table_OGs_protein_counts.txt', emit: protein_counts
+        path '3_ai-orthologous_groups.txt', emit: orthogroups
+        path '3_ai-table_OGs_protein_counts.txt'
+        path '3_ai-table_OGs_protein_names.txt'
+        path '3_ai-chimeric_proteins.txt'
+        path '3_ai-unclassified_proteins.txt'
+        path '3_ai-statistics_per_OG.txt'
+        path '3_ai-statistics_per_species.txt'
+        path '3_ai-statistics_nb_OGs_VS_nb_species.txt'
+        path '3_ai-orthologous_pairs.txt'
         path '3_ai-log-run_broccoli.log'
 
     script:
@@ -89,22 +96,16 @@ process restore_identifiers {
     input:
         path header_mapping
         path orthogroups
-        path protein_counts
 
     output:
-        path '4_ai-orthogroups_gigantic_ids.tsv', emit: orthogroups_gigantic
-        path '4_ai-gene_count_gigantic_ids.tsv', emit: gene_count_gigantic
+        path '4_ai-orthologous_groups-gigantic_ids.tsv', emit: orthogroups_gigantic
         path '4_ai-log-restore_gigantic_identifiers.log'
 
     script:
     """
-    mkdir -p broccoli_output
-    cp ${orthogroups} broccoli_output/
-    cp ${protein_counts} broccoli_output/
-
     python3 ${scripts_dir}/004_ai-python-restore_gigantic_identifiers.py \
         --header-mapping ${header_mapping} \
-        --broccoli-dir broccoli_output \
+        --orthogroups-file ${orthogroups} \
         --output-dir .
     """
 }
@@ -189,8 +190,7 @@ workflow {
     run_broccoli( convert_headers.out.short_header_proteomes )
     restore_identifiers(
         convert_headers.out.header_mapping,
-        run_broccoli.out.orthogroups,
-        run_broccoli.out.protein_counts
+        run_broccoli.out.orthogroups
     )
     generate_summary_statistics(
         validate_proteomes.out.proteome_list,

@@ -1,0 +1,97 @@
+# AI_GUIDE: homolog_counts workflow
+
+**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-homolog_counts.md`) first. This guide focuses on running the workflow.
+
+## Quick Reference
+
+| User needs… | Go to… |
+|---|---|
+| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
+| Subproject concepts, output schema, path portability | `../../../AI_GUIDE-homolog_counts.md` |
+| Running the workflow | This file |
+
+## Quick Start
+
+1. Edit `START_HERE-user_config.yaml` at the workflow root:
+   - Set `execution_mode:` to `"local"` (run here) or `"slurm"` (submit as job)
+   - If `"slurm"`: set `slurm_account:` and `slurm_qos:`
+   - Verify the four `inputs:` paths (species70 phyloname map + 3 upstream `output_to_input/` directories)
+2. Run: `bash RUN-workflow.sh`
+
+A single entrypoint handles both modes. When `execution_mode: "slurm"`, `RUN-workflow.sh` self-submits to SLURM via `sbatch --wrap` and re-enters itself on the compute node. This replaces the older two-file (`.sh` + `.sbatch`) pattern.
+
+On first run, the conda env `aiG-homolog_counts-homolog_counts` is auto-created from `ai/conda_environment.yml` using `mamba` (preferred) or `conda` (fallback). Subsequent runs activate the existing env.
+
+## Pipeline Steps
+
+| # | Script | Purpose | Primary output |
+|---|---|---|---|
+| 1 | `001_ai-python-validate_species70_manifest.py` | Validate phyloname map; emit canonical alphabetical phyloname column order | `1-output/1_ai-species70_alphabetical_phylonames.tsv` |
+| 2 | `002_ai-python-count-orthogroups_orthohmm.py` | Count orthogroups per species | `2-output/2_ai-counts-orthogroups_orthohmm.tsv` |
+| 3 | `003_ai-python-count-trees_gene_groups.py` | Count HGNC gene group homologs per species | `3-output/3_ai-counts-trees_gene_groups.tsv` |
+| 4 | `004_ai-python-count-trees_gene_families.py` | Count curated gene family homologs per species | `4-output/4_ai-counts-trees_gene_families.tsv` |
+| 5 | `005_ai-python-write_run_log.py` | Write timestamped run log to `ai/logs/` and `5-output/` | `ai/logs/<timestamp>_run_log.md` |
+
+Scripts 002-004 are independent of each other and may run in parallel under NextFlow. All three read the canonical species70 column order from script 001's output to guarantee identical column shape across source TSVs.
+
+## Output Layout
+
+```
+workflow-COPYME-homolog_counts/
+├── OUTPUT_pipeline/
+│   ├── 1-output/1_ai-species70_alphabetical_phylonames.tsv
+│   ├── 2-output/2_ai-counts-orthogroups_orthohmm.tsv
+│   ├── 3-output/3_ai-counts-trees_gene_groups.tsv
+│   ├── 4-output/4_ai-counts-trees_gene_families.tsv
+│   └── 5-output/5_ai-run_log.md
+└── ai/logs/<timestamp>_run_log.md
+```
+
+After successful run, `RUN-workflow.sh` creates symlinks from `../../output_to_input/BLOCK_homolog_counts/counts-<source>.tsv` → the corresponding `<N>-output/<N>_ai-counts-<source>.tsv`. Downstream subprojects can read stable paths regardless of run number.
+
+## Verification Commands
+
+```bash
+# Column-count sanity (3 fixed + 70 species = 73)
+head -1 OUTPUT_pipeline/2-output/2_ai-counts-orthogroups_orthohmm.tsv | tr '\t' '\n' | wc -l
+head -1 OUTPUT_pipeline/3-output/3_ai-counts-trees_gene_groups.tsv   | tr '\t' '\n' | wc -l
+head -1 OUTPUT_pipeline/4-output/4_ai-counts-trees_gene_families.tsv | tr '\t' '\n' | wc -l
+
+# Identical species column order across all three sources
+for f in OUTPUT_pipeline/{2,3,4}-output/*-counts-*.tsv; do
+  head -1 "$f" | cut -f4-
+done | sort -u | wc -l   # Expected: 1
+
+# Row-count sanity
+wc -l OUTPUT_pipeline/{2,3,4}-output/*-counts-*.tsv
+
+# Symlinks created
+ls -la ../../output_to_input/BLOCK_homolog_counts/
+```
+
+## Common Errors
+
+| Error | Cause | Solution |
+|---|---|---|
+| `species70_phyloname_map: file not found` | Path moved or `/blue/` not mounted on host | Confirm path resolves: `ls -l <path>`; if running outside `/blue/`, mount or copy the map |
+| Column count != 73 in any output | One counting script used a stale species order | Reset cache and re-run from script 001: `rm -rf work .nextflow .nextflow.log*; bash RUN-workflow.sh` |
+| `species column order differs across sources` | Script 001 was skipped or its output edited | Rerun fresh; never edit `1_ai-species70_alphabetical_phylonames.tsv` by hand |
+| `aiG-homolog_counts-homolog_counts: env exists with conflicts` | Partial previous create | `mamba env remove -n aiG-homolog_counts-homolog_counts -y` then re-run |
+| Empty count TSV (one source) | Upstream `output_to_input/` not populated | Run upstream subproject first; verify its `output_to_input/` contains expected files |
+| `mamba: command not found` and `conda: command not found` | Conda module not loaded (HPC) | `module load conda` before running, or run from a node where conda is on PATH |
+| SLURM job submitted but pipeline doesn't run | `execution_mode: "slurm"` set without `slurm_account` / `slurm_qos` | Edit `START_HERE-user_config.yaml`, set both, then re-run |
+
+## NextFlow Cache Reset
+
+Before re-running after edits to scripts or config:
+
+```bash
+rm -rf work .nextflow .nextflow.log* slurm_logs
+bash RUN-workflow.sh
+```
+
+Do NOT use `-resume` after script changes — stale cached scripts can mask the fix.
+
+## Server Upload
+
+After validation passes, curated count TSVs are copied to `../../upload_to_server/` and registered in `upload_to_server/upload_manifest.tsv`. The upload itself is invoked via subproject-level `RUN-update_upload_to_server.sh` (to be added in a follow-up round, matching the orthogroups / annotations_hmms convention).

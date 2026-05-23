@@ -6,8 +6,14 @@
 |---------------|----------|
 | GIGANTIC overview | `../../AI_GUIDE-project.md` |
 | Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
-| OrthoHMM concepts | This file |
-| Running the workflow | `workflow-COPYME-run_orthohmm/ai/AI_GUIDE-orthohmm_workflow.md` |
+| OrthoHMM concepts (this BLOCK = standard, single-process) | This file |
+| Running the standard workflow | `workflow-COPYME-run_orthohmm/ai/AI_GUIDE-orthohmm_workflow.md` |
+| **Parallel-phmmer variant for ≥30 species** | `../BLOCK_orthohmm_GIGANTIC/AI_GUIDE-orthohmm_GIGANTIC.md` |
+
+> **For ≥30 species**, prefer `BLOCK_orthohmm_GIGANTIC` — it parallelizes
+> the slow phmmer all-vs-all step across SLURM burst-mode job arrays.
+> Standard `BLOCK_orthohmm` (this BLOCK) is simpler and fine for smaller
+> sets, but at scale it can take days and may hit per-process timeouts.
 
 ## OrthoHMM Overview
 

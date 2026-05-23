@@ -2,7 +2,7 @@
 
 **Status**: ✅ **SUCCESS** -- All 5 scripts completed for 105 structure(s). All validation checks passed.
 
-**Generated**: 2026-04-18 14:43:01
+**Generated**: 2026-05-05 02:19:22
 
 ## Configuration
 
@@ -16,51 +16,51 @@
 ---
 
 ## Script 001: Create Annogroups
-- Duration: 9s median (9.1s min / 9.9s max across 105 structures)
-- Annogroups created: **7,767,165** total (73,973 min / 73,973 median / 73,973 max across 105 structures)
+- Duration: 13s median (12.6s min / 14.4s max across 105 structures)
+- Annogroups created: **7,765,170** total (73,954 min / 73,954 median / 73,954 max across 105 structures)
 - By subtype:
-    - combo: 65,528
-    - single: 8,445
+    - combo: 65,512
+    - single: 8,442
     - zero: 0
 - Species with annotations: **7,560** total (72 min / 72 median / 72 max across 105 structures)
 - Annotation database: **pfam**
 
 ## Script 002: Determine Origins
-- Duration: 0s median (0.6s min / 0.7s max across 105 structures)
-- Origins found: **7,767,165** total (73,973 min / 73,973 median / 73,973 max across 105 structures)
+- Duration: 1s median (1.1s min / 1.3s max across 105 structures)
+- Origins found: **7,765,170** total (73,954 min / 73,954 median / 73,954 max across 105 structures)
 - Origins not found: 0 (100% success)
-- Single-species annogroups: **4,961,880** total (47,256 min / 47,256 median / 47,256 max across 105 structures)
-- Multi-species annogroups: **2,805,285** total (26,717 min / 26,717 median / 26,717 max across 105 structures)
+- Single-species annogroups: **4,960,725** total (47,245 min / 47,245 median / 47,245 max across 105 structures)
+- Multi-species annogroups: **2,804,445** total (26,709 min / 26,709 median / 26,709 max across 105 structures)
 - Distinct origin transition blocks: **14,595** total (139 min / 139 median / 139 max across 105 structures)
 
 ## Script 003: Quantify Conservation and Loss (Rule 7 block-states)
-- Duration: 3s median (3.0s min / 3.2s max across 105 structures)
+- Duration: 4s median (4.2s min / 4.7s max across 105 structures)
 - Phylogenetic blocks analyzed: **14,595** total (139 min / 139 median / 139 max across 105 structures)
-- Total block-states classified: **268,734,046** total (2,518,272 min / 2,563,236 median / 2,585,670 max across 105 structures)
+- Total block-states classified: **268,668,836** total (2,517,698 min / 2,562,628 median / 2,585,014 max across 105 structures)
 - Block-state counts:
-    P (Inherited Presence / Conservation): **107,182,027** total (1,015,653 min / 1,020,725 median / 1,026,047 max across 105 structures)
-    L (Loss event): **36,034,867** total (338,061 min / 343,133 median / 348,455 max across 105 structures)
-    X (Inherited Loss): **125,517,152** total (1,154,604 min / 1,196,370 median / 1,228,788 max across 105 structures)
+    P (Inherited Presence / Conservation): **107,161,188** total (1,015,456 min / 1,020,529 median / 1,025,847 max across 105 structures)
+    L (Loss event): **36,024,318** total (337,962 min / 343,035 median / 348,353 max across 105 structures)
+    X (Inherited Loss): **125,483,330** total (1,154,322 min / 1,196,022 median / 1,228,432 max across 105 structures)
 
 ## Script 004: Comprehensive OCL Summaries
-- Duration: 16s median (15.9s min / 17.8s max across 105 structures)
-- Annogroup summaries (all subtypes): **7,767,165** total (73,973 min / 73,973 median / 73,973 max across 105 structures)
+- Duration: 26s median (24.9s min / 29.4s max across 105 structures)
+- Annogroup summaries (all subtypes): **7,765,170** total (73,954 min / 73,954 median / 73,954 max across 105 structures)
 - Clades analyzed: **14,595** total (139 min / 139 median / 139 max across 105 structures)
 - Species analyzed: **7,350** total (70 min / 70 median / 70 max across 105 structures)
-- Path-state rows (annogroup x species): **543,701,550** total (5,178,110 min / 5,178,110 median / 5,178,110 max across 105 structures)
+- Path-state rows (annogroup x species): **543,561,900** total (5,176,780 min / 5,176,780 median / 5,176,780 max across 105 structures)
 
 ## Script 005: Validation (Rule 7 fail-fast)
-- Duration: 11s median (10.9s min / 12.2s max across 105 structures)
+- Duration: 16s median (15.3s min / 17.0s max across 105 structures)
 - **ALL validation checks PASSED** (840/840 checks across 105 structure(s))
 - Per-check results:
     - Conservation/Loss Arithmetic: 14,595/14,595 pass ✓
     - Cross-Script Consistency: 315/315 pass ✓
     - File Integrity: 945/945 pass ✓
-    - No Orphan Annogroups: 7,767,165/7,767,165 pass ✓
-    - Origin in Species Paths: 7,767,165/7,767,165 pass ✓
-    - Per-Annogroup Block-State Counts: 7,767,165/7,767,165 pass ✓
+    - No Orphan Annogroups: 7,765,170/7,765,170 pass ✓
+    - Origin in Species Paths: 7,765,170/7,765,170 pass ✓
+    - Per-Annogroup Block-State Counts: 7,765,170/7,765,170 pass ✓
     - Per-Block Count Consistency: 14,595/14,595 pass ✓
-    - Phylogenetic Path-State Integrity: 543,701,550/543,701,550 pass ✓
+    - Phylogenetic Path-State Integrity: 543,561,900/543,561,900 pass ✓
 
 ---
 

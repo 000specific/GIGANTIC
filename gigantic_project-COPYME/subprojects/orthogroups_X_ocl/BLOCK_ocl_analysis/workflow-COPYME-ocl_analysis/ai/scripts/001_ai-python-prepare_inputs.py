@@ -27,10 +27,15 @@ Usage:
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 
 import yaml
+
+# Add scripts directory to path for utility imports (RUN_SUMMARY fragment emission)
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 
 # ============================================================================
@@ -611,6 +616,8 @@ def write_orthogroups( orthogroup_ids___orthogroup_data ):
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 001: PREPARE INPUTS FROM UPSTREAM SUBPROJECTS" )
     logger.info( "=" * 80 )
@@ -668,6 +675,20 @@ def main():
     logger.info( f"  {output_clade_mappings_file.name}" )
     logger.info( f"  {output_orthogroups_file.name}" )
     logger.info( "=" * 80 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    emit_run_summary_fragment(
+        script_number = 1,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'orthogroups_total': len( orthogroup_ids___orthogroup_data ),
+            'orthogroup_tool': ORTHOGROUP_TOOL,
+            'phylogenetic_blocks_loaded': len( clade_ids___block_data ),
+            'phylogenetic_paths_loaded': len( leaf_clade_ids___paths ) if leaf_clade_ids___paths else 0,
+        }
+    )
 
     return 0
 

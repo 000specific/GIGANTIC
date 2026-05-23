@@ -6,8 +6,15 @@
 |---------------|----------|
 | GIGANTIC overview | `../../AI_GUIDE-project.md` |
 | Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
-| OrthoFinder concepts | This file |
-| Running the workflow | `workflow-COPYME-run_orthofinder/ai/AI_GUIDE-orthofinder_workflow.md` |
+| OrthoFinder concepts (this BLOCK = standard, single-process) | This file |
+| Running the standard workflow | `workflow-COPYME-run_orthofinder/ai/AI_GUIDE-orthofinder_workflow.md` |
+| **Parallel-DIAMOND variant for ≥30 species** | `../BLOCK_orthofinder_array/AI_GUIDE-orthofinder_array.md` |
+
+> **For ≥30 species**, prefer `BLOCK_orthofinder_array` — it parallelizes
+> the slow DIAMOND all-vs-all step across SLURM burst-mode job arrays
+> using OrthoFinder's `-op` and `-b` flags. Standard `BLOCK_orthofinder`
+> (this BLOCK) is simpler and fine for smaller sets, but at scale it
+> can take days.
 
 ## OrthoFinder Overview
 

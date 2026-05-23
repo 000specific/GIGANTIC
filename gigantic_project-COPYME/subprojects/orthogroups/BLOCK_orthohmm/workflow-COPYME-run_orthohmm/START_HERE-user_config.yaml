@@ -32,6 +32,7 @@ output:
 orthohmm:
   # cpus: 100             # <-- UNCOMMENT AND SET: number of CPU cores to use
   # memory: "750 GB"      # <-- UNCOMMENT AND SET: RAM available for OrthoHMM
+  # time: "14d"           # <-- UNCOMMENT AND SET: NextFlow process time limit (e.g. "48h", "14d")
   evalue: "0.0001"
   single_copy_threshold: "0.5"
 

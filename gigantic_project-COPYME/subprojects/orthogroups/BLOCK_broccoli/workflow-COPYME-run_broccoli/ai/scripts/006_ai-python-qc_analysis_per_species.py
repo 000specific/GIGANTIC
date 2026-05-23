@@ -11,7 +11,7 @@ Reads standardized output from script 004.
 
 Input:
     --proteome-list: Path to 1_ai-proteome_list.tsv from script 001
-    --orthogroups-file: Path to 4_ai-orthogroups_gigantic_ids.tsv from script 004
+    --orthogroups-file: Path to 4_ai-orthologous_groups-gigantic_ids.tsv from script 004
 
 Output:
     OUTPUT_pipeline/6-output/6_ai-per_species_summary.tsv
@@ -20,7 +20,7 @@ Output:
 Usage:
     python3 006_ai-python-qc_analysis_per_species.py \\
         --proteome-list OUTPUT_pipeline/1-output/1_ai-proteome_list.tsv \\
-        --orthogroups-file OUTPUT_pipeline/4-output/4_ai-orthogroups_gigantic_ids.tsv
+        --orthogroups-file OUTPUT_pipeline/4-output/4_ai-orthologous_groups-gigantic_ids.tsv
 """
 
 import argparse
@@ -110,7 +110,7 @@ def main():
         '--orthogroups-file',
         type = str,
         required = True,
-        help = 'Path to 4_ai-orthogroups_gigantic_ids.tsv from script 004'
+        help = 'Path to 4_ai-orthologous_groups-gigantic_ids.tsv from script 004'
     )
 
     parser.add_argument(

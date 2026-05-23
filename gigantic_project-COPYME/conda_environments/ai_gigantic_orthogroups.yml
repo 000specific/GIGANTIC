@@ -25,7 +25,7 @@ channels:
 dependencies:
   # Core requirements
   - python>=3.11
-  - nextflow>=23.0
+  - nextflow>=23.0,<26.0   # <26 because NextFlow 26.x dropped top-level `import` in nextflow.config (breaks our SnakeYAML loader pattern)
 
   # OrthoFinder (includes Diamond aligner internally)
   - orthofinder

@@ -1,8 +1,8 @@
-# AI Guide: STEP_2-phylogenetic_analysis (trees_gene_families)
+# AI Guide: STEP_2-phylogenetic_analysis (trees_gene_groups)
 
-**For AI Assistants**: This guide covers STEP_2 of the trees_gene_families subproject. For subproject overview, see `../AI_GUIDE-trees_gene_families.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_2 of the trees_gene_groups subproject. For subproject overview, see `../AI_GUIDE-trees_gene_groups.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
 
-**Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/STEP_2-phylogenetic_analysis/`
+**Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/STEP_2-phylogenetic_analysis/`
 
 ---
 
@@ -18,7 +18,7 @@
 | User needs... | Go to... |
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| trees_gene_families concepts | `../AI_GUIDE-trees_gene_families.md` |
+| trees_gene_groups concepts | `../AI_GUIDE-trees_gene_groups.md` |
 | STEP_2 phylogenetic analysis concepts (this step) | This file |
 | Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-phylogenetic_analysis_workflow.md` |
 
@@ -35,7 +35,7 @@
 4. Alignment trimming (ClipKit)
 5. Tree building (one or more methods)
 6. Tree visualization (human-friendly and computer-vision)
-7. Export to subproject-root output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+7. Export to subproject-root output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
 
 ---
 
@@ -63,9 +63,9 @@ Four methods available, configurable in `START_HERE-user_config.yaml`:
 
 | Input | Source | Description |
 |-------|--------|-------------|
-| AGS FASTA | `../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` | From STEP_1 |
+| AGS FASTA | `../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/` | From STEP_1 |
 
-**Note**: The workflow automatically finds the AGS file in the subproject-root output_to_input/<gene_family>/STEP_1-homolog_discovery/ directory. Uses `find -L` to follow symlinks.
+**Note**: The workflow automatically finds the AGS file in the subproject-root output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/ directory. Uses `find -L` to follow symlinks.
 
 ---
 
@@ -93,7 +93,7 @@ Trees and alignments exported to the subproject-root output_to_input/:
 
 | Level | Path |
 |-------|------|
-| Subproject-root | `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (symlinks to OUTPUT_pipeline/) |
+| Subproject-root | `../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/` (symlinks to OUTPUT_pipeline/) |
 
 ---
 
@@ -104,7 +104,7 @@ STEP_2-phylogenetic_analysis/
 ├── AI_GUIDE-phylogenetic_analysis.md   # THIS FILE
 ├── README.md
 └── workflow-COPYME-phylogenetic_analysis/
-# Note: output symlinked to ../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
+# Note: output symlinked to ../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
     ├── README.md
     ├── RUN-workflow.sh
     ├── START_HERE-user_config.yaml
@@ -135,7 +135,7 @@ STEP_2-phylogenetic_analysis/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `workflow-*/START_HERE-user_config.yaml` | Gene family, tree methods, alignment settings | **YES** |
-| `../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` | Final trees | No (auto-created symlinks) |
+| `../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/` | Final trees | No (auto-created symlinks) |
 
 ---
 

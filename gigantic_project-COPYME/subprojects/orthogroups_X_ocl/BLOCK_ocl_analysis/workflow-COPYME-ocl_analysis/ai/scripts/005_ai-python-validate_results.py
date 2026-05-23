@@ -42,10 +42,15 @@ import csv
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 
 import yaml
+
+# Add scripts directory to path for utility imports (RUN_SUMMARY fragment emission)
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 # Increase CSV field size limit to handle large FASTA sequences
 csv.field_size_limit( sys.maxsize )
@@ -1091,6 +1096,8 @@ def write_qc_metrics( validation_results ):
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 005: VALIDATE RESULTS" )
     logger.info( "=" * 80 )
@@ -1170,6 +1177,32 @@ def main():
     # handled explicitly in Scripts 003-004 (counts set to 0) rather than
     # producing invalid numbers that validation would flag.
     total_failed = sum( 1 for result in validation_results if result[ 'failed' ] > 0 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    total_checks = sum( r[ 'total' ] for r in validation_results )
+    total_checks_passed = sum( r[ 'passed' ] for r in validation_results )
+    total_checks_failed = sum( r[ 'failed' ] for r in validation_results )
+    per_check_results = {
+        r[ 'name' ]: {
+            'total': r[ 'total' ],
+            'passed': r[ 'passed' ],
+            'failed': r[ 'failed' ],
+        } for r in validation_results
+    }
+    emit_run_summary_fragment(
+        script_number = 5,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'total_checks': total_checks,
+            'checks_passed': total_checks_passed,
+            'checks_failed': total_checks_failed,
+            'validation_status': 'PASS' if total_failed == 0 else 'FAIL',
+            'per_check_results': per_check_results,
+        }
+    )
+
     if total_failed > 0:
         logger.error( f"VALIDATION FAILURES DETECTED: {total_failed} check(s) failed" )
         logger.error( "Pipeline stopping - review error log for details" )

@@ -1,0 +1,26 @@
+# GIGANTIC upload_manifest.tsv — analyze_gene_sizes Tier 1 (all_inclusive)
+# ============================================================================
+# Publishes the methodology-strict Tier 1 outputs of the gene_sizes pipeline.
+# Tier 1 = species with full UTR-bearing exon annotation (>= 50% genes with
+# derivable UTR). 40 species, 7 metrics: Gene_Size, Transcript_Size, CDS_Size,
+# Protein_Size, Exon_Count, Intron_Total_Size, UTR_Total_Size.
+#
+# Source globs are relative to this manifest directory (workflow-RUN_*).
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+# ----- Top-level workflow documentation -----
+README.md	yes		Tier 1 workflow README	summary	Tier 1 (all_inclusive) workflow purpose, input format (15-col gene-coordinates TSV), output structure, and how to run.	10
+START_HERE-user_config.yaml	no		Tier 1 user config	summary	User-editable workflow configuration (input paths, project name, resume flag). Off by default — flip on for full reproducibility.	20
+#
+# ----- Cross-species 7-metric summary (the headline Tier 1 deliverable) -----
+OUTPUT_pipeline/4-output/4_ai-cross_species_summary.tsv	yes		Cross-species 7-metric summary	summary	Wide-format table: one row per processed species; columns are 5 stats (gene_count median mean min max) for each of 7 metrics (Gene_Size Transcript_Size CDS_Size Protein_Size Exon_Count Intron_Total_Size UTR_Total_Size). The headline cross-species deliverable.	100
+#
+# ----- Species processing status (drops + reasons) -----
+OUTPUT_pipeline/4-output/4_ai-species_processing_status.tsv	yes		Species processing status	qc	Per-species PROCESSED or SKIPPED_NO_DATA or SKIPPED_INCOMPLETE classification across the GIGANTIC species set, with reason. Documents which species are in the 40-species Tier 1 set and which were dropped (and why).	110
+#
+# ----- Ranked gene metrics: {descriptor} (the underlying granular data) -----
+OUTPUT_pipeline/4-output/species40_gigantic_gene_metrics/3_ai-ranked_gene_metrics-*.tsv	yes		Ranked gene metrics: {descriptor}	summary	Per-gene metrics with within-genome quantile ranks (15 columns per file). One file per species in Tier 1. Used downstream for cross-species rank-conservation analyses.	200
+#
+# ----- Genome summary: {descriptor} (per-metric distribution stats) -----
+OUTPUT_pipeline/4-output/species40_gigantic_gene_sizes_summary/3_ai-genome_summary-*.tsv	yes		Genome summary: {descriptor}	summary	Per-species per-metric distribution stats (gene_count mean median min max p25 p75) for the 7 Tier 1 metrics.	300

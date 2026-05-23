@@ -1,0 +1,51 @@
+# GIGANTIC Upload Manifest - hotspots subproject
+# Format: source_path<TAB>include
+# source_path is relative to subproject root
+# Glob patterns supported (e.g., *.tsv)
+# Lines starting with # are comments
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 05
+# Human: Eric Edsinger
+#
+# WHAT THIS PUBLISHES:
+# Per-species chromosomal hotspot tables (clusters of paralogous gene copies)
+# from Edsinger 2024 (Frontiers in Marine Science). RUN_1 = species64
+# (the 6 ctenophore/sponge/etc. species without GFF-derived gene coordinates
+# are recorded in 1_ai-excluded_species.tsv with reasons).
+#
+# WHAT THIS DOES NOT PUBLISH:
+# The per-species self-BLAST reports under
+#   BLOCK_self_blast/workflow-RUN_1-self_blast-species70/OUTPUT_pipeline/4-output/self_blast_reports/
+# are 41 GB of intermediate tabular blastp output. They are scientifically
+# useful for re-running BLOCK_identify_hotspots at alternative e-value
+# thresholds but are too bulky and tool-grade for collaborator browsing.
+# Stays in output_to_input/ for downstream BLOCKs only.
+#
+# ============================================================================
+# BLOCK_identify_hotspots — primary deliverable
+# ============================================================================
+
+# Per-species hotspot tables (one per species; 64 files)
+BLOCK_identify_hotspots/workflow-RUN_1-identify_hotspots-species64/OUTPUT_pipeline/3-output/3_ai-hotspots-*.tsv	yes
+
+# Per-species hotspot summaries (one-row summary per species; 64 files)
+BLOCK_identify_hotspots/workflow-RUN_1-identify_hotspots-species64/OUTPUT_pipeline/3-output/3_ai-hotspot_summary-*.tsv	yes
+
+# Cross-species summary (one row per species + EXCLUDED rows)
+BLOCK_identify_hotspots/workflow-RUN_1-identify_hotspots-species64/OUTPUT_pipeline/4-output/4_ai-cross_species_hotspot_summary.tsv	yes
+
+# Project-level totals (single-row summary)
+BLOCK_identify_hotspots/workflow-RUN_1-identify_hotspots-species64/OUTPUT_pipeline/4-output/4_ai-project_hotspot_summary.tsv	yes
+
+# Excluded species (6 species without gene coordinates and reasons)
+BLOCK_identify_hotspots/workflow-RUN_1-identify_hotspots-species64/OUTPUT_pipeline/1-output/1_ai-excluded_species.tsv	yes
+
+# ============================================================================
+# BLOCK_self_blast — intermediate reports (NOT published)
+# ============================================================================
+
+# Per-species self-BLAST reports (41 GB total — intermediate, not for browsing)
+BLOCK_self_blast/workflow-RUN_1-self_blast-species70/OUTPUT_pipeline/4-output/self_blast_reports/*.tsv	no
+
+# Self-BLAST summary (small but redundant with hotspot outputs)
+BLOCK_self_blast/workflow-RUN_1-self_blast-species70/OUTPUT_pipeline/4-output/4_ai-self_blast_summary.tsv	no

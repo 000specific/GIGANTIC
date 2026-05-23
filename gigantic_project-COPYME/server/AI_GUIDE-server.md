@@ -6,6 +6,7 @@
 |---------------|----------|
 | GIGANTIC overview, directory structure | `../AI_GUIDE-project.md` |
 | Server setup, configuration, operation | This file |
+| Publishing subproject data to the server | `AI_GUIDE-publishing.md` |
 | Subproject data preparation | Subproject's `AI_GUIDE-*.md` |
 
 ## Purpose

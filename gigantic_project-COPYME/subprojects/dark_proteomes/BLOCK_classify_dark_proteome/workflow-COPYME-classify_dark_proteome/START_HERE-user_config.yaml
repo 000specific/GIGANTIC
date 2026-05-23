@@ -1,0 +1,110 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# GIGANTIC dark_proteome - BLOCK_classify_dark_proteome Configuration
+# AI: Claude Code | Opus 4.7 | 2026 May 04
+# Human: Eric Edsinger
+#
+# This workflow classifies each gene in each species as DARK or ANNOTATED
+# based on a three-axis check (Edsinger 2024, Frontiers in Marine Science):
+#
+#   axis_a: Reference BLAST    - hit to a reference species (default: human/Drosophila/C. elegans)
+#   axis_b: Reference Orthogroup - in an orthogroup that contains a reference-species gene
+#   axis_c: HMM annotation     - has a Pfam or PANTHER domain annotation
+#
+# A gene is DARK only if it fails ALL THREE axes. The result is the "genomic
+# dark matter" — genes too divergent from model organisms to be detected by
+# any standard annotation method.
+#
+# ============================================================================
+# EXECUTION MODE
+# ============================================================================
+
+execution_mode: "local"
+
+# ============================================================================
+# REFERENCE SPECIES SET
+# ============================================================================
+# Reference species drive axes (a) and (b). Default is the paper's three.
+
+reference_species:
+  - "Homo_sapiens"
+  - "Drosophila_melanogaster"
+  - "Caenorhabditis_elegans"
+
+# ============================================================================
+# AXIS-A REFERENCE BLAST CONFIG
+# ============================================================================
+# strict_reference  : (default) gene is annotated by reference BLAST only if
+#                     its Top_Non_Self_Hit_Header references one of the
+#                     species in `reference_species` above.
+# broad_any_nr_hit  : gene is annotated by reference BLAST if it has ANY
+#                     non-self NR hit (regardless of subject species).
+
+reference_blast_mode: "strict_reference"
+
+# ============================================================================
+# AXIS-C HMM DATABASES
+# ============================================================================
+# Default is paper's two; supported values include pfam, panther, prints,
+# sfld, smart, cdd, funfam, gene3d, ncbifam, superfamily.
+
+hmm_databases:
+  - "pfam"
+  - "panther"
+
+# ============================================================================
+# INPUT PATHS (EDIT THESE)
+# ============================================================================
+
+inputs:
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+  reference_blast_dir: "../../../one_direction_homologs/output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits"
+  orthogroups_file: "../../../orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv"
+  hmm_annotations_dir: "../../../annotations_hmms/output_to_input/BLOCK_interproscan_parsed"
+  gigantic_species_list: "INPUT_user/gigantic_species_list.txt"
+
+# ============================================================================
+# OUTPUT
+# ============================================================================
+
+output_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# PROJECT METADATA
+# ============================================================================
+
+project_name: "GIGANTIC"
+
+# ============================================================================
+# CONDA ENVIRONMENT
+# ============================================================================
+# Reuses ai_gigantic_hotspots (only needs python+nextflow).
+
+conda_environment: "ai_gigantic_hotspots"
+
+# ============================================================================
+# SLURM (used only if execution_mode == "slurm" — typically not needed here)
+# ============================================================================
+
+slurm_account: "moroz"
+slurm_qos: "moroz"
+slurm_queue_size: 70
+
+resources:
+  classify_per_species:
+    cpus: 2
+    memory_gb: 8
+    time_hours: 1
+
+  local_step:
+    cpus: 4
+    memory_gb: 30
+    time_hours: 2
+
+# ============================================================================
+# RESUME
+# ============================================================================
+
+resume: false

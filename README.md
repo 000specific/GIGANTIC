@@ -28,6 +28,19 @@ GIGANTIC provides a template-based framework of NextFlow workflows and Python pi
 - **Manifest-driven workflows**: Reproducible NextFlow pipelines configured through simple TSV manifests
 - **Standardized phylogenetic naming**: The GIGANTIC phyloname system provides consistent, hierarchical species identifiers across all analyses
 - **Self-documenting outputs**: Table headers embed calculation methods and data descriptions
+- **Highest-quality-genomes-only tenet**: Subprojects performing intensive cross-species comparison drop species whose source annotations cannot fully meet input requirements rather than substitute proxies or partial values. This filtering at the input gate preserves analytical integrity over species count (see "GIGANTIC Tenets" below)
+
+## GIGANTIC Tenets
+
+**Highest-quality genomes only.** Comparative analyses require strict data
+quality, not exception handling. When a subproject's input requirements cannot
+be fully met for a species, the species is dropped from the analysis — not
+partially included with a flag or fallback value. Variable content across
+species impacts the power of inference post-analysis; filtering at the input
+gate keeps every cross-species metric meaningful. Audit data is preserved
+locally for users to investigate dropped species, but only fully-qualifying
+species reach `output_to_input/`. See `gigantic_project-COPYME/AI_GUIDE-project.md`
+for the full statement and per-subproject application notes.
 
 ## Architecture
 

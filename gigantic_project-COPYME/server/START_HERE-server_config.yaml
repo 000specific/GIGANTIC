@@ -38,18 +38,24 @@ refresh_interval_seconds: 300
 # This is an explicit allowlist — edit to include/exclude subprojects.
 
 subproject_order:
+  # With files (alphabetical) — appear first on landing page
+  - annotations_X_ocl
+  - annotations_hmms
+  - dark_proteomes
   - gene_sizes
-  - trees_species
+  - hotspots
+  - moroz_innovations
+  - orthogroups_X_ocl
   - trees_gene_families
   - trees_gene_groups
-  - synteny
-  - annotations_X_ocl
+  - trees_species
+  # Without files yet (alphabetical) — placeholders, "NO DATA YET"
   - gene_sizes_X_ocl
-  - orthogroups_X_ocl
+  - ocl_perspectives
+  - synteny
+  - synteny_X_ocl
   - trees_gene_families_X_ocl
   - trees_gene_groups_X_ocl
-  - ocl_perspectives
-  - moroz_innovations
 
 # ============================================================================
 # Landing Page: Empty Subprojects

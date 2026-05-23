@@ -26,11 +26,16 @@ import csv
 import sys
 import logging
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
 
 import yaml
+
+# Add scripts directory to path for utility imports (RUN_SUMMARY fragment emission)
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+from utils_run_summary import emit_run_summary_fragment
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -1280,6 +1285,8 @@ def write_validation_report( validation_report ):
 
 def main():
     """Main execution function."""
+    start_time = time.time()
+
     logger.info( "=" * 80 )
     logger.info( "SCRIPT 004: COMPREHENSIVE OCL SUMMARIES (Rule 7 counts)" )
     logger.info( "=" * 80 )
@@ -1369,6 +1376,20 @@ def main():
     logger.info( f"  {output_path_states_file.name}" )
     logger.info( f"  {output_validation_report_file.name}" )
     logger.info( "=" * 80 )
+
+    # Emit run summary fragment
+    duration_seconds = time.time() - start_time
+    emit_run_summary_fragment(
+        script_number = 4,
+        structure_id = args.structure_id,
+        stats = {
+            'duration_seconds': round( duration_seconds, 2 ),
+            'orthogroup_summaries_total': len( orthogroup_summaries ),
+            'clades_analyzed': len( clade_statistics ),
+            'species_analyzed': len( species_summaries ),
+            'path_state_rows': len( path_state_rows ),
+        }
+    )
 
     return 0
 

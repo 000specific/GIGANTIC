@@ -9,26 +9,109 @@
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.6 | 2026 February 28 | Purpose: Broccoli pipeline configuration
+# AI: Claude Code | Opus 4.7 | 2026 April (revised: modernized to match orthohmm/orthofinder schema)
 # Human: Eric Edsinger
 
-# =============================================================================
-# Broccoli Pipeline Configuration
-# =============================================================================
+# ============================================================================
+# WHAT THIS WORKFLOW DOES
+# ============================================================================
+#
+# Runs Broccoli orthogroup detection. Broccoli combines phylogenetic and
+# network analyses for orthology assignment, with notable strength in
+# detecting chimeric proteins (gene fusions).
+#
+# NOTE: Broccoli does not yet have a parallel fan-out architecture (the
+# BLOCK_orthohmm_GIGANTIC / BLOCK_orthofinder_array pattern). The
+# `run_broccoli` process is monolithic.
+#
+# ============================================================================
 
-# Input proteomes directory (from genomesDB output_to_input)
-proteomes_dir: "../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes"
+# ============================================================================
+# PROJECT
+# ============================================================================
+project:
+  name: "species70"
 
-# Broccoli parameters
-cpus: 8
-tree_method: "nj"  # nj (neighbor joining), me (minimum evolution), ml (maximum likelihood)
+# ============================================================================
+# INPUT
+# ============================================================================
+inputs:
+  # Proteomes directory from genomesDB STEP_4
+  # Path is relative to this workflow root directory.
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
 
-# Conda environment name
-conda_environment: "ai_gigantic_orthogroups"
+# ============================================================================
+# OUTPUT
+# ============================================================================
+output:
+  base_dir: "OUTPUT_pipeline"
 
-# =============================================================================
-# Resume from cached NextFlow work directory
-# =============================================================================
+# ============================================================================
+# BROCCOLI PARAMETERS
+# ============================================================================
+broccoli:
+  # Tree-construction method used internally by Broccoli
+  # nj = neighbor joining (fast); me = minimum evolution; ml = maximum likelihood
+  tree_method: "nj"
+
+# ============================================================================
+# RESOURCES (per process)
+# ============================================================================
+# HiPerGator convention: max memory_gb = 7.5 × cpus.
+# ============================================================================
+resources:
+
+  # Broccoli's heavy compute step (4 internal substeps).
+  # Memory scales with proteome size and similarity. Defaults sized for
+  # 70 species at ~20K seqs each — broccoli is monolithic (no fan-out),
+  # so this single job needs to be big.
+  run_broccoli:
+    cpus: 110
+    memory_gb: 700           # 110 × 7.5 = 825 GB max per HiPerGator rule; 700 leaves headroom
+    time_hours: 504          # 3 weeks — broccoli step 2 (DIAMOND + per-protein FastTree) is slow on 70 species
+
+  # Local processes (validation, header conversion, restore IDs, summary,
+  # QC, log). Lightweight; runs inside the driver job (or local process
+  # in local execution mode).
+  local_step:
+    cpus: 4
+    memory_gb: 30            # 4 × 7.5
+    time_hours: 2
+
+# ============================================================================
+# EXECUTION MODE & SLURM SETTINGS
+# ============================================================================
+# execution_mode:
+#   "local" - runs nextflow directly on the calling node (suitable for
+#             big-memory single-node compute, e.g., a 100-cpu workstation
+#             without SLURM)
+#   "slurm" - submits the workflow driver as a SLURM job (recommended for HPC)
+# ============================================================================
+execution_mode: "slurm"
+
+# Driver job (orchestrates NextFlow). When execution_mode is "slurm", the
+# run_broccoli process gets its OWN SLURM allocation (per resources.run_broccoli)
+# and the driver only needs to be small.
+slurm_account: "moroz"
+slurm_qos: "moroz"
+slurm_cpus: 4
+slurm_memory_gb: 30
+slurm_time_hours: 552          # 23 days — must outlast run_broccoli (504h = 3 weeks) with 2-day buffer
+
+# Optional SLURM email notifications for the driver job.
+# Leave slurm_mail_user empty ("") to disable email.
+slurm_mail_user: ""
+slurm_mail_type: "END,FAIL"
+
+# ============================================================================
+# CONDA
+# ============================================================================
+conda:
+  environment: "ai_gigantic_orthogroups_broccoli"
+
+# ============================================================================
+# RESUME
+# ============================================================================
 # When true, NextFlow re-uses cached results from work/ for unchanged tasks
 # (saves time on partial-failure recovery). When false, every task re-runs
 # from scratch.
@@ -36,5 +119,5 @@ conda_environment: "ai_gigantic_orthogroups"
 # Default: false — stale-cache surprises have caused incorrect results in the
 # past, so explicit opt-in is safer for research reproducibility. Flip to true
 # when you intentionally want to resume after a known interruption.
-
+# ============================================================================
 resume: false

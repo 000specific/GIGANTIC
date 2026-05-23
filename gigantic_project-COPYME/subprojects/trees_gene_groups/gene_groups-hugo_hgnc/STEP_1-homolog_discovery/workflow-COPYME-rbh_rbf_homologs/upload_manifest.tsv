@@ -1,0 +1,20 @@
+# GIGANTIC upload_manifest.tsv — STEP_1 rbh_rbf_homologs template
+# ============================================================================
+# Describes which STEP_1 output files get published to the server.
+# All publication defaults to `no` for STEP_1 (intermediate data); flip to
+# `yes` if you want Leonid/collaborators to browse homolog discovery outputs.
+#
+# See the workflow-COPYME-tree_visualization/upload_manifest.tsv for full
+# column documentation.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+# ----- Final AGS (All Gene Set): RGS + confirmed homologs -----
+OUTPUT_pipeline/16-output/16_ai-ags-*.aa	yes		All Gene Set (AGS) FASTA	sequences	Final homolog set: RGS + reciprocal-BLAST-confirmed candidates.	10
+#
+# ----- Earlier outputs (intermediate; off by default) -----
+OUTPUT_pipeline/1-output/*.aa	no		RGS validated	qc	Validated input RGS (pre-BLAST).	20
+OUTPUT_pipeline/4-output/*.aa	no		Blast Gene Set (BGS) FASTA	sequences	Forward-BLAST hits (pre-reciprocal filtering).	30
+OUTPUT_pipeline/13-output/*.aa	no		Candidate Gene Set (CGS) FASTA	sequences	Reciprocal-BLAST-confirmed homologs.	40
+OUTPUT_pipeline/13-output/13_ai-log-dropped-sequences-*	no		Dropped sequences log	qc	BGS sequences rejected by reciprocal BLAST.	50
+OUTPUT_pipeline/17-output/17_ai-run_log.tsv	no		Run log	qc	Workflow execution summary.	90
