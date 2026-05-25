@@ -33,6 +33,10 @@ gene_group-*/
 # SLURM log directories (generated during cluster runs)
 slurm_logs/
 
+# Orchestrator scratch files (per-PID temp species_keeper_list copies; usually
+# cleaned up by RUN-workflow.sh but occasionally orphan if interrupted)
+.species_keeper_list_*.tsv
+
 # Research notebook contents (personal data, not for git)
 **/research_notebook/*
 !**/research_notebook/.gitkeep
