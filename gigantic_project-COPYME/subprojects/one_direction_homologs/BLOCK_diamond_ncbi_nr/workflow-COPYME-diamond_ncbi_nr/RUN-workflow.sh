@@ -55,8 +55,9 @@ fi
 # Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
 
-ENV_NAME="ai_gigantic_one_direction_homologs"
-ENV_YML="../../../../conda_environments/${ENV_NAME}.yml"
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+ENV_NAME="aiG-one_direction_homologs"
+ENV_YML="ai/conda_environment.yml"
 
 module load conda 2>/dev/null || true
 
@@ -66,10 +67,19 @@ if ! command -v conda &> /dev/null; then
     exit 1
 fi
 
-# Create environment on-demand if it does not exist
-if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
-    echo "Environment '${ENV_NAME}' not found. Creating on-demand..."
-    echo ""
+env_is_complete() {
+    local env_prefix=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
+    if [ -z "${env_prefix}" ]; then return 1; fi
+    if [ ! -x "${env_prefix}/bin/python" ]; then return 1; fi
+    return 0
+}
+
+if ! env_is_complete; then
+    if conda env list 2>/dev/null | awk '{print $1}' | grep -q "^${ENV_NAME}$"; then
+        echo "Removing broken/incomplete env '${ENV_NAME}'..."
+        conda env remove -n "${ENV_NAME}" -y 2>&1 | tail -3
+    fi
+    echo "Creating conda env '${ENV_NAME}' from ${ENV_YML}..."
     if [ ! -f "${ENV_YML}" ]; then
         echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
@@ -79,9 +89,11 @@ if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
     else
         conda env create -f "${ENV_YML}" -y
     fi
-    echo ""
-    echo "Environment '${ENV_NAME}' created successfully."
-    echo ""
+    if ! env_is_complete; then
+        echo "ERROR: Environment creation failed -- '${ENV_NAME}' still not complete."
+        exit 1
+    fi
+    echo "Env '${ENV_NAME}' created successfully."
 fi
 
 # Activate the environment
@@ -161,8 +173,18 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
+    # Universal GIGANTIC YAML->params pass-through (no flatten)
+    python3 <<'PYTHON_DUMP'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+with open( '.params.json', 'w' ) as f:
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
+
     nextflow run ai/main.nf ${RESUME_FLAG} \
-        -c ai/nextflow.config
+        -c ai/nextflow.config \
+        -params-file .params.json
 
 # ============================================================================
 # MODE: slurm
@@ -179,8 +201,18 @@ elif [ "${EXECUTION_MODE}" == "slurm" ]; then
         echo "Started: $(date)"
         echo "========================================================================"
 
+        # Universal GIGANTIC YAML->params pass-through (no flatten)
+        python3 <<'PYTHON_DUMP'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+with open( '.params.json', 'w' ) as f:
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
+
         nextflow run ai/main.nf \
-            -c ai/nextflow.config
+            -c ai/nextflow.config \
+            -params-file .params.json
 
     # Otherwise, submit this script as a SLURM job
     else
@@ -235,8 +267,18 @@ elif [ "${EXECUTION_MODE}" == "slurm_burst" ]; then
         echo "Started: $(date)"
         echo "========================================================================"
 
+        # Universal GIGANTIC YAML->params pass-through (no flatten)
+        python3 <<'PYTHON_DUMP'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+with open( '.params.json', 'w' ) as f:
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
+
         nextflow run ai/main.nf \
-            -c ai/nextflow.config
+            -c ai/nextflow.config \
+            -params-file .params.json
 
     # Otherwise, submit the orchestrator as a small SLURM job
     else

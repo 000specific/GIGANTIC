@@ -24,7 +24,8 @@ cp /path/to/proteome_manifest.tsv INPUT_user/
 
 # 4. Run
 bash RUN-workflow.sh       # Local (needs GPU)
-sbatch RUN-workflow.sbatch # SLURM GPU job (edit account/qos first)
+# For SLURM GPU job: edit execution_mode: "slurm" + slurm_account/slurm_qos in
+# START_HERE-user_config.yaml; then bash RUN-workflow.sh self-submits.
 ```
 
 ## Pipeline Steps

@@ -214,16 +214,24 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-# Pipe resource sizing into NextFlow params so its local executor knows the
-# allocation. Top-level keys (cpus, memory_gb) are shared with the SLURM
-# submission block above.
-NEXTFLOW_CPUS=$(read_config "cpus" "4")
-NEXTFLOW_MEMORY_GB=$(read_config "memory_gb" "16")
+# ============================================================================
+# Flatten START_HERE-user_config.yaml -> .params.json for NextFlow -params-file
+# ============================================================================
+# Universal GIGANTIC YAML->params pattern: pass-through json.dump (no flatten).
+# cpus / memory_gb / time_hours flow through as top-level params for the
+# NextFlow local executor sizing.
+
+python3 <<'PYTHON_DUMP'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+with open( '.params.json', 'w' ) as f:
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
 
 nextflow run ai/main.nf ${RESUME_FLAG} \
     -c ai/nextflow.config \
-    --cpus=${NEXTFLOW_CPUS} \
-    --memory_gb=${NEXTFLOW_MEMORY_GB}
+    -params-file .params.json
 
 EXIT_CODE=$?
 

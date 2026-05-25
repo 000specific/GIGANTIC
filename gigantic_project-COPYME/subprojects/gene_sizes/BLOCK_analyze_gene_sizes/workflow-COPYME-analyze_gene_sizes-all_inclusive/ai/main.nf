@@ -24,13 +24,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.input_user_dir = "INPUT_user"
-params.gigantic_species_list = ""
-params.proteome_dir = ""
-params.output_dir = "OUTPUT_pipeline"
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // PROCESSES
@@ -48,7 +45,7 @@ params.output_dir = "OUTPUT_pipeline"
 process validate_gene_size_inputs {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/1_ai-species_processing_status.tsv", emit: status
@@ -61,8 +58,8 @@ process validate_gene_size_inputs {
     mkdir -p 1-output
 
     python3 ${projectDir}/scripts/001_ai-python-validate_gene_size_inputs.py \\
-        --input-dir ${projectDir}/../${params.input_user_dir} \\
-        --gigantic-species-list ${projectDir}/../${params.gigantic_species_list} \\
+        --input-dir ${projectDir}/../${params.inputs.input_user_dir} \\
+        --gigantic-species-list ${projectDir}/../${params.inputs.gigantic_species_list} \\
         --output-dir 1-output
     """
 }
@@ -77,7 +74,7 @@ process validate_gene_size_inputs {
 process extract_gene_metrics {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}/2-output", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}/2-output", mode: 'copy', overwrite: true
 
     input:
         tuple val(genus_species), val(gene_structure_file), val(proteome_file)
@@ -104,7 +101,7 @@ process extract_gene_metrics {
 process compute_genome_wide_statistics {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}/3-output", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}/3-output", mode: 'copy', overwrite: true
 
     input:
         tuple val(genus_species), path(gene_metrics_file)
@@ -130,7 +127,7 @@ process compute_genome_wide_statistics {
 process compile_cross_species_summary {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path genome_summaries
@@ -205,7 +202,7 @@ workflow {
 
     // Count total GIGANTIC species from species list file
     gigantic_species_count = Channel
-        .fromPath( "${projectDir}/../${params.gigantic_species_list}" )
+        .fromPath( "${projectDir}/../${params.inputs.gigantic_species_list}" )
         .splitText()
         .map { it.trim() }
         .filter { it && !it.startsWith('#') }
@@ -218,8 +215,8 @@ workflow {
         .map { it.trim() }
         .filter { it }
         .map { genus_species ->
-            def gene_structure_file = "${projectDir}/../${params.input_user_dir}/${genus_species}-gene_coordinates_all_inclusive.tsv"
-            def proteome_file = params.proteome_dir ? file("${projectDir}/../${params.proteome_dir}/${genus_species}.aa") : null
+            def gene_structure_file = "${projectDir}/../${params.inputs.input_user_dir}/${genus_species}-gene_coordinates_all_inclusive.tsv"
+            def proteome_file = params.inputs.proteome_dir ? file("${projectDir}/../${params.inputs.proteome_dir}/${genus_species}.aa") : null
             def proteome_path = ( proteome_file && proteome_file.exists() ) ? proteome_file.toString() : ""
             tuple( genus_species, gene_structure_file, proteome_path )
         }
@@ -250,30 +247,5 @@ workflow {
     write_run_log( compile_cross_species_summary.out.summary.map { true } )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC gene_sizes Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Species processing status and processable species list"
-        println "  2-output/: Per-species gene metrics"
-        println "  3-output/: Ranked metrics and genome summaries"
-        println "  4-output/: Cross-species summary and downstream directories"
-        println ""
-        println "Symlinks created in output_to_input/BLOCK_analyze_gene_sizes/ (by RUN-workflow.sh)"
-        println "  speciesN_gigantic_gene_metrics/         Per-species ranked gene metrics"
-        println "  speciesN_gigantic_gene_sizes_summary/   Cross-species summary statistics"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

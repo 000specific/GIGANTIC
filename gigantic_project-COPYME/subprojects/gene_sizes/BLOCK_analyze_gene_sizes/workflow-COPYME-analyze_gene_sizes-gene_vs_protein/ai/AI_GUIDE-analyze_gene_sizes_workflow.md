@@ -52,8 +52,10 @@ cd workflow-COPYME-analyze_gene_sizes-gene_vs_protein/
 # Local execution
 bash RUN-workflow.sh
 
-# SLURM cluster
-sbatch RUN-workflow.sbatch
+# SLURM cluster: edit START_HERE-user_config.yaml
+#   set execution_mode: "slurm", fill in slurm_account / slurm_qos
+# Then run the same command (script self-submits):
+bash RUN-workflow.sh
 ```
 
 ### What Happens
@@ -133,6 +135,6 @@ cat OUTPUT_pipeline/3-output/3_ai-genome_summary-Homo_sapiens.tsv
 | `INPUT_user/*_gene_vs_protein.tsv` | Yes | 9-col Tier 2 gene structure data per species |
 | `INPUT_user/gigantic_species_list.txt` | Yes | GIGANTIC species list |
 | `RUN-workflow.sh` | No | Local runner; derives tier name from this directory's basename |
-| `RUN-workflow.sbatch` | Yes (account/qos) | SLURM runner |
+| `RUN-workflow.sh` | No | Unified runner (local or SLURM via execution_mode in YAML); derives tier from this directory's basename |
 | `ai/main.nf` | No | Pipeline definition (9-col schema, 4 metrics) |
 | `ai/nextflow.config` | No | NextFlow settings + YAML param loading |

@@ -17,13 +17,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.project_name = "my_project"
-params.species_list = "INPUT_user/species_list.txt"
-params.output_dir = "OUTPUT_pipeline"
-params.force_download = false
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // PROCESSES
@@ -43,7 +40,7 @@ process download_ncbi_taxonomy {
     script:
     """
     # Check if database already exists (skip download if so)
-    if [ -d "${projectDir}/../database-ncbi_taxonomy_latest" ] && [ "${params.force_download}" != "true" ]; then
+    if [ -d "${projectDir}/../database-ncbi_taxonomy_latest" ] && [ "${params.ncbi_taxonomy.force_download}" != "true" ]; then
         echo "NCBI taxonomy database already exists. Skipping download."
         echo "To force re-download, set force_download: true in config.yaml"
         # Create symlinks to existing database for NextFlow output tracking
@@ -98,7 +95,7 @@ process create_species_mapping {
     label 'local'
 
     // Publish to OUTPUT_pipeline with full directory structure
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     // NOTE: Symlinks for output_to_input/maps/ are created by RUN-workflow.sh
     // after pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
@@ -108,7 +105,7 @@ process create_species_mapping {
         path species_list
 
     output:
-        path "3-output/${params.project_name}_map-genus_species_X_phylonames.tsv", emit: project_mapping
+        path "3-output/${params.project.name}_map-genus_species_X_phylonames.tsv", emit: project_mapping
 
     script:
     """
@@ -119,7 +116,7 @@ process create_species_mapping {
     python3 ${projectDir}/scripts/003_ai-python-create_species_mapping.py \\
         --species-list ${species_list} \\
         --master-mapping ${master_mapping} \\
-        --output 3-output/${params.project_name}_map-genus_species_X_phylonames.tsv
+        --output 3-output/${params.project.name}_map-genus_species_X_phylonames.tsv
     """
 }
 
@@ -139,7 +136,7 @@ process generate_taxonomy_summary {
     label 'local'
 
     // Publish to OUTPUT_pipeline
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     // Also publish to upload_to_server for web viewing
     publishDir "${projectDir}/../../upload_to_server/taxonomy_summaries", mode: 'copy', overwrite: true,
@@ -154,8 +151,8 @@ process generate_taxonomy_summary {
         path project_mapping
 
     output:
-        path "4-output/${params.project_name}_taxonomy_summary.md", emit: summary_md
-        path "4-output/${params.project_name}_taxonomy_summary.html", emit: summary_html
+        path "4-output/${params.project.name}_taxonomy_summary.md", emit: summary_md
+        path "4-output/${params.project.name}_taxonomy_summary.html", emit: summary_html
 
     script:
     """
@@ -166,7 +163,7 @@ process generate_taxonomy_summary {
     python3 ${projectDir}/scripts/004_ai-python-generate_taxonomy_summary.py \\
         --input ${project_mapping} \\
         --output-dir 4-output \\
-        --project-name "${params.project_name}"
+        --project-name "${params.project.name}"
     """
 }
 
@@ -195,7 +192,7 @@ process write_run_log {
 
     # Write run log to research notebook
     python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \\
-        --project-name "${params.project_name}" \\
+        --project-name "${params.project.name}" \\
         --species-count \$SPECIES_COUNT \\
         --species-file ${species_list} \\
         --output-file ${project_mapping} \\
@@ -209,7 +206,7 @@ process write_run_log {
 
 workflow {
     // Get species list from INPUT_user/ (relative to workflow root, not ai/)
-    species_list_ch = Channel.fromPath("${projectDir}/../${params.species_list}")
+    species_list_ch = Channel.fromPath("${projectDir}/../${params.project.species_list}")
 
     // Step 1: Download NCBI taxonomy (if needed)
     download_ncbi_taxonomy()
@@ -235,34 +232,5 @@ workflow {
     )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Phylonames Pipeline - STEP 1 Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files:"
-        println "  - ${params.output_dir}/3-output/${params.project_name}_map-genus_species_X_phylonames.tsv"
-        println "  - ${params.output_dir}/4-output/${params.project_name}_taxonomy_summary.md"
-        println "  - ${params.output_dir}/4-output/${params.project_name}_taxonomy_summary.html"
-        println ""
-        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
-        println "Taxonomy summary copied to upload_to_server/taxonomy_summaries/"
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "NEXT STEP: Review the taxonomy summary for:"
-        println "  - NOTINNCBI species (not found in NCBI taxonomy)"
-        println "  - Numbered clades (e.g., Kingdom6555) that need meaningful names"
-        println "  - Any phylonames you want to override"
-        println ""
-        println "If changes are needed, use STEP 2 to apply custom phylonames."
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

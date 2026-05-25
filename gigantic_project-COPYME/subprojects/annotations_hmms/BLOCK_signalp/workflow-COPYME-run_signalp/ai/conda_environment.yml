@@ -45,7 +45,7 @@ channels:
 dependencies:
   # Python (SignalP 6 tested with 3.9-3.11; <3.12 is required)
   - python>=3.9,<3.12
-  - nextflow>=23.0
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
 
   # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
   # The RUN-workflow.sh `python3 <<PYTHON_FLATTEN` heredoc imports yaml to

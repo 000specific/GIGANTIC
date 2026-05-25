@@ -21,14 +21,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.project_name = "my_project"
-params.step1_mapping = "../../output_to_input/STEP_1-generate_and_evaluate/maps"
-params.user_phylonames = "INPUT_user/user_phylonames.tsv"
-params.mark_unofficial = true
-params.output_dir = "OUTPUT_pipeline"
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // PROCESSES
@@ -50,7 +46,7 @@ process apply_user_phylonames {
     label 'local'
 
     // Publish to OUTPUT_pipeline with full directory structure
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path project_mapping
@@ -62,7 +58,7 @@ process apply_user_phylonames {
 
     script:
     // Build the command with optional --no-mark-unofficial flag
-    def unofficial_flag = params.mark_unofficial ? "" : "--no-mark-unofficial"
+    def unofficial_flag = params.project.mark_unofficial ? "" : "--no-mark-unofficial"
     """
     # Create output directory
     mkdir -p 1-output
@@ -91,7 +87,7 @@ process generate_taxonomy_summary {
     label 'local'
 
     // Publish to OUTPUT_pipeline
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     // Also publish to upload_to_server for web viewing
     publishDir "${projectDir}/../../upload_to_server/taxonomy_summaries", mode: 'copy', overwrite: true,
@@ -106,8 +102,8 @@ process generate_taxonomy_summary {
         path final_mapping
 
     output:
-        path "2-output/${params.project_name}_taxonomy_summary.md", emit: summary_md
-        path "2-output/${params.project_name}_taxonomy_summary.html", emit: summary_html
+        path "2-output/${params.project.name}_taxonomy_summary.md", emit: summary_md
+        path "2-output/${params.project.name}_taxonomy_summary.html", emit: summary_html
 
     script:
     """
@@ -118,7 +114,7 @@ process generate_taxonomy_summary {
     python3 ${projectDir}/scripts/002_ai-python-generate_taxonomy_summary.py \\
         --input ${final_mapping} \\
         --output-dir 2-output \\
-        --project-name "${params.project_name}"
+        --project-name "${params.project.name}"
     """
 }
 
@@ -146,7 +142,7 @@ process write_run_log {
 
     # Write run log to research notebook
     python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \\
-        --project-name "${params.project_name}" \\
+        --project-name "${params.project.name}" \\
         --species-count \$SPECIES_COUNT \\
         --species-file ${final_mapping} \\
         --output-file ${final_mapping} \\
@@ -162,10 +158,10 @@ workflow {
     // Get STEP 1 project mapping from output_to_input (subproject-level symlinks)
     // This follows GIGANTIC convention: between STEPs, read from output_to_input/
     step1_mapping_ch = Channel
-        .fromPath("${projectDir}/../${params.step1_mapping}/${params.project_name}_map-genus_species_X_phylonames.tsv")
+        .fromPath("${projectDir}/../${params.project.step1_mapping}/${params.project.name}_map-genus_species_X_phylonames.tsv")
 
     // Get user-provided phylonames from INPUT_user/
-    user_phylonames_ch = Channel.fromPath("${projectDir}/../${params.user_phylonames}")
+    user_phylonames_ch = Channel.fromPath("${projectDir}/../${params.project.user_phylonames}")
 
     // Step 1: Apply user phylonames
     apply_user_phylonames(
@@ -184,30 +180,5 @@ workflow {
     )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Phylonames Pipeline - STEP 2 Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files:"
-        println "  - ${params.output_dir}/1-output/final_project_mapping.tsv"
-        println "  - ${params.output_dir}/1-output/unofficial_clades_report.tsv"
-        println "  - ${params.output_dir}/2-output/${params.project_name}_taxonomy_summary.md"
-        println "  - ${params.output_dir}/2-output/${params.project_name}_taxonomy_summary.html"
-        println ""
-        println "Symlinks updated in output_to_input/ (by RUN-workflow.sh)"
-        println "Taxonomy summary copied to upload_to_server/taxonomy_summaries/"
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "User phylonames applied. Clades differing from NCBI are marked UNOFFICIAL."
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

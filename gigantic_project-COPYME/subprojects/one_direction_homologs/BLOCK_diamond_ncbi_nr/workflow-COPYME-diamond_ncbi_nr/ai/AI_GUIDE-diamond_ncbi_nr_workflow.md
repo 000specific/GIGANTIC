@@ -54,17 +54,17 @@ diamond:
 
 ### Step 3: Configure SLURM (if applicable)
 
-Edit `RUN-workflow.sbatch`:
-- Set `--account=` and `--qos=` to your cluster values
+In `START_HERE-user_config.yaml`:
+- Set `execution_mode: "slurm"` or `"slurm_burst"` (see file for guidance)
+- Fill in `slurm_account`, `slurm_qos`, and (for burst mode) `burst_qos`
+- Adjust `cpus`, `memory_gb`, `time_hours` per your cluster's per-CPU memory rule
 
 ### Step 4: Run
 
+Same command for all three modes — RUN-workflow.sh reads execution_mode from
+the YAML and self-submits to SLURM when appropriate:
 ```bash
-# Local:
 bash RUN-workflow.sh
-
-# SLURM:
-sbatch RUN-workflow.sbatch
 ```
 
 ---

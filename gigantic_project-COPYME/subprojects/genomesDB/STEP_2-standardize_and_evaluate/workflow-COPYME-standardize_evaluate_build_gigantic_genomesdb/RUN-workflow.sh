@@ -48,6 +48,60 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # ============================================================================
+# Read execution mode from START_HERE-user_config.yaml
+# ============================================================================
+read_config() {
+    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+    echo "${value:-$2}"
+}
+
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+
+# ============================================================================
+# SLURM self-submit (if execution_mode=slurm and not already inside a SLURM job)
+# ============================================================================
+
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    echo "Execution mode: SLURM (submitting job)"
+    echo ""
+
+    SLURM_CPUS=$(read_config "cpus" "16")
+    SLURM_MEM=$(read_config "memory_gb" "64")
+    SLURM_TIME=$(read_config "time_hours" "24")
+    SLURM_ACCOUNT=$(read_config "slurm_account" "")
+    SLURM_QOS=$(read_config "slurm_qos" "")
+
+    mkdir -p slurm_logs
+
+    SBATCH_ARGS="--job-name=genomesDB_STEP_2"
+    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/genomesDB_STEP_2-%j.log"
+
+    if [ -n "${SLURM_ACCOUNT}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+    fi
+    if [ -n "${SLURM_QOS}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+    fi
+
+    echo "Submitting with: sbatch ${SBATCH_ARGS}"
+    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+    echo ""
+    echo "Job submitted. Check slurm_logs/ for output."
+    exit 0
+fi
+
+if [ -n "${SLURM_JOB_ID}" ]; then
+    echo "Running inside SLURM job ${SLURM_JOB_ID}"
+else
+    echo "Execution mode: local"
+fi
+echo ""
+
+# ============================================================================
 # Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
 # The environment is created automatically on first run from the yml spec

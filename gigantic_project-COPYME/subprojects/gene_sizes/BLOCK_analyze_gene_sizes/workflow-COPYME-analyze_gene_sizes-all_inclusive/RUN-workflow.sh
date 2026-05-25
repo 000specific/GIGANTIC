@@ -21,8 +21,8 @@
 # 4. (Optional) Set proteome_dir in config for GIGANTIC ID linkage
 #
 # FOR SLURM CLUSTERS:
-# Use the SLURM version instead:
-#   sbatch RUN-workflow.sbatch
+# Edit START_HERE-user_config.yaml: set execution_mode: "slurm"
+# Then run: bash RUN-workflow.sh  (this script self-submits to SLURM)
 #
 # WHAT THIS DOES:
 # 1. Validates user-provided gene structure files against the GIGANTIC species set
@@ -52,28 +52,127 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # ============================================================================
-# Activate GIGANTIC Environment
+# Read execution mode from START_HERE-user_config.yaml
+# ============================================================================
+# Uses grep to parse flat YAML keys (no Python dependency required at this
+# stage — conda env may not yet exist).
+
+read_config() {
+    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+    echo "${value:-$2}"
+}
+
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+
+# ============================================================================
+# SLURM self-submit (if execution_mode=slurm and not already inside a SLURM job)
+# ============================================================================
+# Self-submits as a SLURM job so heavy work (conda env creation, NextFlow
+# pipeline) runs on a compute node -- never on the login node.
+
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    echo "Execution mode: SLURM (submitting job)"
+    echo ""
+
+    SLURM_CPUS=$(read_config "cpus" "4")
+    SLURM_MEM=$(read_config "memory_gb" "16")
+    SLURM_TIME=$(read_config "time_hours" "4")
+    SLURM_ACCOUNT=$(read_config "slurm_account" "")
+    SLURM_QOS=$(read_config "slurm_qos" "")
+
+    mkdir -p slurm_logs
+
+    SBATCH_ARGS="--job-name=gene_sizes_all_inclusive"
+    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/gene_sizes_all_inclusive-%j.log"
+
+    if [ -n "${SLURM_ACCOUNT}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+    fi
+    if [ -n "${SLURM_QOS}" ]; then
+        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+    fi
+
+    echo "Submitting with: sbatch ${SBATCH_ARGS}"
+    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+
+    echo ""
+    echo "Job submitted. Check slurm_logs/ for output."
+    exit 0
+fi
+
+if [ -n "${SLURM_JOB_ID}" ]; then
+    echo "Running inside SLURM job ${SLURM_JOB_ID}"
+else
+    echo "Execution mode: local"
+fi
+echo ""
+
+# ============================================================================
+# Activate GIGANTIC Environment (on-demand creation)
+# ============================================================================
+# The environment is created automatically on first run from the yml spec
+# in ai/conda_environment.yml. You can also pre-create all environments at once:
+#   cd ../../../../ && bash RUN-setup_environments.sh
 # ============================================================================
 
-# Load conda module (required on HPC systems like HiPerGator)
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+# BLOCK-shared env: BOTH gene_sizes workflows (all_inclusive + gene_vs_protein)
+# use the same env (whichever runs first auto-creates it; the other reuses it).
+ENV_NAME="aiG-gene_sizes-analyze_gene_sizes"
+ENV_YML="ai/conda_environment.yml"
+
 module load conda 2>/dev/null || true
 
-# Activate the gene_sizes environment
-if conda activate ai_gigantic_gene_sizes 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_gene_sizes"
-else
-    # Check if nextflow is already available in PATH
-    if ! command -v nextflow &> /dev/null; then
-        echo "ERROR: Environment 'ai_gigantic_gene_sizes' not found!"
-        echo ""
-        echo "Please run the environment setup script first:"
-        echo ""
-        echo "  cd ../../../../  # Go to project root"
-        echo "  bash RUN-setup_environments.sh"
-        echo ""
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
+    echo "On HPC (HiPerGator): module load conda"
+    exit 1
+fi
+
+env_is_complete() {
+    local env_prefix=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
+    if [ -z "${env_prefix}" ]; then return 1; fi
+    if [ ! -x "${env_prefix}/bin/python" ]; then return 1; fi
+    return 0
+}
+
+if ! env_is_complete; then
+    if conda env list 2>/dev/null | awk '{print $1}' | grep -q "^${ENV_NAME}$"; then
+        echo "Removing broken/incomplete env '${ENV_NAME}'..."
+        conda env remove -n "${ENV_NAME}" -y 2>&1 | tail -3
+    fi
+    echo "Creating conda env '${ENV_NAME}' from ${ENV_YML}..."
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
     fi
-    echo "Using NextFlow from PATH (environment not activated)"
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    if ! env_is_complete; then
+        echo "ERROR: Environment creation failed -- '${ENV_NAME}' still not complete."
+        exit 1
+    fi
+    echo "Env '${ENV_NAME}' created successfully."
+fi
+
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+if ! command -v nextflow &> /dev/null; then
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available!"
+        exit 1
+    fi
 fi
 echo ""
 
@@ -119,7 +218,21 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-nextflow run ai/main.nf ${RESUME_FLAG}
+# ============================================================================
+# Flatten START_HERE-user_config.yaml -> .params.json for NextFlow -params-file
+# ============================================================================
+# Universal GIGANTIC YAML->params pattern: pass-through json.dump (no flatten).
+
+python3 <<'PYTHON_DUMP'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+with open( '.params.json', 'w' ) as f:
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
+
+nextflow run ai/main.nf ${RESUME_FLAG} \
+    -params-file .params.json
 
 EXIT_CODE=$?
 

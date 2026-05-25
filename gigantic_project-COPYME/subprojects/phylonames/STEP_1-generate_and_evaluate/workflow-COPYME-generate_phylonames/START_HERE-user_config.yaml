@@ -104,25 +104,27 @@ phylonames:
     - ":"
     - "-"
 
-# ============================================================================
-# SLURM SETTINGS (FOR HPC USERS)
-# ============================================================================
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by SLURM (job resources) when execution_mode is "slurm".
 
-slurm:
-  # Enable SLURM job submission
-  # Set to true if running on an HPC cluster
-  enabled: false
+cpus: 2
+memory_gb: 8
+time_hours: 2
 
-  # SLURM account to charge
-  account: "your_account"
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the NextFlow driver).
+#   "local" - Run directly on this machine
+#   "slurm" - Self-submit as a SLURM job (driver runs on a compute node)
 
-  # SLURM Quality of Service
-  qos: "your_qos"
+execution_mode: "local"
 
-  # Resource allocation
-  memory: "8gb"
-  time: "2:00:00"
-  cpus: 2
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
 
 # ============================================================================
 # LOGGING SETTINGS

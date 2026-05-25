@@ -39,3 +39,26 @@ conda_environment: "ai_gigantic_orthogroups"
 # when you intentionally want to resume after a known interruption.
 
 resume: false
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# These values are used by SLURM (job resources) when execution_mode is "slurm".
+# OrthoFinder is heavy: scales with N species and proteome sizes.
+
+cpus: 32
+memory_gb: 240
+time_hours: 96
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the NextFlow driver).
+#   "local" - Run directly on this machine
+#   "slurm" - Self-submit as a SLURM job (driver runs on a compute node)
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"

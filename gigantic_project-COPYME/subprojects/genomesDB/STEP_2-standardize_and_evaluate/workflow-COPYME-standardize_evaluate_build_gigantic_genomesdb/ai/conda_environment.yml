@@ -37,7 +37,7 @@ channels:
 dependencies:
   # Core requirements
   - python>=3.11
-  - nextflow>=23.0
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
 
   # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
   - pyyaml

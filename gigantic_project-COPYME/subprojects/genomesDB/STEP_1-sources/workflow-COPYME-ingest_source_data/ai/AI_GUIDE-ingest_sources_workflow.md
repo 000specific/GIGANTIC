@@ -74,9 +74,9 @@ cd workflow-RUN_01-ingest_source_data
 workflow-COPYME-ingest_source_data/
 │
 ├── README.md                       # Quick start guide
-├── RUN-workflow.sh           # Local: bash RUN-workflow.sh
-├── RUN-workflow.sbatch       # SLURM: sbatch RUN-workflow.sbatch
-├── START_HERE-user_config.yaml      # Project name and ingestion options
+├── RUN-workflow.sh           # Unified driver: bash RUN-workflow.sh
+│                             # (self-submits to SLURM if execution_mode: slurm)
+├── START_HERE-user_config.yaml      # Project name, ingestion options, execution_mode
 │
 ├── INPUT_user/                     # User creates manifest here
 │   ├── source_manifest.tsv         # User creates this (required)
@@ -194,13 +194,10 @@ project:
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos first):
+**SLURM**: Edit `START_HERE-user_config.yaml`, set `execution_mode: "slurm"` and
+fill in `slurm_account` / `slurm_qos`, then:
 ```bash
-# Edit RUN-workflow.sbatch:
-#SBATCH --account=YOUR_ACCOUNT
-#SBATCH --qos=YOUR_QOS
-
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM
 ```
 
 ---

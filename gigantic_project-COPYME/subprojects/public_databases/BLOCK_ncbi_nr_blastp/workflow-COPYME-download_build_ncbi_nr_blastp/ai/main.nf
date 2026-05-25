@@ -25,7 +25,7 @@ nextflow.enable.dsl = 2
 scripts_dir = "${projectDir}/scripts"
 
 process download_ncbi_nr {
-    publishDir "${params.output_dir}/1-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/1-output", mode: 'copy'
 
     input:
         val nr_url
@@ -42,7 +42,7 @@ process download_ncbi_nr {
 }
 
 process build_blastp_database {
-    publishDir "${params.output_dir}/2-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/2-output", mode: 'copy'
 
     input:
         path nr_compressed
@@ -65,7 +65,7 @@ process build_blastp_database {
 }
 
 process validate_database {
-    publishDir "${params.output_dir}/3-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/3-output", mode: 'copy'
 
     input:
         path database_pdb
@@ -88,7 +88,7 @@ process validate_database {
 }
 
 process write_run_log {
-    publishDir "${params.output_dir}/4-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/4-output", mode: 'copy'
 
     input:
         path validation_report
@@ -113,7 +113,7 @@ process write_run_log {
 // ============================================================================
 workflow {
     // Step 1: Download NCBI nr FASTA
-    download_ncbi_nr( params.nr_url )
+    download_ncbi_nr( params.ncbi_nr.url )
 
     // Step 2: Build BLAST protein database
     build_blastp_database( download_ncbi_nr.out.nr_compressed )

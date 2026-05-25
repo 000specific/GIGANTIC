@@ -38,7 +38,7 @@ nextflow.enable.dsl = 2
 process validate_proteomes {
     tag "validate"
 
-    publishDir "${params.output_dir}/1-output", mode: 'copy'
+    publishDir "${projectDir}/../${params.output.base_dir}/1-output", mode: 'copy'
 
     input:
         path manifest
@@ -62,7 +62,7 @@ process validate_proteomes {
 process split_proteomes {
     tag "split"
 
-    publishDir "${params.output_dir}/2-output", mode: 'copy'
+    publishDir "${projectDir}/../${params.output.base_dir}/2-output", mode: 'copy'
 
     input:
         path validated_manifest
@@ -77,7 +77,7 @@ process split_proteomes {
     python3 ${projectDir}/scripts/002_ai-python-split_proteomes_for_diamond.py \
         --manifest ${validated_manifest} \
         --output-dir . \
-        --num-parts ${params.num_parts}
+        --num-parts ${params.diamond.num_parts}
     """
 }
 
@@ -93,7 +93,7 @@ process split_proteomes {
 process diamond_search {
     tag "${split_fasta.simpleName}"
 
-    publishDir "${params.output_dir}/3-output", mode: 'copy'
+    publishDir "${projectDir}/../${params.output.base_dir}/3-output", mode: 'copy'
 
     input:
         path split_fasta
@@ -105,11 +105,11 @@ process diamond_search {
     """
     bash ${projectDir}/scripts/003_ai-bash-run_diamond_search.sh \
         ${split_fasta} \
-        ${params.diamond_database} \
+        ${params.diamond.database} \
         ${split_fasta.simpleName}_diamond.tsv \
-        ${params.evalue} \
-        ${params.max_target_sequences} \
-        ${params.threads_per_job}
+        ${params.diamond.evalue} \
+        ${params.diamond.max_target_sequences} \
+        ${params.diamond.threads_per_job}
     """
 }
 
@@ -120,7 +120,7 @@ process diamond_search {
 process combine_results {
     tag "${species_name}"
 
-    publishDir "${params.output_dir}/4-output", mode: 'copy'
+    publishDir "${projectDir}/../${params.output.base_dir}/4-output", mode: 'copy'
 
     input:
         tuple val(species_name), path(diamond_files)
@@ -152,7 +152,7 @@ process combine_results {
 process identify_top_hits {
     tag "${species_name}"
 
-    publishDir "${params.output_dir}/5-output", mode: 'copy'
+    publishDir "${projectDir}/../${params.output.base_dir}/5-output", mode: 'copy'
 
     input:
         tuple val(species_name), path(combined_file), path(proteome_file)
@@ -179,7 +179,7 @@ process identify_top_hits {
 process compile_statistics {
     tag "compile"
 
-    publishDir "${params.output_dir}/6-output", mode: 'copy'
+    publishDir "${projectDir}/../${params.output.base_dir}/6-output", mode: 'copy'
 
     input:
         path statistics_files
@@ -217,7 +217,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \
         --workflow-name "diamond_ncbi_nr" \
         --subproject-name "one_direction_homologs" \
-        --project-name "${params.project_name}" \
+        --project-name "${params.project.name}" \
         --status success
     """
 }
@@ -283,31 +283,5 @@ workflow {
 }
 
 
-// ============================================================================
-// Completion handler
-// ============================================================================
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    if ( workflow.success ) {
-        println "Pipeline completed successfully!"
-        println ""
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "Research outputs (per-step documentation):"
-        println "  Step 1: ${params.output_dir}/1-output/  (validated manifest + log)"
-        println "  Step 2: ${params.output_dir}/2-output/  (split FASTAs + job manifest + log)"
-        println "  Step 3: ${params.output_dir}/3-output/  (DIAMOND results per split)"
-        println "  Step 4: ${params.output_dir}/4-output/  (combined results per species + log)"
-        println "  Step 5: ${params.output_dir}/5-output/  (top hits + statistics per species + log)"
-        println "  Step 6: ${params.output_dir}/6-output/  (master statistics + log)"
-        println ""
-        println "Symlinks for downstream subprojects will be created by RUN-workflow.sh"
-    } else {
-        println "Pipeline FAILED!"
-        println "Check error logs above for details."
-    }
-    println ""
-    println "Duration: ${workflow.duration}"
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

@@ -12,7 +12,14 @@
 
 ---
 
-## The plan
+## The plan (SCOPE EXPANDED 2026-05-24 EOD)
+
+Original scope was conda + NF26 patches. User asked on 2026-05-24 to fold in
+the SLURM-wrapper deprecation as well, so each workflow is also converted from
+"separate RUN-workflow.sbatch wrapper" → "unified RUN-workflow.sh that
+self-submits based on execution_mode YAML key". The canonical reference for
+this self-submit pattern is `subprojects/annotations_X_ocl/BLOCK_ocl_analysis/
+workflow-COPYME-ocl_analysis/RUN-workflow.sh` (lines 57-178).
 
 For each legacy workflow-COPYME-* dir, modernize so that:
 1. **Per-workflow conda env yml at `<workflow>/ai/conda_environment.yml`** with:
@@ -31,17 +38,37 @@ For each legacy workflow-COPYME-* dir, modernize so that:
    - Top-level `workflow.onComplete { ... }` blocks DELETED (NF26 parser rejects)
    - `params.X` accesses changed to match the YAML shape if needed (e.g. `params.project_name` → `params.project.name` when YAML has nested `project: { name: ... }`)
 
-4. **RUN-workflow.sh** rewritten:
-   - Modern auto-install conda block (template below)
+4. **RUN-workflow.sh** rewritten with full universal driver:
+   - `read_config` bash-grep helper at top (no Python dep)
+   - SLURM self-submit block (reads `execution_mode` from YAML; if "slurm" and not already in a SLURM job, builds sbatch args from `cpus`/`memory_gb`/`time_hours`/`slurm_account`/`slurm_qos` and self-submits via `sbatch ... --wrap="bash $(realpath $0)"`, then exits 0)
+   - Modern auto-install conda block
    - Universal YAML→JSON pass-through heredoc (no flatten — see memory pattern doc)
    - `-params-file .params.json` added to all `nextflow run` invocations
 
-5. **AI_GUIDE-*.md** in `<workflow>/ai/` updated:
+5. **START_HERE-user_config.yaml** additions:
+   - `execution_mode: "local"` (default; user flips to "slurm" if needed)
+   - `slurm_account: "your_account"` + `slurm_qos: "your_qos"` placeholders
+   - `cpus`, `memory_gb`, `time_hours` (per-workflow sensible defaults)
+
+6. **AI_GUIDE-*.md** in `<workflow>/ai/` updated:
    - Replace legacy env name references (`ai_gigantic_X`) with new `aiG-<subproject>-<descriptor>` name
    - Replace legacy yml path references (`../../../../conda_environments/ai_gigantic_X.yml`) with `ai/conda_environment.yml`
+   - Replace `sbatch RUN-workflow.sbatch` instructions with: "set execution_mode: slurm in START_HERE-user_config.yaml, then `bash RUN-workflow.sh` self-submits"
    - Update any "Environment 'X' not found" error message examples in troubleshooting tables
    - Update setup instructions if they reference the legacy `RUN-setup_environments.sh`
    - For workflows with multiple variants (e.g. orthohmm + orthohmm_GIGANTIC sharing one env), note the shared env in the troubleshooting/setup section
+
+7. **DELETE `RUN-workflow.sbatch`** at workflow root (now obsolete — self-submit handled by RUN-workflow.sh)
+
+**Retroactive work needed on already-"completed" subprojects** (step 4 SLURM block + step 5 YAML keys + step 7 .sbatch deletion):
+- annotations_hmms (6 COPYMEs) — also needs heredoc retro (flatten→pass-through) and AI_GUIDE
+- orthogroups (6 COPYMEs)
+- genomesDB (4 STEPs)
+Total retro: 16 workflows.
+
+**Forward work** (full 6-step pattern on first pass):
+- phylonames (2 STEPs), gene_sizes (2), public_databases (2), secretome (1),
+  one_direction_homologs (1), dark_proteomes (?), hotspots (×2)
 
 ---
 
@@ -267,32 +294,67 @@ When a user creates a fresh RUN_N from a modernized COPYME, the new env (`aiG-<s
 
 ---
 
-## Status as of last update (2026-05-24)
+## Status as of last update (2026-05-25)
 
-**Just-finished work**:
-- 7 ai/conda_environment.yml files written (6 annotations_hmms + 1 build_annotation_database)
-- 6 orthogroups ai/conda_environment.yml files written (4 distinct names; 6 files because each workflow has its own copy even when sharing an env name)
-- Universal YAML→params pattern decided + documented + memory saved
-- broccoli ai/nextflow.config rewritten in universal pattern (DONE)
-- 5 envs from earlier work delete (build_annotation_database SLURM submitted then env deleted as part of cleanup; will auto-recreate on next run)
+### ⚠️ NF VERSION PINNED TO <26.0 (2026-05-25)
 
-**Currently working on**: orthogroups subproject. broccoli DONE as the template; propagating to the other 5: comparison, orthofinder, orthofinder_array, orthohmm, orthohmm_GIGANTIC.
+All 28 `ai/conda_environment.yml` files now constrain `nextflow>=23.0,<26.0`.
 
-**Resume here**: next workflow to do is BLOCK_comparison. For each remaining orthogroups workflow, repeat the 3-step process used on broccoli:
-1. Read current ai/nextflow.config + ai/main.nf + RUN-workflow.sh to enumerate every `userConfig?.X?.Y`, `params.X`, `import org.yaml`, `workflow.onComplete` site
-2. Rewrite ai/nextflow.config with nested params block + executor/process resources from params.X.Y.Z; remove Yaml import; replace `userConfig?.X?.Y` with `params.X.Y`
-3. Patch ai/main.nf: change params accesses to nested form matching the YAML shape; delete top-level workflow.onComplete block
-4. Patch RUN-workflow.sh: swap conda block to modern auto-install (ENV_NAME per workflow); add universal pass-through heredoc; add `-params-file .params.json` to all nextflow run invocations
-5. Audit: 0 Yaml imports, 0 userConfig refs, 0 workflow.onComplete, 0 legacy `ai_gigantic_X` env refs
+**Why**: NF 26.04.2 introduces a strict config DSL that retroactively rejects multiple long-standing patterns in these workflows:
+- `def X = ...` declarations mixed with config blocks (params{}/executor{}/process{}) — Error: "Variable declarations cannot be mixed with config statements"
+- `executor { $local { ... } $slurm { ... } }` scoped-block syntax — silently dropped as "Unrecognized config option"
+- Top-level statements in `main.nf` outside process/workflow/function blocks — Error: "Statements cannot be mixed with script declarations"
+- (Possibly more not yet discovered)
 
-Per-workflow env names (already in their ai/conda_environment.yml from earlier work):
-- BLOCK_comparison → `aiG-orthogroups-comparison` (its OWN env: python + matplotlib + numpy + pyyaml + nextflow only)
-- BLOCK_orthofinder → `aiG-orthogroups-orthofinder` (shared with orthofinder_array)
-- BLOCK_orthofinder_array → `aiG-orthogroups-orthofinder` (same env as orthofinder)
-- BLOCK_orthohmm → `aiG-orthogroups-orthohmm` (shared with orthohmm_GIGANTIC)
-- BLOCK_orthohmm_GIGANTIC → `aiG-orthogroups-orthohmm` (same env as orthohmm)
+We fixed the `def` issue in our 10 affected COPYMEs (inlined params references). The remaining NF 26.x DSL changes affect more code (scoped-block executors, top-level statements in main.nf, conditional executor blocks) and the iteration cost of "fix, test, repeat against a moving target" is high. **Pinning is the pragmatic stopping point** — preserves all the conda + NF26-precursor patches we made, but holds NF version at the proven-working tier until a dedicated NF 26.x migration session can do it thoroughly.
 
-Note for shared-env workflows: each workflow still has its OWN ai/conda_environment.yml (identical content). Whichever workflow runs first auto-creates the env, the rest reuse it.
+**To revisit later**: when NF 26.x DSL stabilizes and a focused session has bandwidth, work through all remaining 26.x rejections in COPYME + bump pin to allow `>=26.0`. Issues to address (audited 2026-05-25):
+- 2 of our 28 cfg files have top-level `if (...) { executor {...} } else { executor {...} }` blocks (interproscan, one_direction_homologs) — flatten to a single `executor {}` with conditional values inside
+- Scoped executor syntax `executor { $local {...} $slurm {...} }` is no longer recognized — find NF 26.x replacement
+- Top-level Groovy statements in main.nf (e.g. `scripts_dir = "..."`) — hoist into workflow{} block
+
+---
+
+### ✅ ALL 28 WORKFLOWS FULLY MODERNIZED (within NF 25.x scope)
+
+Every one of the 28 legacy `workflow-COPYME-*` directories now has:
+1. `ai/conda_environment.yml` with the `aiG-<subproject>-...` naming convention + `nextflow>=23.0,<26.0` pin
+2. `ai/nextflow.config` patched for NextFlow 26.x-precursor (no SnakeYAML import, params block with nested defaults; top-level `def` inlined; still has some patterns rejected by NF 26.04.2 strict-DSL — see pin note above)
+3. `ai/main.nf` patched (nested params accesses, top-level `workflow.onComplete` deleted)
+4. `RUN-workflow.sh` rewritten with:
+   - SLURM-self-submit block (canonical = phylonames STEP_1; alternate = Python-eval in dark_proteomes/hotspots)
+   - Modern conda auto-install (env_is_complete + mamba env create on first run)
+   - Universal YAML→JSON pass-through heredoc (no flatten) + `-params-file .params.json`
+5. `START_HERE-user_config.yaml` has `execution_mode` + `slurm_account` + `slurm_qos` + `cpus` + `memory_gb` + `time_hours`
+6. `AI_GUIDE-*.md` updated to reflect unified-driver pattern
+7. `RUN-workflow.sbatch` deleted (and `SLURM_workflow.sbatch` for BLOCK_comparison)
+
+### Final inventory (28 modernized + 1 skipped)
+
+| Subproject | Workflows | Env name(s) |
+|---|---|---|
+| annotations_hmms (6) | signalp, tmbed, metapredict, deeploc, interproscan, build_annotation_database | 6 per-tool envs `aiG-annotations_hmms-<tool>` |
+| orthogroups (6) | broccoli, comparison, orthofinder, orthofinder_array, orthohmm, orthohmm_GIGANTIC | 4 envs: `aiG-orthogroups-{broccoli,comparison,orthofinder,orthohmm}` (orthofinder + orthohmm each shared by 2 BLOCKs) |
+| genomesDB (4) | STEP_1, STEP_2, STEP_3, STEP_4 | `aiG-genomesDB` (shared) |
+| phylonames (2) | STEP_1, STEP_2 | `aiG-phylonames` (shared) |
+| gene_sizes (2) | all_inclusive, gene_vs_protein | `aiG-gene_sizes-analyze_gene_sizes` (shared) |
+| public_databases (2) | ncbi_nr_blastp, ncbi_nr_diamond | `aiG-public_databases` (shared) |
+| one_direction_homologs (1) | diamond_ncbi_nr | `aiG-one_direction_homologs` (has local/slurm/slurm_burst modes) |
+| secretome (2) | build_evidence_table, secretome_per_moroz_17may2026 | 2 per-BLOCK envs |
+| dark_proteomes (1) | classify_dark_proteome | `aiG-dark_proteomes` |
+| hotspots (2) | self_blast, identify_hotspots | `aiG-hotspots` (shared) |
+| **Skipped**: orthogroups/BLOCK_orthohmm/workflow-COPYME-run_orthohmm_USED_FOR_RUNS_1_TO_3 | (historical snapshot — intentionally NOT modernized) |
+
+### Audit results (final)
+- 28 / 28 workflows have `ai/conda_environment.yml`, `execution_mode` in YAML, no `.sbatch` file, and `bash -n RUN-workflow.sh` PASS
+- 25 / 28 use the canonical `read_config()` bash helper for YAML-key reads before conda env exists
+- 3 / 28 (dark_proteomes/BLOCK_classify_dark_proteome, hotspots/BLOCK_self_blast, hotspots/BLOCK_identify_hotspots) use a functionally-equivalent Python-eval pattern instead — these workflows were already richly modern and were retained as-is rather than rewriting working code
+
+### Scope NOT modernized in this sweep (separate future scope)
+- 17 additional template-COPYMEs across 7 untouched subprojects: `annotations_X_ocl` (1), `homolog_counts` (1), `orthogroups_X_ocl` (1), `parsimony_tree_structures` (1), `trees_gene_groups` (7), `trees_species` (4), `trees_gene_families/gene_family_COPYME` (~2)
+- 5 zero-COPYME subprojects awaiting initial scaffolding: `ocl_perspectives`, `ocl_using_simple_taxonomy`, `synteny`, `trees_gene_families_X_ocl`, `trees_gene_groups_X_ocl`
+- The 163 trees_gene_families gene-family workflow instances likely all share a base template; modernize the 2 templates + mass-regenerate is the realistic approach
+- All RUN_N instances under any subproject — these are **scientific records of work as conducted** and are intentionally never modified (RUN_Ns are historical lab-notebook artifacts; the COPYME templates are what future RUN_Ns are created from)
 
 ---
 

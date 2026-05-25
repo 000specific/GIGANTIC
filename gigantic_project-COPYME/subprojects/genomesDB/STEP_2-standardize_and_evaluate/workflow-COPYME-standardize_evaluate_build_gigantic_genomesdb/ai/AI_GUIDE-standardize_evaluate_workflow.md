@@ -70,11 +70,10 @@ cd workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 bash RUN-workflow.sh
 ```
 
-**SLURM execution:**
+**SLURM execution:** Edit `START_HERE-user_config.yaml`, set `execution_mode: "slurm"` and fill in `slurm_account` / `slurm_qos`, then:
 ```bash
 cd workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
-# Edit RUN-workflow.sbatch to set --account and --qos
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM
 ```
 
 ---
@@ -124,7 +123,7 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 | File | User Edits? | Description |
 |------|-------------|-------------|
 | `RUN-workflow.sh` | No | Main workflow script |
-| `RUN-workflow.sbatch` | Yes (account/qos) | SLURM job wrapper |
+| `RUN-workflow.sh` (with execution_mode: slurm) | Yes (slurm_account/slurm_qos in YAML) | Unified runner that self-submits to SLURM |
 | `START_HERE-user_config.yaml` | Yes (project settings) | User-editable configuration |
 | `INPUT_user/busco_lineages.txt` | Yes (lineage assignments) | BUSCO lineage per species |
 | `ai/scripts/001_*.py` | No | Proteome standardization |

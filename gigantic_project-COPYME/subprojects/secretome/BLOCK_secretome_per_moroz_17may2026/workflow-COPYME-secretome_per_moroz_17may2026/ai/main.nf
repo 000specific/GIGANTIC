@@ -16,20 +16,16 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (resolved from nextflow.config which reads START_HERE-user_config.yaml)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.species70_phyloname_map  = ''
-params.output_dir               = 'OUTPUT_pipeline'
-params.project_name             = 'secretome'
-
-// TODO: add additional input params here as upstream sources are wired in.
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // VALIDATE REQUIRED INPUTS
 // ============================================================================
 
-if ( !params.species70_phyloname_map || !file( params.species70_phyloname_map ).exists() ) {
+if ( !params.inputs.species70_phyloname_map || !file( params.inputs.species70_phyloname_map ).exists() ) {
     error """
     ========================================================================
     CONFIGURATION ERROR: species70_phyloname_map not set or file missing.
@@ -48,7 +44,7 @@ if ( !params.species70_phyloname_map || !file( params.species70_phyloname_map ).
  * SKELETON PROCESS — replace with real processes once scripts are defined.
  *
  * Convention reminder:
- *   - publishDir to ${projectDir}/../${params.output_dir}
+ *   - publishDir to ${projectDir}/../${params.output.base_dir}
  *   - Numbered output directories: N-output/
  *   - Output filenames: N_ai-<details>.<ext>
  *   - Log filename:     N_ai-log-<details>.log
@@ -59,7 +55,7 @@ if ( !params.species70_phyloname_map || !file( params.species70_phyloname_map ).
 process placeholder_first_step {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/1_ai-placeholder_skeleton.txt"
@@ -82,22 +78,5 @@ workflow {
     placeholder_first_step()
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC secretome Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Output files in ${params.output_dir}/"
-        println ""
-        println "Symlinks created in output_to_input/BLOCK_secretome_per_moroz_17may2026/ (by RUN-workflow.sh)"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

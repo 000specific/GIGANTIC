@@ -59,9 +59,9 @@ cd workflow-RUN_01-generate_phylonames
 workflow-COPYME-generate_phylonames/
 │
 ├── README.md                    # Quick start guide
-├── RUN-workflow.sh               # Local: bash RUN-workflow.sh
-├── RUN-workflow.sbatch           # SLURM: sbatch RUN-workflow.sbatch
-├── START_HERE-user_config.yaml       # Project name and options
+├── RUN-workflow.sh               # Unified driver: bash RUN-workflow.sh
+│                                 # (self-submits to SLURM if execution_mode: slurm)
+├── START_HERE-user_config.yaml       # Project name + execution_mode + SLURM options
 │
 ├── INPUT_user/                  # Species list resolved at runtime (see override design below)
 │   └── species_list.txt         # Species to process (override or auto-copied default)
@@ -121,35 +121,35 @@ project:
 
 ### Step 3: Run
 
-**Local**:
+**Local** (default):
 ```bash
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos first):
+**SLURM**: Edit `START_HERE-user_config.yaml`, set `execution_mode: "slurm"` and
+fill in `slurm_account` / `slurm_qos`, then:
 ```bash
-# Edit RUN-workflow.sbatch:
-#SBATCH --account=YOUR_ACCOUNT
-#SBATCH --qos=YOUR_QOS
-
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM
 ```
 
 ---
 
 ## SLURM Execution Details
 
-| Setting | Value | Notes |
-|---------|-------|-------|
-| `--account` | `YOUR_ACCOUNT` | **Must edit** |
-| `--qos` | `YOUR_QOS` | **Must edit** |
-| `--mem` | `75gb` | HiPerGator rule: 7.5 GB per CPU |
-| `--time` | `2:00:00` | First run ~15min, subsequent <1min |
-| `--cpus-per-task` | `10` | Required for NextFlow JVM on SLURM |
+When `execution_mode: "slurm"`, `RUN-workflow.sh` self-submits to SLURM by
+reading these keys from `START_HERE-user_config.yaml`:
+
+| YAML key | Default | Notes |
+|----------|---------|-------|
+| `slurm_account` | `your_account` | **Must edit** |
+| `slurm_qos` | `your_qos` | **Must edit** |
+| `cpus` | `2` | NextFlow JVM concurrency |
+| `memory_gb` | `8` | Honor HiPerGator 7.5 GB/CPU rule if scaling up |
+| `time_hours` | `2` | First run ~15min, subsequent <1min |
 
 **Check job status**: `squeue -u $USER`
 
-**View logs**: `cat slurm_logs/phylonames-*.log`
+**View logs**: `cat slurm_logs/phylonames_STEP_1-*.log`
 
 ---
 
@@ -283,7 +283,7 @@ chmod +x ai/scripts/*.sh
 
 **Cause**: Insufficient resource allocation. NextFlow's JVM can hang indefinitely on SLURM compute nodes when allocated too few CPUs or too little RAM (e.g., 2 CPUs / 8 GB). The same workflow runs fine locally because the login node has ample resources.
 
-**Solution**: Ensure `RUN-workflow.sbatch` follows the HiPerGator rule of 7.5 GB RAM per CPU. The phylonames workflow uses 10 CPUs / 75 GB by default. On other HPC systems, check your cluster's RAM-per-CPU ratio and adjust accordingly.
+**Solution**: Scale up `cpus` and `memory_gb` in `START_HERE-user_config.yaml` together, honoring the HiPerGator rule of ~7.5 GB RAM per CPU (e.g., 10 CPUs / 75 GB). On other HPC systems, check your cluster's RAM-per-CPU ratio and adjust accordingly.
 
 ### NextFlow errors
 

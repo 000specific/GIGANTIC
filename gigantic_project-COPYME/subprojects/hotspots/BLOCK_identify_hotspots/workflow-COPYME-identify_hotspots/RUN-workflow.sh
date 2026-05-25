@@ -54,25 +54,56 @@ fi
 
 module load conda 2>/dev/null || true
 
-CONDA_ENV=$( python3 -c "
-import re
-with open('START_HERE-user_config.yaml') as f:
-    for line in f:
-        m = re.match(r'\s*environment:\s*[\"]?([^\"\s#]+)', line)
-        if m:
-            print(m.group(1))
-            break
-" 2>/dev/null )
-CONDA_ENV="${CONDA_ENV:-ai_gigantic_hotspots}"
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+# Subproject-shared env: BOTH hotspots BLOCKs use the same env.
+ENV_NAME="aiG-hotspots"
+ENV_YML="ai/conda_environment.yml"
 
-if conda activate "${CONDA_ENV}" 2>/dev/null; then
-    echo "Activated conda environment: ${CONDA_ENV}"
-else
-    if ! command -v nextflow &> /dev/null || ! command -v python3 &> /dev/null; then
-        echo "ERROR: conda env '${CONDA_ENV}' not found and required tools (nextflow, python3) are not on PATH."
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found! On HPC (HiPerGator): module load conda"
+    exit 1
+fi
+
+env_is_complete() {
+    local env_prefix=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
+    if [ -z "${env_prefix}" ]; then return 1; fi
+    if [ ! -x "${env_prefix}/bin/python" ]; then return 1; fi
+    return 0
+}
+
+if ! env_is_complete; then
+    if conda env list 2>/dev/null | awk '{print $1}' | grep -q "^${ENV_NAME}$"; then
+        echo "Removing broken/incomplete env '${ENV_NAME}'..."
+        conda env remove -n "${ENV_NAME}" -y 2>&1 | tail -3
+    fi
+    echo "Creating conda env '${ENV_NAME}' from ${ENV_YML}..."
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
     fi
-    echo "Using NextFlow + python from PATH"
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    if ! env_is_complete; then
+        echo "ERROR: Environment creation failed."
+        exit 1
+    fi
+fi
+
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+if ! command -v nextflow &> /dev/null; then
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available!"
+        exit 1
+    fi
 fi
 
 # ============================================================================

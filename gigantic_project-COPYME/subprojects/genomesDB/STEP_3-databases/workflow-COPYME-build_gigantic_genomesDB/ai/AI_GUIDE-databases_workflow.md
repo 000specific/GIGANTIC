@@ -62,9 +62,10 @@ Default paths work if STEP_2 has been run and its `RUN-workflow.sh` created the 
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos in sbatch file first):
+**SLURM**: Edit `START_HERE-user_config.yaml`, set `execution_mode: "slurm"` and
+fill in `slurm_account` / `slurm_qos`, then:
 ```bash
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM
 ```
 
 ### 5. Verify outputs

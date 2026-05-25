@@ -19,13 +19,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from nextflow.config via START_HERE-user_config.yaml)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.project_name = "my_project"
-params.nr_url = "https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz"
-params.output_dir = "OUTPUT_pipeline"
-params.diamond_threads = 15
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // PROCESSES
@@ -38,7 +35,7 @@ params.diamond_threads = 15
 process download_ncbi_nr {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/nr.gz", emit: nr_fasta_gz
@@ -47,7 +44,7 @@ process download_ncbi_nr {
     """
     bash ${projectDir}/scripts/001_ai-bash-download_ncbi_nr.sh \
         --output-dir 1-output \
-        --url "${params.nr_url}"
+        --url "${params.ncbi_nr.download_url}"
     """
 }
 
@@ -58,7 +55,7 @@ process download_ncbi_nr {
 process build_diamond_database {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path nr_fasta_gz
@@ -71,7 +68,7 @@ process build_diamond_database {
     bash ${projectDir}/scripts/002_ai-bash-build_diamond_database.sh \
         --input-file ${nr_fasta_gz} \
         --output-dir 2-output \
-        --threads ${params.diamond_threads}
+        --threads ${params.diamond.threads}
     """
 }
 
@@ -82,7 +79,7 @@ process build_diamond_database {
 process validate_database {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path diamond_database
@@ -105,7 +102,7 @@ process validate_database {
 process write_run_log {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path validation_report
@@ -139,28 +136,5 @@ workflow {
     write_run_log( validate_database.out.validation_report )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Public Databases - NCBI nr DIAMOND Database Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files:"
-        println "  - ${params.output_dir}/1-output/nr.gz (NCBI nr FASTA)"
-        println "  - ${params.output_dir}/2-output/nr.dmnd (DIAMOND database)"
-        println "  - ${params.output_dir}/3-output/validation_report.txt"
-        println "  - ${params.output_dir}/4-output/run_log.txt"
-        println ""
-        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
-        println ""
-        println "USAGE: diamond blastp -d ${params.output_dir}/2-output/nr.dmnd -q query.fasta -o results.tsv"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

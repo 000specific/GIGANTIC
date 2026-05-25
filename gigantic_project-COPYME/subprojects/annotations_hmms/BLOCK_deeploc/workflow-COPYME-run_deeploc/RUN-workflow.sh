@@ -193,22 +193,13 @@ fi
 # the YAML config is flattened to JSON here (Python pyyaml) and passed via
 # -params-file. All keys become params.KEY in nextflow.config at run time.
 
-python3 <<'PYTHON_FLATTEN'
+python3 <<'PYTHON_DUMP'
 import yaml, json
 with open( 'START_HERE-user_config.yaml' ) as f:
     cfg = yaml.safe_load( f )
-
-flat = {}
-for k, v in cfg.items():
-    if isinstance( v, dict ):
-        for sk, sv in v.items():
-            flat[ sk ] = sv
-    else:
-        flat[ k ] = v
-
 with open( '.params.json', 'w' ) as f:
-    json.dump( flat, f, indent=2 )
-PYTHON_FLATTEN
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
 
 nextflow run ai/main.nf ${RESUME_FLAG} \
     -c ai/nextflow.config \

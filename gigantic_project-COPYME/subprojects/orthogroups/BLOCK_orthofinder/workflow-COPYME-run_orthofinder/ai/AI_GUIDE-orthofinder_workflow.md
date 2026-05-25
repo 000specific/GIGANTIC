@@ -11,8 +11,8 @@ vi START_HERE-user_config.yaml
 # 2. Run pipeline (auto-creates aiG-orthogroups-orthofinder env on first run)
 bash RUN-workflow.sh
 
-# Or submit to SLURM
-sbatch ../RUN-workflow.sbatch
+# Or submit to SLURM: set execution_mode: "slurm" in START_HERE-user_config.yaml,
+# then run the same bash command — RUN-workflow.sh self-submits.
 ```
 
 ## Pipeline Steps

@@ -49,7 +49,7 @@ channels:
 dependencies:
   # Core requirements (Python 3.10 required by DeepLoc 2.1)
   - python==3.10.*
-  - nextflow>=23.0
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
 
   # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
   - pyyaml

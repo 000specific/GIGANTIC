@@ -1,0 +1,42 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# BLOCK-shared conda env used by BOTH gene_sizes workflows in BLOCK_analyze_gene_sizes:
+#   workflow-COPYME-analyze_gene_sizes-all_inclusive     (Tier 1, 15-column TSV)
+#   workflow-COPYME-analyze_gene_sizes-gene_vs_protein   (Tier 2, smaller subset)
+# Each workflow has an identical copy of this yml in its own ai/ so each
+# workflow is self-installable; whichever runs first auto-creates the env,
+# the other reuses it. The two workflows use Python stdlib only — no
+# tool-specific deps beyond NextFlow + JVM + pyyaml (for the YAML→JSON
+# heredoc in RUN-workflow.sh).
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-gene_sizes-analyze_gene_sizes
+
+name: aiG-gene_sizes-analyze_gene_sizes
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # NextFlow needs a JVM; older NF builds don't pull it transitively, so
+  # request it explicitly.
+  - openjdk

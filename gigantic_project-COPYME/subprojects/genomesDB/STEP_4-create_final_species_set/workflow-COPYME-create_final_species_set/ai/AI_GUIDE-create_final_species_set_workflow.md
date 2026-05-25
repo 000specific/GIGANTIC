@@ -65,9 +65,10 @@ If this file does not exist or is empty, **all species** from STEP_2 are include
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos in sbatch file first):
+**SLURM**: Edit `START_HERE-user_config.yaml`, set `execution_mode: "slurm"` and
+fill in `slurm_account` / `slurm_qos`, then:
 ```bash
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM
 ```
 
 ### 5. Verify outputs

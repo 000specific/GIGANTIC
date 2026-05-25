@@ -50,9 +50,9 @@ cd workflow-RUN_01-download_build_ncbi_nr_diamond
 workflow-COPYME-download_build_ncbi_nr_diamond/
 |
 ├── README.md                        # Quick start guide
-├── RUN-workflow.sh                  # Local: bash RUN-workflow.sh
-├── RUN-workflow.sbatch              # SLURM: sbatch RUN-workflow.sbatch
-├── START_HERE-user_config.yaml      # Project name and settings
+├── RUN-workflow.sh                  # Unified driver: bash RUN-workflow.sh
+│                                    # (self-submits to SLURM if execution_mode: slurm)
+├── START_HERE-user_config.yaml      # Project name, execution_mode, SLURM settings
 |
 ├── INPUT_user/                      # (empty - no user input files needed)
 |
@@ -91,14 +91,15 @@ diamond:
 
 ### Step 2: Run
 
-**Local**:
+**Local** (default):
 ```bash
 bash RUN-workflow.sh
 ```
 
-**SLURM** (edit account/qos first):
+**SLURM**: Edit `START_HERE-user_config.yaml`, set `execution_mode: "slurm"` and
+fill in `slurm_account` / `slurm_qos`, then:
 ```bash
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM
 ```
 
 ---
@@ -211,7 +212,7 @@ curl -I https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
 
 **Cause**: Insufficient memory for building database from nr
 
-**Solution**: Increase `--mem` in `RUN-workflow.sbatch` to at least 100 GB.
+**Solution**: Increase `memory_gb` in `START_HERE-user_config.yaml` to at least 100 GB.
 
 ### Validation reports 0 sequences
 

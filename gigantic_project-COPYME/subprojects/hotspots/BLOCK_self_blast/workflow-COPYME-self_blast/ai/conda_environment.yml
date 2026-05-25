@@ -1,0 +1,40 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Subproject-shared conda env used by BOTH hotspots BLOCKs:
+#   BLOCK_self_blast       (BLASTP each species vs itself)
+#   BLOCK_identify_hotspots (Python analysis of self-BLAST output)
+# Each BLOCK has an identical copy of this yml in its own ai/ so each is
+# self-installable; whichever runs first auto-creates the env, the other
+# reuses it.
+#
+# Provides every tool either BLOCK can invoke:
+#   - blast    ( BLOCK_self_blast: blastp )
+#   - python   ( both BLOCKs: pandas-based hotspot identification + summaries )
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-hotspots
+
+name: aiG-hotspots
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.10
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
+  - pyyaml
+  - pandas
+  - openjdk
+  - blast>=2.14

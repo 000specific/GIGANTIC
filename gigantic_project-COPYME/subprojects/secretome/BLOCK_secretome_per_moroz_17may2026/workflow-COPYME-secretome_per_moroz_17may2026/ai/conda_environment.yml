@@ -1,16 +1,34 @@
-# GIGANTIC secretome - workflow conda environment
-# Per-BLOCK conda env scoped to BLOCK_secretome_per_moroz_17may2026.
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-BLOCK conda env scoped to secretome/BLOCK_secretome_per_moroz_17may2026.
 # Auto-created from this file on first run by RUN-workflow.sh
 # (mamba preferred; conda fallback).
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-secretome-secretome_per_moroz_17may2026
+
 name: aiG-secretome-secretome_per_moroz_17may2026
+
 channels:
   - conda-forge
   - bioconda
   - defaults
+
 dependencies:
   - python>=3.10
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
   - pyyaml
   - pandas
-  - nextflow
+  - openjdk
   # TODO: add domain-specific deps once scripts are defined
   # (e.g., biopython, signalp / phobius tools if invoked via conda, etc.)

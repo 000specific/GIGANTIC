@@ -126,22 +126,13 @@ EXECUTION_MODE=$(read_config "execution_mode" "local")
 # This flatten runs once, before the EXECUTION_MODE branch; all 3 nextflow
 # invocations below reuse the same .params.json.
 
-python3 <<'PYTHON_FLATTEN'
+python3 <<'PYTHON_DUMP'
 import yaml, json
 with open( 'START_HERE-user_config.yaml' ) as f:
     cfg = yaml.safe_load( f )
-
-flat = {}
-for k, v in cfg.items():
-    if isinstance( v, dict ):
-        for sk, sv in v.items():
-            flat[ sk ] = sv
-    else:
-        flat[ k ] = v
-
 with open( '.params.json', 'w' ) as f:
-    json.dump( flat, f, indent=2 )
-PYTHON_FLATTEN
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
 
 # ============================================================================
 # MODE: local
