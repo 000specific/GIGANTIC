@@ -10,6 +10,7 @@ x_*
 work/
 .nextflow/
 .nextflow.log*
+.params.json
 
 # Pipeline outputs (generated, not tracked)
 OUTPUT_pipeline/

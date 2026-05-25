@@ -19,7 +19,7 @@ structure, conventions, and documentation are built around that model.
 ### 1. Clone the repository
 
 ```
-git clone https://github.com/000specific/GIGANTIC.git
+git clone https://github.com/000generic/GIGANTIC.git
 ```
 
 ### 2. Copy and rename the project template
@@ -44,8 +44,8 @@ whole directory as the complete record of your project.
 
 ### 3. Start a fresh, naive AI assistant session rooted at the renamed project
 
-Open a new AI assistant session (Claude Code, Cursor, ChatGPT with a
-codebase-aware integration, etc.) and **root it at the renamed project
+Open a new AI assistant session (Claude Code, Cursor, ChatGPT, Gemini, or
+any other codebase-aware AI assistant) and **root it at the renamed project
 directory**, not at the cloned `GIGANTIC/` directory.
 
 For example, if you renamed your project to
@@ -79,6 +79,9 @@ renamed project directory is where you actually do science.
   copy.
 - **AI-assistant-facing guidance for the framework itself**:
   [`AI_GUIDE.md`](AI_GUIDE.md) in this directory.
+- **Behavior and posture for research-grade work** (full documentation,
+  transparency, archival, replication): [`CLAUDE.md`](CLAUDE.md) in this
+  directory.
 - **Standard repository files**: [`LICENSE`](LICENSE),
   [`CITATION.cff`](CITATION.cff), [`CONTRIBUTING.md`](CONTRIBUTING.md),
   [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).

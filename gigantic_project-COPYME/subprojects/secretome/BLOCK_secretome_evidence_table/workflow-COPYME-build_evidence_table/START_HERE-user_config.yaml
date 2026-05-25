@@ -31,7 +31,7 @@ project_name: "species70_secretome_evidence_table_2026may23"
 #   database_interproscan/ ( IPR summary )
 #   database_go/           ( GO terms )
 #   database_cdd/  database_funfam/  ... ( IPR sub-databases that were run )
-annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/BLOCK_build_annotation_database/workflow-RUN_1-build_annotation_database/OUTPUT_pipeline"
+annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/BLOCK_build_annotation_database/workflow-RUN_1-build_annotation_database/OUTPUT_pipeline/annotation_databases"
 
 # =============================================================================
 # Computational Resources
@@ -49,7 +49,7 @@ time_hours: 12
 # "local" - Run directly on this machine (default)
 # "slurm" - Submit as a SLURM cluster job
 
-execution_mode: "slurm"
+execution_mode: "local"
 
 # SLURM settings (only used when execution_mode is "slurm")
 slurm_account: "moroz"

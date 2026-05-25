@@ -1,11 +1,11 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: Run MetaPredict Nextflow pipeline
+# AI: Claude Code | Opus 4.7 | 2026 May 25 | Purpose: Run Secretome Evidence Table Builder Nextflow pipeline
 # Human: Eric Edsinger
 
 # =============================================================================
 # RUN-workflow.sh
 # =============================================================================
-# Runs the MetaPredict annotation Nextflow pipeline.
+# Runs the Secretome Evidence Table Builder Nextflow pipeline.
 # Supports both local and SLURM execution via START_HERE-user_config.yaml.
 #
 # Usage:
@@ -149,7 +149,7 @@ else
 fi
 
 echo "========================================================================"
-echo "Starting MetaPredict Annotation Pipeline"
+echo "Starting Secretome Evidence Table Builder Pipeline"
 echo "========================================================================"
 
 # Optionally resume from cached work/ if user enabled it in config
@@ -203,16 +203,14 @@ SUBPROJECT_SHARED_DIR="../../output_to_input/BLOCK_secretome_evidence_table"
 mkdir -p "${SUBPROJECT_SHARED_DIR}"
 find "${SUBPROJECT_SHARED_DIR}" -type l -delete 2>/dev/null || true
 
-# --- Create relative symlinks for per-species MetaPredict result files ---
-# Real files: OUTPUT_pipeline/2-output/{phyloname}_metapredict_idrs.tsv
-#             OUTPUT_pipeline/2-output/{phyloname}_metapredict_disorder.tsv
+# --- Create relative symlinks for per-species evidence table TSVs ---
+# Real files: OUTPUT_pipeline/2-output/{phyloname}_evidence_table.tsv
 RESULT_DIR="OUTPUT_pipeline/2-output"
 SYMLINK_COUNT=0
 
-for result_file in ${RESULT_DIR}/*_metapredict_idrs.tsv ${RESULT_DIR}/*_metapredict_disorder.tsv; do
+for result_file in ${RESULT_DIR}/*_evidence_table.tsv; do
     if [ -f "$result_file" ]; then
         filename="$(basename "$result_file")"
-        # Symlink from subproject output_to_input to real file
         ln -sf "../../BLOCK_secretome_evidence_table/${WORKFLOW_DIR_NAME}/${result_file}" "${SUBPROJECT_SHARED_DIR}/${filename}"
         SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
     fi
@@ -221,13 +219,13 @@ done
 echo "  Created ${SYMLINK_COUNT} symlinks in output_to_input/BLOCK_secretome_evidence_table/"
 
 if [ $SYMLINK_COUNT -eq 0 ]; then
-    echo "  WARNING: No MetaPredict result files found in ${RESULT_DIR}/"
+    echo "  WARNING: No evidence_table TSVs found in ${RESULT_DIR}/"
     echo "  The pipeline may have produced no outputs."
 fi
 
 echo ""
 echo "========================================================================"
-echo "SUCCESS! MetaPredict Annotation Pipeline complete."
+echo "SUCCESS! Secretome Evidence Table Builder Pipeline complete."
 echo ""
 echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/"

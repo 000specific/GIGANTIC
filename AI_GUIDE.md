@@ -32,7 +32,10 @@ the repo from GitHub, they get this directory tree. It contains:
 - Standard repository files (`LICENSE`, `CITATION.cff`, `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md`, `.github/`)
 - Branding assets, a demo placeholder
-- This file (`AI_GUIDE.md`) and its user-facing companion (`README.md`)
+- Three top-level documents: this file (`AI_GUIDE.md`), the user-facing
+  `README.md`, and `CLAUDE.md` — the behavior/posture document for
+  research-grade work (full documentation, transparency, archival,
+  replication)
 
 `GIGANTIC/` itself is not where a user does science. It is the framework. It
 ships; the user copies it.
@@ -43,7 +46,7 @@ ships; the user copies it.
 
 1. **Clone** the repository from GitHub:
    ```
-   git clone https://github.com/000specific/GIGANTIC.git
+   git clone https://github.com/000generic/GIGANTIC.git
    ```
 2. **Copy and rename** `gigantic_project-COPYME/` to a project-specific name,
    placing the copy outside `GIGANTIC/` so the framework and the user's
