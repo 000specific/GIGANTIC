@@ -384,6 +384,12 @@ def main():
         required = True,
         help = "Output directory for database_signalp_<mode>/ subdirs",
     )
+    parser.add_argument(
+        "--proteomes-dir",
+        required = False,
+        default = None,
+        help = "Accepted for main.nf parity; ignored by this parser. SignalP6 predicts for every input protein, so there are no unannotated proteins to identify.",
+    )
     args = parser.parse_args()
 
     output_directory = Path( args.output_dir ).resolve()

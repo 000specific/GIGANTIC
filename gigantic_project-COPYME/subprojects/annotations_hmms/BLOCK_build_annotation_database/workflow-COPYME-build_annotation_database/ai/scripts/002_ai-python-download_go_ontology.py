@@ -44,6 +44,7 @@ Usage:
 
 import argparse
 import logging
+import shutil
 import sys
 import time
 import urllib.request
@@ -107,8 +108,18 @@ def download_obo_file( go_url: str, obo_file_path: Path, logger: logging.Logger 
 
     logger.info( f"Downloading GO ontology from: {go_url}" )
 
+    # The OBO Foundry / geneontology.org CDN returns HTTP 403 to the default
+    # Python urllib User-Agent (anti-scraping). Send a browser-style UA so
+    # the request is honored. urllib transparently follows the HTTP->HTTPS
+    # redirect from purl.obolibrary.org to current.geneontology.org.
+    request = urllib.request.Request(
+        go_url,
+        headers = { 'User-Agent': 'Mozilla/5.0 (compatible; GIGANTIC build_annotation_database)' },
+    )
+
     try:
-        urllib.request.urlretrieve( go_url, str( obo_file_path ) )
+        with urllib.request.urlopen( request ) as response, open( obo_file_path, 'wb' ) as out:
+            shutil.copyfileobj( response, out )
     except urllib.error.URLError as url_error:
         logger.error( "CRITICAL ERROR: Failed to download GO ontology OBO file!" )
         logger.error( f"URL: {go_url}" )

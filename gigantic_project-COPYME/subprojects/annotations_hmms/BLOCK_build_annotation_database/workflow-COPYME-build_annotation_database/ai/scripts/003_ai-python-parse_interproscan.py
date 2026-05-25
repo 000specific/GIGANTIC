@@ -881,7 +881,7 @@ def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: di
     # Count output files per database
     logger.info( "" )
     logger.info( "Output files per database:" )
-    for gigantic_database_name in sorted( all_gigantic_database_names ):
+    for gigantic_database_name in sorted( gigantic_database_names___total_counts.keys() ):
         database_directory = output_directory / f"database_{gigantic_database_name}"
         output_files_in_database = list( database_directory.glob( '*.tsv' ) )
         logger.info( f"  {gigantic_database_name:<20s} {len( output_files_in_database ):>5d} file(s)" )

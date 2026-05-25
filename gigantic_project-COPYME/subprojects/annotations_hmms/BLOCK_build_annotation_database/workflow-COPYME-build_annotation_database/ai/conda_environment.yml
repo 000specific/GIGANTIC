@@ -40,5 +40,8 @@ dependencies:
   # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
   - pyyaml
 
+  # NextFlow needs a JVM; older NF builds don't pull it transitively
+  - openjdk
+
   # Database building uses only Python standard library
   # (pathlib, csv, json, collections, statistics, urllib)

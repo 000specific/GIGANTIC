@@ -92,7 +92,7 @@ process download_go_ontology {
 // =============================================================================
 
 process parse_interproscan {
-    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*/'
+    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*'
     publishDir "${params.output_dir}/3-output", mode: 'copy', pattern: '*.log'
 
     input:
@@ -100,11 +100,8 @@ process parse_interproscan {
         path go_lookup
 
     output:
-        path 'database_*/', emit: databases
+        path 'database_*', emit: databases
         path '3_ai-log-parse_interproscan.log', emit: log
-
-    when:
-        discovery_manifest.text.contains("interproscan\tyes")
 
     script:
     def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
@@ -119,7 +116,7 @@ process parse_interproscan {
 }
 
 process parse_deeploc {
-    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*/'
+    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*'
     publishDir "${params.output_dir}/4-output", mode: 'copy', pattern: '*.log'
 
     input:
@@ -128,9 +125,6 @@ process parse_deeploc {
     output:
         path 'database_deeploc/', emit: databases
         path '4_ai-log-parse_deeploc.log', emit: log
-
-    when:
-        discovery_manifest.text.contains("deeploc\tyes")
 
     script:
     def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
@@ -144,18 +138,15 @@ process parse_deeploc {
 }
 
 process parse_signalp {
-    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*/'
+    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*'
     publishDir "${params.output_dir}/5-output", mode: 'copy', pattern: '*.log'
 
     input:
         path discovery_manifest
 
     output:
-        path 'database_signalp/', emit: databases
+        path 'database_signalp_*', emit: databases
         path '5_ai-log-parse_signalp.log', emit: log
-
-    when:
-        discovery_manifest.text.contains("signalp\tyes")
 
     script:
     def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
@@ -169,7 +160,7 @@ process parse_signalp {
 }
 
 process parse_tmbed {
-    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*/'
+    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*'
     publishDir "${params.output_dir}/6-output", mode: 'copy', pattern: '*.log'
 
     input:
@@ -178,9 +169,6 @@ process parse_tmbed {
     output:
         path 'database_tmbed/', emit: databases
         path '6_ai-log-parse_tmbed.log', emit: log
-
-    when:
-        discovery_manifest.text.contains("tmbed\tyes")
 
     script:
     def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
@@ -194,7 +182,7 @@ process parse_tmbed {
 }
 
 process parse_metapredict {
-    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*/'
+    publishDir "${params.output_dir}/annotation_databases", mode: 'copy', pattern: 'database_*'
     publishDir "${params.output_dir}/7-output", mode: 'copy', pattern: '*.log'
 
     input:
@@ -203,9 +191,6 @@ process parse_metapredict {
     output:
         path 'database_metapredict/', emit: databases
         path '7_ai-log-parse_metapredict.log', emit: log
-
-    when:
-        discovery_manifest.text.contains("metapredict\tyes")
 
     script:
     def proteomes_arg = params.proteomes_dir ? "--proteomes-dir ${projectDir}/../${params.proteomes_dir}" : ""
@@ -246,7 +231,7 @@ process compile_annotation_statistics {
     """
     python3 ${scripts_dir}/008_ai-python-compile_annotation_statistics.py \
         --discovery-manifest ${discovery_manifest} \
-        --database-dir ${params.output_dir}/annotation_databases \
+        --database-dir ${launchDir}/${params.output_dir}/annotation_databases \
         --output-dir .
     """
 }
@@ -275,7 +260,7 @@ process analyze_cross_tool_consistency {
     """
     python3 ${scripts_dir}/009_ai-python-analyze_cross_tool_consistency.py \
         --statistics ${statistics} \
-        --database-dir ${params.output_dir}/annotation_databases \
+        --database-dir ${launchDir}/${params.output_dir}/annotation_databases \
         --output-dir .
     """
 }
@@ -312,7 +297,7 @@ process analyze_protein_complexity {
     """
     python3 ${scripts_dir}/011_ai-python-analyze_protein_complexity.py \
         --statistics ${statistics} \
-        --database-dir ${params.output_dir}/annotation_databases \
+        --database-dir ${launchDir}/${params.output_dir}/annotation_databases \
         --output-dir .
     """
 }
@@ -331,7 +316,7 @@ process analyze_functional_categories {
     """
     python3 ${scripts_dir}/012_ai-python-analyze_functional_categories.py \
         --statistics ${statistics} \
-        --database-dir ${params.output_dir}/annotation_databases \
+        --database-dir ${launchDir}/${params.output_dir}/annotation_databases \
         --output-dir .
     """
 }
@@ -350,7 +335,7 @@ process analyze_domain_architecture {
     """
     python3 ${scripts_dir}/013_ai-python-analyze_domain_architecture.py \
         --statistics ${statistics} \
-        --database-dir ${params.output_dir}/annotation_databases \
+        --database-dir ${launchDir}/${params.output_dir}/annotation_databases \
         --output-dir .
     """
 }
@@ -450,11 +435,26 @@ workflow {
     download_go_ontology()
 
     // Step 3-7: Parse tool outputs (conditional on availability)
-    parse_interproscan( discover_tool_outputs.out.discovery_manifest, download_go_ontology.out.go_lookup )
-    parse_deeploc( discover_tool_outputs.out.discovery_manifest )
-    parse_signalp( discover_tool_outputs.out.discovery_manifest )
-    parse_tmbed( discover_tool_outputs.out.discovery_manifest )
-    parse_metapredict( discover_tool_outputs.out.discovery_manifest )
+    // NextFlow 25.x ProviderMismatchException workaround: use Channel.filter
+    // on the manifest channel instead of process-level `when:` blocks. The
+    // filter closure runs in workflow-body context where path.text works on
+    // the real staged file; `when:` evaluation context cannot access .text.
+    interproscan_manifest_channel = discover_tool_outputs.out.discovery_manifest
+        .filter { manifest -> manifest.text.contains("interproscan\tyes") }
+    deeploc_manifest_channel = discover_tool_outputs.out.discovery_manifest
+        .filter { manifest -> manifest.text.contains("deeploc\tyes") }
+    signalp_manifest_channel = discover_tool_outputs.out.discovery_manifest
+        .filter { manifest -> manifest.text.contains("signalp\tyes") }
+    tmbed_manifest_channel = discover_tool_outputs.out.discovery_manifest
+        .filter { manifest -> manifest.text.contains("tmbed\tyes") }
+    metapredict_manifest_channel = discover_tool_outputs.out.discovery_manifest
+        .filter { manifest -> manifest.text.contains("metapredict\tyes") }
+
+    parse_interproscan( interproscan_manifest_channel, download_go_ontology.out.go_lookup )
+    parse_deeploc( deeploc_manifest_channel )
+    parse_signalp( signalp_manifest_channel )
+    parse_tmbed( tmbed_manifest_channel )
+    parse_metapredict( metapredict_manifest_channel )
 
     // Step 8: Compile statistics from published annotation_databases/
     // Parser log signals (val inputs) ensure ordering without staging databases
