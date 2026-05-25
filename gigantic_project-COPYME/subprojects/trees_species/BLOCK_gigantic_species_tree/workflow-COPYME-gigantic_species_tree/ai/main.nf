@@ -35,14 +35,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + -params-file)
 // ============================================================================
-
-// Default parameter values (overridden by nextflow.config which loads from YAML)
-params.species_set_name = "speciesN"
-params.input_species_tree = "INPUT_user/species_tree.newick"
-params.output_dir = "OUTPUT_pipeline"
-
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // PROCESSES
@@ -59,7 +55,7 @@ params.output_dir = "OUTPUT_pipeline"
 process validate_input_species_tree {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/1_ai-input_species_tree-canonical.newick", emit: canonical_newick
@@ -72,7 +68,7 @@ process validate_input_species_tree {
     mkdir -p 1-output
 
     python3 ${projectDir}/scripts/001_ai-python-validate_input_species_tree.py \\
-        --input-newick ${projectDir}/../${params.input_species_tree} \\
+        --input-newick ${projectDir}/../${params.input_files.species_tree} \\
         --output-dir 1-output
     """
 }
@@ -89,7 +85,7 @@ process validate_input_species_tree {
 process assign_clade_identifiers {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path canonical_newick
@@ -124,7 +120,7 @@ process assign_clade_identifiers {
 process write_newick_variants {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path labeled_newick
@@ -158,7 +154,7 @@ process write_newick_variants {
 process generate_clade_map {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path labeled_newick
@@ -194,7 +190,7 @@ process generate_clade_map {
 process visualize_species_tree {
     label 'visualization'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path labeled_newick
@@ -229,7 +225,7 @@ process visualize_species_tree {
 process validate_outputs {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path canonical_newick
@@ -320,29 +316,5 @@ workflow {
 }
 
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_species BLOCK_gigantic_species_tree Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Canonical validated input species tree + name mapping + validation report"
-        println "  2-output/: Fully labeled species tree (CXXX_Name everywhere)"
-        println "  3-output/: Three Newick variants (simple, full, ids-only)"
-        println "  4-output/: Clade name <-> clade ID lookup map TSV"
-        println "  5-output/: Species tree visualization (SVG or soft-fail placeholder)"
-        println "  6-output/: Cross-validation report"
-        println ""
-        println "Run log written to ai/logs/ in this workflow directory"
-        println "Downstream symlinks created in output_to_input/BLOCK_gigantic_species_tree/ by RUN-workflow.sh"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

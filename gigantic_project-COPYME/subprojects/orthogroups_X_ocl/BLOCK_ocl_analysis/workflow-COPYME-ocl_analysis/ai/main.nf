@@ -18,12 +18,12 @@
  */
 
 // ============================================================================
-// PARAMETERS
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
+// RUN-workflow.sh passes the yaml directly via -params-file at runtime.
 
-params.config = "${projectDir}/../START_HERE-user_config.yaml"
-params.structure_manifest = null  // Read from config if not provided
-params.output_dir = null          // Read from config if not provided
 params.help = false
 
 // Show help message
@@ -60,46 +60,14 @@ if ( params.help ) {
 }
 
 // ============================================================================
-// CONFIGURATION FROM YAML
-// ============================================================================
-
-// Load START_HERE-user_config.yaml
-def config_file = file( params.config )
-if ( !config_file.exists() ) {
-    log.error "Configuration file not found: ${params.config}"
-    System.exit( 1 )
-}
-
-def config = new org.yaml.snakeyaml.Yaml().load( config_file.text )
-
-// Resolve parameters (CLI overrides config)
-def workflow_dir = config_file.parent  // Directory containing START_HERE-user_config.yaml
-def structure_manifest = params.structure_manifest ?: "${workflow_dir}/${config.inputs.structure_manifest}"
-def output_dir = params.output_dir ?: "${workflow_dir}/${config.output.base_dir}"
-def config_path = params.config
-
-// Log resolved parameters
-log.info """
-==============================================================================
-GIGANTIC OCL PIPELINE
-==============================================================================
-Run Label           : ${config.run_label}
-Species Set         : ${config.species_set_name}
-Orthogroup Tool     : ${config.orthogroup_tool}
-FASTA Embedding     : ${config.include_fasta_in_output}
-Structure Manifest  : ${structure_manifest}
-Output Directory    : ${output_dir}
-Config File         : ${config_path}
-==============================================================================
-""".stripIndent()
-
-// ============================================================================
 // INPUT CHANNELS
 // ============================================================================
+// Workflow root = ${projectDir}/.. (since projectDir is ai/, the workflow root
+// is one level up). All workflow-relative paths use that convention.
 
-// Read structure IDs from manifest
+// Read structure IDs from manifest (path resolved from params.inputs.structure_manifest)
 Channel
-    .fromPath( structure_manifest )
+    .fromPath( "${projectDir}/../${params.inputs.structure_manifest}" )
     .splitCsv( header: true, sep: '\t' )
     .map { row -> row.structure_id }
     .set { structure_ids_channel }
@@ -121,8 +89,8 @@ process prepare_inputs {
     """
     python3 ${projectDir}/scripts/001_ai-python-prepare_inputs.py \\
         --structure_id ${structure_id} \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -143,8 +111,8 @@ process determine_origins {
     """
     python3 ${projectDir}/scripts/002_ai-python-determine_origins.py \\
         --structure_id ${structure_id} \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -165,8 +133,8 @@ process quantify_conservation_loss {
     """
     python3 ${projectDir}/scripts/003_ai-python-quantify_conservation_loss.py \\
         --structure_id ${structure_id} \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -187,8 +155,8 @@ process comprehensive_ocl_analysis {
     """
     python3 ${projectDir}/scripts/004_ai-python-comprehensive_ocl_analysis.py \\
         --structure_id ${structure_id} \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -209,8 +177,8 @@ process validate_results {
     """
     python3 ${projectDir}/scripts/005_ai-python-validate_results.py \\
         --structure_id ${structure_id} \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -268,8 +236,8 @@ process aggregate_run_summary {
     script:
     """
     python3 ${projectDir}/scripts/007_ai-python-aggregate_run_summary.py \
-        --config ${config_path} \
-        --workflow_dir ${workflow_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \
+        --workflow_dir ${projectDir}/..
     """
 }
 
@@ -304,30 +272,5 @@ workflow {
     aggregate_run_summary( write_run_log.out.log_complete )
 }
 
-// ============================================================================
-// WORKFLOW COMPLETION
-// ============================================================================
-
-workflow.onComplete {
-    log.info """
-    ==============================================================================
-    GIGANTIC OCL PIPELINE - COMPLETED
-    ==============================================================================
-    Status      : ${workflow.success ? 'SUCCESS' : 'FAILED'}
-    Duration    : ${workflow.duration}
-    Run Label   : ${config.run_label}
-    Results     : ${output_dir}
-    Run log written to ai/logs/ in this workflow directory
-    ==============================================================================
-    """.stripIndent()
-}
-
-workflow.onError {
-    log.error """
-    ==============================================================================
-    GIGANTIC OCL PIPELINE - ERROR
-    ==============================================================================
-    Error message: ${workflow.errorMessage}
-    ==============================================================================
-    """.stripIndent()
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

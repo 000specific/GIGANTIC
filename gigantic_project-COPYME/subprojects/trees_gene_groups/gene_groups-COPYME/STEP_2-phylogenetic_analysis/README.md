@@ -5,7 +5,7 @@ Per-source STEP_2: build phylogenetic trees from the AGS produced by STEP_1.
 ## Single user-runnable script
 
 ```bash
-# 1. Inside the per-source instance (e.g., gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/),
+# 1. Inside the per-source instance (e.g., gene_groups-<INSTANCE>/STEP_2-phylogenetic_analysis/),
 #    copy the COPYME → RUN_NN at the same level:
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_1-phylogenetic_analysis
 

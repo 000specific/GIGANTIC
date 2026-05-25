@@ -7,7 +7,7 @@ trees per gene group from STEP_1's AGS output.
 
 ```bash
 # 1. Copy this COPYME → RUN_NN at the same level
-#    (e.g., inside gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/):
+#    (e.g., inside gene_groups-<INSTANCE>/STEP_2-phylogenetic_analysis/):
 cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_1-phylogenetic_analysis
 cd workflow-RUN_1-phylogenetic_analysis
 

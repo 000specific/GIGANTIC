@@ -350,22 +350,13 @@ echo "  parallelism_mode: ${PARALLELISM_MODE} (nextflow ${PROFILE_FLAG})"
 # params.memory_gb in nextflow.config) so parallelism_mode=local inside a
 # SLURM allocation can use the full box instead of being capped at a stale
 # hardcoded 4 CPUs.
-# Re-read here because the outer SLURM_ACCOUNT/SLURM_QOS shell vars (if set)
-# only exist in the self-submitting branch above, not when re-invoked by sbatch.
-NEXTFLOW_SLURM_ACCOUNT=$(read_config "slurm_account" "")
-NEXTFLOW_SLURM_QOS=$(read_config "slurm_qos" "")
-NEXTFLOW_CPUS=$(read_config "cpus" "4")
-NEXTFLOW_MEMORY_GB=$(read_config "memory_gb" "16")
-NEXTFLOW_PARAMS=""
-if [ -n "${NEXTFLOW_SLURM_ACCOUNT}" ]; then
-    NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_account=${NEXTFLOW_SLURM_ACCOUNT}"
-fi
-if [ -n "${NEXTFLOW_SLURM_QOS}" ]; then
-    NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_qos=${NEXTFLOW_SLURM_QOS}"
-fi
-NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --cpus=${NEXTFLOW_CPUS} --memory_gb=${NEXTFLOW_MEMORY_GB}"
+# Universal GIGANTIC YAML->params pattern: pass the YAML directly via
+# -params-file. NextFlow loads YAML natively, populating params.X.Y.Z to
+# mirror the yaml shape. All keys (slurm_account/qos, cpus, memory_gb,
+# inputs.*, output.*, etc.) flow through automatically.
 
-nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} ${NEXTFLOW_PARAMS}
+nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} \
+    -params-file START_HERE-user_config.yaml
 
 EXIT_CODE=$?
 

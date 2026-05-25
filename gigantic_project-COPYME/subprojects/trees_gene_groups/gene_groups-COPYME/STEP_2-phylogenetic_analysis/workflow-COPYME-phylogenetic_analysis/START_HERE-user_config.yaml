@@ -28,10 +28,26 @@ execution_mode: "slurm-burst"
 # GENE-GROUP SOURCE (EDIT THESE)
 # ============================================================================
 # TSV produced by STEP_0 listing gene groups.
-gene_group_source_tsv: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/3_ai-rgs_generation_summary.tsv"
+gene_group_source_tsv: "../../../output_to_input/gene_groups-<INSTANCE>/STEP_0-<source>/3_ai-rgs_generation_summary.tsv"
 
 # Where STEP_1's per-gene-group AGS output lives (one .aa per gene group).
-step1_output_to_input_dir: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery"
+step1_output_to_input_dir: "../../../output_to_input/gene_groups-<INSTANCE>/STEP_1-homolog_discovery"
+
+# ============================================================================
+# OPTIONAL OVERRIDE MANIFEST (LEAVE EMPTY TO USE DEFAULTS)
+# ============================================================================
+# Manifest lives in the SUBPROJECT-LEVEL INPUT_user dir (gene_groups-<INSTANCE>/
+# INPUT_user/), not the COPYME-level dir. From here the relative path is
+# "../../INPUT_user/<file>".
+#
+# gene_groups_manifest: optional override of which gene groups STEP_2 processes.
+# This is independent of STEP_1's manifest — STEP_2 can target a different subset.
+#   - Default (empty string OR a manifest whose first data line is 'all'):
+#     process every row of gene_group_source_tsv that has a STEP_1 AGS file.
+#   - To override: drop a TSV in ../../INPUT_user/ with a single column
+#     'sanitized_name' (one sanitized_name per line; '#' = comment). Each value
+#     must match a row of gene_group_source_tsv, or the orchestrator fails-fast.
+gene_groups_manifest: ""       # e.g. "../../INPUT_user/gene_groups_manifest_step2.tsv"
 
 # ============================================================================
 # TIERING (EDIT IF NEEDED)
@@ -90,7 +106,7 @@ gene_family:
 
 input:
   # Path to output_to_input directory (relative to per-gene-group workflow-RUN_01).
-  # AGS files at: <output_to_input_dir>/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/
+  # AGS files at: <output_to_input_dir>/gene_groups-<INSTANCE>/STEP_1-homolog_discovery/gene_group-<gene_family>/
   output_to_input_dir: "../../../../output_to_input"
 
 # ============================================================================

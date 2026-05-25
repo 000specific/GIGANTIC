@@ -289,33 +289,5 @@ workflow {
     write_run_log( generate_clade_species_mappings.out.done )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_species - Permutations and Features Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "Output files in OUTPUT_pipeline/:"
-        println "  1-output/: Tree components and phylogenetic paths"
-        println "  2-output/: Topology permutations (Newick files)"
-        println "  3-output/: Annotated topologies with clade IDs"
-        println "  4-output/: Complete species trees and clade registry"
-        println "  5-output/: Parent-child relationship tables"
-        println "  6-output/: Phylogenetic blocks"
-        println "  7-output/: Integrated clade data table"
-        println "  8-output/: Tree visualizations (SVG/PDF)"
-        println "  9-output/: Clade-to-species mappings"
-        println ""
-        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

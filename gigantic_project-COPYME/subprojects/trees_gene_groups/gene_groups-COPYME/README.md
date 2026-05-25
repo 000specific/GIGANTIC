@@ -53,11 +53,11 @@ mkdir -p gene_groups-mysource/STEP_0-mysource/workflow-COPYME-mysource/
 
 STEPs are sequentially dependent: STEP_0 → STEP_1 → STEP_2 → STEP_3.
 
-Inside a per-source instance (e.g., `gene_groups-hugo_hgnc/`), for each STEP:
+Inside a per-source instance (e.g., `gene_groups-<INSTANCE>/`), for each STEP:
 
 ```bash
 # 1. Copy the STEP's COPYME → a RUN_NN instance at the same level
-cd gene_groups-hugo_hgnc/STEP_1-homolog_discovery/
+cd gene_groups-<INSTANCE>/STEP_1-homolog_discovery/
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
 
 # 2. Edit the RUN's START_HERE-user_config.yaml
@@ -92,4 +92,4 @@ To add a new source (Pfam, InterPro, custom): make another `gene_groups-<source>
 
 - `../AI_GUIDE-trees_gene_groups.md` — subproject-level AI guide
 - `../README.md` — subproject overview
-- `../gene_groups-hugo_hgnc/` — current source instance (HUGO HGNC gene groups)
+- `../gene_groups-<INSTANCE>/` — current source instance (HUGO HGNC gene groups)

@@ -7,7 +7,7 @@ gene groups for a source via RBH/RBF homolog discovery.
 
 ```bash
 # 1. Copy this COPYME to a RUN_NN at the same level
-#    (e.g., inside gene_groups-hugo_hgnc/STEP_1-homolog_discovery/):
+#    (e.g., inside gene_groups-<INSTANCE>/STEP_1-homolog_discovery/):
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
 cd workflow-RUN_1-rbh_rbf_homologs
 

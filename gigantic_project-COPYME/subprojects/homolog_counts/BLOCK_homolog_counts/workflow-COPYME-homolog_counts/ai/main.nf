@@ -29,21 +29,16 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (resolved from nextflow.config which reads START_HERE-user_config.yaml)
+// PARAMETERS (from config.yaml via nextflow.config + -params-file)
 // ============================================================================
-
-params.species70_phyloname_map  = ''
-params.orthogroups_orthohmm_dir = ''
-params.trees_gene_groups_dir    = ''
-params.trees_gene_families_dir  = ''
-params.output_dir               = 'OUTPUT_pipeline'
-params.project_name             = 'homolog_counts'
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // VALIDATE REQUIRED INPUTS
 // ============================================================================
 
-if ( !params.species70_phyloname_map || !file( params.species70_phyloname_map ).exists() ) {
+if ( !params.inputs.species70_phyloname_map || !file( params.inputs.species70_phyloname_map ).exists() ) {
     error """
     ========================================================================
     CONFIGURATION ERROR: species70_phyloname_map not set or file missing.
@@ -68,7 +63,7 @@ if ( !params.species70_phyloname_map || !file( params.species70_phyloname_map ).
 process validate_species70_manifest {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/1_ai-species70_alphabetical_phylonames.tsv", emit: species_order
@@ -79,7 +74,7 @@ process validate_species70_manifest {
     mkdir -p 1-output
 
     python3 ${projectDir}/scripts/001_ai-python-validate_species70_manifest.py \\
-        --phyloname-map ${params.species70_phyloname_map} \\
+        --phyloname-map ${params.inputs.species70_phyloname_map} \\
         --output-dir 1-output
     """
 }
@@ -91,7 +86,7 @@ process validate_species70_manifest {
 process count_orthogroups_orthohmm {
     label 'counting'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path species_order
@@ -106,7 +101,7 @@ process count_orthogroups_orthohmm {
 
     python3 ${projectDir}/scripts/002_ai-python-count-orthogroups_orthohmm.py \\
         --species-order ${species_order} \\
-        --orthogroups-dir ${params.orthogroups_orthohmm_dir} \\
+        --orthogroups-dir ${params.inputs.orthogroups_orthohmm_dir} \\
         --output-dir 2-output
     """
 }
@@ -118,7 +113,7 @@ process count_orthogroups_orthohmm {
 process count_trees_gene_groups {
     label 'counting'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path species_order
@@ -133,7 +128,7 @@ process count_trees_gene_groups {
 
     python3 ${projectDir}/scripts/003_ai-python-count-trees_gene_groups.py \\
         --species-order ${species_order} \\
-        --gene-groups-dir ${params.trees_gene_groups_dir} \\
+        --gene-groups-dir ${params.inputs.trees_gene_groups_dir} \\
         --output-dir 3-output
     """
 }
@@ -145,7 +140,7 @@ process count_trees_gene_groups {
 process count_trees_gene_families {
     label 'counting'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path species_order
@@ -160,7 +155,7 @@ process count_trees_gene_families {
 
     python3 ${projectDir}/scripts/004_ai-python-count-trees_gene_families.py \\
         --species-order ${species_order} \\
-        --gene-families-dir ${params.trees_gene_families_dir} \\
+        --gene-families-dir ${params.inputs.trees_gene_families_dir} \\
         --output-dir 4-output
     """
 }
@@ -172,7 +167,7 @@ process count_trees_gene_families {
 process rewrite_short_headers_orthohmm {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path counts_tsv
@@ -199,7 +194,7 @@ process rewrite_short_headers_orthohmm {
 process rewrite_short_headers_gene_groups {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path counts_tsv
@@ -226,7 +221,7 @@ process rewrite_short_headers_gene_groups {
 process rewrite_short_headers_gene_families {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path counts_tsv
@@ -256,7 +251,7 @@ process rewrite_short_headers_gene_families {
 process write_run_log {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path all_count_outputs
@@ -271,7 +266,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \\
         --workflow-name "homolog_counts" \\
         --subproject-name "homolog_counts" \\
-        --project-name "${params.project_name}" \\
+        --project-name "${params.project.name}" \\
         --status success \\
         --output-dir 5-output
     """
@@ -312,30 +307,5 @@ workflow {
     write_run_log( all_outputs )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC homolog_counts Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: species70 alphabetical phyloname column order"
-        println "  2-output/: counts from orthogroups/BLOCK_orthohmm"
-        println "  3-output/: counts from trees_gene_groups"
-        println "  4-output/: counts from trees_gene_families"
-        println "  5-output/: run log"
-        println "  6-output/: orthohmm counts with short species headers"
-        println "  7-output/: gene_groups counts with short species headers"
-        println "  8-output/: gene_families counts with short species headers"
-        println ""
-        println "Symlinks created in output_to_input/BLOCK_homolog_counts/ (by RUN-workflow.sh)"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

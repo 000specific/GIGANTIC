@@ -351,10 +351,41 @@ Every one of the 28 legacy `workflow-COPYME-*` directories now has:
 - 3 / 28 (dark_proteomes/BLOCK_classify_dark_proteome, hotspots/BLOCK_self_blast, hotspots/BLOCK_identify_hotspots) use a functionally-equivalent Python-eval pattern instead — these workflows were already richly modern and were retained as-is rather than rewriting working code
 
 ### Scope NOT modernized in this sweep (separate future scope)
-- 17 additional template-COPYMEs across 7 untouched subprojects: `annotations_X_ocl` (1), `homolog_counts` (1), `orthogroups_X_ocl` (1), `parsimony_tree_structures` (1), `trees_gene_groups` (7), `trees_species` (4), `trees_gene_families/gene_family_COPYME` (~2)
 - 5 zero-COPYME subprojects awaiting initial scaffolding: `ocl_perspectives`, `ocl_using_simple_taxonomy`, `synteny`, `trees_gene_families_X_ocl`, `trees_gene_groups_X_ocl`
-- The 163 trees_gene_families gene-family workflow instances likely all share a base template; modernize the 2 templates + mass-regenerate is the realistic approach
+- The 163 trees_gene_families gene-family workflow instances (per-gene-family COPYMEs) — the parent template `gene_family_COPYME` IS now modernized in the second sweep; the 163 instances were intentionally skipped per user instruction ("skip the specific gene family copymes - just the parent one for processing"). Mass-regeneration of instances from the modernized template is a separate operation.
 - All RUN_N instances under any subproject — these are **scientific records of work as conducted** and are intentionally never modified (RUN_Ns are historical lab-notebook artifacts; the COPYME templates are what future RUN_Ns are created from)
+
+---
+
+## SECOND SWEEP (2026-05-25) — 17 more COPYMEs modernized
+
+After the first 28-workflow sweep, a follow-up sweep modernized **17 additional COPYMEs** across 7 previously-untouched subprojects. Same 6-step modernization pattern as the 28, plus the NF<26 pin. Trees_gene_families gene-family-specific instances (163 COPYMEs) intentionally skipped per user instruction.
+
+### Final inventory (17 modernized + 1 placeholder skipped + 163 gene-family instances skipped per user)
+
+| Subproject | Modernized | Notes |
+|---|---|---|
+| annotations_X_ocl | 1 | full convert (SnakeYAML in main.nf removed; -params-file; def removed; onComplete + onError removed; pin) |
+| orthogroups_X_ocl | 1 | same as annotations_X_ocl |
+| homolog_counts | 1 | full convert (SnakeYAML in nextflow.config removed; nested params; pin) |
+| parsimony_tree_structures (nested under `parsimony_tree_structures-staging-2026may11/BLOCK_ocl_orthogroups/`) | 1 | full convert (same pattern) |
+| trees_species/BLOCK_permutations_and_features | 1 | onComplete removed; .sbatch deleted; -params-file; pin (cfg already clean) |
+| trees_species/BLOCK_gigantic_species_tree | 1 | full convert (SnakeYAML in cfg removed; nested params; .sbatch deleted; pin) |
+| trees_species/BLOCK_user_requests | 1 | pure-Python (no NF) — already clean, no changes needed |
+| trees_species/BLOCK_de_novo_species_tree | 0 | placeholder (no main.nf/cfg/yaml) — intentionally skipped per user (Q2 confirmation) |
+| trees_gene_groups/gene_groups-COPYME (template, 3 STEPs) | 3 | STEP_1 + STEP_2 pinned; STEP_3 pure-Python no NF |
+| trees_gene_groups/gene_groups-hugo_hgnc (instance, 4 STEPs) | 4 | STEP_0/1/2 pinned; STEP_3 pure-Python no NF |
+| trees_gene_families/gene_family_COPYME (parent template, 3 STEPs) | 3 | STEP_1 + STEP_2 full convert (7+18 defs inlined; SnakeYAML removed; nested params; onComplete removed; -params-file; pin). STEP_3 pure-Python no NF. The 163 gene-family-specific COPYMEs intentionally skipped per user; future regeneration uses the modernized parent template. |
+
+### Second sweep audit results
+- 17 / 17 modernized: 13 NF-based (all NF26-precursor + pin applied; -params-file pattern; bash -n PASS); 4 pure-Python (no NF, already clean)
+- Same NF<26.0 pin applied to all conda envs that include nextflow as a dep
+- Same RUN-workflow.sh pattern: read_config helper + execution_mode self-submit + auto-install conda + -params-file (when applicable)
+- Same nextflow.config pattern: no SnakeYAML import, no top-level def declarations, nested params{} block matching YAML shape
+- Same main.nf pattern: no top-level workflow.onComplete/onError, nested params accesses
+
+### Pattern note: trees_gene_families STEP_2 used a "params alias" trick
+Because STEP_2's main.nf workflow body had ~25 references to flat params (params.mafft_threads, params.iqtree_model, etc) backed by nested YAML (phylogenetics.mafft.threads), the modernization keeps the flat aliases at top of main.nf but rewrites their right-hand-side to read from params.X.Y (nested) instead of via SnakeYAML loader. This minimizes touches to the workflow body while still removing the SnakeYAML import. Same approach was used for `params.output_dir`, `params.gene_family.name`, etc.
 
 ---
 

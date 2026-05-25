@@ -61,16 +61,20 @@ process prepare_alignment_input {
     script:
     def project_db = params.project_database
     def oti_dir = file( "${projectDir}/../${params.output_to_input_dir}" ).toAbsolutePath()
+    // Derive the per-source instance dir name from the script's runtime location.
+    // projectDir is .../gene_groups-<INSTANCE>/STEP_2-.../gene_group-<gene_family>/workflow-RUN_01-.../ai/
+    // 4 levels up = gene_groups-<INSTANCE>. Avoids hardcoding any specific instance name.
+    def instance_dir_name = file( "${projectDir}/../../../.." ).name
     """
     mkdir -p 1-output
 
-    # Find AGS file from output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/
-    AGS_FILE=\$(find -L "${oti_dir}/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/" -name "*.aa" -type f | head -1)
+    # Find AGS file from output_to_input/${instance_dir_name}/STEP_1-homolog_discovery/gene_group-<gene_family>/
+    AGS_FILE=\$(find -L "${oti_dir}/${instance_dir_name}/STEP_1-homolog_discovery/gene_group-${gene_family}/" -name "*.aa" -type f | head -1)
 
     if [ -z "\${AGS_FILE}" ] || [ ! -f "\${AGS_FILE}" ]; then
-        echo "ERROR: AGS file not found in: ${oti_dir}/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/"
-        echo "Ensure STEP_1 has completed and output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/ contains results."
-        echo "Expected directory: ${oti_dir}/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-${gene_family}/"
+        echo "ERROR: AGS file not found in: ${oti_dir}/${instance_dir_name}/STEP_1-homolog_discovery/gene_group-${gene_family}/"
+        echo "Ensure STEP_1 has completed and output_to_input/${instance_dir_name}/STEP_1-homolog_discovery/gene_group-${gene_family}/ contains results."
+        echo "Expected directory: ${oti_dir}/${instance_dir_name}/STEP_1-homolog_discovery/gene_group-${gene_family}/"
         exit 1
     fi
 

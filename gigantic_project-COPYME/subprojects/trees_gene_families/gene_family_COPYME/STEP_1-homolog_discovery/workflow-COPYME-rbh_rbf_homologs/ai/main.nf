@@ -37,20 +37,17 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + -params-file)
 // ============================================================================
-
-params.gene_family = null
-params.rgs_file = null
-params.species_keeper_list = "INPUT_user/species_keeper_list.tsv"
-params.rgs_species_map = "INPUT_user/rgs_species_map.tsv"
-params.blast_databases_dir = null
-params.rgs_genomes_dir = null
-params.project_database = "speciesN_T1-speciesN"
-params.blast_evalue = "1e-3"
-params.blast_threads = 50
-params.blast_conda_env = "blast"
-params.output_dir = "OUTPUT_pipeline"
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape:
+//   params.gene_family.{name, rgs_full_length_file, rgs_subsequence_file,
+//                       rgs_sequence_is_full_length, include_orphan_rgs}
+//   params.inputs.{species_keeper_list, rgs_species_map,
+//                  blast_databases_dir, rgs_genomes_dir}
+//   params.project.{name, database}
+//   params.blast.{evalue, threads, conda_env}
+//   params.output.base_dir
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -154,7 +151,7 @@ process validate_rgs {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta)
@@ -187,7 +184,7 @@ process setup_blast_database_list {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta)
@@ -200,14 +197,14 @@ process setup_blast_database_list {
     """
     mkdir -p 2-output
 
-    echo "Listing BLAST databases from: ${params.blast_databases_dir}"
-    find ${params.blast_databases_dir} -name "*.aa" -not -name "*blastdb*" | sort > 2-output/2_ai-list-projectdb-blastdbs
+    echo "Listing BLAST databases from: ${projectDir}/../${params.inputs.blast_databases_dir}"
+    find ${projectDir}/../${params.inputs.blast_databases_dir} -name "*.aa" -not -name "*blastdb*" | sort > 2-output/2_ai-list-projectdb-blastdbs
 
     DB_COUNT=\$(wc -l < 2-output/2_ai-list-projectdb-blastdbs)
     echo "Found \${DB_COUNT} BLAST databases for gene family: ${gene_family}"
 
     if [ "\${DB_COUNT}" -eq 0 ]; then
-        echo "ERROR: No BLAST databases found in ${params.blast_databases_dir}"
+        echo "ERROR: No BLAST databases found in ${projectDir}/../${params.inputs.blast_databases_dir}"
         exit 1
     fi
     """
@@ -222,7 +219,7 @@ process blast_rgs_versus_project_database {
     tag "${gene_family}"
     label 'blast'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta), path(db_list)
@@ -244,9 +241,9 @@ process blast_rgs_versus_project_database {
         --rgs-fasta ${rgs_fasta} \\
         --output-dir . \\
         --output-script 3-blastp-project_database.sh \\
-        --evalue ${params.blast_evalue} \\
-        --threads ${params.blast_threads} \\
-        --conda-env ${params.blast_conda_env}
+        --evalue ${params.blast.evalue} \\
+        --threads ${params.blast.threads} \\
+        --conda-env ${params.blast.conda_env}
 
     echo "Executing BLASTP searches against project database..."
     chmod +x 3-blastp-project_database.sh
@@ -276,15 +273,15 @@ process extract_blast_gene_sequences {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta), path(db_list), path(blast_report_list)
 
     output:
         tuple val(gene_family), path(rgs_fasta),
-              path("4-output/4_ai-bgs-${params.project_database}-${gene_family}-fullseqs.aa"),
-              path("4-output/4_ai-bgs-${params.project_database}-${gene_family}-hitregions.aa"),
+              path("4-output/4_ai-bgs-${params.project.database}-${gene_family}-fullseqs.aa"),
+              path("4-output/4_ai-bgs-${params.project.database}-${gene_family}-hitregions.aa"),
               emit: bgs_done
         path "4-output"
 
@@ -296,8 +293,8 @@ process extract_blast_gene_sequences {
     python3 ${projectDir}/scripts/004_ai-python-extract_gene_set_sequences.py \\
         --database-list ${db_list} \\
         --report-list ${blast_report_list} \\
-        --output-full 4-output/4_ai-bgs-${params.project_database}-${gene_family}-fullseqs.aa \\
-        --output-regions 4-output/4_ai-bgs-${params.project_database}-${gene_family}-hitregions.aa
+        --output-full 4-output/4_ai-bgs-${params.project.database}-${gene_family}-fullseqs.aa \\
+        --output-regions 4-output/4_ai-bgs-${params.project.database}-${gene_family}-hitregions.aa
 
     echo "BGS extraction complete for ${gene_family}"
     """
@@ -312,7 +309,7 @@ process blast_rgs_versus_rgs_genomes {
     tag "${gene_family}"
     label 'blast'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta)
@@ -325,21 +322,21 @@ process blast_rgs_versus_rgs_genomes {
         path "6-output"
 
     script:
-    def species_map_path = file("${projectDir}/../${params.rgs_species_map}")
-    def species_map_arg = species_map_path.exists() ? "--rgs-species-map ${projectDir}/../${params.rgs_species_map}" : ""
+    def species_map_path = file("${projectDir}/../${params.inputs.rgs_species_map}")
+    def species_map_arg = species_map_path.exists() ? "--rgs-species-map ${projectDir}/../${params.inputs.rgs_species_map}" : ""
     """
     mkdir -p 5-output 6-output
 
     echo "Generating RGS genome BLASTP commands for ${gene_family}..."
     python3 ${projectDir}/scripts/005_ai-python-generate_blastp_commands-rgs_genomes.py \\
         --rgs-fasta ${rgs_fasta} \\
-        --rgs-genomes-dir ${params.rgs_genomes_dir} \\
+        --rgs-genomes-dir ${projectDir}/../${params.inputs.rgs_genomes_dir} \\
         ${species_map_arg} \\
         --output-dir . \\
         --output-script 006-blastp-rgs_genomes.sh \\
-        --evalue ${params.blast_evalue} \\
-        --threads ${params.blast_threads} \\
-        --conda-env ${params.blast_conda_env}
+        --evalue ${params.blast.evalue} \\
+        --threads ${params.blast.threads} \\
+        --conda-env ${params.blast.conda_env}
 
     echo "Executing RGS genome BLASTP searches..."
     chmod +x 006-blastp-rgs_genomes.sh
@@ -363,7 +360,7 @@ process prepare_reciprocal_blast {
     tag "${gene_family}"
     label 'blast'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta), path(rgs_blast_report_list)
@@ -387,7 +384,7 @@ process prepare_reciprocal_blast {
     echo "=== Step 007: List RGS BLAST files and model organism FASTAs ==="
     python3 ${projectDir}/scripts/007_ai-python-list_rgs_blast_files.py \\
         --output-dir . \\
-        --blast-databases-dir ${params.blast_databases_dir} \\
+        --blast-databases-dir ${projectDir}/../${params.inputs.blast_databases_dir} \\
         --rbh-species "${rbh_species}" \\
         --input-blast-report-list ${rgs_blast_report_list} \\
         --output-blast-reports 7-output/7_ai-list-rgs-blast-reports.txt \\
@@ -410,7 +407,7 @@ process prepare_reciprocal_blast {
         --genome-list 7-output/7_ai-list-model-organism-fastas.txt \\
         --output-dir . \\
         --log-file 9-output/9_ai-log-create-modified-genomes.log \\
-        ${params.include_orphan_rgs ? '--include-orphan-rgs' : ''}
+        ${params.gene_family.include_orphan_rgs ? '--include-orphan-rgs' : ''}
 
     echo "=== Step 010: Combine modified genomes and create BLAST database ==="
     # Combine modified genomes (and orphan RGS if present)
@@ -447,7 +444,7 @@ process run_reciprocal_blast {
     tag "${gene_family}"
     label 'blast'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(bgs_fullseqs), path(blastdb_files)
@@ -471,9 +468,9 @@ process run_reciprocal_blast {
         --database-prefix ${blastdb_prefix} \\
         --output-script 11-output/11_ai-bash-execute_reciprocal_blast.sh \\
         --output-report 12-output/12_ai-reciprocal-blast-report.txt \\
-        --evalue ${params.blast_evalue} \\
-        --threads ${params.blast_threads} \\
-        --conda-env ${params.blast_conda_env}
+        --evalue ${params.blast.evalue} \\
+        --threads ${params.blast.threads} \\
+        --conda-env ${params.blast.conda_env}
 
     echo "Executing reciprocal BLAST..."
     chmod +x 11-output/11_ai-bash-execute_reciprocal_blast.sh
@@ -492,7 +489,7 @@ process extract_reciprocal_best_hits {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(db_list), path(reciprocal_report), path(rgs_mapping)
@@ -500,7 +497,7 @@ process extract_reciprocal_best_hits {
 
     output:
         tuple val(gene_family),
-              path("13-output/13_ai-cgs-${params.project_database}-${gene_family}.aa"),
+              path("13-output/13_ai-cgs-${params.project.database}-${gene_family}.aa"),
               emit: rbh_done
         path "13-output"
 
@@ -514,7 +511,7 @@ process extract_reciprocal_best_hits {
         --database-list ${db_list} \\
         --blast-report ${reciprocal_report} \\
         --rgs-mapping ${rgs_mapping} \\
-        --output-fasta 13-output/13_ai-cgs-${params.project_database}-${gene_family}.aa \\
+        --output-fasta 13-output/13_ai-cgs-${params.project.database}-${gene_family}.aa \\
         --output-filtered 13-output/13_ai-log-dropped-sequences-${gene_family} \\
         --rbh-species "${rbh_species}"
 
@@ -531,7 +528,7 @@ process filter_species {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(cgs_fasta)
@@ -539,7 +536,7 @@ process filter_species {
 
     output:
         tuple val(gene_family),
-              path("14-output/14_ai-cgs-${params.project_database}-${gene_family}-filtered.aa"),
+              path("14-output/14_ai-cgs-${params.project.database}-${gene_family}-filtered.aa"),
               emit: filtered_done
         path "14-output"
 
@@ -551,7 +548,7 @@ process filter_species {
     python3 ${projectDir}/scripts/014_ai-python-filter_species_for_tree_building.py \\
         --input-fasta ${cgs_fasta} \\
         --species-keeper-list ${species_keeper_list} \\
-        --output-fasta 14-output/14_ai-cgs-${params.project_database}-${gene_family}-filtered.aa
+        --output-fasta 14-output/14_ai-cgs-${params.project.database}-${gene_family}-filtered.aa
 
     echo "Species filtering complete for ${gene_family}"
     """
@@ -568,14 +565,14 @@ process concatenate_final_gene_set {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(rgs_fasta), path(filtered_cgs_fasta)
 
     output:
         tuple val(gene_family),
-              path("16-output/16_ai-ags-${params.project_database}-${gene_family}-homologs.aa"),
+              path("16-output/16_ai-ags-${params.project.database}-${gene_family}-homologs.aa"),
               emit: ags_done
         path "16-output"
 
@@ -587,9 +584,9 @@ process concatenate_final_gene_set {
     python3 ${projectDir}/scripts/016_ai-python-concatenate_sequences.py \\
         --rgs-file ${rgs_fasta} \\
         --cgs-file ${filtered_cgs_fasta} \\
-        --output-file 16-output/16_ai-ags-${params.project_database}-${gene_family}-homologs.aa \\
+        --output-file 16-output/16_ai-ags-${params.project.database}-${gene_family}-homologs.aa \\
         --gene-family ${gene_family} \\
-        --project-db ${params.project_database}
+        --project-db ${params.project.database}
 
     echo "AGS concatenation complete for ${gene_family}"
     """
@@ -607,7 +604,7 @@ process restore_full_length_rgs {
     tag "${gene_family}"
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         tuple val(gene_family), path(ags_fasta)
@@ -625,7 +622,7 @@ process restore_full_length_rgs {
     echo "Restoring full-length RGS sequences for ${gene_family}..."
     python3 ${projectDir}/scripts/018_ai-python-restore_full_length_rgs_sequences.py \\
         --ags-fasta ${ags_fasta} \\
-        --full-length-rgs ${projectDir}/../${params.rgs_full_length_file} \\
+        --full-length-rgs ${projectDir}/../${params.gene_family.rgs_full_length_file} \\
         --output-dir 18-output
 
     echo "Full-length RGS restoration complete for ${gene_family}"
@@ -665,51 +662,57 @@ process write_run_log {
 // pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
 workflow {
+    // ---- Resolve derived values from nested params ----
+    def workflow_dir = "${projectDir}/.."
+    def rgs_file_relative = params.gene_family.rgs_sequence_is_full_length ?
+        params.gene_family.rgs_full_length_file :
+        params.gene_family.rgs_subsequence_file
+    def blast_databases_abs = new File( "${workflow_dir}/${params.inputs.blast_databases_dir}" ).canonicalPath
+    def rgs_genomes_abs = new File( "${workflow_dir}/${params.inputs.rgs_genomes_dir}" ).canonicalPath
+
     log.info """
     ========================================================================
     GIGANTIC trees_gene_families STEP_1 - RBH/RBF Homolog Discovery
     ========================================================================
-    Gene family         : ${params.gene_family}
-    RGS file (for BLAST): ${params.rgs_file}
-    RGS full-length     : ${params.rgs_full_length_file}
-    RGS is full-length  : ${params.rgs_sequence_is_full_length}
-    Species keeper list : ${params.species_keeper_list}
-    BLAST databases     : ${params.blast_databases_dir}
-    Project database    : ${params.project_database}
-    Output directory    : ${params.output_dir}
+    Gene family         : ${params.gene_family.name}
+    RGS file (for BLAST): ${rgs_file_relative}
+    RGS full-length     : ${params.gene_family.rgs_full_length_file}
+    RGS is full-length  : ${params.gene_family.rgs_sequence_is_full_length}
+    Species keeper list : ${params.inputs.species_keeper_list}
+    BLAST databases     : ${blast_databases_abs}
+    Project database    : ${params.project.database}
+    Output directory    : ${params.output.base_dir}
     ========================================================================
     """.stripIndent()
 
     // ---- Validate critical parameters ----
-    def workflow_dir = "${projectDir}/.."
-
-    if ( !params.gene_family ) {
-        error "gene_family not set in config! Edit START_HERE-user_config.yaml."
+    if ( !params.gene_family.name ) {
+        error "gene_family.name not set in config! Edit START_HERE-user_config.yaml."
     }
-    if ( !params.rgs_full_length_file ) {
+    if ( !params.gene_family.rgs_full_length_file ) {
         error "rgs_full_length_file not set in config! Edit START_HERE-user_config.yaml."
     }
-    if ( !params.blast_databases_dir ) {
+    if ( !params.inputs.blast_databases_dir ) {
         error "blast_databases_dir must be set in config. This is the path to BLAST protein databases."
     }
-    if ( !params.rgs_genomes_dir ) {
+    if ( !params.inputs.rgs_genomes_dir ) {
         error "rgs_genomes_dir must be set in config. This is the path to RGS source genome databases."
     }
 
-    // ---- Validate BLAST paths (resolved to absolute by nextflow.config) ----
-    if ( !file( params.blast_databases_dir ).exists() ) {
-        error "BLAST databases directory not found: ${params.blast_databases_dir}\nCheck blast_databases_dir in START_HERE-user_config.yaml"
+    // ---- Validate BLAST paths (resolved to absolute above) ----
+    if ( !file( blast_databases_abs ).exists() ) {
+        error "BLAST databases directory not found: ${blast_databases_abs}\nCheck inputs.blast_databases_dir in START_HERE-user_config.yaml"
     }
-    if ( !file( params.rgs_genomes_dir ).exists() ) {
-        error "RGS genomes directory not found: ${params.rgs_genomes_dir}\nCheck rgs_genomes_dir in START_HERE-user_config.yaml"
+    if ( !file( rgs_genomes_abs ).exists() ) {
+        error "RGS genomes directory not found: ${rgs_genomes_abs}\nCheck inputs.rgs_genomes_dir in START_HERE-user_config.yaml"
     }
 
     // ---- Validate subsequence RGS configuration ----
-    if ( !params.rgs_sequence_is_full_length ) {
+    if ( !params.gene_family.rgs_sequence_is_full_length ) {
         log.info "RGS mode: SUBSEQUENCE (rgs_sequence_is_full_length = false)"
         log.info "  -> Reciprocal BLAST will use hit-region subsequences"
         log.info "  -> Script 018 will restore full-length RGS in final AGS"
-        if ( !params.rgs_subsequence_file ) {
+        if ( !params.gene_family.rgs_subsequence_file ) {
             error "rgs_sequence_is_full_length is false but rgs_subsequence_file is not set!\n" +
                   "When using subsequence RGS, you must provide the domain subsequence file.\n" +
                   "Set rgs_subsequence_file in START_HERE-user_config.yaml under gene_family:"
@@ -718,31 +721,31 @@ workflow {
         log.info "RGS mode: FULL-LENGTH (default)"
     }
 
-    log.info "BLAST databases: ${params.blast_databases_dir}"
-    log.info "RGS genomes:     ${params.rgs_genomes_dir}"
+    log.info "BLAST databases: ${blast_databases_abs}"
+    log.info "RGS genomes:     ${rgs_genomes_abs}"
 
     // ---- Resolve RGS file path ----
-    def rgs_path = file( "${workflow_dir}/${params.rgs_file}" )
+    def rgs_path = file( "${workflow_dir}/${rgs_file_relative}" )
     if ( !rgs_path.exists() ) {
-        error "RGS file not found: ${params.rgs_file}\nExpected at: ${rgs_path}\nEnsure the RGS file path is correct in START_HERE-user_config.yaml."
+        error "RGS file not found: ${rgs_file_relative}\nExpected at: ${rgs_path}\nEnsure the RGS file path is correct in START_HERE-user_config.yaml."
     }
 
-    def species_keeper_path = file( "${workflow_dir}/${params.species_keeper_list}" )
+    def species_keeper_path = file( "${workflow_dir}/${params.inputs.species_keeper_list}" )
     if ( !species_keeper_path.exists() ) {
         error "Species keeper list not found: ${species_keeper_path}"
     }
 
     // ---- Determine RBH species ----
-    def species_map_path = "${workflow_dir}/${params.rgs_species_map}"
+    def species_map_path = "${workflow_dir}/${params.inputs.rgs_species_map}"
     def species_map = load_species_map( species_map_path )
 
-    log.info "\nDetermining RBH species for ${params.gene_family}..."
+    log.info "\nDetermining RBH species for ${params.gene_family.name}..."
     def rbh_species = determine_rbh_species(
-        rgs_path.toString(), species_map, params.blast_databases_dir
+        rgs_path.toString(), species_map, blast_databases_abs
     )
 
     // ---- Create single-item channel for the gene family ----
-    gene_family_channel = Channel.of( [ params.gene_family, rgs_path ] )
+    gene_family_channel = Channel.of( [ params.gene_family.name, rgs_path ] )
 
     // ---- Process 1: Validate RGS file (fails fast before expensive BLAST runs) ----
     validate_rgs( gene_family_channel )
@@ -781,7 +784,7 @@ workflow {
     // the subsequence RGS spliced into the modified genomes,
     // preventing BLAST from preferring full-length genome proteins over
     // the shorter RGS sequences.
-    def use_hitregions = !params.rgs_sequence_is_full_length
+    def use_hitregions = !params.gene_family.rgs_sequence_is_full_length
     def reciprocal_input = extract_blast_gene_sequences.out.bgs_done
         .map { gene_family, rgs_fasta, bgs_fullseqs, bgs_hitregions ->
             [ gene_family, use_hitregions ? bgs_hitregions : bgs_fullseqs ]
@@ -830,7 +833,7 @@ workflow {
     // ---- Process 10b: Restore full-length RGS (conditional) ----
     // Only runs when rgs_sequence_is_full_length is false (subsequence RGS).
     // When RGS is already full-length, skip this step entirely.
-    if ( !params.rgs_sequence_is_full_length ) {
+    if ( !params.gene_family.rgs_sequence_is_full_length ) {
         restore_full_length_rgs( concatenate_final_gene_set.out.ags_done )
         write_run_log( restore_full_length_rgs.out.restored_done.map { true } )
     } else {
@@ -841,43 +844,5 @@ workflow {
     // pipeline completes. Real files only live in OUTPUT_pipeline/16-output/.
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_gene_families STEP_1 Pipeline Complete!"
-    println "========================================================================"
-    println "Gene family: ${params.gene_family}"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "Output files in ${params.output_dir}/:"
-        println "   1-output/: RGS validation (validated FASTA + report)"
-        println "   2-output/: BLAST database listing"
-        println "   3-output/: Project database BLAST reports"
-        println "   4-output/: Blast gene sequences (BGS)"
-        println "   5-output/: RGS genome BLAST report listing"
-        println "   6-output/: RGS genome BLAST reports"
-        println "   7-output/: RBH species file listings"
-        println "   8-output/: RGS-to-genome identifier mapping"
-        println "   9-output/: Modified genomes with RGS sequences"
-        println "  10-output/: Combined genomes and BLAST database"
-        println "  11-output/: Reciprocal BLAST commands"
-        println "  12-output/: Reciprocal BLAST report"
-        println "  13-output/: Candidate gene sequences (CGS)"
-        println "  14-output/: Species-filtered sequences"
-        println "  16-output/: Final AGS (All Gene Set)"
-        println ""
-        println "Symlinks created by RUN-workflow.sh in:"
-        println "  ../../../output_to_input/STEP_1-homolog_discovery/ags_fastas/${params.gene_family}/"
-        println ""
-        println "Next: Run STEP_2 phylogenetic analysis with AGS file"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

@@ -35,6 +35,30 @@ gene_group_source_tsv: "../../../output_to_input/gene_groups-<INSTANCE>/STEP_0-<
 rgs_fastas_dir: "../../../output_to_input/gene_groups-<INSTANCE>/STEP_0-<source>/rgs_fastas"
 
 # ============================================================================
+# OPTIONAL OVERRIDE MANIFESTS (LEAVE EMPTY TO USE DEFAULTS)
+# ============================================================================
+# Manifests live in the SUBPROJECT-LEVEL INPUT_user dir (gene_groups-<INSTANCE>/
+# INPUT_user/), not the COPYME-level dir. From here the relative path is
+# "../../INPUT_user/<file>".
+#
+# species_keeper_manifest: optional override of the species set.
+#   - Default (empty string): orchestrator auto-derives the species list from
+#     every *.aa file present in inputs.blast_databases_dir.
+#   - To override: drop a TSV in ../../INPUT_user/ with a single column
+#     'genus_species' (one Genus_species per line; '#' = comment). Each value
+#     must match a *<genus_species>*.aa file under inputs.blast_databases_dir,
+#     or the orchestrator fails-fast.
+species_keeper_manifest: ""    # e.g. "../../INPUT_user/species_keeper_manifest.tsv"
+#
+# gene_groups_manifest: optional override of which gene groups STEP_1 processes.
+#   - Default (empty string OR a manifest whose first data line is 'all'):
+#     process every row of gene_group_source_tsv.
+#   - To override: drop a TSV in ../../INPUT_user/ with a single column
+#     'sanitized_name' (one sanitized_name per line; '#' = comment). Each value
+#     must match a row of gene_group_source_tsv, or the orchestrator fails-fast.
+gene_groups_manifest: ""       # e.g. "../../INPUT_user/gene_groups_manifest.tsv"
+
+# ============================================================================
 # TIERING (EDIT IF NEEDED)
 # ============================================================================
 # Gene groups with > large_threshold RGS sequences use the "large" resource tier.

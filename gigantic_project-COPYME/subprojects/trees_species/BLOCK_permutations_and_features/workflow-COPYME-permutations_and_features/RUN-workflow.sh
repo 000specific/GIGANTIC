@@ -267,21 +267,12 @@ case "${PARALLELISM_MODE}" in
 esac
 echo "  parallelism_mode: ${PARALLELISM_MODE} (nextflow ${PROFILE_FLAG})"
 
-# Pipe SLURM account/QOS from START_HERE-user_config.yaml into nextflow.config
-# via --param CLI args so nextflow.config never needs hand-edited duplicates.
-# Re-read here because the outer SLURM_ACCOUNT/SLURM_QOS shell vars (if set)
-# only exist in the self-submitting branch above, not when re-invoked by sbatch.
-NEXTFLOW_SLURM_ACCOUNT=$(read_config "slurm_account" "")
-NEXTFLOW_SLURM_QOS=$(read_config "slurm_qos" "")
-NEXTFLOW_PARAMS=""
-if [ -n "${NEXTFLOW_SLURM_ACCOUNT}" ]; then
-    NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_account=${NEXTFLOW_SLURM_ACCOUNT}"
-fi
-if [ -n "${NEXTFLOW_SLURM_QOS}" ]; then
-    NEXTFLOW_PARAMS="${NEXTFLOW_PARAMS} --slurm_qos=${NEXTFLOW_SLURM_QOS}"
-fi
+# Universal GIGANTIC YAML->params pattern: pass the YAML directly via
+# -params-file. NextFlow loads YAML natively; all keys (slurm_account/qos,
+# cpus, memory_gb, inputs.*, output.*, etc.) flow through automatically.
 
-nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} ${NEXTFLOW_PARAMS}
+nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} \
+    -params-file START_HERE-user_config.yaml
 
 EXIT_CODE=$?
 

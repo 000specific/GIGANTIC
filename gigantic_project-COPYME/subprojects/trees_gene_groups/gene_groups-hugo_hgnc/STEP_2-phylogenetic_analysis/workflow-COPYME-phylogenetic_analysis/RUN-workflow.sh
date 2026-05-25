@@ -48,6 +48,9 @@ STEP1_OUTPUT_TO_INPUT=$(read_config "step1_output_to_input_dir" "")
 LARGE_THRESHOLD=$(read_config "large_threshold" "50")
 RESUME=$(read_config "resume" "false")
 
+# Optional override manifest (empty = process all gene groups with STEP_1 AGS)
+GENE_GROUPS_MANIFEST=$(read_config "gene_groups_manifest" "")
+
 SLURM_ACCOUNT=$(read_config "slurm_account" "")
 SLURM_QOS_STANDARD=$(read_config "slurm_qos_standard" "")
 SLURM_QOS_BURST=$(read_config "slurm_qos_burst" "")
@@ -112,6 +115,47 @@ fi
 STEP2_DIR="$(dirname "${SCRIPT_DIR}")"
 mkdir -p "${STEP2_DIR}/slurm_logs"
 
+# Build optional gene-groups whitelist (empty = process all from STEP0_SUMMARY).
+# Default (YAML key empty OR manifest's first data line is 'all'): no filter.
+# Override: TSV with column 'sanitized_name'; each value must match a row in
+# STEP0_SUMMARY or orchestrator fails-fast.
+GENE_GROUPS_WHITELIST=""
+if [ -n "${GENE_GROUPS_MANIFEST}" ]; then
+    GENE_GROUPS_MANIFEST_PATH="${SCRIPT_DIR}/${GENE_GROUPS_MANIFEST}"
+    if [ ! -f "${GENE_GROUPS_MANIFEST_PATH}" ]; then
+        echo "ERROR: gene_groups_manifest not found: ${GENE_GROUPS_MANIFEST_PATH}" >&2
+        echo "  (resolved from YAML key gene_groups_manifest = '${GENE_GROUPS_MANIFEST}')" >&2
+        exit 1
+    fi
+    WHITELIST_TMP="${STEP2_DIR}/.gene_groups_whitelist_$$.tsv"
+    grep -vE '^\s*(#|$)' "${GENE_GROUPS_MANIFEST_PATH}" \
+        | awk 'NR==1 && tolower($1) == "sanitized_name" {next} {print $1}' \
+        | sort -u > "${WHITELIST_TMP}"
+    if [ ! -s "${WHITELIST_TMP}" ]; then
+        echo "ERROR: gene_groups_manifest is empty (no data rows): ${GENE_GROUPS_MANIFEST_PATH}" >&2
+        rm -f "${WHITELIST_TMP}"
+        exit 1
+    fi
+    if [ "$(wc -l < "${WHITELIST_TMP}")" = "1" ] && [ "$(cat "${WHITELIST_TMP}")" = "all" ]; then
+        echo "Gene-groups manifest: 'all' sentinel — processing every entry of gene_group_source_tsv"
+        rm -f "${WHITELIST_TMP}"
+    else
+        ALL_SANITIZED="${STEP2_DIR}/.all_sanitized_$$.tsv"
+        tail -n +2 "${STEP0_SUMMARY}" | awk -F'\t' '{print $3}' | sort -u > "${ALL_SANITIZED}"
+        MISSING_GG=$(comm -23 "${WHITELIST_TMP}" "${ALL_SANITIZED}")
+        rm -f "${ALL_SANITIZED}"
+        if [ -n "${MISSING_GG}" ]; then
+            echo "ERROR: gene_groups_manifest names not found in gene_group_source_tsv:" >&2
+            echo "${MISSING_GG}" | sed 's/^/  /' >&2
+            rm -f "${WHITELIST_TMP}"
+            exit 1
+        fi
+        GENE_GROUPS_WHITELIST="${WHITELIST_TMP}"
+        whitelist_count=$(wc -l < "${GENE_GROUPS_WHITELIST}")
+        echo "Gene-groups manifest: ${whitelist_count} gene groups whitelisted (from ${GENE_GROUPS_MANIFEST})"
+    fi
+fi
+
 SMALL_GG=()
 LARGE_GG=()
 
@@ -119,9 +163,18 @@ setup_count=0
 skip_count=0
 no_ags_count=0
 total_count=0
+filtered_count=0
 
 while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filename sequence_count; do
     total_count=$((total_count + 1))
+
+    # Apply gene-groups whitelist if active
+    if [ -n "${GENE_GROUPS_WHITELIST}" ]; then
+        if ! grep -qx "${sanitized_name}" "${GENE_GROUPS_WHITELIST}"; then
+            filtered_count=$((filtered_count + 1))
+            continue
+        fi
+    fi
 
     AGS_DIR="${STEP1_OUTPUT_TO_INPUT}/gene_group-${sanitized_name}"
     if [ ! -d "${AGS_DIR}" ] || ! ls "${AGS_DIR}"/*.aa &>/dev/null; then
@@ -232,8 +285,14 @@ PYTHON_FLATTEN
     setup_count=$((setup_count + 1))
 done < <(tail -n +2 "${STEP0_SUMMARY}")
 
+rm -f "${GENE_GROUPS_WHITELIST}"
+
 echo ""
-echo "Setup: ${setup_count} new, ${skip_count} already exist, ${no_ags_count} skipped (no STEP_1 AGS)"
+if [ -n "${GENE_GROUPS_MANIFEST}" ]; then
+    echo "Setup: ${setup_count} new, ${skip_count} already exist, ${filtered_count} filtered by manifest, ${no_ags_count} skipped (no STEP_1 AGS)"
+else
+    echo "Setup: ${setup_count} new, ${skip_count} already exist, ${no_ags_count} skipped (no STEP_1 AGS)"
+fi
 echo "Small gene groups (<= ${LARGE_THRESHOLD} RGS seqs): ${#SMALL_GG[@]}"
 echo "Large gene groups (>  ${LARGE_THRESHOLD} RGS seqs): ${#LARGE_GG[@]}"
 echo ""

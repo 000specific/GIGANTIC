@@ -384,7 +384,7 @@ Recommended order — each phase is independently shippable:
 
 ### Downstream propagation (after master is fixed)
 - Per the master/instance pattern documented in [project_trees_gene_x_ags_rgs_duplication_bug](../../../../memory/project_trees_gene_x_ags_rgs_duplication_bug.md): after updating `gene_groups_COPYME/.../008` and `gene_family_COPYME/.../008`, propagate to:
-  - `gene_groups-hugo_hgnc/.../workflow-COPYME-rbh_rbf_homologs/ai/scripts/008` (downstream instance)
+  - `gene_groups-<INSTANCE>/.../workflow-COPYME-rbh_rbf_homologs/ai/scripts/008` (downstream instance)
   - All 76 `trees_gene_families/gene_family-*/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008` (downstream per-family instances)
   - Verify via md5sum that all 78 stay in sync after each phase
 

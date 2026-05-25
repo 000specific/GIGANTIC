@@ -21,10 +21,11 @@
  */
 
 // ============================================================================
-// PARAMETERS
+// PARAMETERS (from config.yaml via nextflow.config + -params-file)
 // ============================================================================
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
-params.config = "${projectDir}/../START_HERE-user_config.yaml"
 params.help = false
 
 if ( params.help ) {
@@ -48,35 +49,6 @@ if ( params.help ) {
 }
 
 // ============================================================================
-// CONFIGURATION FROM YAML
-// ============================================================================
-
-def config_file = file( params.config )
-if ( !config_file.exists() ) {
-    log.error "Configuration file not found: ${params.config}"
-    System.exit( 1 )
-}
-
-def config = new org.yaml.snakeyaml.Yaml().load( config_file.text )
-def workflow_dir = config_file.parent
-def output_dir = "${workflow_dir}/${config.output.base_dir}"
-def config_path = params.config
-
-log.info """
-==============================================================================
-parsimony_tree_structures — BLOCK_ocl_orthogroups
-==============================================================================
-Run Label            : ${config.run_label}
-Species Set          : ${config.species_set_name}
-Orthogroup Tool      : ${config.orthogroup_tool}
-Bootstrap Iterations : ${config.bootstrap.iterations}
-Bootstrap Seed       : ${config.bootstrap.seed}
-Output Directory     : ${output_dir}
-Config File          : ${config_path}
-==============================================================================
-""".stripIndent()
-
-// ============================================================================
 // PROCESSES
 // ============================================================================
 
@@ -90,8 +62,8 @@ process validate_inputs {
     script:
     """
     python3 ${projectDir}/scripts/001_ai-python-validate_inputs.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -105,8 +77,8 @@ process aggregate_ocl_per_structure {
     script:
     """
     python3 ${projectDir}/scripts/002_ai-python-aggregate_ocl_per_structure.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -120,8 +92,8 @@ process compute_parsimony_scores {
     script:
     """
     python3 ${projectDir}/scripts/003_ai-python-compute_parsimony_scores.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -135,8 +107,8 @@ process bootstrap_ranking_confidence {
     script:
     """
     python3 ${projectDir}/scripts/004_ai-python-bootstrap_ranking_confidence.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -150,8 +122,8 @@ process rank_structures_and_summarize {
     script:
     """
     python3 ${projectDir}/scripts/005_ai-python-rank_structures_and_summarize.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -165,8 +137,8 @@ process visualize_ranking {
     script:
     """
     python3 ${projectDir}/scripts/006_ai-python-visualize_ranking.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -180,8 +152,8 @@ process diagnose_criteria_divergence {
     script:
     """
     python3 ${projectDir}/scripts/008_ai-python-diagnose_criteria_divergence.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -195,8 +167,8 @@ process clade_binarized_parsimony {
     script:
     """
     python3 ${projectDir}/scripts/010_ai-python-clade_binarized_parsimony.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -210,8 +182,8 @@ process clade_binarized_parsimony_subsampled {
     script:
     """
     python3 ${projectDir}/scripts/011_ai-python-clade_binarized_parsimony-subsampled_metazoans.py \\
-        --config ${config_path} \\
-        --output_dir ${output_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
@@ -225,8 +197,8 @@ process write_run_log {
     script:
     """
     python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \\
-        --config ${config_path} \\
-        --workflow_dir ${workflow_dir}
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --workflow_dir ${projectDir}/..
     """
 }
 
@@ -249,26 +221,5 @@ workflow {
     write_run_log( clade_binarized_parsimony_subsampled.out.ready )
 }
 
-workflow.onComplete {
-    log.info """
-    ==============================================================================
-    parsimony_tree_structures BLOCK_ocl_orthogroups — COMPLETED
-    ==============================================================================
-    Status     : ${workflow.success ? 'SUCCESS' : 'FAILED'}
-    Duration   : ${workflow.duration}
-    Run Label  : ${config.run_label}
-    Results    : ${output_dir}
-    Final ranking: OUTPUT_pipeline/5-output/5_ai-parsimony_ranking-structures.tsv
-    ==============================================================================
-    """.stripIndent()
-}
-
-workflow.onError {
-    log.error """
-    ==============================================================================
-    parsimony_tree_structures BLOCK_ocl_orthogroups — ERROR
-    ==============================================================================
-    Error message: ${workflow.errorMessage}
-    ==============================================================================
-    """.stripIndent()
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

@@ -216,16 +216,13 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-# Pipe resource sizing into NextFlow params so its local executor knows the
-# allocation. Top-level keys (cpus, memory_gb) are shared with the SLURM
-# submission block above.
-NEXTFLOW_CPUS=$(read_config "cpus" "4")
-NEXTFLOW_MEMORY_GB=$(read_config "memory_gb" "16")
+# Universal GIGANTIC YAML->params pattern: pass the YAML directly via
+# -params-file. NextFlow loads YAML natively; all keys (cpus, memory_gb,
+# inputs.*, output.*, project.*, etc.) flow through automatically.
 
 nextflow run ai/main.nf ${RESUME_FLAG} \
     -c ai/nextflow.config \
-    --cpus=${NEXTFLOW_CPUS} \
-    --memory_gb=${NEXTFLOW_MEMORY_GB}
+    -params-file START_HERE-user_config.yaml
 
 EXIT_CODE=$?
 

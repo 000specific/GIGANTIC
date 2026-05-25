@@ -7,7 +7,7 @@ produced by STEP_2 as PDF + SVG via toytree.
 
 ```bash
 # 1. Copy this COPYME → RUN_NN at the same level
-#    (e.g., inside gene_groups-hugo_hgnc/STEP_3-tree_visualization/):
+#    (e.g., inside gene_groups-<INSTANCE>/STEP_3-tree_visualization/):
 cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
 cd workflow-RUN_1-tree_visualization
 

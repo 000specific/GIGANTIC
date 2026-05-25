@@ -6,7 +6,7 @@ toytree (pure Python, no Qt).
 ## Single user-runnable script
 
 ```bash
-# 1. Inside the per-source instance (e.g., gene_groups-hugo_hgnc/STEP_3-tree_visualization/),
+# 1. Inside the per-source instance (e.g., gene_groups-<INSTANCE>/STEP_3-tree_visualization/),
 #    copy the COPYME → RUN_NN at the same level:
 cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
 

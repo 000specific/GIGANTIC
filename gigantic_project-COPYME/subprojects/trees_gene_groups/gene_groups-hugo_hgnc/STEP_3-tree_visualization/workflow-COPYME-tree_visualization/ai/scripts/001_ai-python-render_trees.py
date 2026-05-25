@@ -456,8 +456,13 @@ def main():
         return 0
 
     # Discover trees
-    # trees_gene_groups structure: <output_to_input>/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<name>/
-    gene_family_step2_directory = output_to_input_directory / 'gene_groups-hugo_hgnc' / 'STEP_2-phylogenetic_analysis' / f'gene_group-{gene_family}'
+    # trees_gene_groups structure: <output_to_input>/gene_groups-<INSTANCE>/STEP_2-phylogenetic_analysis/gene_group-<name>/
+    # Derive the per-source instance dir name from the script's runtime location:
+    #   config_directory = gene_groups-<INSTANCE>/STEP_3-tree_visualization/gene_group-<name>/workflow-RUN_01-tree_visualization/
+    #   parents[2]       = gene_groups-<INSTANCE>/
+    # This avoids hardcoding any specific instance name.
+    instance_dir_name = config_directory.resolve().parents[ 2 ].name
+    gene_family_step2_directory = output_to_input_directory / instance_dir_name / 'STEP_2-phylogenetic_analysis' / f'gene_group-{gene_family}'
     logger.info( f"Looking for trees in: {gene_family_step2_directory}" )
     trees = discover_trees( gene_family_step2_directory )
 

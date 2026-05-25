@@ -51,6 +51,10 @@ RGS_FASTAS_DIR=$(read_config "rgs_fastas_dir" "")
 LARGE_THRESHOLD=$(read_config "large_threshold" "50")
 RESUME=$(read_config "resume" "false")
 
+# Optional override manifests (empty = use defaults)
+SPECIES_KEEPER_MANIFEST=$(read_config "species_keeper_manifest" "")
+GENE_GROUPS_MANIFEST=$(read_config "gene_groups_manifest" "")
+
 SLURM_ACCOUNT=$(read_config "slurm_account" "")
 SLURM_QOS_STANDARD=$(read_config "slurm_qos_standard" "")
 SLURM_QOS_BURST=$(read_config "slurm_qos_burst" "")
@@ -128,19 +132,114 @@ else
 fi
 
 # =============================================================================
-# Generate species_keeper_list from genomesDB
+# Generate species_keeper_list
+# - Default: auto-derive from every *.aa file in BLAST_DB_DIR (genomesDB)
+# - Override: if species_keeper_manifest is set in YAML, use that instead
+#   (filename column 'genus_species', one per line; # = comment; '' lines skipped)
+# Each requested species must match a *<genus_species>*.aa under BLAST_DB_DIR
+# or the orchestrator fails-fast.
 # =============================================================================
 STEP1_DIR="$(dirname "${SCRIPT_DIR}")"   # parent: .../STEP_1-homolog_discovery
 SPECIES_KEEPER_LIST="${STEP1_DIR}/.species_keeper_list_$$.tsv"
 
+# Always derive the full set of available species from BLAST_DB_DIR. Used either
+# as the keeper list directly (default) or as the validation universe for the
+# manifest (override path).
+AVAILABLE_SPECIES="${STEP1_DIR}/.species_available_$$.tsv"
 ls "${BLAST_DB_DIR}"/*.aa 2>/dev/null | while read f; do
     basename "$f" | sed 's/-T1-proteome\.aa$//' | awk -F'_' '{print $(NF-1)"_"$NF}'
-done | sort -u > "${SPECIES_KEEPER_LIST}"
+done | sort -u > "${AVAILABLE_SPECIES}"
 
-species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
-echo "Species keeper list: ${species_count} species from genomesDB"
+if [ -n "${SPECIES_KEEPER_MANIFEST}" ]; then
+    SPECIES_MANIFEST_PATH="${SCRIPT_DIR}/${SPECIES_KEEPER_MANIFEST}"
+    if [ ! -f "${SPECIES_MANIFEST_PATH}" ]; then
+        echo "ERROR: species_keeper_manifest not found: ${SPECIES_MANIFEST_PATH}" >&2
+        echo "  (resolved from YAML key species_keeper_manifest = '${SPECIES_KEEPER_MANIFEST}')" >&2
+        rm -f "${AVAILABLE_SPECIES}"
+        exit 1
+    fi
+
+    # Strip comments, blank lines, and the header row 'genus_species'.
+    grep -vE '^\s*(#|$)' "${SPECIES_MANIFEST_PATH}" \
+        | awk 'NR==1 && tolower($1) == "genus_species" {next} {print $1}' \
+        | sort -u > "${SPECIES_KEEPER_LIST}"
+
+    if [ ! -s "${SPECIES_KEEPER_LIST}" ]; then
+        echo "ERROR: species_keeper_manifest is empty (no data rows): ${SPECIES_MANIFEST_PATH}" >&2
+        rm -f "${AVAILABLE_SPECIES}" "${SPECIES_KEEPER_LIST}"
+        exit 1
+    fi
+
+    # Every requested species must exist in AVAILABLE_SPECIES
+    MISSING_SPECIES=$(comm -23 "${SPECIES_KEEPER_LIST}" "${AVAILABLE_SPECIES}")
+    if [ -n "${MISSING_SPECIES}" ]; then
+        echo "ERROR: species in manifest not found among BLAST DBs:" >&2
+        echo "${MISSING_SPECIES}" | sed 's/^/  /' >&2
+        echo "  BLAST_DB_DIR: ${BLAST_DB_DIR}" >&2
+        rm -f "${AVAILABLE_SPECIES}" "${SPECIES_KEEPER_LIST}"
+        exit 1
+    fi
+
+    species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
+    echo "Species keeper list: ${species_count} species (from manifest ${SPECIES_KEEPER_MANIFEST})"
+else
+    cp "${AVAILABLE_SPECIES}" "${SPECIES_KEEPER_LIST}"
+    species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
+    echo "Species keeper list: ${species_count} species from genomesDB (default; no manifest)"
+fi
+
+rm -f "${AVAILABLE_SPECIES}"
 
 mkdir -p "${STEP1_DIR}/slurm_logs"
+
+# =============================================================================
+# Build optional gene-groups whitelist (empty = process all from STEP0_SUMMARY)
+# - Default (YAML key empty OR manifest's first data line is 'all'): no filter
+# - Override: TSV with column 'sanitized_name'; each value must match a row in
+#   STEP0_SUMMARY or orchestrator fails-fast.
+# =============================================================================
+GENE_GROUPS_WHITELIST=""
+if [ -n "${GENE_GROUPS_MANIFEST}" ]; then
+    GENE_GROUPS_MANIFEST_PATH="${SCRIPT_DIR}/${GENE_GROUPS_MANIFEST}"
+    if [ ! -f "${GENE_GROUPS_MANIFEST_PATH}" ]; then
+        echo "ERROR: gene_groups_manifest not found: ${GENE_GROUPS_MANIFEST_PATH}" >&2
+        echo "  (resolved from YAML key gene_groups_manifest = '${GENE_GROUPS_MANIFEST}')" >&2
+        exit 1
+    fi
+
+    # Strip comments, blank lines, header row 'sanitized_name'.
+    WHITELIST_TMP="${STEP1_DIR}/.gene_groups_whitelist_$$.tsv"
+    grep -vE '^\s*(#|$)' "${GENE_GROUPS_MANIFEST_PATH}" \
+        | awk 'NR==1 && tolower($1) == "sanitized_name" {next} {print $1}' \
+        | sort -u > "${WHITELIST_TMP}"
+
+    if [ ! -s "${WHITELIST_TMP}" ]; then
+        echo "ERROR: gene_groups_manifest is empty (no data rows): ${GENE_GROUPS_MANIFEST_PATH}" >&2
+        rm -f "${WHITELIST_TMP}"
+        exit 1
+    fi
+
+    # 'all' sentinel = no filter
+    if [ "$(wc -l < "${WHITELIST_TMP}")" = "1" ] && [ "$(cat "${WHITELIST_TMP}")" = "all" ]; then
+        echo "Gene-groups manifest: 'all' sentinel — processing every entry of gene_group_source_tsv"
+        rm -f "${WHITELIST_TMP}"
+    else
+        # Validate every whitelisted sanitized_name exists in STEP0_SUMMARY (column 3)
+        ALL_SANITIZED="${STEP1_DIR}/.all_sanitized_$$.tsv"
+        tail -n +2 "${STEP0_SUMMARY}" | awk -F'\t' '{print $3}' | sort -u > "${ALL_SANITIZED}"
+        MISSING_GG=$(comm -23 "${WHITELIST_TMP}" "${ALL_SANITIZED}")
+        rm -f "${ALL_SANITIZED}"
+        if [ -n "${MISSING_GG}" ]; then
+            echo "ERROR: gene_groups_manifest names not found in gene_group_source_tsv:" >&2
+            echo "${MISSING_GG}" | sed 's/^/  /' >&2
+            rm -f "${WHITELIST_TMP}"
+            exit 1
+        fi
+        GENE_GROUPS_WHITELIST="${WHITELIST_TMP}"
+        whitelist_count=$(wc -l < "${GENE_GROUPS_WHITELIST}")
+        echo "Gene-groups manifest: ${whitelist_count} gene groups whitelisted (from ${GENE_GROUPS_MANIFEST})"
+    fi
+fi
 
 # =============================================================================
 # Phase 1: setup gene_group-X/workflow-RUN_01-*/ directories
@@ -152,11 +251,20 @@ setup_count=0
 skip_count=0
 error_count=0
 total_count=0
+filtered_count=0
 
 RGS_SPECIES_MAP_SOURCE="${SCRIPT_DIR}/INPUT_user/rgs_species_map.tsv"
 
 while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filename sequence_count; do
     total_count=$((total_count + 1))
+
+    # Apply gene-groups whitelist if active
+    if [ -n "${GENE_GROUPS_WHITELIST}" ]; then
+        if ! grep -qx "${sanitized_name}" "${GENE_GROUPS_WHITELIST}"; then
+            filtered_count=$((filtered_count + 1))
+            continue
+        fi
+    fi
 
     DEST="${STEP1_DIR}/gene_group-${sanitized_name}/workflow-RUN_01-rbh_rbf_homologs"
     RGS_SOURCE="${RGS_FASTAS_DIR}/${rgs_filename}"
@@ -260,9 +368,14 @@ PYTHON_FLATTEN
 done < <(tail -n +2 "${STEP0_SUMMARY}")
 
 rm -f "${SPECIES_KEEPER_LIST}"
+rm -f "${GENE_GROUPS_WHITELIST}"
 
 echo ""
-echo "Setup: ${setup_count} new, ${skip_count} already exist, ${error_count} errors"
+if [ -n "${GENE_GROUPS_MANIFEST}" ]; then
+    echo "Setup: ${setup_count} new, ${skip_count} already exist, ${filtered_count} filtered by manifest, ${error_count} errors"
+else
+    echo "Setup: ${setup_count} new, ${skip_count} already exist, ${error_count} errors"
+fi
 echo "Small gene groups (<= ${LARGE_THRESHOLD} seqs): ${#SMALL_GG[@]}"
 echo "Large gene groups (>  ${LARGE_THRESHOLD} seqs): ${#LARGE_GG[@]}"
 echo ""

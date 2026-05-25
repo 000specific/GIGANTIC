@@ -194,8 +194,13 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
+# Universal GIGANTIC YAML->params pattern: pass the YAML directly via
+# -params-file. NextFlow loads YAML natively; all keys (cpus, memory_gb,
+# inputs.*, output.*, gene_family.*, project.*, blast.*) flow through.
+
 nextflow run ai/main.nf ${RESUME_FLAG} \
-    -c ai/nextflow.config
+    -c ai/nextflow.config \
+    -params-file START_HERE-user_config.yaml
 
 EXIT_CODE=$?
 

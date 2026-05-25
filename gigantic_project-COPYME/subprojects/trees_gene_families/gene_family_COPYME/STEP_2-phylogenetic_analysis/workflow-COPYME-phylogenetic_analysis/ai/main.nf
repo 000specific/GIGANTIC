@@ -33,67 +33,59 @@ nextflow.enable.dsl=2
 //
 // ============================================================================
 
-// Load configuration from YAML
-import org.yaml.snakeyaml.Yaml
-
-def load_config() {
-    def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
-    if ( !config_file.exists() ) {
-        error "Configuration file not found: ${config_file}"
-    }
-    return yaml.load( config_file.text )
-}
-
-// Load the configuration
-def config = load_config()
-
 // ============================================================================
-// Parameters (from config.yaml)
+// Parameters (from config.yaml via -params-file)
 // ============================================================================
+// NextFlow 26.x compatibility: no SnakeYAML import; load_config replaced by
+// -params-file START_HERE-user_config.yaml passed from RUN-workflow.sh.
+//
+// Below we expose flat aliases (params.X) backed by nested params (params.Y.Z)
+// from the YAML, so the existing workflow body (which references flat names
+// throughout) keeps working without ~25 individual touches. Defaults match
+// the original code.
 
-params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
+params.output_dir = params.output?.base_dir ?: 'OUTPUT_pipeline'
 
-// Gene family (single gene family per workflow copy)
-params.gene_family = config.gene_family?.name ?: null
+// Gene family: access via params.gene_family.name in workflow body
+// (no flat alias here -- self-shadowing the params.gene_family map would be hazardous)
 
 // Input: output_to_input directory (AGS found at <dir>/<gene_family>/STEP_1-homolog_discovery/)
-params.output_to_input_dir = config.input?.output_to_input_dir ?: '../../../output_to_input'
+params.output_to_input_dir = params.input?.output_to_input_dir ?: '../../../output_to_input'
 
 // Project database name (for file naming)
-params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
+params.project_database = params.project?.database ?: 'speciesN_T1-speciesN'
 
 // Project name (for run log)
-params.project_name = config.project?.name ?: 'gene_families'
+params.project_name = params.project?.name ?: 'gene_families'
 
 // MAFFT parameters
-params.mafft_maxiterate = config.phylogenetics?.mafft?.maxiterate ?: 1000
-params.mafft_bl = config.phylogenetics?.mafft?.bl ?: 45
-params.mafft_threads = config.phylogenetics?.mafft?.threads ?: 50
+params.mafft_maxiterate = params.phylogenetics?.mafft?.maxiterate ?: 1000
+params.mafft_bl = params.phylogenetics?.mafft?.bl ?: 45
+params.mafft_threads = params.phylogenetics?.mafft?.threads ?: 50
 
 // ClipKit parameters
-params.clipkit_mode = config.phylogenetics?.clipkit?.mode ?: 'smart-gap'
+params.clipkit_mode = params.phylogenetics?.clipkit?.mode ?: 'smart-gap'
 
 // IQ-TREE parameters
-params.iqtree_model = config.phylogenetics?.iqtree?.model ?: 'MFP'
-params.iqtree_bootstrap = config.phylogenetics?.iqtree?.bootstrap ?: 2000
-params.iqtree_alrt = config.phylogenetics?.iqtree?.alrt ?: 2000
-params.iqtree_threads = config.phylogenetics?.iqtree?.threads ?: 'AUTO'
+params.iqtree_model = params.phylogenetics?.iqtree?.model ?: 'MFP'
+params.iqtree_bootstrap = params.phylogenetics?.iqtree?.bootstrap ?: 2000
+params.iqtree_alrt = params.phylogenetics?.iqtree?.alrt ?: 2000
+params.iqtree_threads = params.phylogenetics?.iqtree?.threads ?: 'AUTO'
 
 // VeryFastTree parameters
-params.veryfasttree_threads = config.phylogenetics?.veryfasttree?.threads ?: 4
+params.veryfasttree_threads = params.phylogenetics?.veryfasttree?.threads ?: 4
 
 // PhyloBayes parameters
-params.phylobayes_model = config.phylogenetics?.phylobayes?.model ?: '-cat -gtr'
-params.phylobayes_generations = config.phylogenetics?.phylobayes?.generations ?: 10000
-params.phylobayes_burnin = config.phylogenetics?.phylobayes?.burnin ?: 2500
-params.phylobayes_every = config.phylogenetics?.phylobayes?.every ?: 1
+params.phylobayes_model = params.phylogenetics?.phylobayes?.model ?: '-cat -gtr'
+params.phylobayes_generations = params.phylogenetics?.phylobayes?.generations ?: 10000
+params.phylobayes_burnin = params.phylogenetics?.phylobayes?.burnin ?: 2500
+params.phylobayes_every = params.phylogenetics?.phylobayes?.every ?: 1
 
 // Tree methods (configurable)
-params.run_fasttree = config.tree_methods?.fasttree ?: true
-params.run_iqtree = config.tree_methods?.iqtree ?: false
-params.run_veryfasttree = config.tree_methods?.veryfasttree ?: false
-params.run_phylobayes = config.tree_methods?.phylobayes ?: false
+params.run_fasttree = params.tree_methods?.fasttree ?: true
+params.run_iqtree = params.tree_methods?.iqtree ?: false
+params.run_veryfasttree = params.tree_methods?.veryfasttree ?: false
+params.run_phylobayes = params.tree_methods?.phylobayes ?: false
 
 // ============================================================================
 // Processes
@@ -404,7 +396,7 @@ workflow {
     ========================================================================
     GIGANTIC trees_gene_families STEP_2 - Phylogenetic Analysis
     ========================================================================
-    Gene family      : ${params.gene_family}
+    Gene family      : ${params.gene_family.name}
     Project database : ${params.project_database}
     output_to_input  : ${params.output_to_input_dir}
     Output directory : ${params.output_dir}
@@ -425,8 +417,8 @@ workflow {
     """.stripIndent()
 
     // Validate critical parameters
-    if ( !params.gene_family ) {
-        error "gene_family not set in config! Edit START_HERE-user_config.yaml."
+    if ( !params.gene_family?.name ) {
+        error "gene_family.name not set in config! Edit START_HERE-user_config.yaml."
     }
 
     // Validate at least one tree method is enabled
@@ -435,7 +427,7 @@ workflow {
     }
 
     // Create single-item channel for the gene family
-    gene_family_channel = Channel.of( params.gene_family )
+    gene_family_channel = Channel.of( params.gene_family.name )
 
     // Process 1: Stage AGS sequences from STEP_1
     prepare_alignment_input( gene_family_channel )
@@ -476,21 +468,5 @@ workflow {
     write_run_log( tree_collected.collect().map { true } )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_gene_families STEP_2 Pipeline Complete!"
-    println "========================================================================"
-    println "Gene family: ${params.gene_family}"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

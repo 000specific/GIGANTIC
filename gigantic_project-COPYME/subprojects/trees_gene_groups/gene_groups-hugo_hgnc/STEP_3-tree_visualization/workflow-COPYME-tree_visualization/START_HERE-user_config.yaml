@@ -34,6 +34,23 @@ gene_group_source_tsv: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_0-hg
 step2_output_to_input_dir: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis"
 
 # ============================================================================
+# OPTIONAL OVERRIDE MANIFEST (LEAVE EMPTY TO USE DEFAULTS)
+# ============================================================================
+# Manifest lives in the SUBPROJECT-LEVEL INPUT_user dir (gene_groups-hugo_hgnc/
+# INPUT_user/), not the COPYME-level dir. From here the relative path is
+# "../../INPUT_user/<file>".
+#
+# gene_groups_manifest: optional override of which gene groups STEP_3 visualizes.
+# Independent of STEP_1's and STEP_2's manifests — STEP_3 can target a different
+# subset (e.g., the trees you actually want figures for).
+#   - Default (empty string OR a manifest whose first data line is 'all'):
+#     visualize every row of gene_group_source_tsv that has STEP_2 newicks.
+#   - To override: drop a TSV in ../../INPUT_user/ with a single column
+#     'sanitized_name' (one sanitized_name per line; '#' = comment). Each value
+#     must match a row of gene_group_source_tsv, or the orchestrator fails-fast.
+gene_groups_manifest: ""       # e.g. "../../INPUT_user/gene_groups_manifest_step3.tsv"
+
+# ============================================================================
 # TIERING (EDIT IF NEEDED)
 # ============================================================================
 large_threshold: 50

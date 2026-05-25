@@ -9,7 +9,7 @@ The workflow inside `workflow-COPYME-rbh_rbf_homologs/` is the template. To run
 STEP_1 for a source:
 
 ```bash
-# 1. Inside the per-source instance (e.g., gene_groups-hugo_hgnc/STEP_1-homolog_discovery/),
+# 1. Inside the per-source instance (e.g., gene_groups-<INSTANCE>/STEP_1-homolog_discovery/),
 #    copy the COPYME → RUN_NN at the same level:
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
 
