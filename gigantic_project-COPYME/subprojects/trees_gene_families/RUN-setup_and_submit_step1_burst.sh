@@ -41,7 +41,11 @@ cd "${SCRIPT_DIR}"
 # Paths
 TEMPLATE_DIR="${SCRIPT_DIR}/gene_family_COPYME"
 RGS_SOURCE_DIR="${SCRIPT_DIR}/research_notebook/rgs_from_before/rgs_for_trees"
-CONDA_ENV="ai_gigantic_trees_gene_families"
+# NOTE (2026-05-24): The per-workflow conda env is now created on-demand by each
+# RUN-workflow.sh on first run, from the workflow's colocated ai/conda_environment.yml.
+# The burst script no longer pre-activates a shared env; submitted jobs just call
+# `bash RUN-workflow.sh` which handles env creation + activation itself.
+# (Previous: CONDA_ENV="ai_gigantic_trees_gene_families")
 
 # SLURM settings for STEP_1 (BLAST-heavy homolog discovery)
 SLURM_ACCOUNT="moroz"
@@ -270,7 +274,7 @@ for entry in "${GENE_FAMILIES[@]}"; do
                 --time="${SLURM_TIME}" \
                 --cpus-per-task="${SLURM_CPUS}" \
                 --output="${SCRIPT_DIR}/slurm_logs/step1_${gene_family}-%j.log" \
-                --wrap="module load conda 2>/dev/null || true; conda activate ${CONDA_ENV} || { echo 'ERROR: Failed to activate conda environment ${CONDA_ENV}'; exit 1; }; cd ${STEP1_WORKFLOW} && bash RUN-workflow.sh"
+                --wrap="module load conda 2>/dev/null || true; cd ${STEP1_WORKFLOW} && bash RUN-workflow.sh"
 
             submit_count=$((submit_count + 1))
         fi

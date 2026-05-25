@@ -1,0 +1,144 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# GIGANTIC parsimony_tree_structures -- BLOCK_ocl_orthogroups
+# Score species tree structures by orthogroup-OCL parsimony.
+# AI: Claude Code | Opus 4.7 | 2026 May 11
+# Human: Eric Edsinger
+
+# ============================================================================
+# Run identification
+# ============================================================================
+# run_label names the output_to_input subdirectory for this exploration.
+# Convention: match the upstream orthogroups_X_ocl run_label so the parsimony
+# ranking sits alongside the OCL data it was derived from.
+# Example labels:
+#   "species70_X_OrthoHMM_GIGANTIC"
+#   "species70_X_OrthoFinder"
+#   "species70_X_Broccoli"
+run_label: "SET_NAME_HERE_X_OrthoFinder"
+
+# Species set identifier (e.g., "species71", "speciesN")
+species_set_name: "SET_NAME_HERE"
+
+# Orthogroup clustering tool used to generate the upstream OCL input
+# Valid values: OrthoFinder | OrthoHMM | Broccoli
+# Descriptive only -- informs filenames and metadata; does not change algorithm
+orthogroup_tool: "OrthoFinder"
+
+# ============================================================================
+# Input paths (relative to this workflow directory)
+# ============================================================================
+
+inputs:
+  # Path to orthogroups_X_ocl output_to_input directory for a single run_label.
+  # Must contain structure_NNN/4_ai-orthogroups-complete_ocl_summary.tsv per
+  # structure listed in INPUT_user/structure_manifest.tsv.
+  ocl_orthogroups_dir: "../../../orthogroups_X_ocl/output_to_input/BLOCK_ocl_analysis/SET_NAME_HERE_X_OrthoFinder"
+
+  # Path to trees_species output_to_input/BLOCK_permutations_and_features.
+  # Used by Script 001 to cross-check that the manifest's structure IDs match
+  # the trees_species structure manifest -- guarantees we are scoring real
+  # GIGANTIC structures, not arbitrary IDs.
+  trees_species_dir: "../../../trees_species/output_to_input/BLOCK_permutations_and_features"
+
+  # Structure manifest file listing which tree structures to rank.
+  # Format: TSV with column "structure_id" (e.g., "001", "002", ...).
+  structure_manifest: "INPUT_user/structure_manifest.tsv"
+
+# ============================================================================
+# Bootstrap configuration
+# ============================================================================
+# Bootstrap resamples orthogroups (with replacement) and recomputes
+# Score_Total_Losses per structure on each resample. Reports a 95% rank CI
+# and the fraction of resamples in which each structure was the best.
+
+# ============================================================================
+# Orthogroup filtering
+# ============================================================================
+# Both parsimony criteria (loss-min and shallow-gain) gain signal-to-noise by
+# restricting to mid-range orthogroups (species_count in [min, max]).
+#
+# - Singletons (species_count == 1) contribute no topology signal: their MRCA
+#   is the species itself, identical on every tree. Dropping them sharpens
+#   the cross-tree comparison.
+# - Near-universal orthogroups (species_count close to total species count)
+#   have MRCAs at or near root on every tree -- also low topology signal.
+# - Mid-range orthogroups (e.g., present in some clade but not all) carry the
+#   real signal because their MRCAs shift with topology.
+#
+# Defaults drop singletons only. To also drop universals, set max_species_count
+# to total_species_count - 1 (e.g., 69 for species70).
+
+filter:
+  min_species_count: 2     # Drop orthogroups present in fewer than this many species
+  max_species_count: 69    # Drop orthogroups present in more than this many species (species70: 69 = drop universals)
+
+bootstrap:
+  iterations: 1000
+  seed: 42                # Reproducible -- change for sensitivity analyses
+  tie_threshold_pct: 5.0  # Structures with pct_times_best >= this are flagged as tied with the best
+
+# ============================================================================
+# Output configuration
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# Computational Resources
+# ============================================================================
+# Workflow is lightweight: each script aggregates one row per structure.
+# Even 105 structures with 200k orthogroups each runs in well under an hour.
+# These values are used by SLURM (job resources) when execution_mode is "slurm".
+
+cpus: 2
+memory_gb: 8
+time_hours: 2
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# Controls where RUN-workflow.sh runs (the NextFlow driver).
+#   "local" -- Run directly on this machine
+#   "slurm" -- Self-submit as a SLURM job (driver runs on a compute node)
+#
+# Default is "local" because the workflow is light enough that SLURM overhead
+# typically exceeds the actual run time. Switch to "slurm" only if the host
+# you're on is not appropriate for compute (e.g., login node with strict CPU
+# limits) and you specifically need to offload.
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# ============================================================================
+# Parallelism Mode
+# ============================================================================
+# Controls how NextFlow dispatches per-process work (composes with execution_mode).
+#   "local" -- All processes run within this process (default; right for a
+#              7-process linear pipeline)
+#   "slurm" -- Each process submits as its own SLURM job (not recommended
+#              for this lightweight workflow)
+
+parallelism_mode: "local"
+
+# ============================================================================
+# Resume from cached NextFlow work directory
+# ============================================================================
+# When true, NextFlow re-uses cached results for unchanged tasks.
+# Default false -- forces a clean re-run, which matches what users almost
+# always want for a small fast pipeline.
+
+resume: false

@@ -15,15 +15,11 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
-// Default parameter values (overridden by nextflow.config which loads from YAML)
-params.step2_proteomes = "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
-params.step3_blastp = "../../output_to_input/STEP_3-databases/gigantic-T1-blastp"
-params.step2_genome_annotations = "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations"
-params.selected_species = "INPUT_user/selected_species.txt"
-params.output_dir = "OUTPUT_pipeline"
 // ============================================================================
 // PROCESSES
 // ============================================================================
@@ -35,7 +31,7 @@ params.output_dir = "OUTPUT_pipeline"
 process validate_species_selection {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/1_ai-validated_species_list.txt", emit: validated_list
@@ -48,10 +44,10 @@ process validate_species_selection {
     mkdir -p 1-output
 
     python3 ${projectDir}/scripts/001_ai-python-validate_species_selection.py \\
-        --step2-proteomes ${projectDir}/../${params.step2_proteomes} \\
-        --step3-blastp ${projectDir}/../${params.step3_blastp} \\
-        --step2-genome-annotations ${projectDir}/../${params.step2_genome_annotations} \\
-        --selected-species ${projectDir}/../${params.selected_species} \\
+        --step2-proteomes ${projectDir}/../${params.inputs.step2_proteomes} \\
+        --step3-blastp ${projectDir}/../${params.inputs.step3_blastp} \\
+        --step2-genome-annotations ${projectDir}/../${params.inputs.step2_genome_annotations} \\
+        --selected-species ${projectDir}/../${params.inputs.selected_species} \\
         --output-dir 1-output
     """
 }
@@ -63,7 +59,7 @@ process validate_species_selection {
 process copy_selected_files {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
     // pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
@@ -88,9 +84,9 @@ process copy_selected_files {
         --validated-species ${validated_list} \\
         --species-count ${species_count} \\
         --species-with-annotations ${species_with_annotations} \\
-        --step2-proteomes ${projectDir}/../${params.step2_proteomes} \\
-        --step3-blastp ${projectDir}/../${params.step3_blastp} \\
-        --step2-genome-annotations ${projectDir}/../${params.step2_genome_annotations} \\
+        --step2-proteomes ${projectDir}/../${params.inputs.step2_proteomes} \\
+        --step3-blastp ${projectDir}/../${params.inputs.step3_blastp} \\
+        --step2-genome-annotations ${projectDir}/../${params.inputs.step2_genome_annotations} \\
         --output-dir 2-output
     """
 }
@@ -116,7 +112,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \
         --workflow-name "create_final_species_set" \
         --subproject-name "genomesDB" \
-        --project-name "${params.project_name}" \
+        --project-name "${params.project.name}" \
         --status success
     """
 }
@@ -140,28 +136,5 @@ workflow {
     write_run_log( copy_selected_files.out.manifest )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC genomesDB STEP_4 Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Validated species list, count, and annotation availability"
-        println "  2-output/: Final species set directories"
-        println ""
-        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
-        println "  speciesN_gigantic_T1_proteomes/       -> OUTPUT_pipeline/2-output/"
-        println "  speciesN_gigantic_T1_blastp/           -> OUTPUT_pipeline/2-output/"
-        println "  speciesN_gigantic_genome_annotations/    -> OUTPUT_pipeline/2-output/"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

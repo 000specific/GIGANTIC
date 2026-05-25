@@ -88,7 +88,7 @@ bash RUN-workflow.sh
 ## Prerequisites
 
 - **STEP_1-homolog_discovery** complete for this gene family (AGS file in `trees_gene_families/output_to_input/<gene_family>/STEP_1-homolog_discovery/`)
-- **Conda environment** `ai_gigantic_trees_gene_families` with `mafft`, `clipkit`, `fasttree`, and optionally `iqtree`, `VeryFastTree`, `phylobayes`
+- **Conda environment** `aiG-trees_gene_families-phylogenetic_analysis` (auto-created from ai/conda_environment.yml on first run by RUN-workflow.sh; includes mafft, clipkit, fasttree, iqtree, veryfasttree)
 - **NextFlow** installed and available in PATH
 
 ---

@@ -23,24 +23,62 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # ============================================================================
-# Activate Environment
+# Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
+# The environment is auto-created on first RUN_1 run from the yml spec
+# colocated at ai/conda_environment.yml. mamba is preferred (much faster);
+# conda is the fallback if mamba is not available.
+
+# Disable NextFlow telemetry/update checks (prevents curl hangs on compute nodes)
+export NXF_OFFLINE=true
+
+ENV_NAME="aiG-trees_gene_families-phylogenetic_analysis"
+ENV_YML="ai/conda_environment.yml"
 
 module load conda 2>/dev/null || true
 
-if conda activate ai_gigantic_trees_gene_families 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_trees_gene_families"
-else
-    echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
     echo ""
-    echo "Please run the environment setup script first:"
-    echo "  cd ../../../../  # Go to project root"
-    echo "  bash RUN-setup_environments.sh"
-    echo ""
-    echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
-    echo ""
+    echo "On HPC (HiPerGator): module load conda"
+    echo "Otherwise: install conda from https://docs.conda.io/en/latest/miniconda.html"
     exit 1
+fi
+
+# Create environment on-demand if it does not exist
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Environment '${ENV_NAME}' not found. Creating on-demand from ${ENV_YML}..."
+    echo ""
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
+        echo "Make sure you are running from a valid GIGANTIC workflow directory."
+        exit 1
+    fi
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+        CREATE_EXIT=$?
+    else
+        conda env create -f "${ENV_YML}" -y
+        CREATE_EXIT=$?
+    fi
+    if [ $CREATE_EXIT -ne 0 ]; then
+        echo ""
+        echo "ERROR: Failed to create conda environment '${ENV_NAME}' (exit code $CREATE_EXIT)"
+        echo "Check the error messages above and verify the spec at: ${ENV_YML}"
+        echo ""
+        echo "If a partial env was left behind, remove it before retrying:"
+        echo "  mamba env remove -n ${ENV_NAME} -y"
+        exit 1
+    fi
+    echo ""
+    echo "Environment '${ENV_NAME}' created successfully."
+    echo ""
+fi
+
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
 fi
 
 # Ensure NextFlow is available (conda env or system module)
@@ -52,7 +90,7 @@ if ! command -v nextflow &> /dev/null; then
         echo "ERROR: NextFlow not available!"
         echo ""
         echo "Options to resolve:"
-        echo "  1. Install nextflow in conda env: conda install -n ai_gigantic_trees_gene_families -c bioconda nextflow"
+        echo "  1. Install nextflow in conda env: conda install -n ${ENV_NAME} -c bioconda nextflow"
         echo "  2. Load system module: module load nextflow"
         echo "  3. Install globally: https://www.nextflow.io/docs/latest/install.html"
         exit 1

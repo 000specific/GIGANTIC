@@ -29,9 +29,12 @@ go_ontology_cache_days: 30
 
 # Proteomes directory (FASTA files for GIGANTIC species)
 # Used by parser scripts 003-007 to identify unannotated proteins per database.
-# Default follows GIGANTIC convention: genomesDB output_to_input.
+# Default follows GIGANTIC convention: subprojects/genomesDB output_to_input.
+# Path is resolved by main.nf as ${projectDir}/../${proteomes_dir} where
+# ${projectDir} is the workflow's ai/ subdir. With the current GIGANTIC layout
+# ( workflow-*/ai/main.nf ), 3 leading ../'s reach subprojects/.
 # Set to empty string "" to skip unannotated protein identification.
-proteomes_dir: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
 
 # Species set name (for documentation and output file naming)
 species_set_name: "species70"

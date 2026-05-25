@@ -43,8 +43,10 @@ process run_metapredict {
         tuple val( species_name ), val( proteome_path ), val( phyloname )
 
     output:
-        path "${phyloname}_metapredict_disorder.tsv", emit: disorder_results
-        path "${phyloname}_metapredict_idrs.tsv", emit: idr_results
+        // Emit the full tuple including the raw output dir so the downstream
+        // consolidate process gets proteome_path + phyloname + raw_dir in one
+        // tuple ( no manual channel-joining needed ).
+        tuple val( species_name ), val( proteome_path ), val( phyloname ), path( "metapredict_raw_output_${phyloname}" ), emit: metapredict_raw_full
         path "2_ai-log-run_metapredict_${phyloname}.log"
 
     script:
@@ -53,16 +55,46 @@ process run_metapredict {
         --input-fasta ${proteome_path} \
         --output-dir . \
         --phyloname ${phyloname} \
-        --prediction-types ${params.prediction_types}
+        --device ${params.metapredict_device ?: 'cpu'}
     """
 }
 
 /*
- * Process 3: Write Run Log
- * Calls: scripts/003_ai-python-write_run_log.py
+ * Process 3: Consolidate raw outputs into one descriptive-header TSV per species
+ * Calls: scripts/003_ai-python-consolidate_metapredict_outputs.py
  *
- * Creates a timestamped log in ai/logs/ within this workflow directory
- * for transparency and reproducibility.
+ * Reads the canonical proteome FASTA plus the per-species metapredict raw dir
+ * ( containing idrs.fasta + disorder.csv + pLDDT_scores.csv ) and writes:
+ *     <phyloname>_metapredict_predictions.tsv
+ * with the GIGANTIC self-documenting header schema:
+ *     Protein_Identifier, Sequence_Length, IDR_Count, IDR_Identifiers,
+ *     IDR_Starts, IDR_Ends
+ * Proteins with 0 IDRs get None in the regions cells.
+ */
+process consolidate_metapredict_outputs {
+    publishDir "${params.output_dir}/3-output", mode: 'copy'
+
+    input:
+        tuple val( species_name ), val( proteome_path ), val( phyloname ), path( metapredict_raw_dir )
+
+    output:
+        path "${phyloname}_metapredict_predictions.tsv", emit: consolidated_tsv
+        path "3_ai-log-consolidate_metapredict_outputs_${phyloname}.log"
+
+    script:
+    """
+    python3 ${scripts_dir}/003_ai-python-consolidate_metapredict_outputs.py \
+        --input-fasta ${proteome_path} \
+        --raw-output-dir ${metapredict_raw_dir} \
+        --output-dir . \
+        --phyloname ${phyloname}
+    """
+}
+
+/*
+ * Process 4: Write Run Log ( renamed from 003 → 004 on 2026-05-23 to make
+ * room for the new consolidate step at 003 )
+ * Calls: scripts/004_ai-python-write_run_log.py
  */
 process write_run_log {
     label 'local'
@@ -75,7 +107,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \
+    python3 ${projectDir}/scripts/004_ai-python-write_run_log.py \
         --workflow-name "run_metapredict" \
         --subproject-name "annotations_hmms" \
         --project-name "${params.project_name}" \
@@ -104,6 +136,9 @@ workflow {
 
     run_metapredict( validated_channel )
 
-    // Write run log (FINAL STEP)
-    write_run_log( run_metapredict.out.disorder_results.collect() )
+    // Step 3: Consolidate raw outputs into one descriptive-header TSV per species
+    consolidate_metapredict_outputs( run_metapredict.out.metapredict_raw_full )
+
+    // Step 4: Write run log (FINAL STEP)
+    write_run_log( consolidate_metapredict_outputs.out.consolidated_tsv.collect() )
 }

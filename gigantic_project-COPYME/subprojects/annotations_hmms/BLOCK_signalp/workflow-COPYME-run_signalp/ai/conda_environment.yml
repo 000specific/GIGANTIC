@@ -1,0 +1,65 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env, no
+#                      suffix needed.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_signalp ( SignalP6 signal peptide
+# prediction on species proteomes ).
+#
+# Created on-demand by RUN-workflow.sh via mamba ( conda fallback ).
+#
+# ⚠️ TWO-STEP INSTALL — academic license required for SignalP6 ⚠️
+#
+#   Step 1 ( automatic on first `bash RUN-workflow.sh` ): create this env.
+#
+#   Step 2 ( MANUAL, user must do once ): install SignalP6 into the env from
+#   the DTU tarball ( academic license required ):
+#     https://services.healthtech.dtu.dk/services/SignalP-6.0/
+#   After downloading signalp-6.0h.fast.tar.gz to
+#     subprojects/annotations_hmms/BLOCK_signalp/software/
+#   then run:
+#     cd subprojects/annotations_hmms/BLOCK_signalp/
+#     bash DOWNLOAD_SOFTWARE-signalp.sh
+#   This pip-installs the tarball into the activated env.
+#
+# Without Step 2, the run_signalp process will fail because the `signalp6`
+# command will not be on PATH.
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-annotations_hmms-signalp
+
+name: aiG-annotations_hmms-signalp
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python (SignalP 6 tested with 3.9-3.11; <3.12 is required)
+  - python>=3.9,<3.12
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  # The RUN-workflow.sh `python3 <<PYTHON_FLATTEN` heredoc imports yaml to
+  # produce .params.json for `nextflow run -params-file .params.json`.
+  - pyyaml
+
+  # SignalP 6 dependencies (must be present BEFORE Step 2 manual pip install
+  # of the signalp tarball)
+  - pip
+  - numpy
+  - pillow
+  - matplotlib
+  - tqdm
+
+  # PyTorch CPU (required by SignalP 6 deep learning models). Pinned to 1.13
+  # because SignalP 6.0h was validated against that version.
+  - pytorch::pytorch=1.13

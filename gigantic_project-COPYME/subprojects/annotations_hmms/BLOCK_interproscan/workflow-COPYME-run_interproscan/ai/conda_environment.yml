@@ -1,0 +1,53 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env, no
+#                      suffix needed.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_interproscan ( InterProScan domain +
+# functional annotation on species proteomes ).
+#
+# Created on-demand by RUN-workflow.sh via mamba ( conda fallback ).
+#
+# ⚠️ InterProScan itself is a STANDALONE Java application — not installed via
+# conda. This env only provides the Java runtime ( openjdk ) plus the Python
+# infrastructure for validation / chunking scripts and NextFlow.
+#
+# After creating this env, the user must install InterProScan separately and
+# set the install path in the workflow's START_HERE-user_config.yaml:
+#
+#   interproscan_install_path: "/path/to/interproscan-5.XX-XX.0"
+#
+# Download + install instructions:
+#   https://interproscan-docs.readthedocs.io/en/latest/InstallationRequirements.html
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-annotations_hmms-interproscan
+
+name: aiG-annotations_hmms-interproscan
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # Java runtime for the standalone InterProScan application
+  - openjdk>=11
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # InterProScan is standalone Java - not installed via conda.
+  # Only Python standard library is needed for validation + chunking scripts.

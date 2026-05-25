@@ -109,6 +109,15 @@ def find_model_organism_fastas(
     model_fastas = []
     
     # Map common names to scientific names
+    #
+    # STRUCTURAL TODO (flagged 2026-05-24):
+    # This hardcoded short→Genus_species mapping should be replaced with loading
+    # INPUT_user/rgs_species_map.tsv at runtime. The TSV is the canonical source
+    # of truth. As-is, any custom species added to rgs_species_map.tsv (e.g.,
+    # octopus, squid, ctenophore) will be silently ignored by both 007 and 008
+    # because they aren't in the dict below. Proper fix: add --rgs-species-map
+    # CLI arg to both scripts, load the TSV, and replace this dict with the
+    # loaded mapping. The same dict lives in script 008 — fix both together.
     species_mappings = {
         'human': 'Homo_sapiens',
         'fly': 'Drosophila_melanogaster',

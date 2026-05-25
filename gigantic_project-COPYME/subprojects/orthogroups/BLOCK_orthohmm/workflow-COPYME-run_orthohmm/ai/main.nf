@@ -24,14 +24,8 @@ nextflow.enable.dsl = 2
 // PARAMETERS (from nextflow.config)
 // ============================================================================
 
-params.proteomes_dir = '../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes'
-params.output_dir = 'OUTPUT_pipeline'
-params.cpus = 0
-params.memory = '0 GB'
-params.evalue = '0.0001'
-params.single_copy_threshold = '0.5'
-params.project_name = 'GIGANTIC'
-params.conda_environment = 'ai_gigantic_orthogroups_orthohmm'
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // VALIDATE REQUIRED CONFIGURATION
@@ -39,7 +33,7 @@ params.conda_environment = 'ai_gigantic_orthogroups_orthohmm'
 // OrthoHMM is resource-intensive. Users MUST set cpus and memory in
 // START_HERE-user_config.yaml before running.
 
-if (params.cpus == 0) {
+if (params.orthohmm.cpus == 0) {
     error """
     ========================================================================
     CONFIGURATION ERROR: cpus not set!
@@ -54,7 +48,7 @@ if (params.cpus == 0) {
     """.stripIndent()
 }
 
-if (params.memory == '0 GB') {
+if (params.orthohmm.memory == '0 GB') {
     error """
     ========================================================================
     CONFIGURATION ERROR: memory not set!
@@ -80,7 +74,7 @@ if (params.memory == '0 GB') {
 process validate_proteomes {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         val proteomes_dir
@@ -106,7 +100,7 @@ process validate_proteomes {
 process convert_headers {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -133,7 +127,7 @@ process convert_headers {
 process run_orthohmm {
     label 'orthohmm'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path short_header_proteomes
@@ -153,9 +147,9 @@ process run_orthohmm {
     bash ${projectDir}/scripts/003_ai-bash-run_orthohmm.sh \\
         --input-dir 3-output/input_proteomes \\
         --output-dir 3-output \\
-        --cpus ${params.cpus} \\
-        --evalue ${params.evalue} \\
-        --single-copy-threshold ${params.single_copy_threshold}
+        --cpus ${params.orthohmm.cpus} \\
+        --evalue ${params.orthohmm.evalue} \\
+        --single-copy-threshold ${params.orthohmm.single_copy_threshold}
     """
 }
 
@@ -166,7 +160,7 @@ process run_orthohmm {
 process restore_identifiers {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path header_mapping
@@ -199,7 +193,7 @@ process restore_identifiers {
 process generate_summary_statistics {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -228,7 +222,7 @@ process generate_summary_statistics {
 process qc_analysis_per_species {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -270,7 +264,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \\
         --workflow-name "run_orthohmm" \\
         --subproject-name "orthogroups" \\
-        --project-name "${params.project_name}" \\
+        --project-name "${params.project.name}" \\
         --status success
     """
 }
@@ -284,7 +278,7 @@ process write_run_log {
 
 workflow {
     // Step 1: Validate proteomes
-    validate_proteomes( params.proteomes_dir )
+    validate_proteomes( params.inputs.proteomes_dir )
 
     // Step 2: Convert headers to short IDs
     convert_headers( validate_proteomes.out.proteome_list )
@@ -315,29 +309,5 @@ workflow {
     write_run_log( qc_analysis_per_species.out.per_species_summary )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Orthogroups - OrthoHMM Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Validated proteome list"
-        println "  2-output/: Short-header proteomes and mapping"
-        println "  3-output/: OrthoHMM clustering results"
-        println "  4-output/: Orthogroups with restored GIGANTIC identifiers"
-        println "  5-output/: Summary statistics"
-        println "  6-output/: Per-species QC analysis"
-        println ""
-        println "Symlinks created in output_to_input/BLOCK_orthohmm/ (by RUN-workflow.sh)"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

@@ -1,81 +1,95 @@
-# gene_groups-COPYME - Source-Level Template
+# gene_groups_COPYME — Master Template for trees_gene_groups Sources
 
-This is the template directory for creating a new gene group source. Copy this entire directory and customize it for your specific gene group classification system.
+This is the master template directory for the `trees_gene_groups` subproject. To
+analyze gene groups from a new classification source (HUGO HGNC, Pfam clans, a
+custom list, etc.), copy this entire directory and customize STEP_0 for that
+source.
 
-## How to Use
-
-```bash
-# 1. Copy the template
-cp -r gene_groups-COPYME gene_groups-pfam
-
-# 2. Replace STEP_0-placeholder with source-specific RGS generation
-rm -r gene_groups-pfam/STEP_0-placeholder/
-mkdir -p gene_groups-pfam/STEP_0-pfam_clans/
-# Create your STEP_0 pipeline here (download data, generate RGS files)
-
-# 3. Adjust paths in STEP_1 and STEP_2 workflow configs
-# Edit STEP_1-*/workflow-COPYME-*/START_HERE-user_config.yaml
-# Edit STEP_2-*/workflow-COPYME-*/START_HERE-user_config.yaml
-
-# 4. Create documentation
-# Create gene_groups-pfam/AI_GUIDE-pfam.md
-
-# 5. Create output_to_input structure
-mkdir -p ../output_to_input/gene_groups-pfam/STEP_0-pfam_clans
-mkdir -p ../output_to_input/gene_groups-pfam/STEP_1-homolog_discovery
-mkdir -p ../output_to_input/gene_groups-pfam/STEP_2-phylogenetic_analysis
-```
-
-## Template Contents
+## What's in here
 
 ```
-gene_groups-COPYME/
-├── README.md                          # This file
-├── STEP_0-placeholder/                # Replace with source-specific RGS generation
-├── STEP_1-homolog_discovery/          # Shared RBH/RBF homolog finding pipeline
+gene_groups_COPYME/
+├── README.md                                          (this file)
+├── STEP_0-placeholder/                                # empty — replace with source-specific STEP_0
+├── STEP_1-homolog_discovery/                          # shared RBH/RBF homolog discovery
 │   ├── AI_GUIDE-homolog_discovery.md
 │   ├── README.md
-│   └── workflow-COPYME-rbh_rbf_homologs/
-│       ├── START_HERE-user_config.yaml
-│       ├── RUN-workflow.sh
+│   └── workflow-COPYME-rbh_rbf_homologs/              # the STEP_1 workflow template
+│       ├── RUN-workflow.sh                            # the SINGLE user-runnable script
+│       ├── START_HERE-user_config.yaml                # user config
 │       ├── INPUT_user/
-│       └── ai/
-│           ├── main.nf
-│           ├── nextflow.config
-│           └── scripts/
-└── STEP_2-phylogenetic_analysis/      # Shared alignment + tree building pipeline
-    ├── AI_GUIDE-phylogenetic_analysis.md
+│       └── ai/                                        # main.nf, nextflow.config, scripts, conda_environment.yml
+├── STEP_2-phylogenetic_analysis/                      # shared phylogenetic analysis
+│   ├── AI_GUIDE-phylogenetic_analysis.md
+│   ├── README.md
+│   └── workflow-COPYME-phylogenetic_analysis/         # the STEP_2 workflow template
+│       └── (same layout as STEP_1's workflow-COPYME-*)
+└── STEP_3-tree_visualization/                         # shared tree rendering
+    ├── AI_GUIDE-phylogenetic_visualization.md
     ├── README.md
-    └── workflow-COPYME-phylogenetic_analysis/
-        ├── START_HERE-user_config.yaml
-        ├── RUN-workflow.sh
-        └── ai/
-            ├── main.nf
-            ├── nextflow.config
-            └── scripts/
+    └── workflow-COPYME-tree_visualization/            # the STEP_3 workflow template
+        └── (same layout)
 ```
 
-## STEP_0: What Your Source Needs to Provide
+## How a user creates a new source
 
-Your custom STEP_0 should produce RGS FASTA files that STEP_1 can consume:
+```bash
+# 1. Copy the master template to a per-source instance
+cp -r gene_groups_COPYME gene_groups-mysource
 
-**RGS File Requirements**:
-- Standard FASTA format (.aa extension)
-- One file per gene group
-- Header format should include gene group identifiers and species info
-- Sequences must be amino acid protein sequences
+# 2. Replace STEP_0-placeholder with source-specific RGS generation code
+rm -r gene_groups-mysource/STEP_0-placeholder/
+mkdir -p gene_groups-mysource/STEP_0-mysource/workflow-COPYME-mysource/
+# ... populate with the source's STEP_0 pipeline ...
 
-**Recommended Outputs**:
-- `rgs_fastas/` directory with one .aa file per gene group
-- A manifest TSV listing all generated RGS files with metadata
-- A summary TSV with generation statistics
+# 3. Per-source AI_GUIDE
+# Create gene_groups-mysource/AI_GUIDE-mysource.md describing source specifics
 
-## Path Notes
+# 4. Edit each STEP's START_HERE-user_config.yaml inside the per-source instance
+#    to point at the right STEP_0 output and pick execution_mode (local | slurm-standard | slurm-burst)
+```
 
-The workflow-COPYME templates have paths configured for the **running depth** - i.e., from `gene_group-X/workflow-RUN_01/` (one level deeper than the COPYME location itself). This is intentional: COPYME should never be run directly, only copied into gene_group directories.
+## How a user runs a STEP (per source)
 
-## See Also
+STEPs are sequentially dependent: STEP_0 → STEP_1 → STEP_2 → STEP_3.
 
-- `../AI_GUIDE-trees_gene_groups.md` - Subproject-level guide
-- `../gene_groups-hugo_hgnc/` - First implemented source (HUGO HGNC) - use as a reference
-- `../../trees_gene_families/AI_GUIDE-trees_gene_families.md` - Shared pipeline methodology
+Inside a per-source instance (e.g., `gene_groups-hugo_hgnc/`), for each STEP:
+
+```bash
+# 1. Copy the STEP's COPYME → a RUN_NN instance at the same level
+cd gene_groups-hugo_hgnc/STEP_1-homolog_discovery/
+cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
+
+# 2. Edit the RUN's START_HERE-user_config.yaml
+cd workflow-RUN_1-rbh_rbf_homologs
+# (set execution_mode, paths, etc.)
+
+# 3. Run the single user-runnable script
+bash RUN-workflow.sh
+```
+
+For STEP_1, STEP_2, STEP_3 the per-STEP `RUN-workflow.sh` is an **orchestrator**:
+- Creates its conda env once on the login node
+- Iterates over gene groups from the STEP_0 summary TSV
+- Creates one `gene_group-X/workflow-RUN_01-<stepname>/` sub-instance per gene group as siblings at the STEP level
+- Dispatches each per `execution_mode`:
+  - `local` — sequential nextflow/python runs
+  - `slurm-standard` — one sbatch per gene group (standard QOS)
+  - `slurm-burst` — chunked into blocks (burst QOS), block size per tier
+
+## The two-workflow pattern at the subproject level
+
+The `trees_gene_groups/` subproject has exactly two workflows:
+
+| Workflow | Purpose |
+|----------|---------|
+| `gene_groups_COPYME/` | This master template (never run from here) |
+| `gene_groups-<source>/` | Per-source instance (copy of master + source-specific STEP_0) |
+
+To add a new source (Pfam, InterPro, custom): make another `gene_groups-<source>/`.
+
+## See also
+
+- `../AI_GUIDE-trees_gene_groups.md` — subproject-level AI guide
+- `../README.md` — subproject overview
+- `../gene_groups-hugo_hgnc/` — current source instance (HUGO HGNC gene groups)

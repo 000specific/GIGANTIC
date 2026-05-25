@@ -1,105 +1,124 @@
-# trees_gene_groups - Gene Group Phylogenetic Analysis
+# trees_gene_groups — Gene Group Phylogenetic Analysis
 
-Build phylogenetic trees for gene groups across GIGANTIC project species. Gene groups are defined by external classification systems (e.g., HUGO HGNC, Pfam), in contrast to trees_gene_families where reference sequences are hand-curated per family.
+Build phylogenetic trees for gene groups across GIGANTIC project species. Gene
+groups are defined by external classification systems (e.g., HUGO HGNC, Pfam,
+custom lists), in contrast to `trees_gene_families` where reference sequences
+are hand-curated per family.
 
-## Overview
+## The two-workflow pattern
 
-This subproject uses a **source-based architecture**: each gene group source (HGNC, Pfam, custom) gets its own directory with a source-specific STEP_0 (RGS generation) and shared STEP_1/STEP_2 pipelines (homolog discovery + tree building).
+This subproject has exactly **two workflows** at the subproject level:
 
-The homolog discovery and phylogenetic analysis pipelines are identical to those in trees_gene_families.
+| Workflow | Purpose |
+|----------|---------|
+| `gene_groups_COPYME/` | Master template (never run from here) |
+| `gene_groups-<source>/` | Per-source instance (copy of master + source-specific STEP_0) |
 
-## Architecture
+To add a new gene-group source (Pfam, InterPro, custom): make another `gene_groups-<source>/` by `cp -r gene_groups_COPYME gene_groups-<source>/`, then replace its `STEP_0-placeholder/` with source-specific STEP_0 code.
 
+## Current sources
+
+| Source | Directory | Status |
+|--------|-----------|--------|
+| HUGO HGNC | `gene_groups-hugo_hgnc/` | ~1,974 protein-coding gene groups; ready to run |
+
+## Three-Step Sequential Pipeline (per source)
+
+STEPs are sequentially dependent: STEP_0 → STEP_1 → STEP_2 → STEP_3.
+
+| Step | Name | What |
+|------|------|------|
+| STEP_0 | RGS Generation (source-specific) | Download source data, generate per-gene-group RGS FASTAs |
+| STEP_1 | Homolog Discovery | RBH/RBF BLAST → AGS (All Gene Set) per gene group |
+| STEP_2 | Phylogenetic Analysis | MAFFT → ClipKit → trees (FastTree/IQ-TREE/etc.) |
+| STEP_3 | Tree Visualization | toytree → PDF + SVG |
+
+Each STEP's `workflow-COPYME-*/RUN-workflow.sh` is the **single user-runnable script** for that STEP. It always runs in orchestrator mode — processes all gene groups in one invocation.
+
+## How a user runs a STEP
+
+Inside a per-source instance:
+
+```bash
+# 1. Copy the STEP's COPYME → RUN_NN at the same level
+cd gene_groups-hugo_hgnc/STEP_1-homolog_discovery/
+cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
+
+# 2. Edit the RUN's config
+cd workflow-RUN_1-rbh_rbf_homologs
+# edit START_HERE-user_config.yaml — set execution_mode, paths, SLURM resources
+
+# 3. Run
+bash RUN-workflow.sh
 ```
-trees_gene_groups/
-├── gene_groups-COPYME/              # Template for new sources
-│   ├── STEP_0-placeholder/          # Source customizes this
-│   ├── STEP_1-homolog_discovery/    # Shared pipeline
-│   └── STEP_2-phylogenetic_analysis/# Shared pipeline
-│
-├── gene_groups-hugo_hgnc/           # HUGO HGNC (first source, ~1,974 groups)
-│   ├── STEP_0-hgnc_gene_groups/     # Downloads HGNC, generates RGS
-│   ├── STEP_1-homolog_discovery/    # Per-gene-group homolog finding
-│   └── STEP_2-phylogenetic_analysis/# Per-gene-group tree building
-│
-└── output_to_input/                 # Final outputs (step-centric)
-    └── gene_groups-hugo_hgnc/
-        ├── STEP_0-hgnc_gene_groups/ # All RGS files
-        ├── STEP_1-homolog_discovery/# Per-gene-group AGS
-        └── STEP_2-phylogenetic_analysis/ # Per-gene-group trees
-```
 
-## Three-Step Pipeline (Per Source)
+`execution_mode` (in YAML) picks the dispatch strategy:
+- `local` — sequential local runs
+- `slurm-standard` — one sbatch per gene group to the standard QOS
+- `slurm-burst` — chunked into blocks, one sbatch per block to the burst QOS
 
-| Step | Name | Runs | Purpose |
-|------|------|------|---------|
-| STEP_0 | RGS Generation | Once per source | Download gene group definitions, generate RGS FASTA files |
-| STEP_1 | Homolog Discovery | Per gene group | Find homologs via RBH/RBF BLAST, produce AGS |
-| STEP_2 | Phylogenetic Analysis | Per gene group | Align, trim, build trees, visualize |
+The orchestrator creates the per-workflow conda env once on the login node before any sbatch (no race condition for sub-jobs).
 
 ## Quick Start (HUGO HGNC)
 
 ```bash
-# 1. Run STEP_0 (generates all ~1,974 RGS files)
+# 1. STEP_0 — generate ~1,974 RGS FASTAs (one time per source)
 cd gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/
-cp -r workflow-COPYME-hgnc_gene_groups workflow-RUN_01-hgnc_gene_groups
-cd workflow-RUN_01-hgnc_gene_groups/
+cp -r workflow-COPYME-hgnc_gene_groups workflow-RUN_1-hgnc_gene_groups
+cd workflow-RUN_1-hgnc_gene_groups
 # Edit START_HERE-user_config.yaml (set human_proteome_path)
 bash RUN-workflow.sh
 
-# 2. Run STEP_1 for ALL gene groups (burst mode)
-cd ../../
-bash RUN-setup_and_submit_step1_burst.sh
+# 2. STEP_1 — homolog discovery across all gene groups
+cd ../../STEP_1-homolog_discovery/
+cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
+cd workflow-RUN_1-rbh_rbf_homologs
+# Edit START_HERE-user_config.yaml (execution_mode, SLURM resources)
+bash RUN-workflow.sh
 
-# Or for a single gene group:
-bash RUN-setup_and_submit_step1_burst.sh --gene-group fascin_family
+# 3. STEP_2 — phylogenetic trees per gene group
+cd ../../STEP_2-phylogenetic_analysis/
+cp -r workflow-COPYME-phylogenetic_analysis workflow-RUN_1-phylogenetic_analysis
+cd workflow-RUN_1-phylogenetic_analysis
+bash RUN-workflow.sh
 
-# 3. Run STEP_2 for all completed STEP_1 gene groups (burst mode)
-bash RUN-setup_and_submit_step2_burst.sh
-
-# Or for a single gene group:
-bash RUN-setup_and_submit_step2_burst.sh --gene-group fascin_family
+# 4. STEP_3 — render trees as PDF + SVG
+cd ../../STEP_3-tree_visualization/
+cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
+cd workflow-RUN_1-tree_visualization
+bash RUN-workflow.sh
 ```
 
-## Batch Processing (Burst Scripts)
+## Conda Environments
 
-Burst scripts at the source level (`gene_groups-hugo_hgnc/`) automate the copy-configure-submit workflow for all gene groups:
+Each STEP has its own conda env (auto-created from `ai/conda_environment.yml` on first run, on the login node, before any sbatch):
 
-- **`RUN-setup_and_submit_step1_burst.sh`** - Reads STEP_0 summary, sets up and submits STEP_1 for all gene groups
-- **`RUN-setup_and_submit_step2_burst.sh`** - Finds completed STEP_1 outputs, sets up and submits STEP_2
+| STEP | Env name | Key deps |
+|------|----------|----------|
+| STEP_0 (HGNC) | (source-specific; see HGNC's STEP_0 conda_environment.yml) | python, pyyaml, requests |
+| STEP_1 | `aiG-trees_gene_groups-rbh_rbf_homologs` | python, nextflow, blast, numpy, scipy |
+| STEP_2 | `aiG-trees_gene_groups-phylogenetic_analysis` | python, nextflow, mafft, clipkit, fasttree, iqtree, veryfasttree |
+| STEP_3 | `aiG-trees_gene_groups-visualization` | python, pip → toytree, toyplot, reportlab |
 
-**Options**: `--dry-run`, `--setup-only`, `--submit-only`, `--gene-group NAME`
+## Subproject layout
+
+```
+trees_gene_groups/
+├── AI_GUIDE-trees_gene_groups.md
+├── README.md                          (this file)
+├── RUN-update_upload_to_server.sh
+├── gene_groups_COPYME/                (master; see its README.md)
+├── gene_groups-hugo_hgnc/             (HGNC source instance)
+├── output_to_input/                   (autopopulated by workflows)
+├── research_notebook/
+└── upload_to_server/                  (autopopulated)
+```
 
 ## Prerequisites
 
-- **genomesDB** subproject must be complete (BLAST databases required)
-- **phylonames** subproject must be complete (species naming)
-- Conda environment: `ai_gigantic_trees_gene_families` (see `../../conda_environments/`)
-
-## Adding a New Gene Group Source
-
-```bash
-cp -r gene_groups-COPYME gene_groups-pfam
-# Replace STEP_0-placeholder with source-specific RGS generation
-# Adjust paths in STEP_1 and STEP_2 configs
-# Create AI_GUIDE-pfam.md
-```
-
-## Tree Methods Available (STEP_2)
-
-| Method | Speed | Use When |
-|--------|-------|----------|
-| FastTree | Fast (minutes) | Default, exploratory analysis |
-| IQ-TREE | Slow (hours-days) | Publication-quality, model selection |
-| VeryFastTree | Very fast | Large datasets (>10,000 sequences) |
-| PhyloBayes | Very slow (days-weeks) | Bayesian counterpoint to ML methods |
-
-## Current Sources
-
-| Source | Gene Groups | Status |
-|--------|-------------|--------|
-| HUGO HGNC | ~1,974 protein-coding groups | STEP_0 complete, STEP_1 all submitted, STEP_2 burst script ready |
+- **genomesDB** subproject must be complete (BLAST databases for STEP_1)
+- **phylonames** subproject must be complete (species naming used throughout)
 
 ## For AI Assistants
 
-See `AI_GUIDE-trees_gene_groups.md` for detailed AI guidance.
+See `AI_GUIDE-trees_gene_groups.md`.

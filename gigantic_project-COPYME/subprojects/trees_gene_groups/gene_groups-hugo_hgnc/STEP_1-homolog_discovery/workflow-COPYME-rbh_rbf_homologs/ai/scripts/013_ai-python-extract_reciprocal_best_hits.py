@@ -63,21 +63,33 @@ def setup_logging( log_file_path: Path ) -> logging.Logger:
 def load_rgs_identifiers(
     mapping_file: Path,
     logger: logging.Logger = None
-) -> List[str]:
+):
     """
-    Load RGS identifiers from mapping file.
-    
+    Load RGS identifiers AND project-DB genome identifiers from mapping file.
+
     Format: genome_identifier<TAB>truncated_rgs_header<TAB>original_full_rgs_header
-    
+
     Args:
         mapping_file: File with source-to-reference ID mapping
         logger: Logger instance
-        
+
     Returns:
-        List of RGS identifiers (includes genome_id, truncated, and original headers)
+        Tuple of:
+          rgs_identifiers (List[str]): RGS headers, both truncated and original
+            full forms. Used for the HIT-side check (a reciprocal hit must land
+            on one of these to confirm BGS is a true gene-family member).
+          projectdb_identifiers_to_exclude_as_queries (Set[str]): The genome
+            protein IDs from the source-genome that correspond to RGS sequences
+            (column 0 of the mapping). Used for the QUERY-side check (BGS
+            queries matching one of these IDs ARE the RGS proteins in their
+            source genome and must be dropped from CGS — otherwise the same
+            protein appears in both CGS and RGS in the final AGS, because the
+            project-database keeps the `g_*` header while the modified-genome
+            BLAST DB carries the RGS-renamed header).
     """
     rgs_identifiers = []
-    
+    projectdb_identifiers_to_exclude_as_queries = set()
+
     with open( mapping_file, 'r' ) as input_file:
         for line in input_file:
             parts = line.strip().split( '\t' )
@@ -86,45 +98,60 @@ def load_rgs_identifiers(
                 projectdb_identifier = parts[ 0 ]    # genome_id
                 truncated_rgs_header = parts[ 1 ]    # truncated header
                 original_full_rgs_header = parts[ 2 ] # original full header
-                
-                # Only add RGS headers — NOT genome protein IDs
-                # Genome IDs (g_*) must NOT be in the set, otherwise
-                # unreplaced genome proteins pass the reciprocal filter
+
+                # HIT-side set: only RGS headers. Genome IDs MUST NOT be here
+                # — otherwise unreplaced genome proteins would pass the
+                # reciprocal filter.
                 rgs_identifiers.append( truncated_rgs_header )
                 rgs_identifiers.append( original_full_rgs_header )
+
+                # QUERY-side set: the genome IDs whose modified-genome entries
+                # carry RGS headers. Reciprocal BLAST queries matching one of
+                # these ARE the RGS protein in the source genome — dropping
+                # them prevents the AGS duplication where the same protein
+                # appears as both `g_*-<species>` (via CGS) and `rgs_*`
+                # (via the explicit RGS addition in script 016).
+                projectdb_identifiers_to_exclude_as_queries.add( projectdb_identifier )
             elif len( parts ) >= 2:
                 # Two-column format (backward compatibility)
                 rgs_identifier = parts[ 1 ]
                 rgs_identifiers.append( rgs_identifier )
-    
+
     if logger:
-        logger.info( f"Loaded {len(rgs_identifiers)} RGS identifiers" )
-    
-    return rgs_identifiers
+        logger.info( f"Loaded {len(rgs_identifiers)} RGS identifiers (HIT-side check)" )
+        logger.info( f"Loaded {len(projectdb_identifiers_to_exclude_as_queries)} project-DB identifiers to exclude as queries (RGS source-genome proteins)" )
+
+    return rgs_identifiers, projectdb_identifiers_to_exclude_as_queries
 
 
 def parse_reciprocal_blast_results(
     blast_report: Path,
     rgs_identifiers: List[str],
+    projectdb_identifiers_to_exclude_as_queries: Set[str],
     rbh_species: List[str],
     output_filtered: Path,
     logger: logging.Logger = None
 ) -> List[str]:
     """
     Parse reciprocal BLAST results and identify keepers.
-    
+
     Args:
         blast_report: Reciprocal BLAST report file
-        rgs_identifiers: List of RGS identifiers to exclude
+        rgs_identifiers: List of RGS identifiers (truncated + original full)
+        projectdb_identifiers_to_exclude_as_queries: Set of source-genome protein
+            IDs that ARE RGS sequences. Queries matching these are dropped to
+            prevent AGS duplication (same protein appearing as both `g_*` via
+            CGS and `rgs_*` via the explicit RGS addition in script 016).
         rbh_species: List of RBH species names (e.g., ['human', 'fly', 'worm'])
         output_filtered: File to write filtered/dropped sequences
         logger: Logger instance
-        
+
     Returns:
         List of keeper sequence identifiers
     """
     keepers = []
     rgs_identifiers_set = set( rgs_identifiers )
+    queries_dropped_as_rgs_source_genome = 0
 
     with open( blast_report, 'r' ) as input_report, \
          open( output_filtered, 'w' ) as output_dropped:
@@ -147,15 +174,25 @@ def parse_reciprocal_blast_results(
             hit_is_rgs = hit in rgs_identifiers_set
 
             if hit_is_rgs:
-                # Keep if NOT in RGS (avoid circularity - RGS hitting itself)
+                # QUERY-side exclusion: if the query is the source-genome version
+                # of an RGS protein (e.g., g_SFN-...-Homo_sapiens when RGS came
+                # from human), drop it. Otherwise the same protein lands in BOTH
+                # CGS (here) and RGS (script 016's explicit add) → AGS dup.
+                if query in projectdb_identifiers_to_exclude_as_queries:
+                    output_dropped.write( f"{query}\t{hit}\tRGS_source_genome_protein_duplicate\n" )
+                    queries_dropped_as_rgs_source_genome += 1
+                    continue
+
+                # Keep if NOT an RGS header itself (avoid circularity — RGS hitting itself)
                 if query not in rgs_identifiers_set:
                     keepers.append( query )
             else:
-                # Log filtered sequence
+                # Log filtered sequence (hit was not an RGS sequence)
                 output_dropped.write( f"{query}\t{hit}\n" )
 
     if logger:
         logger.info( f"Identified {len(keepers)} keeper sequences" )
+        logger.info( f"Dropped {queries_dropped_as_rgs_source_genome} queries identified as RGS source-genome proteins (would have caused AGS duplication)" )
 
     return keepers
 
@@ -295,15 +332,16 @@ def main():
         logger.error( f"Database list not found: {args.database_list}" )
         sys.exit( 1 )
     
-    # Load RGS identifiers
+    # Load RGS identifiers (HIT-side check) and source-genome IDs (QUERY-side exclusion)
     logger.info( "\nLoading RGS identifiers..." )
-    rgs_identifiers = load_rgs_identifiers( args.rgs_mapping, logger )
-    
+    rgs_identifiers, projectdb_identifiers_to_exclude_as_queries = load_rgs_identifiers( args.rgs_mapping, logger )
+
     # Parse reciprocal BLAST results
     logger.info( "\nParsing reciprocal BLAST results..." )
     keepers = parse_reciprocal_blast_results(
         args.blast_report,
         rgs_identifiers,
+        projectdb_identifiers_to_exclude_as_queries,
         rbh_species_list,
         args.output_filtered,
         logger

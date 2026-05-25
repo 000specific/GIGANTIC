@@ -14,13 +14,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from nextflow.config which reads START_HERE-user_config.yaml)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.proteomes_dir = "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
-params.output_dir = "OUTPUT_pipeline"
-params.database_name = "gigantic-T1-blastp"
-params.parallel_jobs = 4
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // ============================================================================
 // PROCESSES
@@ -36,13 +33,13 @@ params.parallel_jobs = 4
 process build_blast_databases {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
     // pipeline completes. Real files only live in OUTPUT_pipeline/1-output/.
 
     output:
-        path "1-output/${params.database_name}", emit: blastdb_dir
+        path "1-output/${params.blast.database_name}", emit: blastdb_dir
         path "1-output/1_ai-makeblastdb_commands.sh", emit: commands_log
         path "1-output/1_ai-log-build_per_genome_blastdbs.log", emit: log
 
@@ -51,10 +48,10 @@ process build_blast_databases {
     mkdir -p 1-output
 
     python3 ${projectDir}/scripts/001_ai-python-build_per_genome_blastdbs.py \\
-        --proteomes-dir ${projectDir}/../${params.proteomes_dir} \\
+        --proteomes-dir ${projectDir}/../${params.inputs.proteomes_dir} \\
         --output-dir 1-output \\
-        --database-name ${params.database_name} \\
-        --parallel ${params.parallel_jobs}
+        --database-name ${params.blast.database_name} \\
+        --parallel ${params.blast.parallel_jobs}
     """
 }
 
@@ -79,7 +76,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/002_ai-python-write_run_log.py \
         --workflow-name "build_gigantic_genomesDB" \
         --subproject-name "genomesDB" \
-        --project-name "${params.project_name}" \
+        --project-name "${params.project.name}" \
         --status success
     """
 }
@@ -96,27 +93,5 @@ workflow {
     write_run_log( build_blast_databases.out.blastdb_dir )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC genomesDB STEP_3 Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Per-genome BLAST protein databases"
-        println ""
-        println "BLAST database symlinks created in output_to_input/ (by RUN-workflow.sh)"
-        println ""
-        println "To use with blastp:"
-        println "  blastp -db OUTPUT_pipeline/1-output/${params.database_name}/PHYLONAME-proteome.aa -query sequences.fasta"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

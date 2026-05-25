@@ -165,29 +165,5 @@ workflow {
     )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_gene_groups STEP_0 Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Downloaded HGNC data (family.csv, hierarchy*.csv, bulk TSV)"
-        println "  2-output/: Aggregated gene sets + metadata TSVs"
-        println "  3-output/: RGS FASTA files + generation manifest/summary"
-        println "  3-output/rgs_fastas/rgs_hugo_hgnc-human-{name}.aa"
-        println ""
-        println "Symlinks created by RUN-workflow.sh in:"
-        println "  ../../output_to_input/STEP_0-hgnc_gene_groups/"
-        println ""
-        println "Next: Use individual RGS files in STEP_1 (validation) or STEP_2 (homolog discovery)"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

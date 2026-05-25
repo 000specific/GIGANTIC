@@ -1,0 +1,43 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env, no
+#                      suffix needed.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_metapredict ( intrinsic disorder
+# prediction, IDR boundary detection, pLDDT scoring on species proteomes ).
+#
+# Created on-demand by RUN-workflow.sh via mamba ( conda fallback ).
+#
+# Lightweight CPU-only tool. No GPU. No license requirement.
+# MetaPredict installs cleanly via pip from PyPI in a single step.
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-annotations_hmms-metapredict
+
+name: aiG-annotations_hmms-metapredict
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # MetaPredict via pip (PyPI)
+  - pip
+  - pip:
+    - metapredict

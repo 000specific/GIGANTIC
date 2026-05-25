@@ -1,245 +1,391 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 10 | Purpose: Run STEP_1 RBH/RBF homolog discovery Nextflow pipeline
+# AI: Claude Code | Opus 4.7 | 2026 May 24 | Purpose: Single user-runnable entry point for STEP_1 RBH/RBF homolog discovery (orchestrator across all gene groups)
 # Human: Eric Edsinger
 
 # =============================================================================
-# RUN-workflow.sh
+# RUN-workflow.sh - STEP_1 RBH/RBF Homolog Discovery Orchestrator
 # =============================================================================
-# Runs the STEP_1 RBH/RBF homolog discovery Nextflow pipeline.
-# Supports both local and SLURM execution via START_HERE-user_config.yaml.
+# Single user-runnable script for this STEP_1 workflow. Invoked from this
+# COPYME directory:
+#     bash RUN-workflow.sh
 #
-# Usage:
-#   bash RUN-workflow.sh
+# Reads START_HERE-user_config.yaml. Always orchestrator mode (no per-gene-group
+# invocation by the user; per-gene-group RUN_01 dirs are created from this
+# COPYME and either run locally or sbatched by this script).
 #
-# Set execution_mode in START_HERE-user_config.yaml:
-#   "local" - runs directly on this machine
-#   "slurm" - submits as a SLURM job with resources from config
+# Pipeline:
+#   1. Create per-workflow conda env once on the login node (if missing)
+#   2. Generate species_keeper_list from genomesDB BLAST DB dir
+#   3. For each gene group in gene_group_source_tsv:
+#        - Set up gene_group-X/workflow-RUN_01-rbh_rbf_homologs/ from this COPYME
+#        - Customize INPUT_user/ and YAML per gene group
+#        - Categorize as small (<= large_threshold seqs) or large
+#   4. Dispatch per execution_mode:
+#        local         - sequential nextflow runs
+#        slurm-standard - 1 sbatch per gene group, standard QOS
+#        slurm-burst    - chunk into blocks (burst_block_size per tier), 1 sbatch per block, burst QOS
 # =============================================================================
 
 set -e
 
-# Get the directory where this script is located
+# Resolve where this script lives
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
-
-# ============================================================================
-# Activate Environment
-# ============================================================================
 
 # Disable NextFlow telemetry/update checks (prevents curl hangs on compute nodes)
 export NXF_OFFLINE=true
 
-module load conda 2>/dev/null || true
-
-if conda activate ai_gigantic_trees_gene_families 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_trees_gene_families"
-else
-    echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
-    echo ""
-    echo "Please run the environment setup script first:"
-    echo "  cd ../../../../../  # Go to project root (from gene_group-X/workflow-RUN_01)"
-    echo "  bash RUN-setup_environments.sh"
-    echo ""
-    echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
-    echo ""
-    exit 1
-fi
-
-# Ensure NextFlow is available (conda env or system module)
-if ! command -v nextflow &> /dev/null; then
-    echo "NextFlow not found in conda env. Trying system module..."
-    module load nextflow 2>/dev/null || true
-    if ! command -v nextflow &> /dev/null; then
-        echo ""
-        echo "ERROR: NextFlow not available!"
-        echo ""
-        echo "Options to resolve:"
-        echo "  1. Install nextflow in conda env: conda install -n ai_gigantic_trees_gene_families -c bioconda nextflow"
-        echo "  2. Load system module: module load nextflow"
-        echo "  3. Install globally: https://www.nextflow.io/docs/latest/install.html"
-        exit 1
-    fi
-    echo "Using NextFlow from system module"
-else
-    echo "NextFlow available"
-fi
-echo ""
-
-# ============================================================================
-# Read execution mode from START_HERE-user_config.yaml
-# ============================================================================
-# Uses grep to parse flat YAML keys (no Python dependency required).
-
+# =============================================================================
+# Read flat top-level YAML keys
+# =============================================================================
 read_config() {
-    # Read a flat YAML key from START_HERE-user_config.yaml (no Python dependency)
-    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
-    echo "${value:-$2}"
+    local key="$1"
+    local default="$2"
+    local value=$(grep "^${key}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//' | sed 's/ *#.*$//')
+    echo "${value:-$default}"
 }
 
 EXECUTION_MODE=$(read_config "execution_mode" "local")
-
-# ============================================================================
-# SLURM submission (if execution_mode is "slurm" and not already inside a job)
-# ============================================================================
-
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    echo "Execution mode: SLURM (submitting job)"
-    echo ""
-
-    # Read resources and SLURM settings from config
-    SLURM_CPUS=$(read_config "cpus" "50")
-    SLURM_MEM=$(read_config "memory_gb" "187")
-    SLURM_TIME=$(read_config "time_hours" "96")
-    SLURM_ACCOUNT=$(read_config "slurm_account" "")
-    SLURM_QOS=$(read_config "slurm_qos" "")
-
-    mkdir -p slurm_logs
-
-    SBATCH_ARGS="--job-name=rbh_rbf_homologs"
-    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
-    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
-    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
-    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/rbh_rbf_homologs-%j.log"
-
-    if [ -n "${SLURM_ACCOUNT}" ]; then
-        SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
-    fi
-    if [ -n "${SLURM_QOS}" ]; then
-        SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
-    fi
-
-    echo "Submitting with: sbatch ${SBATCH_ARGS}"
-    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
-
-    echo ""
-    echo "Job submitted. Check slurm_logs/ for output."
-    conda deactivate 2>/dev/null || true
-    exit 0
-fi
-
-# ============================================================================
-# Run Nextflow pipeline (local execution or inside SLURM job)
-# ============================================================================
-
-if [ -n "${SLURM_JOB_ID}" ]; then
-    echo "Running inside SLURM job ${SLURM_JOB_ID}"
-else
-    echo "Execution mode: local"
-fi
-
-# Validate prerequisites
-echo "Validating prerequisites..."
-echo ""
-
-if [ ! -f "START_HERE-user_config.yaml" ]; then
-    echo "ERROR: Configuration file not found!"
-    echo "Expected: START_HERE-user_config.yaml"
-    exit 1
-fi
-echo "  [OK] Configuration file found"
-
-if [ ! -f "INPUT_user/species_keeper_list.tsv" ]; then
-    echo "ERROR: Species keeper list not found!"
-    echo "Expected: INPUT_user/species_keeper_list.tsv"
-    exit 1
-fi
-echo "  [OK] Species keeper list found"
-echo ""
-
-echo "========================================================================"
-echo "Starting STEP_1 RBH/RBF Homolog Discovery Pipeline"
-echo "========================================================================"
-
-# Optionally resume from cached work/ if user enabled it in config
+STEP0_SUMMARY=$(read_config "gene_group_source_tsv" "")
+RGS_FASTAS_DIR=$(read_config "rgs_fastas_dir" "")
+LARGE_THRESHOLD=$(read_config "large_threshold" "50")
 RESUME=$(read_config "resume" "false")
+
+SLURM_ACCOUNT=$(read_config "slurm_account" "")
+SLURM_QOS_STANDARD=$(read_config "slurm_qos_standard" "")
+SLURM_QOS_BURST=$(read_config "slurm_qos_burst" "")
+
+SMALL_CPUS=$(read_config "small_cpus" "2")
+SMALL_MEM=$(read_config "small_memory_gb" "15")
+SMALL_TIME=$(read_config "small_time_hours" "12")
+SMALL_TIME_BURST=$(read_config "small_time_hours_burst" "96")
+SMALL_BURST_BLOCK=$(read_config "small_burst_block_size" "10")
+
+LARGE_CPUS=$(read_config "large_cpus" "8")
+LARGE_MEM=$(read_config "large_memory_gb" "60")
+LARGE_TIME=$(read_config "large_time_hours" "12")
+LARGE_TIME_BURST=$(read_config "large_time_hours_burst" "96")
+LARGE_BURST_BLOCK=$(read_config "large_burst_block_size" "3")
+
+# Conda env name is fixed per the colocated conda_environment.yml
+ENV_NAME="aiG-trees_gene_groups-rbh_rbf_homologs"
+ENV_YML="ai/conda_environment.yml"
+
+# =============================================================================
+# Sanity-check inputs
+# =============================================================================
+if [ ! -f "${STEP0_SUMMARY}" ]; then
+    echo "ERROR: STEP_0 summary TSV not found: ${STEP0_SUMMARY}" >&2
+    echo "Set gene_group_source_tsv in START_HERE-user_config.yaml" >&2
+    exit 1
+fi
+if [ ! -d "${RGS_FASTAS_DIR}" ]; then
+    echo "ERROR: RGS FASTAs directory not found: ${RGS_FASTAS_DIR}" >&2
+    echo "Set rgs_fastas_dir in START_HERE-user_config.yaml" >&2
+    exit 1
+fi
+if [ ! -f "${ENV_YML}" ]; then
+    echo "ERROR: conda env spec not found: ${ENV_YML}" >&2
+    exit 1
+fi
+
+# Pick blast_databases_dir from nested YAML (extract any indented `blast_databases_dir:` under `inputs:`)
+BLAST_DB_DIR_REL=$(awk '/^inputs:/{inblock=1;next} /^[^[:space:]]/{inblock=0} inblock && /^[[:space:]]+blast_databases_dir:/ {sub(/^[[:space:]]+blast_databases_dir:[[:space:]]*/, ""); gsub(/"/, ""); print; exit}' START_HERE-user_config.yaml)
+if [ -z "${BLAST_DB_DIR_REL}" ]; then
+    echo "ERROR: inputs.blast_databases_dir not set in START_HERE-user_config.yaml" >&2
+    exit 1
+fi
+# YAML paths are relative to per-gene-group RUN_01 depth (sibling of orchestrator at
+# STEP_1/gene_group-X/workflow-RUN_01-*). Resolve from that virtual sibling location.
+BLAST_DB_DIR=$(realpath -m "$(dirname "${SCRIPT_DIR}")/gene_group-PLACEHOLDER/workflow-RUN_01-rbh_rbf_homologs/${BLAST_DB_DIR_REL}" 2>/dev/null)
+if [ ! -d "${BLAST_DB_DIR}" ]; then
+    echo "ERROR: inputs.blast_databases_dir not found or invalid:" >&2
+    echo "  YAML value:     ${BLAST_DB_DIR_REL}" >&2
+    echo "  Resolved path:  ${BLAST_DB_DIR}" >&2
+    exit 1
+fi
+
+# =============================================================================
+# Create conda env once on the login node (first thing, before any sbatch)
+# =============================================================================
+module load conda 2>/dev/null || true
+
+if ! type conda &>/dev/null; then
+    echo "ERROR: conda is not available. On HiPerGator: 'module load conda'." >&2
+    exit 1
+fi
+
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Conda env '${ENV_NAME}' not found. Creating once from ${ENV_YML}..."
+    if command -v mamba &>/dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    echo "Env '${ENV_NAME}' created."
+else
+    echo "Conda env '${ENV_NAME}' already exists. Skipping creation."
+fi
+
+# =============================================================================
+# Generate species_keeper_list from genomesDB
+# =============================================================================
+STEP1_DIR="$(dirname "${SCRIPT_DIR}")"   # parent: .../STEP_1-homolog_discovery
+SPECIES_KEEPER_LIST="${STEP1_DIR}/.species_keeper_list_$$.tsv"
+
+ls "${BLAST_DB_DIR}"/*.aa 2>/dev/null | while read f; do
+    basename "$f" | sed 's/-T1-proteome\.aa$//' | awk -F'_' '{print $(NF-1)"_"$NF}'
+done | sort -u > "${SPECIES_KEEPER_LIST}"
+
+species_count=$(wc -l < "${SPECIES_KEEPER_LIST}")
+echo "Species keeper list: ${species_count} species from genomesDB"
+
+mkdir -p "${STEP1_DIR}/slurm_logs"
+
+# =============================================================================
+# Phase 1: setup gene_group-X/workflow-RUN_01-*/ directories
+# =============================================================================
+SMALL_GG=()
+LARGE_GG=()
+
+setup_count=0
+skip_count=0
+error_count=0
+total_count=0
+
+RGS_SPECIES_MAP_SOURCE="${SCRIPT_DIR}/INPUT_user/rgs_species_map.tsv"
+
+while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filename sequence_count; do
+    total_count=$((total_count + 1))
+
+    DEST="${STEP1_DIR}/gene_group-${sanitized_name}/workflow-RUN_01-rbh_rbf_homologs"
+    RGS_SOURCE="${RGS_FASTAS_DIR}/${rgs_filename}"
+
+    if [ ! -f "${RGS_SOURCE}" ]; then
+        echo "  ERROR: RGS not found: ${rgs_filename}" >&2
+        error_count=$((error_count + 1))
+        continue
+    fi
+
+    if [ "$sequence_count" -gt "$LARGE_THRESHOLD" ] 2>/dev/null; then
+        LARGE_GG+=("${sanitized_name}")
+    else
+        SMALL_GG+=("${sanitized_name}")
+    fi
+
+    if [ -d "${DEST}" ]; then
+        skip_count=$((skip_count + 1))
+        continue
+    fi
+
+    # Create gene_group-X/workflow-RUN_01-* from this COPYME
+    mkdir -p "${STEP1_DIR}/gene_group-${sanitized_name}"
+    cp -r "${SCRIPT_DIR}" "${DEST}"
+
+    # Drop the COPYME's INPUT_user contents and seed with per-gene-group inputs
+    mkdir -p "${DEST}/INPUT_user"
+    rm -f "${DEST}/INPUT_user/"*.aa  2>/dev/null
+    cp -L "${RGS_SOURCE}" "${DEST}/INPUT_user/${rgs_filename}"
+    cp "${SPECIES_KEEPER_LIST}" "${DEST}/INPUT_user/species_keeper_list.tsv"
+    if [ -f "${RGS_SPECIES_MAP_SOURCE}" ]; then
+        cp "${RGS_SPECIES_MAP_SOURCE}" "${DEST}/INPUT_user/rgs_species_map.tsv"
+    fi
+
+    # Patch the per-RUN_01 YAML
+    CONFIG_FILE="${DEST}/START_HERE-user_config.yaml"
+    sed -i "s|^  name: \"PLACEHOLDER\"|  name: \"${sanitized_name}\"|" "${CONFIG_FILE}"
+    sed -i "s|^  rgs_full_length_file: \"INPUT_user/PLACEHOLDER.aa\"|  rgs_full_length_file: \"INPUT_user/${rgs_filename}\"|" "${CONFIG_FILE}"
+
+    # Flatten the per-RUN_01 YAML to .params.json for nextflow -params-file
+    # (nextflow 26.x strict config parser disallows Groovy imports in nextflow.config)
+    DEST="${DEST}" CONFIG_FILE="${CONFIG_FILE}" python3 - <<'PYTHON_FLATTEN'
+import os, yaml, json
+from pathlib import Path
+dest = Path(os.environ['DEST']).resolve()
+cfg_path = Path(os.environ['CONFIG_FILE'])
+with open(cfg_path) as f:
+    cfg = yaml.safe_load(f)
+
+def resolve(rel):
+    if rel is None: return None
+    p = Path(rel)
+    return str(p if p.is_absolute() else (dest / p).resolve())
+
+gf = cfg.get('gene_family', {}) or {}
+inp = cfg.get('inputs', {}) or {}
+proj = cfg.get('project', {}) or {}
+bl = cfg.get('blast', {}) or {}
+out = cfg.get('output', {}) or {}
+
+is_full = gf.get('rgs_sequence_is_full_length', True)
+rgs_full = gf.get('rgs_full_length_file')
+rgs_sub = gf.get('rgs_subsequence_file')
+
+flat = {
+    'gene_family': gf.get('name'),
+    'rgs_full_length_file': rgs_full,
+    'rgs_subsequence_file': rgs_sub,
+    'rgs_sequence_is_full_length': bool(is_full),
+    'rgs_file': rgs_full if is_full else rgs_sub,
+    'include_orphan_rgs': bool(gf.get('include_orphan_rgs', False)),
+
+    'species_keeper_list': inp.get('species_keeper_list', 'INPUT_user/species_keeper_list.tsv'),
+    'rgs_species_map':     inp.get('rgs_species_map',     'INPUT_user/rgs_species_map.tsv'),
+    'blast_databases_dir': resolve(inp.get('blast_databases_dir')),
+    'rgs_genomes_dir':     resolve(inp.get('rgs_genomes_dir')),
+
+    'project_database': proj.get('database', 'speciesN_T1-speciesN'),
+    'project_name':     proj.get('name', 'GIGANTIC'),
+
+    'blast_evalue':     str(bl.get('evalue', '1e-3')),
+    'blast_threads':    int(bl.get('threads', 10)),
+    'blast_conda_env':  bl.get('conda_env', 'blast'),
+
+    'output_dir':  out.get('base_dir', 'OUTPUT_pipeline'),
+
+    # Per-label NextFlow process resources (Layer 3 - inside SLURM block)
+    # Threaded directly into nextflow.config withLabel: blocks via params.*
+    'local_cpus':       int(cfg.get('local_cpus', 2)),
+    'local_memory_gb':  int(cfg.get('local_memory_gb', 10)),
+    'local_time_hours': int(cfg.get('local_time_hours', 1)),
+    'blast_cpus':       int(cfg.get('blast_cpus', 10)),
+    'blast_memory_gb':  int(cfg.get('blast_memory_gb', 75)),
+    'blast_time_hours': int(cfg.get('blast_time_hours', 24)),
+}
+with open(dest / '.params.json', 'w') as f:
+    json.dump(flat, f, indent=2)
+PYTHON_FLATTEN
+
+    setup_count=$((setup_count + 1))
+done < <(tail -n +2 "${STEP0_SUMMARY}")
+
+rm -f "${SPECIES_KEEPER_LIST}"
+
+echo ""
+echo "Setup: ${setup_count} new, ${skip_count} already exist, ${error_count} errors"
+echo "Small gene groups (<= ${LARGE_THRESHOLD} seqs): ${#SMALL_GG[@]}"
+echo "Large gene groups (>  ${LARGE_THRESHOLD} seqs): ${#LARGE_GG[@]}"
+echo ""
+
+# Shuffle so slow groups spread evenly across blocks
+if [ "${#SMALL_GG[@]}" -gt 0 ]; then
+    SMALL_GG=($(printf '%s\n' "${SMALL_GG[@]}" | shuf))
+fi
+if [ "${#LARGE_GG[@]}" -gt 0 ]; then
+    LARGE_GG=($(printf '%s\n' "${LARGE_GG[@]}" | shuf))
+fi
+
+# =============================================================================
+# Phase 2: dispatch per execution_mode
+# =============================================================================
 RESUME_FLAG=""
 if [ "${RESUME}" == "true" ]; then
     RESUME_FLAG="-resume"
-    echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-nextflow run ai/main.nf ${RESUME_FLAG} \
-    -c ai/nextflow.config
+# Build the per-gene-group nextflow invocation as a reusable shell snippet.
+# Runs inside the gene-group's workflow-RUN_01 directory; uses the activated env.
+# Uses -params-file .params.json (flattened from START_HERE-user_config.yaml at setup time).
+nextflow_run_cmd() {
+    local dest="$1"
+    echo "cd '${dest}' && nextflow run ai/main.nf ${RESUME_FLAG} -c ai/nextflow.config -params-file .params.json"
+}
 
-EXIT_CODE=$?
+case "${EXECUTION_MODE}" in
+    local)
+        echo "Execution mode: local (sequential)"
+        conda activate "${ENV_NAME}" 2>/dev/null || true
+        for gg in "${SMALL_GG[@]}" "${LARGE_GG[@]}"; do
+            DEST="${STEP1_DIR}/gene_group-${gg}/workflow-RUN_01-rbh_rbf_homologs"
+            echo ""
+            echo "------------------------------------------------------------"
+            echo "[$(date)] Running locally: ${gg}"
+            echo "------------------------------------------------------------"
+            ( cd "${DEST}" && nextflow run ai/main.nf ${RESUME_FLAG} -c ai/nextflow.config -params-file .params.json ) \
+                || echo "  FAILED: ${gg}"
+        done
+        ;;
 
-if [ $EXIT_CODE -ne 0 ]; then
-    echo "========================================================================"
-    echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
-    echo "========================================================================"
-    exit $EXIT_CODE
-fi
+    slurm-standard)
+        echo "Execution mode: slurm-standard (1 sbatch per gene group, QOS=${SLURM_QOS_STANDARD})"
+        for tier in small large; do
+            if [ "$tier" = "small" ]; then
+                arr=("${SMALL_GG[@]}")
+                cpus="${SMALL_CPUS}"; mem="${SMALL_MEM}"; time_h="${SMALL_TIME}"
+            else
+                arr=("${LARGE_GG[@]}")
+                cpus="${LARGE_CPUS}"; mem="${LARGE_MEM}"; time_h="${LARGE_TIME}"
+            fi
+            for gg in "${arr[@]}"; do
+                DEST="${STEP1_DIR}/gene_group-${gg}/workflow-RUN_01-rbh_rbf_homologs"
+                wrap="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; $(nextflow_run_cmd "${DEST}")"
+                sbatch \
+                    --job-name="s1_${tier}_${gg}" \
+                    --account="${SLURM_ACCOUNT}" \
+                    --qos="${SLURM_QOS_STANDARD}" \
+                    --cpus-per-task="${cpus}" \
+                    --mem="${mem}gb" \
+                    --time="${time_h}:00:00" \
+                    --output="${STEP1_DIR}/slurm_logs/s1_${tier}_${gg}-%j.log" \
+                    --wrap="${wrap}"
+            done
+        done
+        ;;
 
-# ============================================================================
-# Create symlinks for output_to_input (subproject root)
-# ============================================================================
-# Real files live in OUTPUT_pipeline/16-output/ (created by NextFlow above).
-# Symlinks are organized step-centrically at the subproject-root output_to_input/:
-#   ../../../../output_to_input/<source>/STEP_1-homolog_discovery/<gene_group>/
-#
-# Structure (from trees_gene_groups/output_to_input/):
-#   gene_groups-hugo_hgnc/
-#   ├── STEP_0-hgnc_gene_groups/           <- created by STEP_0
-#   ├── STEP_1-homolog_discovery/          <- created here
-#   │   ├── gene_group-gap_junction_proteins/
-#   │   └── gene_group-fascin_family/
-#   └── STEP_2-phylogenetic_analysis/      <- created by STEP_2
-#
-# Directory context (from gene_group-X/workflow-RUN_01):
-#   ../           -> gene_group-X/
-#   ../../        -> STEP_1-homolog_discovery/
-#   ../../../     -> gene_groups-[source]/
-#   ../../../../  -> trees_gene_groups/
-#
-# Symlink targets are RELATIVE paths from the symlink location to
-# the real files in OUTPUT_pipeline/.
-# ============================================================================
+    slurm-burst)
+        echo "Execution mode: slurm-burst (chunked, QOS=${SLURM_QOS_BURST})"
+        for tier in small large; do
+            if [ "$tier" = "small" ]; then
+                arr=("${SMALL_GG[@]}")
+                cpus="${SMALL_CPUS}"; mem="${SMALL_MEM}"; time_h="${SMALL_TIME_BURST}"; block="${SMALL_BURST_BLOCK}"
+            else
+                arr=("${LARGE_GG[@]}")
+                cpus="${LARGE_CPUS}"; mem="${LARGE_MEM}"; time_h="${LARGE_TIME_BURST}"; block="${LARGE_BURST_BLOCK}"
+            fi
 
-echo ""
-echo "Creating symlinks for downstream workflows..."
+            n=${#arr[@]}
+            i=0
+            block_n=0
+            while [ "$i" -lt "$n" ]; do
+                end=$((i + block))
+                [ "$end" -gt "$n" ] && end="$n"
+                block_n=$((block_n + 1))
+                block_name="s1_${tier}_blk_$(printf '%02d' ${block_n})"
 
-# Extract gene family name from config
-GENE_FAMILY=$(grep -A5 "^gene_family:" START_HERE-user_config.yaml | grep "name:" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
-WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-# Derive directory names from the trees_gene_groups directory structure:
-#   SCRIPT_DIR = .../gene_groups-<source>/STEP_1-homolog_discovery/gene_group-<name>/workflow-RUN_01
-GENE_GROUP_DIR="$(basename "$(dirname "${SCRIPT_DIR}")")"
-SOURCE_DIR="$(basename "$(dirname "$(dirname "$(dirname "${SCRIPT_DIR}")")")")"
+                # Build runner: sequential nextflow per gene group in the block
+                runner="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; "
+                j=$i
+                while [ "$j" -lt "$end" ]; do
+                    gg="${arr[$j]}"
+                    DEST="${STEP1_DIR}/gene_group-${gg}/workflow-RUN_01-rbh_rbf_homologs"
+                    runner+="echo '----------'; echo \"[\$(date)] Starting: ${gg}\"; "
+                    runner+="( $(nextflow_run_cmd "${DEST}") ) || echo \"FAILED: ${gg}\"; "
+                    j=$((j + 1))
+                done
 
-# --- Subproject-root output_to_input ---
-# From gene_group-X/workflow-RUN_01: 4 levels up to trees_gene_groups
-SYMLINK_DIR="../../../../output_to_input/${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}"
-mkdir -p "${SYMLINK_DIR}"
-find "${SYMLINK_DIR}" -type l -delete 2>/dev/null
+                sbatch \
+                    --job-name="${block_name}" \
+                    --account="${SLURM_ACCOUNT}" \
+                    --qos="${SLURM_QOS_BURST}" \
+                    --cpus-per-task="${cpus}" \
+                    --mem="${mem}gb" \
+                    --time="${time_h}:00:00" \
+                    --output="${STEP1_DIR}/slurm_logs/${block_name}-%j.log" \
+                    --wrap="${runner}"
 
-# Symlink location: trees_gene_groups/output_to_input/<source>/STEP_1/gene_group-X/
-# Target location:  trees_gene_groups/<source>/STEP_1/gene_group-X/workflow-RUN_01/OUTPUT_pipeline/16-output/
-for ags_file in OUTPUT_pipeline/16-output/16_ai-ags-*.aa; do
-    if [ -f "$ags_file" ]; then
-        filename=$(basename "$ags_file")
-        ln -sf "../../../../${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${ags_file}" \
-            "${SYMLINK_DIR}/${filename}"
-    fi
-done
+                i="$end"
+            done
+        done
+        ;;
 
-echo "  output_to_input/${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}/ -> symlinks created"
+    *)
+        echo "ERROR: Invalid execution_mode: ${EXECUTION_MODE}" >&2
+        echo "Must be one of: local, slurm-standard, slurm-burst" >&2
+        exit 1
+        ;;
+esac
 
 echo ""
 echo "========================================================================"
-echo "SUCCESS! STEP_1 pipeline complete."
-echo ""
-echo "Research outputs (real files):"
-echo "  OUTPUT_pipeline/1-output/ through 16-output/"
-echo ""
-echo "Downstream symlinks:"
-echo "  ../../../../output_to_input/${SOURCE_DIR}/STEP_1-homolog_discovery/${GENE_GROUP_DIR}/"
-echo ""
-echo "Next: Run STEP_2 phylogenetic analysis with AGS files"
+echo "Dispatch complete: $(date)"
 echo "========================================================================"
-echo "Completed: $(date)"
-
-# ============================================================================
-# Deactivate Conda Environment
-# ============================================================================
-conda deactivate 2>/dev/null || true

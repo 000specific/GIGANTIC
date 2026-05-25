@@ -5,18 +5,17 @@
 ## Quick Start
 
 ```bash
-module load conda
-conda activate ai_gigantic_orthogroups
-module load nextflow
-
 # Verify at least 2 tools have results (all in subproject-root output_to_input/)
 ls ../../output_to_input/BLOCK_orthofinder/
 ls ../../output_to_input/BLOCK_orthohmm/
 ls ../../output_to_input/BLOCK_broccoli/
 
-bash ../RUN-workflow.sh
-# Or: sbatch ../RUN-workflow.sbatch
+bash RUN-workflow.sh
 ```
+
+Modern conda convention: `RUN-workflow.sh` auto-creates env `aiG-orthogroups-comparison`
+from `ai/conda_environment.yml` on first run, then activates it before invoking
+NextFlow. No need to `conda activate` manually.
 
 ## Pipeline Steps
 

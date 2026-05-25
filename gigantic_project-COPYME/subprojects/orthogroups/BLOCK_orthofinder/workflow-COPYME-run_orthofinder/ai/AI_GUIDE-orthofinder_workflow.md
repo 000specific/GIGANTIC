@@ -5,16 +5,11 @@
 ## Quick Start
 
 ```bash
-# 1. Activate environment
-module load conda
-conda activate ai_gigantic_orthogroups
-module load nextflow
+# 1. Edit configuration
+vi START_HERE-user_config.yaml
 
-# 2. Edit configuration
-vi ../START_HERE-user_config.yaml
-
-# 3. Run pipeline
-bash ../RUN-workflow.sh
+# 2. Run pipeline (auto-creates aiG-orthogroups-orthofinder env on first run)
+bash RUN-workflow.sh
 
 # Or submit to SLURM
 sbatch ../RUN-workflow.sbatch
@@ -46,7 +41,7 @@ ls ../../output_to_input/BLOCK_orthofinder/
 
 | Error | Solution |
 |-------|----------|
-| OrthoFinder not found | `conda activate ai_gigantic_orthogroups` |
+| OrthoFinder not found | env auto-creates via `RUN-workflow.sh`; or `conda activate aiG-orthogroups-orthofinder` |
 | No .aa files | Check proteomes_dir path in config |
 | Results_* dir not found | OrthoFinder failed; check 3-output log |
 | Stale Nextflow cache | `rm -rf work .nextflow .nextflow.log*` |

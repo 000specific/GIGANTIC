@@ -1,245 +1,273 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.7 | 2026 April 19 | Purpose: Run STEP_3 tree_visualization workflow
+# AI: Claude Code | Opus 4.7 | 2026 May 24 | Purpose: Single user-runnable entry point for STEP_3 tree visualization (orchestrator across all gene groups)
 # Human: Eric Edsinger
 
-################################################################################
-# GIGANTIC trees_gene_families - STEP_3 tree_visualization
-################################################################################
+# =============================================================================
+# RUN-workflow.sh - STEP_3 Tree Visualization Orchestrator
+# =============================================================================
+# Single user-runnable script. Invoke from a workflow-RUN_NN-tree_visualization/
+# copy of this COPYME:
+#     bash RUN-workflow.sh
 #
-# PURPOSE:
-# Render gene family phylogenetic trees (produced by STEP_2) as PDF + SVG
-# using toytree. This is decoupled from STEP_2 deliberately: the newick is
-# the scientific artifact, the PDF is presentation. A render failure should
-# never invalidate the science.
+# Reads START_HERE-user_config.yaml. Always orchestrator mode (creates and
+# dispatches per-gene-group RUN_01 sub-runs at the STEP_3 parent level).
 #
-# USAGE:
-#   bash RUN-workflow.sh
+# Pipeline:
+#   1. Create/heal per-workflow conda env once on the login node (if missing or broken)
+#   2. For each gene group in gene_group_source_tsv with STEP_2 tree newick output:
+#        - Set up gene_group-X/workflow-RUN_01-tree_visualization/ from this COPYME
+#        - Customize per-gene-group YAML
+#        - Skip if STEP_2 hasn't produced newicks for that gene group
+#   3. Dispatch per execution_mode (local | slurm-standard | slurm-burst)
 #
-# BEFORE RUNNING:
-# 1. Edit START_HERE-user_config.yaml (set gene_family name to match STEP_2 output)
-# 2. Verify STEP_2 has populated output_to_input:
-#    ../../../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
-#
-# WHAT THIS DOES:
-# 1. Creates/activates the aiG-trees_gene_groups-visualization conda env
-#    (self-heals broken envs from prior failed installs)
-# 2. Runs Script 001 which:
-#    - Auto-discovers tree newicks in STEP_2 output
-#    - Renders each to PDF + SVG with species color-coding and branch support
-#    - Writes a summary report
-# 3. Runs Script 002 to write the workflow run log
-# 4. Creates symlinks in output_to_input/gene_groups-hugo_hgnc/STEP_3-tree_visualization/gene_group-<gene_family>/
-#
-# OUTPUT:
-# OUTPUT_pipeline/1-output/
-#   1_ai-visualization-<gene_family>-<method>.pdf    (one per tree method)
-#   1_ai-visualization-<gene_family>-<method>.svg
-#   1_ai-visualization_summary.md
-#
-# SOFT-FAIL:
-# If toytree import fails or rendering breaks, the script writes a placeholder
-# and exits 0. STEP_2 newicks remain valid. The placeholder file documents
-# how to retry manually.
-#
-################################################################################
+# STEP_3 rendering is soft-fail by design (render failure -> placeholder + exit 0).
+# =============================================================================
 
 set -e
 
-echo "========================================================================"
-echo "GIGANTIC trees_gene_families - STEP_3 tree_visualization"
-echo "========================================================================"
-echo ""
-echo "Started: $(date)"
-echo ""
-
-# Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
-# Simple YAML reader for flat top-level keys (no Python dependency)
+# =============================================================================
+# Read flat top-level YAML keys
+# =============================================================================
 read_config() {
-    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
-    echo "${value:-$2}"
+    local key="$1"
+    local default="$2"
+    local value=$(grep "^${key}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//' | sed 's/ *#.*$//')
+    echo "${value:-$default}"
 }
 
-# Read gene_family from the nested config structure
-GENE_FAMILY=$(grep -A 5 "^gene_family:" START_HERE-user_config.yaml | grep "  name:" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+STEP0_SUMMARY=$(read_config "gene_group_source_tsv" "")
+STEP2_OUTPUT_TO_INPUT=$(read_config "step2_output_to_input_dir" "")
+LARGE_THRESHOLD=$(read_config "large_threshold" "50")
 
-# Derive directory names from the trees_gene_groups directory structure:
-#   SCRIPT_DIR = .../gene_groups-<source>/STEP_3-tree_visualization/gene_group-<name>/workflow-RUN_01
-GENE_GROUP_DIR="$(basename "$(dirname "${SCRIPT_DIR}")")"
-SOURCE_DIR="$(basename "$(dirname "$(dirname "$(dirname "${SCRIPT_DIR}")")")")"
-WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+SLURM_ACCOUNT=$(read_config "slurm_account" "")
+SLURM_QOS_STANDARD=$(read_config "slurm_qos_standard" "")
+SLURM_QOS_BURST=$(read_config "slurm_qos_burst" "")
 
-echo "Configuration:"
-echo "  Gene group: ${GENE_FAMILY}"
-echo "  Source: ${SOURCE_DIR}"
-echo "  Gene group dir: ${GENE_GROUP_DIR}"
-echo ""
+SMALL_CPUS=$(read_config "small_cpus" "2")
+SMALL_MEM=$(read_config "small_memory_gb" "8")
+SMALL_TIME=$(read_config "small_time_hours" "2")
+SMALL_TIME_BURST=$(read_config "small_time_hours_burst" "12")
+SMALL_BURST_BLOCK=$(read_config "small_burst_block_size" "50")
 
-# ============================================================================
-# Validate prerequisites
-# ============================================================================
-
-echo "Validating prerequisites..."
-
-if [ ! -f "START_HERE-user_config.yaml" ]; then
-    echo "ERROR: Configuration file not found: START_HERE-user_config.yaml"
-    exit 1
-fi
-echo "  [OK] Configuration file found"
-
-if [ -z "${GENE_FAMILY}" ]; then
-    echo "ERROR: gene_family not set in START_HERE-user_config.yaml"
-    exit 1
-fi
-echo "  [OK] Gene family configured: ${GENE_FAMILY}"
-
-STEP2_DIR="../../../../output_to_input/${SOURCE_DIR}/STEP_2-phylogenetic_analysis/${GENE_GROUP_DIR}"
-if [ ! -d "${STEP2_DIR}" ]; then
-    echo "ERROR: STEP_2 output not found!"
-    echo "  Expected: ${STEP2_DIR}"
-    echo "  Run STEP_2 first for gene family '${GENE_FAMILY}'."
-    exit 1
-fi
-echo "  [OK] STEP_2 output found"
-
-echo ""
-
-# ============================================================================
-# Activate GIGANTIC Environment (on-demand creation + self-heal)
-# ============================================================================
-# This workflow needs: python, pyyaml, toytree, toyplot, reportlab
-# All installed from ai/conda_environment.yml.
+LARGE_CPUS=$(read_config "large_cpus" "2")
+LARGE_MEM=$(read_config "large_memory_gb" "16")
+LARGE_TIME=$(read_config "large_time_hours" "4")
+LARGE_TIME_BURST=$(read_config "large_time_hours_burst" "24")
+LARGE_BURST_BLOCK=$(read_config "large_burst_block_size" "20")
 
 ENV_NAME="aiG-trees_gene_groups-visualization"
 ENV_YML="ai/conda_environment.yml"
 
-# Load conda module on HPC systems
-module load conda 2>/dev/null || true
-
-if ! command -v conda &> /dev/null; then
-    echo "ERROR: conda not found!"
-    echo "On HPC (HiPerGator): module load conda"
+# =============================================================================
+# Sanity-check inputs
+# =============================================================================
+if [ ! -f "${STEP0_SUMMARY}" ]; then
+    echo "ERROR: STEP_0 summary TSV not found: ${STEP0_SUMMARY}" >&2
+    exit 1
+fi
+if [ ! -d "${STEP2_OUTPUT_TO_INPUT}" ]; then
+    echo "ERROR: STEP_2 output_to_input dir not found: ${STEP2_OUTPUT_TO_INPUT}" >&2
+    echo "Run STEP_2 first." >&2
+    exit 1
+fi
+if [ ! -f "${ENV_YML}" ]; then
+    echo "ERROR: conda env spec not found: ${ENV_YML}" >&2
     exit 1
 fi
 
-# Detect incomplete env (directory exists but missing Python) and rebuild.
-# This addresses the "env dir created but install failed partway" failure mode
-# we've seen bite ete3-based envs on conda-forge.
-env_is_complete() {
-    local env_prefix=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
-    if [ -z "${env_prefix}" ]; then
-        return 1  # not found at all
-    fi
-    if [ ! -x "${env_prefix}/bin/python" ]; then
-        return 1  # env dir exists but broken/empty
-    fi
-    return 0
-}
+# =============================================================================
+# Create/heal conda env once on the login node
+# =============================================================================
+module load conda 2>/dev/null || true
 
-if ! env_is_complete; then
-    # Make sure no broken husk remains
-    if conda env list 2>/dev/null | awk '{print $1}' | grep -q "^${ENV_NAME}$"; then
-        echo "Removing broken/incomplete env '${ENV_NAME}'..."
-        conda env remove -n "${ENV_NAME}" -y 2>&1 | tail -3
-    fi
+if ! type conda &>/dev/null; then
+    echo "ERROR: conda is not available. On HiPerGator: 'module load conda'." >&2
+    exit 1
+fi
 
-    echo "Creating conda env '${ENV_NAME}' from ${ENV_YML}..."
-    if [ ! -f "${ENV_YML}" ]; then
-        echo "ERROR: Environment spec not found at: ${ENV_YML}"
-        exit 1
-    fi
-    if command -v mamba &> /dev/null; then
+# Self-heal pattern: detect broken env (dir exists but bin/python missing) and rebuild
+ENV_PREFIX=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
+if [ -n "${ENV_PREFIX}" ] && [ -d "${ENV_PREFIX}" ] && [ ! -x "${ENV_PREFIX}/bin/python" ]; then
+    echo "Conda env '${ENV_NAME}' is broken (no bin/python). Removing and rebuilding..."
+    conda env remove -n "${ENV_NAME}" -y 2>/dev/null || rm -rf "${ENV_PREFIX}"
+    ENV_PREFIX=""
+fi
+
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Conda env '${ENV_NAME}' not found. Creating once from ${ENV_YML}..."
+    if command -v mamba &>/dev/null; then
         mamba env create -f "${ENV_YML}" -y
     else
         conda env create -f "${ENV_YML}" -y
     fi
-    if ! env_is_complete; then
-        echo "ERROR: Environment creation failed -- '${ENV_NAME}' still not complete."
-        exit 1
-    fi
-    echo "Env '${ENV_NAME}' created successfully."
-fi
-
-# Activate the env
-if conda activate "${ENV_NAME}" 2>/dev/null; then
-    echo "Activated conda environment: ${ENV_NAME}"
+    echo "Env '${ENV_NAME}' created."
 else
-    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+    echo "Conda env '${ENV_NAME}' already exists. Skipping creation."
 fi
-echo ""
 
-# ============================================================================
-# Run Script 001: render_trees (soft-fail on rendering issues)
-# ============================================================================
+# =============================================================================
+# Phase 1: setup gene_group-X/workflow-RUN_01-tree_visualization dirs
+# =============================================================================
+STEP3_DIR="$(dirname "${SCRIPT_DIR}")"
+mkdir -p "${STEP3_DIR}/slurm_logs"
 
-echo "Running Script 001: render_trees (PDF + SVG)..."
-echo ""
+SMALL_GG=()
+LARGE_GG=()
 
-python3 ai/scripts/001_ai-python-render_trees.py \
-    --config START_HERE-user_config.yaml
+setup_count=0
+skip_count=0
+no_trees_count=0
+total_count=0
 
-# Script 001 is soft-fail -- it always exits 0 unless there's a config error.
-# STEP_2 newicks remain the valid artifact regardless of rendering outcome.
+while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filename sequence_count; do
+    total_count=$((total_count + 1))
 
-# ============================================================================
-# Run Script 002: write_run_log
-# ============================================================================
-
-echo ""
-echo "Running Script 002: write_run_log..."
-
-python3 ai/scripts/002_ai-python-write_run_log.py \
-    --workflow-name "tree_visualization" \
-    --subproject-name "trees_gene_families" \
-    --project-name "${GENE_FAMILY}" \
-    --status success
-
-# ============================================================================
-# Create symlinks for output_to_input
-# ============================================================================
-# Expose the rendered PDFs/SVGs at output_to_input/gene_groups-hugo_hgnc/STEP_3-tree_visualization/gene_group-<gene_family>/
-# for downstream consumption (upload_to_server publishing, browsing, etc.)
-
-echo ""
-echo "Creating symlinks for downstream..."
-
-# SYMLINK_DIR and SOURCE_DIR/GENE_GROUP_DIR/WORKFLOW_DIR_NAME already derived at top
-SYMLINK_DIR="../../../../output_to_input/${SOURCE_DIR}/STEP_3-tree_visualization/${GENE_GROUP_DIR}"
-mkdir -p "${SYMLINK_DIR}"
-
-# Remove stale symlinks from previous runs
-for old_link in "${SYMLINK_DIR}"/*; do
-    if [ -L "${old_link}" ]; then
-        rm "${old_link}"
+    # STEP_2 must have produced at least one newick for this gene group
+    NEWICK_DIR="${STEP2_OUTPUT_TO_INPUT}/gene_group-${sanitized_name}"
+    if [ ! -d "${NEWICK_DIR}" ] || ! ls "${NEWICK_DIR}"/*.fasttree "${NEWICK_DIR}"/*.treefile "${NEWICK_DIR}"/*.veryfasttree "${NEWICK_DIR}"/*.phylobayes.nwk &>/dev/null; then
+        no_trees_count=$((no_trees_count + 1))
+        continue
     fi
-done
 
-# Link each rendered file (PDF, SVG, summary)
-# Symlink location: trees_gene_groups/output_to_input/<source>/STEP_3/gene_group-X/
-# Target location:  trees_gene_groups/<source>/STEP_3/gene_group-X/workflow-RUN_01/OUTPUT_pipeline/1-output/
-for rendered_file in OUTPUT_pipeline/1-output/*; do
-    if [ -f "${rendered_file}" ]; then
-        filename=$(basename "${rendered_file}")
-        # Target uses relative path from the symlink location to the real file
-        ln -sf "../../../../../${SOURCE_DIR}/STEP_3-tree_visualization/${GENE_GROUP_DIR}/${WORKFLOW_DIR_NAME}/${rendered_file}" \
-            "${SYMLINK_DIR}/${filename}"
+    DEST="${STEP3_DIR}/gene_group-${sanitized_name}/workflow-RUN_01-tree_visualization"
+
+    if [ "$sequence_count" -gt "$LARGE_THRESHOLD" ] 2>/dev/null; then
+        LARGE_GG+=("${sanitized_name}")
+    else
+        SMALL_GG+=("${sanitized_name}")
     fi
-done
 
-echo "  output_to_input/${SOURCE_DIR}/STEP_3-tree_visualization/${GENE_GROUP_DIR}/ -> symlinks created"
+    if [ -d "${DEST}" ]; then
+        skip_count=$((skip_count + 1))
+        continue
+    fi
+
+    mkdir -p "${STEP3_DIR}/gene_group-${sanitized_name}"
+    cp -r "${SCRIPT_DIR}" "${DEST}"
+
+    CONFIG_FILE="${DEST}/START_HERE-user_config.yaml"
+    sed -i "s|^  name: \"PLACEHOLDER\"|  name: \"${sanitized_name}\"|" "${CONFIG_FILE}"
+
+    setup_count=$((setup_count + 1))
+done < <(tail -n +2 "${STEP0_SUMMARY}")
+
+echo ""
+echo "Setup: ${setup_count} new, ${skip_count} already exist, ${no_trees_count} skipped (no STEP_2 newicks)"
+echo "Small gene groups (<= ${LARGE_THRESHOLD} RGS seqs): ${#SMALL_GG[@]}"
+echo "Large gene groups (>  ${LARGE_THRESHOLD} RGS seqs): ${#LARGE_GG[@]}"
+echo ""
+
+if [ "${#SMALL_GG[@]}" -gt 0 ]; then
+    SMALL_GG=($(printf '%s\n' "${SMALL_GG[@]}" | shuf))
+fi
+if [ "${#LARGE_GG[@]}" -gt 0 ]; then
+    LARGE_GG=($(printf '%s\n' "${LARGE_GG[@]}" | shuf))
+fi
+
+# =============================================================================
+# Phase 2: dispatch per execution_mode
+# =============================================================================
+# Per-gene-group render command (no nextflow; pure python via toytree)
+render_cmd() {
+    local dest="$1"
+    echo "cd '${dest}' && python3 ai/scripts/001_ai-python-render_trees.py && python3 ai/scripts/002_ai-python-write_run_log.py"
+}
+
+case "${EXECUTION_MODE}" in
+    local)
+        echo "Execution mode: local (sequential)"
+        conda activate "${ENV_NAME}" 2>/dev/null || true
+        for gg in "${SMALL_GG[@]}" "${LARGE_GG[@]}"; do
+            DEST="${STEP3_DIR}/gene_group-${gg}/workflow-RUN_01-tree_visualization"
+            echo ""
+            echo "[$(date)] Rendering locally: ${gg}"
+            ( cd "${DEST}" && python3 ai/scripts/001_ai-python-render_trees.py && python3 ai/scripts/002_ai-python-write_run_log.py ) \
+                || echo "  FAILED: ${gg}"
+        done
+        ;;
+
+    slurm-standard)
+        echo "Execution mode: slurm-standard (QOS=${SLURM_QOS_STANDARD})"
+        for tier in small large; do
+            if [ "$tier" = "small" ]; then
+                arr=("${SMALL_GG[@]}")
+                cpus="${SMALL_CPUS}"; mem="${SMALL_MEM}"; time_h="${SMALL_TIME}"
+            else
+                arr=("${LARGE_GG[@]}")
+                cpus="${LARGE_CPUS}"; mem="${LARGE_MEM}"; time_h="${LARGE_TIME}"
+            fi
+            for gg in "${arr[@]}"; do
+                DEST="${STEP3_DIR}/gene_group-${gg}/workflow-RUN_01-tree_visualization"
+                wrap="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; $(render_cmd "${DEST}")"
+                sbatch \
+                    --job-name="s3_${tier}_${gg}" \
+                    --account="${SLURM_ACCOUNT}" \
+                    --qos="${SLURM_QOS_STANDARD}" \
+                    --cpus-per-task="${cpus}" \
+                    --mem="${mem}gb" \
+                    --time="${time_h}:00:00" \
+                    --output="${STEP3_DIR}/slurm_logs/s3_${tier}_${gg}-%j.log" \
+                    --wrap="${wrap}"
+            done
+        done
+        ;;
+
+    slurm-burst)
+        echo "Execution mode: slurm-burst (chunked, QOS=${SLURM_QOS_BURST})"
+        for tier in small large; do
+            if [ "$tier" = "small" ]; then
+                arr=("${SMALL_GG[@]}")
+                cpus="${SMALL_CPUS}"; mem="${SMALL_MEM}"; time_h="${SMALL_TIME_BURST}"; block="${SMALL_BURST_BLOCK}"
+            else
+                arr=("${LARGE_GG[@]}")
+                cpus="${LARGE_CPUS}"; mem="${LARGE_MEM}"; time_h="${LARGE_TIME_BURST}"; block="${LARGE_BURST_BLOCK}"
+            fi
+
+            n=${#arr[@]}
+            i=0
+            block_n=0
+            while [ "$i" -lt "$n" ]; do
+                end=$((i + block))
+                [ "$end" -gt "$n" ] && end="$n"
+                block_n=$((block_n + 1))
+                block_name="s3_${tier}_blk_$(printf '%02d' ${block_n})"
+
+                runner="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; "
+                j=$i
+                while [ "$j" -lt "$end" ]; do
+                    gg="${arr[$j]}"
+                    DEST="${STEP3_DIR}/gene_group-${gg}/workflow-RUN_01-tree_visualization"
+                    runner+="echo '----------'; echo \"[\$(date)] Rendering: ${gg}\"; "
+                    runner+="( $(render_cmd "${DEST}") ) || echo \"FAILED: ${gg}\"; "
+                    j=$((j + 1))
+                done
+
+                sbatch \
+                    --job-name="${block_name}" \
+                    --account="${SLURM_ACCOUNT}" \
+                    --qos="${SLURM_QOS_BURST}" \
+                    --cpus-per-task="${cpus}" \
+                    --mem="${mem}gb" \
+                    --time="${time_h}:00:00" \
+                    --output="${STEP3_DIR}/slurm_logs/${block_name}-%j.log" \
+                    --wrap="${runner}"
+
+                i="$end"
+            done
+        done
+        ;;
+
+    *)
+        echo "ERROR: Invalid execution_mode: ${EXECUTION_MODE}" >&2
+        exit 1
+        ;;
+esac
 
 echo ""
 echo "========================================================================"
-echo "SUCCESS! STEP_3 tree visualization complete."
-echo ""
-echo "Rendered outputs:"
-echo "  OUTPUT_pipeline/1-output/1_ai-visualization-*.pdf    (primary)"
-echo "  OUTPUT_pipeline/1-output/1_ai-visualization-*.svg    (secondary)"
-echo "  OUTPUT_pipeline/1-output/1_ai-visualization_summary.md"
-echo ""
-echo "Downstream symlinks:"
-echo "  ../../../output_to_input/${GENE_FAMILY}/STEP_3-tree_visualization/"
+echo "Dispatch complete: $(date)"
 echo "========================================================================"
-echo "Completed: $(date)"

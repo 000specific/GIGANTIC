@@ -122,8 +122,8 @@ blast:
   # Number of threads for BLAST searches
   threads: 50
 
-  # Conda environment (ai_gigantic_trees_gene_families includes BLAST)
-  conda_env: "ai_gigantic_trees_gene_families"
+  # Conda environment for this workflow (matches ai/conda_environment.yml; includes BLAST)
+  conda_env: "aiG-trees_gene_families-rbh_rbf_homologs"
 
 # ============================================================================
 # OUTPUT SETTINGS

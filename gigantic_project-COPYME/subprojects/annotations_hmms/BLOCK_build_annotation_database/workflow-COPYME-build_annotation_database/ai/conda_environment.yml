@@ -1,0 +1,44 @@
+# GIGANTIC annotations_hmms - BLOCK_build_annotation_database environment
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_build_annotation_database.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# This file is the canonical dependency specification for this BLOCK.
+# All workflow templates in this BLOCK share this environment.
+#
+# Pure Python environment for parsing tool outputs and building the
+# standardized annotation database. No heavy tool dependencies needed
+# because each upstream annotation tool ( SignalP, TMBed, MetaPredict,
+# DeepLoc, InterProScan ) runs in its own BLOCK-scoped env and writes
+# its results to output_to_input/BLOCK_*/; this BLOCK only reads those
+# results.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-annotations_hmms-build_annotation_database
+
+name: aiG-annotations_hmms-build_annotation_database
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # Database building uses only Python standard library
+  # (pathlib, csv, json, collections, statistics, urllib)

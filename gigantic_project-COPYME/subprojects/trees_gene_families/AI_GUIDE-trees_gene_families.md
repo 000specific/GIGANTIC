@@ -339,19 +339,17 @@ Gene family directories are nested TWO levels deeper than standard subprojects (
 
 ---
 
-## Conda Environments
+## Conda Environments (per-workflow, auto-created on first run)
 
-Two environments are used across the three steps:
+Each workflow has its own conda env, defined in `workflow-COPYME-*/ai/conda_environment.yml` and auto-created by `RUN-workflow.sh` on first run (mamba preferred; conda fallback). No separate setup script is needed.
 
-**STEP_1 + STEP_2** — `ai_gigantic_trees_gene_families`
-- Definition file: `../../conda_environments/ai_gigantic_trees_gene_families.yml`
-- Includes: Python, NextFlow, BLAST, MAFFT, ClipKit, FastTree, IQ-TREE, VeryFastTree, PhyloBayes-MPI
+| STEP | Workflow | Env name | Key dependencies |
+|------|----------|----------|------------------|
+| STEP_1 | rbh_rbf_homologs | `aiG-trees_gene_families-rbh_rbf_homologs` | python, pyyaml, nextflow, blast, numpy, scipy |
+| STEP_2 | phylogenetic_analysis | `aiG-trees_gene_families-phylogenetic_analysis` | python, pyyaml, nextflow, mafft, clipkit, fasttree, iqtree, veryfasttree |
+| STEP_3 | tree_visualization | `aiG-trees_gene_families-visualization` | python, pyyaml, pip → toytree, toyplot, reportlab (no Qt) |
 
-**STEP_3** — `aiG-trees_gene_families-visualization`
-- Definition file: `gene_family_COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/ai/conda_environment.yml`
-- Created on-demand by STEP_3's RUN-workflow.sh (self-heals if broken)
-- Includes: Python, PyYAML, toytree, toyplot, reportlab (all pip-installed)
-- No ete3 / PyQt5 — removes a major source of install instability
+**Migration note (2026-05-24)**: The old shared `ai_gigantic_trees_gene_families` env is deprecated. The per-workflow envs above replace it. numpy + scipy in STEP_1 are required by the rewritten script 008 (Hungarian optimal RGS-assignment); without them the script falls back to greedy assignment that fails-fast on residual ambiguity per the [PLAN](../trees_gene_groups/gene_groups_COPYME/STEP_1-homolog_discovery/PLAN-rgs_identification_improvements.md). STEP_3's env-creation includes broken-env self-heal (rebuilds if `bin/python` is missing).
 
 ---
 

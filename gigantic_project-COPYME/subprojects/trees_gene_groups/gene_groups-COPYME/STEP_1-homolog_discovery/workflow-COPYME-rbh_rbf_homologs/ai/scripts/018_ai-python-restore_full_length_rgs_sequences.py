@@ -197,7 +197,7 @@ def main() -> int:
         nonlocal rgs_subsequence_total, rgs_restored, rgs_unmatched
         nonlocal rgs_already_full_length, cgs_total
 
-        if not header.startswith( 'rgs-' ):
+        if not header.startswith( 'rgs_' ):
             # CGS sequence — pass through unchanged
             output_lines.append( '>' + header )
             output_lines.append( sequence )

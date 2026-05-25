@@ -39,7 +39,7 @@
  *
  * Each numbered script writes to OUTPUT_pipeline/N-output/ via:
  *   - script invocation:  --output-dir N-output  (relative to work dir)
- *   - publishDir:         "${projectDir}/../${params.output_dir}"
+ *   - publishDir:         "${projectDir}/../${params.output.base_dir}"
  *                         which resolves to workflow_root/OUTPUT_pipeline/
  *   - filenames:          N_ai-<description>.<ext>
  *
@@ -74,12 +74,8 @@ nextflow.enable.dsl = 2
 // ============================================================================
 // All defaults below match the COPYME yaml; users edit yaml, not main.nf.
 
-params.proteomes_dir = '../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes'
-params.output_dir = 'OUTPUT_pipeline'
-params.evalue = '0.0001'
-params.single_copy_threshold = '0.5'
-params.project_name = 'GIGANTIC'
-params.conda_environment = 'ai_gigantic_orthogroups_orthohmm'
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 
 // ============================================================================
@@ -99,7 +95,7 @@ params.conda_environment = 'ai_gigantic_orthogroups_orthohmm'
 process validate_proteomes {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         val proteomes_dir
@@ -133,7 +129,7 @@ process validate_proteomes {
 process convert_headers {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -173,7 +169,7 @@ process convert_headers {
 process extract_phmmer_commands {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path short_header_proteomes
@@ -190,7 +186,7 @@ process extract_phmmer_commands {
 
     python3 ${projectDir}/scripts/003_ai-python-extract_phmmer_commands.py \\
         --proteomes-dir 3-output/short_header_proteomes \\
-        --evalue ${params.evalue} \\
+        --evalue ${params.orthohmm.evalue} \\
         --output-dir 3-output
     """
 }
@@ -257,7 +253,7 @@ process run_phmmer_pair {
 process pool_and_verify_phmmer {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path "phmmer_outputs/*"
@@ -301,7 +297,7 @@ process pool_and_verify_phmmer {
 process run_orthohmm_from_search_res {
     label 'orthohmm_finalize'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path pooled_phmmer_outputs
@@ -326,8 +322,8 @@ process run_orthohmm_from_search_res {
         --working-res-dir 5-output/orthohmm_working_res \\
         --output-dir 5-output \\
         --cpus ${task.cpus} \\
-        --evalue ${params.evalue} \\
-        --single-copy-threshold ${params.single_copy_threshold}
+        --evalue ${params.orthohmm.evalue} \\
+        --single-copy-threshold ${params.orthohmm.single_copy_threshold}
     """
 }
 
@@ -344,7 +340,7 @@ process run_orthohmm_from_search_res {
 process restore_identifiers {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path header_mapping
@@ -380,7 +376,7 @@ process restore_identifiers {
 process generate_summary_statistics {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -413,7 +409,7 @@ process generate_summary_statistics {
 process qc_analysis_per_species {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -456,7 +452,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/009_ai-python-write_run_log.py \\
         --workflow-name "run_orthohmm_GIGANTIC" \\
         --subproject-name "orthogroups" \\
-        --project-name "${params.project_name}" \\
+        --project-name "${params.project.name}" \\
         --status success
     """
 }
@@ -487,7 +483,7 @@ workflow {
     // -------------------------------------------------------------------
     // Stage 1: Validate inputs and prep
     // -------------------------------------------------------------------
-    validate_proteomes(params.proteomes_dir)
+    validate_proteomes(params.inputs.proteomes_dir)
 
     convert_headers(validate_proteomes.out.proteome_list)
 
@@ -505,7 +501,7 @@ workflow {
     // Stage the proteomes directory once per task; the bash command references
     // taxa_a / taxa_b files INSIDE it. Avoids NextFlow's per-file staging
     // collision when taxa_a == taxa_b (self-pairs).
-    proteomes_dir_ch = Channel.value( file("${projectDir}/../${params.output_dir}/2-output/short_header_proteomes") )
+    proteomes_dir_ch = Channel.value( file("${projectDir}/../${params.output.base_dir}/2-output/short_header_proteomes") )
 
     pair_tuples_ch = extract_phmmer_commands.out.pair_manifest
         .splitCsv(header: true, sep: '\t')
@@ -552,31 +548,5 @@ workflow {
 }
 
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Orthogroups - BLOCK_orthohmm_GIGANTIC Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Validated proteome list"
-        println "  2-output/: Short-header proteomes and mapping"
-        println "  3-output/: Phmmer pair manifest (extracted from OrthoHMM --stop prepare)"
-        println "  4-output/: Pooled phmmer outputs and verification report"
-        println "  5-output/: OrthoHMM finalization results (Steps 2-5)"
-        println "  6-output/: Orthogroups with restored GIGANTIC identifiers"
-        println "  7-output/: Summary statistics"
-        println "  8-output/: Per-species QC analysis"
-        println ""
-        println "Symlinks created in output_to_input/BLOCK_orthohmm_GIGANTIC/ (by RUN-workflow.sh)"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

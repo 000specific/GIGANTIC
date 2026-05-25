@@ -39,7 +39,7 @@ inputs:
   # Path to GIGANTIC human T1 proteome .aa file (REQUIRED)
   # Header format: >g_GENE_SYMBOL-t_TRANSCRIPT-p_PROTEIN-n_PHYLONAME
   # From genomesDB subproject output
-  human_proteome_path: "../../../../genomesDB-species70/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa"
+  human_proteome_path: "../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa"
 
 # ============================================================================
 # RGS GENERATION SETTINGS

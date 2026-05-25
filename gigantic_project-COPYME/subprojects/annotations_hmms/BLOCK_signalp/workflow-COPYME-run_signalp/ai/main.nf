@@ -70,7 +70,10 @@ process run_signalp {
         tuple val( species_name ), val( proteome_path ), val( phyloname )
 
     output:
-        path "${phyloname}_signalp_predictions.tsv", emit: signalp_results
+        // Emit the full tuple including the raw output dir so the downstream
+        // consolidate process gets proteome_path + phyloname + raw_dir in one
+        // tuple ( no manual channel-joining needed ).
+        tuple val( species_name ), val( proteome_path ), val( phyloname ), path( "signalp_raw_output_${phyloname}" ), emit: signalp_raw_full
         path "2_ai-log-run_signalp_${phyloname}.log"
 
     script:
@@ -85,11 +88,46 @@ process run_signalp {
 }
 
 /*
- * Process 3: Write Run Log
- * Calls: scripts/003_ai-python-write_run_log.py
+ * Process 3: Consolidate raw outputs into one descriptive-header TSV per species
+ * Calls: scripts/003_ai-python-consolidate_signalp_outputs.py
  *
- * Creates a timestamped log in ai/logs/ within this workflow directory
- * for transparency and reproducibility.
+ * Reads the canonical proteome FASTA plus the per-species signalp raw dir
+ * ( containing prediction_results.txt ) and writes a mode-tagged file:
+ *     <phyloname>_signalp_FAST_predictions.tsv   ( when params.mode == 'fast' )
+ *     <phyloname>_signalp_SLOW_predictions.tsv   ( when params.mode == 'slow' )
+ * GIGANTIC self-documenting header schema:
+ *     Protein_Identifier, Sequence_Length, Signal_Peptide_Call,
+ *     Signal_Peptide_Start, Signal_Peptide_End, OTHER_Probability,
+ *     SP_Probability, LIPO_Probability, TAT_Probability,
+ *     Cleavage_Site_String
+ * SignalP6 Prediction = OTHER -> Signal_Peptide_Call = None ( probabilities
+ * still kept ). Proteins not annotated by SignalP6 -> all values None.
+ */
+process consolidate_signalp_outputs {
+    publishDir "${params.output_dir}/3-output", mode: 'copy'
+
+    input:
+        tuple val( species_name ), val( proteome_path ), val( phyloname ), path( signalp_raw_dir )
+
+    output:
+        path "${phyloname}_signalp_*_predictions.tsv", emit: consolidated_tsv
+        path "3_ai-log-consolidate_signalp_outputs_${phyloname}.log"
+
+    script:
+    """
+    python3 ${scripts_dir}/003_ai-python-consolidate_signalp_outputs.py \
+        --input-fasta ${proteome_path} \
+        --raw-output-dir ${signalp_raw_dir} \
+        --output-dir . \
+        --phyloname ${phyloname} \
+        --mode ${params.mode}
+    """
+}
+
+/*
+ * Process 4: Write Run Log ( renamed from 003 → 004 on 2026-05-23 to make
+ * room for the new consolidate step at 003 )
+ * Calls: scripts/004_ai-python-write_run_log.py
  */
 process write_run_log {
     label 'local'
@@ -102,7 +140,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \
+    python3 ${projectDir}/scripts/004_ai-python-write_run_log.py \
         --workflow-name "run_signalp" \
         --subproject-name "annotations_hmms" \
         --project-name "${params.project_name}" \
@@ -135,6 +173,9 @@ workflow {
 
     run_signalp( validated_channel )
 
-    // Write run log (FINAL STEP)
-    write_run_log( run_signalp.out.signalp_results.collect() )
+    // Step 3: Consolidate raw outputs into one descriptive-header TSV per species
+    consolidate_signalp_outputs( run_signalp.out.signalp_raw_full )
+
+    // Step 4: Write run log (FINAL STEP)
+    write_run_log( consolidate_signalp_outputs.out.consolidated_tsv.collect() )
 }

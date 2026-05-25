@@ -84,7 +84,8 @@ def load_species_map( map_path ) {
 def extract_rgs_species( rgs_file_path ) {
     /*
      * Extract unique species short names from RGS FASTA headers.
-     * Header format: >rgs-{identifier}-{family}-{species}-{gene_symbol}-{source}
+     * HGNC RGS header format (5 fields): >rgs_{family}-{species}-{gene_symbol}-{source}-{accession}
+     * Species is parts[1] (e.g., 'human' in >rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1)
      */
     def species_set = [] as Set
     def rgs_file = file( rgs_file_path )
@@ -93,8 +94,8 @@ def extract_rgs_species( rgs_file_path ) {
         if ( line.startsWith( '>' ) ) {
             def header = line.substring( 1 ).trim()
             def parts = header.split( '-' )
-            if ( parts.size() >= 4 ) {
-                def species_short_name = parts[3]
+            if ( parts.size() >= 5 && parts[0].startsWith( 'rgs_' ) ) {
+                def species_short_name = parts[1]
                 if ( species_short_name && Character.isLetter( species_short_name.charAt( 0 ) ) ) {
                     species_set.add( species_short_name )
                 }
@@ -841,43 +842,5 @@ workflow {
     // pipeline completes. Real files only live in OUTPUT_pipeline/16-output/.
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_gene_families STEP_1 Pipeline Complete!"
-    println "========================================================================"
-    println "Gene family: ${params.gene_family}"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Run log written to ai/logs/ in this workflow directory"
-        println ""
-        println "Output files in ${params.output_dir}/:"
-        println "   1-output/: RGS validation (validated FASTA + report)"
-        println "   2-output/: BLAST database listing"
-        println "   3-output/: Project database BLAST reports"
-        println "   4-output/: Blast gene sequences (BGS)"
-        println "   5-output/: RGS genome BLAST report listing"
-        println "   6-output/: RGS genome BLAST reports"
-        println "   7-output/: RBH species file listings"
-        println "   8-output/: RGS-to-genome identifier mapping"
-        println "   9-output/: Modified genomes with RGS sequences"
-        println "  10-output/: Combined genomes and BLAST database"
-        println "  11-output/: Reciprocal BLAST commands"
-        println "  12-output/: Reciprocal BLAST report"
-        println "  13-output/: Candidate gene sequences (CGS)"
-        println "  14-output/: Species-filtered sequences"
-        println "  16-output/: Final AGS (All Gene Set)"
-        println ""
-        println "Symlinks created by RUN-workflow.sh in:"
-        println "  ../../../../output_to_input/gene_groups-<source>/STEP_1-homolog_discovery/ags_fastas/${params.gene_family}/"
-        println ""
-        println "Next: Run STEP_2 phylogenetic analysis with AGS file"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

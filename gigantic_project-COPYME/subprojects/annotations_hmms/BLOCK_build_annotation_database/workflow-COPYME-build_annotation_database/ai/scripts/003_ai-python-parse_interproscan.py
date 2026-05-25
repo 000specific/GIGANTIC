@@ -384,16 +384,47 @@ def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: di
     logger.info( f"Found {len( result_files )} InterProScan result file(s) to parse" )
 
     # =========================================================================
-    # Create output directory structure
+    # Pre-scan to discover which IPR sub-databases were actually run
     # =========================================================================
+    # Not every IPR install runs every sub-database. The set we run is
+    # configured upstream ( as of 2026-05-23: CDD, FunFam, Gene3D, NCBIfam,
+    # PANTHER, Pfam, PRINTS, SMART, SUPERFAMILY — 9 of the 17 known ).
+    # We must NOT inject fake "unannotated_<db>-N" rows for databases that
+    # were never run — that would falsely imply every protein was scanned by
+    # those databases. So we do a quick pass through the raw TSVs to build
+    # a set of analysis databases that actually appear in the data.
+    encountered_analysis_databases = set()
+    for result_file in result_files:
+        with open( result_file, "r" ) as input_interproscan_results:
+            for line in input_interproscan_results:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split( "\t" )
+                if len( parts ) >= 4:
+                    encountered_analysis_databases.add( parts[ 3 ] )
 
-    # All databases are flat at the same level: database_{name}/
-    all_gigantic_database_names = list( ANALYSIS_DATABASE_NAMES___GIGANTIC_DATABASE_NAMES.values() )
-    all_gigantic_database_names.append( 'interproscan' )
-    all_gigantic_database_names.append( 'go' )
+    # Map encountered analysis db names ( e.g. 'Pfam' ) -> GIGANTIC db names ( e.g. 'pfam' )
+    encountered_gigantic_database_names = set()
+    for analysis_db in encountered_analysis_databases:
+        if analysis_db in ANALYSIS_DATABASE_NAMES___GIGANTIC_DATABASE_NAMES:
+            encountered_gigantic_database_names.add( ANALYSIS_DATABASE_NAMES___GIGANTIC_DATABASE_NAMES[ analysis_db ] )
 
-    for gigantic_database_name in all_gigantic_database_names:
+    logger.info( f"IPR sub-databases ENCOUNTERED in data ({len( encountered_gigantic_database_names )}): {sorted( encountered_gigantic_database_names )}" )
+    absent_gigantic_database_names = set( ANALYSIS_DATABASE_NAMES___GIGANTIC_DATABASE_NAMES.values() ) - encountered_gigantic_database_names
+    if len( absent_gigantic_database_names ) > 0:
+        logger.info( f"IPR sub-databases ABSENT (never run this round, will be skipped) ({len( absent_gigantic_database_names )}): {sorted( absent_gigantic_database_names )}" )
+
+    # =========================================================================
+    # Create output directory structure — only for ENCOUNTERED databases
+    # =========================================================================
+    # Plus the always-emitted summary tracks 'interproscan' and 'go'.
+
+    for gigantic_database_name in encountered_gigantic_database_names:
         database_directory = output_directory / f"database_{gigantic_database_name}"
+        database_directory.mkdir( parents = True, exist_ok = True )
+    for fixed_database_name in ( "interproscan", "go" ):
+        database_directory = output_directory / f"database_{fixed_database_name}"
         database_directory.mkdir( parents = True, exist_ok = True )
 
     # =========================================================================
@@ -593,7 +624,12 @@ def parse_interproscan_files( interproscan_record: dict, go_ids___go_records: di
             all_protein_identifiers = phylonames___protein_identifiers[ phyloname ]
 
             # --- Component databases ---
-            component_database_names = list( ANALYSIS_DATABASE_NAMES___GIGANTIC_DATABASE_NAMES.values() )
+            # IMPORTANT: only iterate databases that were ACTUALLY run this round.
+            # encountered_gigantic_database_names was populated by the pre-scan above.
+            # This is the skip-absent fix from 2026-05-23: previously the loop iterated
+            # ALL 17 known component databases, which falsely emitted "unannotated_<db>-N"
+            # rows for databases that were never run.
+            component_database_names = sorted( encountered_gigantic_database_names )
 
             for gigantic_database_name in component_database_names:
                 # Get protein IDs that have annotations for this database

@@ -1,106 +1,133 @@
 # ============================================================================
-# WORKFLOW CONFIGURATION - Edit this file before running
+# WORKFLOW CONFIGURATION - Edit this file before running RUN-workflow.sh
 # ============================================================================
 #
-# This is the main configuration file for this workflow.
-# Review and update the settings below for your project, then run:
-#
+# Single user-runnable script for this workflow:
 #     bash RUN-workflow.sh
 #
-# ============================================================================
-
-# GIGANTIC trees_gene_families STEP_1 - RBH/RBF Homolog Discovery Configuration
-# AI: Claude Code | Opus 4.6 | 2026 February 27
-# Human: Eric Edsinger
-#
-# ============================================================================
-# HOW TO USE THIS FILE
-# ============================================================================
-#
-# Each workflow copy processes ONE gene family.
-# Copy the workflow template, edit this config, then run.
-#
-# Example:
-#   cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
-#   cd workflow-RUN_01-rbh_rbf_homologs
-#   # Edit this config file
-#   bash RUN-workflow.sh
-#
+# The script:
+#   1. Creates the per-workflow conda env once on the login node (if missing)
+#   2. For every gene group in `gene_group_source_tsv`: creates a
+#      gene_group-X/workflow-RUN_01-rbh_rbf_homologs/ directory by copying
+#      this COPYME (one level up at STEP_1-homolog_discovery/)
+#   3. Dispatches per `execution_mode`:
+#        local         - sequential local nextflow runs
+#        slurm-standard - one sbatch per gene group, standard QOS
+#        slurm-burst    - chunked: one sbatch per BLOCK of gene groups, burst QOS
 # ============================================================================
 
 # ============================================================================
-# GENE FAMILY (EDIT THIS)
+# EXECUTION MODE (EDIT THIS)
+# ============================================================================
+# "local"          - run nextflow sequentially on this machine
+# "slurm-standard" - submit one SLURM job per gene group to slurm_qos_standard
+# "slurm-burst"    - chunk gene groups into blocks; submit one SLURM job per block to slurm_qos_burst
+execution_mode: "slurm-burst"
+
+# ============================================================================
+# GENE-GROUP SOURCE (EDIT THESE)
+# ============================================================================
+# TSV produced by STEP_0 listing gene groups to process.
+# Tab-separated: gene_group_id<TAB>gene_group_name<TAB>sanitized_name<TAB>rgs_filename<TAB>sequence_count
+gene_group_source_tsv: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/3_ai-rgs_generation_summary.tsv"
+
+# Directory of RGS FASTA files produced by STEP_0 (one .aa per gene group).
+rgs_fastas_dir: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/rgs_fastas"
+
+# ============================================================================
+# TIERING (EDIT IF NEEDED)
+# ============================================================================
+# Gene groups with > large_threshold RGS sequences use the "large" resource tier.
+# Otherwise they use the "small" tier.
+large_threshold: 50
+
+# ============================================================================
+# SLURM SETTINGS (EDIT slurm_account FOR YOUR CLUSTER)
+# ============================================================================
+slurm_account: "moroz"
+slurm_qos_standard: "moroz"
+slurm_qos_burst: "moroz-b"
+
+# ============================================================================
+# SLURM BLOCK RESOURCES (Layer 2 - orchestrator sbatches these)
+# ============================================================================
+# Each SLURM block must reserve >= max(local_cpus, blast_cpus) CPUs and
+# >= max(local_memory_gb, blast_memory_gb) RAM, or NextFlow processes inside
+# the block will fail with "exceeds available CPUs". Currently sized to
+# match the blast label (the heaviest process).
+small_cpus: 10
+small_memory_gb: 75
+small_time_hours: 48
+small_time_hours_burst: 96
+small_burst_block_size: 10
+
+large_cpus: 10
+large_memory_gb: 75
+large_time_hours: 48
+large_time_hours_burst: 96
+large_burst_block_size: 3
+
+# ============================================================================
+# NEXTFLOW PROCESS RESOURCES (Layer 3 - inside the SLURM block)
+# ============================================================================
+# These thread directly into nextflow.config via params.<label>_<key>, so the
+# YAML is the single source of truth for per-label resources.
+#
+# 'local' label: small/fast Python tasks (validate, list, filter, concatenate, log)
+local_cpus: 2
+local_memory_gb: 10
+local_time_hours: 1
+
+# 'blast' label: NCBI BLAST+ commands
+blast_cpus: 10
+blast_memory_gb: 75
+blast_time_hours: 24
+
+# ============================================================================
+# Resume from cached NextFlow work directory
+# ============================================================================
+# When true, each gene group's nextflow run uses -resume.
+# Default: false (every task re-runs from scratch).
+resume: false
+
+# ============================================================================
+# ============================================================================
+# Below this point: per-gene-group nextflow pipeline settings.
+# These are templated into each gene_group-X/workflow-RUN_01-*/START_HERE-user_config.yaml
+# at setup time. RUN-workflow.sh sed-patches `gene_family.name` and
+# `gene_family.rgs_full_length_file` per gene group; everything else flows through.
+# ============================================================================
+# ============================================================================
+
+# ============================================================================
+# GENE FAMILY (the orchestrator sets these per gene group)
 # ============================================================================
 
 gene_family:
-  # Name of the gene family being analyzed (used in output filenames)
-  name: "innexin_pannexin"
+  # Set per-gene-group by the orchestrator at setup time.
+  name: "PLACEHOLDER"
 
-  # Path to the full-length RGS FASTA file (ALWAYS REQUIRED)
-  # This file contains full-length protein sequences for the gene family.
-  # Used directly for BLAST when rgs_sequence_is_full_length is true.
-  # Used for full-length restoration in the final AGS when false.
-  rgs_full_length_file: "INPUT_user/rgs_channel-human_worm_fly-innexin_pannexin_channels.aa"
+  # Set per-gene-group by the orchestrator at setup time.
+  rgs_full_length_file: "INPUT_user/PLACEHOLDER.aa"
 
-  # ---- RGS Sequence Type ----
   # Is the RGS a full-length protein or a domain subsequence?
-  #
-  #   true  = full-length proteins (DEFAULT, most gene families)
-  #           Pipeline uses rgs_full_length_file for BLAST discovery.
-  #
-  #   false = domain-only sequences (e.g., TRP pore regions)
-  #           Pipeline uses rgs_subsequence_file for BLAST discovery,
-  #           then restores full-length sequences in the final AGS.
-  #           You MUST also set rgs_subsequence_file below.
-  #
+  #   true  = full-length proteins (DEFAULT)
+  #   false = domain-only sequences (e.g., TRP pore regions); requires rgs_subsequence_file
   rgs_sequence_is_full_length: true
 
-  # Path to the SUBSEQUENCE RGS FASTA
-  # REQUIRED when rgs_sequence_is_full_length is false.
-  # Contains the subsequence-only sequences used for BLAST homolog discovery.
-  # Headers must match rgs_full_length_file exactly, with '_subsequence' appended.
-  #
-  # Example (TRP pore regions):
-  #   Full-length header:   >rgs-Q8NER1-trp_channels-human-TRPV1-uniprot
-  #   Subsequence header:   >rgs-Q8NER1-trp_channels-human-TRPV1-uniprot_subsequence
-  #
-  # rgs_subsequence_file: "INPUT_user/rgs_pore_region.aa"
+  # rgs_subsequence_file: "INPUT_user/rgs_pore_region.aa"   # required when rgs_sequence_is_full_length: false
 
-  # ---- Orphan RGS ----
-  # Include RGS sequences whose source species has no genome in the species set
-  # as reciprocal BLAST targets. This allows gene assignments for seeds like
-  # FLYC1 (venus flytrap) or TRPC2 (mouse) when their species isn't in the
-  # BLAST databases. Without this, those sequences pass the filter but get
-  # assigned to the closest available gene instead of the correct one.
-  #
-  #   true  = append orphan RGS to the modified genomes for reciprocal BLAST
-  #   false = do not include orphan RGS (DEFAULT)
-  #
+  # Include RGS sequences whose source species has no genome in the species set.
   include_orphan_rgs: false
 
 # ============================================================================
-# INPUT PATHS (EDIT THESE)
+# INPUT PATHS (per gene group)
 # ============================================================================
 
 inputs:
-  # Species keeper list (one Genus_species per line)
-  # Only species in this list will be kept in the final AGS
   species_keeper_list: "INPUT_user/species_keeper_list.tsv"
-
-  # RGS species map (maps short names in RGS headers to GIGANTIC Genus_species)
-  # Format: short_name<TAB>Genus_species
-  # Only needed if RGS headers use short names (e.g., "human", "fly", "worm")
-  # If RGS headers already use Genus_species format, this can be omitted
   rgs_species_map: "INPUT_user/rgs_species_map.tsv"
-
-  # BLAST protein databases directory (REQUIRED)
-  # Path to directory containing per-species .aa BLAST database files
-  # From genomesDB subproject: ../../../genomesDB/output_to_input/gigantic_T1_blastp/
   blast_databases_dir: "../../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
-
-  # RGS genomes directory (REQUIRED)
-  # Directory containing genome .aa files for RGS species
-  # Usually the same as blast_databases_dir
   rgs_genomes_dir: "../../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_blastp"
 
 # ============================================================================
@@ -108,28 +135,6 @@ inputs:
 # ============================================================================
 
 project:
-  # Project database identifier (embedded in output filenames for provenance).
-  #
-  # Format: {blast_database}-{keeper_species_set}
-  #
-  #   {blast_database}      = the proteome set used for BLAST homolog discovery.
-  #                           Convention: speciesN_T1 where N is the species count
-  #                           and T1 means Transcript-1 (primary isoform only).
-  #                           Example: species70_T1 = 70-species GIGANTIC proteome DB, T1 isoforms.
-  #
-  #   {keeper_species_set}  = the species set retained in the final AGS after
-  #                           species_keeper_list.tsv filtering (script 014).
-  #                           Often identical to the blast_database (keep everything),
-  #                           but can differ when filtering a large DB down to a subset
-  #                           (e.g. species200_T1-species50 = searched 200, kept 50).
-  #
-  # Output files embed this in their names:
-  #   4_ai-bgs-{project.database}-{gene_family}-fullseqs.aa
-  #  13_ai-cgs-{project.database}-{gene_family}.aa
-  #  14_ai-cgs-{project.database}-{gene_family}-filtered.aa
-  #  16_ai-ags-{project.database}-{gene_family}-homologs.aa
-  #
-  # Current project: 70-species GIGANTIC proteome DB (T1), keeper list = same 70 species
   database: "species70_T1-species70"
 
 # ============================================================================
@@ -137,14 +142,9 @@ project:
 # ============================================================================
 
 blast:
-  # E-value threshold for BLAST searches
   evalue: "1e-3"
-
-  # Number of threads for BLAST searches
-  threads: 50
-
-  # Conda environment (ai_gigantic_trees_gene_families includes BLAST)
-  conda_env: "ai_gigantic_trees_gene_families"
+  threads: 10                                # must be <= blast_cpus (above)
+  conda_env: "aiG-trees_gene_groups-rbh_rbf_homologs"
 
 # ============================================================================
 # OUTPUT SETTINGS
@@ -152,70 +152,3 @@ blast:
 
 output:
   base_dir: "OUTPUT_pipeline"
-
-# =============================================================================
-# Computational Resources
-# =============================================================================
-# These values are used by BOTH NextFlow (process resources) and SLURM (job resources).
-# STEP_1 is BLAST-heavy - needs significant CPU and memory.
-
-cpus: 50
-memory_gb: 187
-time_hours: 96
-
-# =============================================================================
-# Execution Mode
-# =============================================================================
-# "local" - Run directly on this machine (default)
-# "slurm" - Submit as a SLURM cluster job
-
-execution_mode: "local"
-
-# SLURM settings (only used when execution_mode is "slurm")
-slurm_account: "your_account"
-slurm_qos: "your_qos"
-
-# ============================================================================
-# NOTES
-# ============================================================================
-#
-# WORKFLOW STEPS:
-#   001: List BLAST databases
-#   002: Generate BLASTP commands for RGS vs project database
-#   003: Execute BLASTP searches (generated by 002)
-#   004: Extract blast gene sequences (BGS) from BLAST hits
-#   005: Generate BLASTP commands for RGS vs RGS source genomes
-#   006: Execute RGS genome BLASTP searches (generated by 005)
-#   007: List RGS BLAST files and identify model organism FASTAs
-#   008: Map RGS sequences to reference genome identifiers
-#   009: Create modified genomes with RGS sequences
-#   010: Combine modified genomes and create BLAST database
-#   011: Generate reciprocal BLAST commands
-#   012: Execute reciprocal BLAST (generated by 011)
-#   013: Extract candidate gene sequences (CGS)
-#   014: Filter species by keeper list
-#   016: Concatenate RGS + CGS into final AGS (All Gene Set)
-#   018: Restore full-length RGS sequences in AGS (optional, when using domain-restricted RGS)
-#
-# NOTE: Script 015 (identifier remapping) was removed because BLAST v5
-#       databases preserve full GIGANTIC identifiers without truncation.
-#
-# OUTPUT STRUCTURE:
-#   OUTPUT_pipeline/1-output/ through 16-output/
-#
-# The final AGS fasta is also symlinked to:
-#   trees_gene_families/output_to_input/STEP_1-homolog_discovery/ags_fastas/<gene_family>/
-#
-
-# =============================================================================
-# Resume from cached NextFlow work directory
-# =============================================================================
-# When true, NextFlow re-uses cached results from work/ for unchanged tasks
-# (saves time on partial-failure recovery). When false, every task re-runs
-# from scratch.
-#
-# Default: false — stale-cache surprises have caused incorrect results in the
-# past, so explicit opt-in is safer for research reproducibility. Flip to true
-# when you intentionally want to resume after a known interruption.
-
-resume: false

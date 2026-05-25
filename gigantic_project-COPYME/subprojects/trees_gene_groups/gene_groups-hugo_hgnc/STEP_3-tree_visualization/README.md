@@ -1,54 +1,58 @@
-# STEP_3: Tree Visualization
+# STEP_3 — Tree Visualization
 
-Render phylogenetic trees (produced by STEP_2) as PDF + SVG using toytree.
+Per-source STEP_3: render the tree newicks produced by STEP_2 as PDF + SVG using
+toytree (pure Python, no Qt).
 
-## Purpose
-
-STEP_2 produces tree newick files — the scientific artifact. STEP_3 renders them as PDF and SVG figures for sharing and publication preparation.
-
-This step is **decoupled** from STEP_2 deliberately: visualization is presentation, not science. A rendering issue never invalidates the underlying tree data.
-
-## Quick Start
+## Single user-runnable script
 
 ```bash
+# 1. Inside the per-source instance (e.g., gene_groups-hugo_hgnc/STEP_3-tree_visualization/),
+#    copy the COPYME → RUN_NN at the same level:
 cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
-cd workflow-RUN_1-tree_visualization/
-# Edit START_HERE-user_config.yaml (set gene_family.name to match STEP_2)
+
+# 2. Edit RUN's config (execution_mode, styling):
+cd workflow-RUN_1-tree_visualization
+# edit START_HERE-user_config.yaml
+
+# 3. Run
 bash RUN-workflow.sh
 ```
 
+`RUN-workflow.sh` is an **orchestrator** that processes all gene groups with
+STEP_2 newick output:
+
+1. Creates the conda env once on the login node (or self-heals a broken env)
+2. For each gene group with newicks at `output_to_input/<source>/STEP_2-phylogenetic_analysis/gene_group-<name>/`:
+   creates `gene_group-X/workflow-RUN_01-tree_visualization/` as a sibling
+3. Dispatches per `execution_mode`:
+   - `local` — sequential renders (default; rendering is lightweight)
+   - `slurm-standard` — one sbatch per gene group, standard QOS
+   - `slurm-burst` — chunked, one sbatch per block, burst QOS
+
 ## Prerequisites
 
-- **STEP_2** must be complete for this gene group (tree newicks in `output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/`)
-- **Conda** available (env is created automatically on first run)
+STEP_2 must have completed for at least some gene groups (newick files present).
+Gene groups without STEP_2 newicks are skipped.
 
-## Rendering Engine
+## Rendering engine
 
-Uses `toytree` + `toyplot` + `reportlab` (pure Python, no Qt). The conda env `aiG-trees_gene_groups-visualization` is created on first run. If the env is broken (e.g., from a prior failed install), `RUN-workflow.sh` detects this and rebuilds it automatically.
+`toytree` + `toyplot` + `reportlab` — pure Python, no Qt/PyQt5. Replaces ete3
+which had recurring install-instability problems.
 
-## What Gets Rendered
+## Soft-fail behavior
 
-For each gene group, all tree methods that STEP_2 produced:
-
-| Tree Method | Source File | Output |
-|-------------|-------------|--------|
-| FastTree | `*.fasttree` | `1_ai-visualization-<gene_family>-fasttree.pdf/.svg` |
-| IQ-TREE | `*.treefile` | `1_ai-visualization-<gene_family>-iqtree.pdf/.svg` |
-| VeryFastTree | `*.veryfasttree` | `1_ai-visualization-<gene_family>-veryfasttree.pdf/.svg` |
-| PhyloBayes | `*.phylobayes.nwk` | `1_ai-visualization-<gene_family>-phylobayes.pdf/.svg` |
-
-## Features
-
-- **Species color-coding**: tip labels colored by species (parsed from GIGANTIC gene identifiers)
-- **Branch support**: rendered when newick includes numeric node labels (bootstrap/aLRT/posterior)
-- **Auto-scaling**: canvas sizes with tip count; tip labels auto-hidden for very large trees (>500 tips by default)
-- **Soft-fail**: render failures write a placeholder + documented retry instructions; they never block downstream analysis
+STEP_3 rendering is **soft-fail by design**: a render failure writes a
+placeholder text file and exits 0. STEP_2 newicks remain the valid scientific
+artifact regardless of rendering outcome.
 
 ## Output
 
-Rendered files are symlinked to:
-- `../../output_to_input/gene_groups-hugo_hgnc/STEP_3-tree_visualization/gene_group-<gene_family>/`
+| Output | Location |
+|--------|----------|
+| Rendered PDFs/SVGs | `../gene_group-X/workflow-RUN_01-tree_visualization/OUTPUT_pipeline/1-output/1_ai-visualization-<gene_family>-<method>.{pdf,svg}` |
+| Symlinks for server upload | `../../../../output_to_input/<source>/STEP_3-tree_visualization/gene_group-X/*.{pdf,svg}` |
 
-## For AI Assistants
+## See also
 
-See `AI_GUIDE-phylogenetic_visualization.md` for detailed guidance.
+- `AI_GUIDE-phylogenetic_visualization.md` — detailed AI guide
+- `workflow-COPYME-tree_visualization/ai/AI_GUIDE-tree_visualization_workflow.md` — workflow execution guide

@@ -19,17 +19,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.phylonames_mapping = "../../../phylonames/output_to_input/maps/my_project_map-genus_species_X_phylonames.tsv"
-params.input_proteomes = "../../output_to_input/STEP_1-sources/T1_proteomes"
-params.input_genomes = "../../output_to_input/STEP_1-sources/genomes"
-params.input_genome_annotations = "../../output_to_input/STEP_1-sources/genome_annotations"
-params.busco_lineages = "INPUT_user/busco_lineages.txt"
-params.output_dir = "OUTPUT_pipeline"
-params.busco_parallel = 4
-params.busco_cpus_per_job = 4
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 // ============================================================================
 // PROCESSES
 // ============================================================================
@@ -41,7 +34,7 @@ params.busco_cpus_per_job = 4
 process standardize_proteome_phylonames {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "1-output/gigantic_proteomes", emit: proteomes
@@ -53,8 +46,8 @@ process standardize_proteome_phylonames {
     mkdir -p 1-output
 
     python3 ${projectDir}/scripts/001_ai-python-standardize_proteome_phylonames.py \\
-        --phylonames-mapping ${projectDir}/../${params.phylonames_mapping} \\
-        --input-proteomes ${projectDir}/../${params.input_proteomes} \\
+        --phylonames-mapping ${projectDir}/../${params.inputs.phylonames_mapping} \\
+        --input-proteomes ${projectDir}/../${params.inputs.proteomes} \\
         --output-dir 1-output
     """
 }
@@ -66,7 +59,7 @@ process standardize_proteome_phylonames {
 process clean_proteome_invalid_residues {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteomes
@@ -98,7 +91,7 @@ process clean_proteome_invalid_residues {
 process standardize_genome_annotation_phylonames {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "3-output/gigantic_genomes", emit: genomes
@@ -107,13 +100,13 @@ process standardize_genome_annotation_phylonames {
         path "3-output/3_ai-log-standardize_genome_and_annotation_phylonames.log", emit: log
 
     script:
-    def genomes_arg = file("${projectDir}/../${params.input_genomes}").exists() ? "--input-genomes ${projectDir}/../${params.input_genomes}" : ""
-    def annotations_arg = file("${projectDir}/../${params.input_genome_annotations}").exists() ? "--input-genome-annotations ${projectDir}/../${params.input_genome_annotations}" : ""
+    def genomes_arg = file("${projectDir}/../${params.inputs.genomes}").exists() ? "--input-genomes ${projectDir}/../${params.inputs.genomes}" : ""
+    def annotations_arg = file("${projectDir}/../${params.inputs.genome_annotations}").exists() ? "--input-genome-annotations ${projectDir}/../${params.inputs.genome_annotations}" : ""
     """
     mkdir -p 3-output/gigantic_genomes 3-output/gigantic_genome_annotations
 
     python3 ${projectDir}/scripts/003_ai-python-standardize_genome_and_annotation_phylonames.py \\
-        --phylonames-mapping ${projectDir}/../${params.phylonames_mapping} \\
+        --phylonames-mapping ${projectDir}/../${params.inputs.phylonames_mapping} \\
         --output-dir 3-output \\
         ${genomes_arg} \\
         ${annotations_arg}
@@ -127,7 +120,7 @@ process standardize_genome_annotation_phylonames {
 process calculate_assembly_statistics {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path genomes
@@ -142,7 +135,7 @@ process calculate_assembly_statistics {
 
     python3 ${projectDir}/scripts/004_ai-python-calculate_genome_assembly_statistics.py \\
         --input-genomes ${genomes} \\
-        --phylonames-mapping ${projectDir}/../${params.phylonames_mapping} \\
+        --phylonames-mapping ${projectDir}/../${params.inputs.phylonames_mapping} \\
         --output-dir 4-output
     """
 }
@@ -154,7 +147,7 @@ process calculate_assembly_statistics {
 process run_busco_evaluation {
     label 'busco'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path cleaned_proteomes
@@ -169,11 +162,11 @@ process run_busco_evaluation {
     mkdir -p 5-output
 
     python3 ${projectDir}/scripts/005_ai-python-run_busco_proteome_evaluation.py \\
-        --lineage-manifest ${projectDir}/../${params.busco_lineages} \\
+        --lineage-manifest ${projectDir}/../${params.inputs.busco_lineages} \\
         --input-proteomes ${cleaned_proteomes} \\
         --output-dir 5-output \\
-        --parallel ${params.busco_parallel} \\
-        --cpus-per-job ${params.busco_cpus_per_job} \\
+        --parallel ${params.busco.parallel} \\
+        --cpus-per-job ${params.busco.cpus_per_job} \\
         --cleanup-databases
     """
 }
@@ -187,7 +180,7 @@ process run_busco_evaluation {
 process summarize_quality {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path assembly_stats
@@ -231,7 +224,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \
         --workflow-name "standardize_evaluate_build_gigantic_genomesdb" \
         --subproject-name "genomesDB" \
-        --project-name "${params.project_name}" \
+        --project-name "${params.project.name}" \
         --status success
     """
 }
@@ -243,7 +236,7 @@ process write_run_log {
 process skip_busco {
     label 'local'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     output:
         path "5-output/5_ai-busco_summary.tsv", emit: summary
@@ -298,32 +291,5 @@ workflow {
     // Proteomes are symlinked to output_to_input by STEP_4 (after user review).
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC genomesDB STEP_2 Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Standardized proteomes with phylonames"
-        println "  2-output/: Cleaned proteomes (invalid residues fixed)"
-        println "  3-output/: Standardized genomes and annotations (symlinks)"
-        println "  4-output/: Genome assembly statistics"
-        println "  5-output/: BUSCO proteome completeness evaluation"
-        println "  6-output/: Quality summary"
-        println ""
-        println ""
-        println "Symlinks created in output_to_input/ (by RUN-workflow.sh)"
-        println ""
-        println "Next: Run STEP_4 to create final species set in output_to_input/"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

@@ -33,67 +33,12 @@ nextflow.enable.dsl=2
 //
 // ============================================================================
 
-// Load configuration from YAML
-import org.yaml.snakeyaml.Yaml
-
-def load_config() {
-    def yaml = new Yaml()
-    def config_file = file( "${projectDir}/../START_HERE-user_config.yaml" )
-    if ( !config_file.exists() ) {
-        error "Configuration file not found: ${config_file}"
-    }
-    return yaml.load( config_file.text )
-}
-
-// Load the configuration
-def config = load_config()
-
 // ============================================================================
-// Parameters (from config.yaml)
+// Parameters
 // ============================================================================
-
-params.output_dir = config.output?.base_dir ?: 'OUTPUT_pipeline'
-
-// Gene family (single gene family per workflow copy)
-params.gene_family = config.gene_family?.name ?: null
-
-// Input: output_to_input directory (AGS found at <dir>/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/)
-params.output_to_input_dir = config.input?.output_to_input_dir ?: '../../../../output_to_input'
-
-// Project database name (for file naming)
-params.project_database = config.project?.database ?: 'speciesN_T1-speciesN'
-
-// Project name (for run log)
-params.project_name = config.project?.name ?: 'gene_families'
-
-// MAFFT parameters
-params.mafft_maxiterate = config.phylogenetics?.mafft?.maxiterate ?: 1000
-params.mafft_bl = config.phylogenetics?.mafft?.bl ?: 45
-params.mafft_threads = config.phylogenetics?.mafft?.threads ?: 50
-
-// ClipKit parameters
-params.clipkit_mode = config.phylogenetics?.clipkit?.mode ?: 'smart-gap'
-
-// IQ-TREE parameters
-params.iqtree_model = config.phylogenetics?.iqtree?.model ?: 'MFP'
-params.iqtree_bootstrap = config.phylogenetics?.iqtree?.bootstrap ?: 2000
-params.iqtree_alrt = config.phylogenetics?.iqtree?.alrt ?: 2000
-params.iqtree_threads = config.phylogenetics?.iqtree?.threads ?: 'AUTO'
-
-// VeryFastTree parameters
-params.veryfasttree_threads = config.phylogenetics?.veryfasttree?.threads ?: 4
-
-// PhyloBayes parameters
-params.phylobayes_model = config.phylogenetics?.phylobayes?.model ?: '-cat -gtr'
-params.phylobayes_generations = config.phylogenetics?.phylobayes?.generations ?: 10000
-params.phylobayes_burnin = config.phylogenetics?.phylobayes?.burnin ?: 2500
-params.phylobayes_every = config.phylogenetics?.phylobayes?.every ?: 1
-
-// Tree methods (configurable)
-params.run_fasttree = config.tree_methods?.fasttree ?: true
-params.run_iqtree = config.tree_methods?.iqtree ?: false
-params.run_veryfasttree = config.tree_methods?.veryfasttree ?: false
-params.run_phylobayes = config.tree_methods?.phylobayes ?: false
+// All params come from `-params-file .params.json` (flattened from START_HERE-user_config.yaml
+// by the orchestrator's RUN-workflow.sh). Defaults live in nextflow.config under params{}.
+// Compatible with NextFlow 26.x strict config parser (no `import org.yaml.snakeyaml.Yaml`).
 
 // ============================================================================
 // Processes
@@ -476,21 +421,5 @@ workflow {
     write_run_log( tree_collected.collect().map { true } )
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC trees_gene_families STEP_2 Pipeline Complete!"
-    println "========================================================================"
-    println "Gene family: ${params.gene_family}"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if ( workflow.success ) {
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

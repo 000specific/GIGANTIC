@@ -56,27 +56,51 @@ TOOL_DEFINITIONS = [
     {
         'tool_name': 'interproscan',
         'block_directory_name': 'BLOCK_interproscan',
+        # Per-species combined raw IPR TSV ( 15-column native format ).
         'file_pattern': '*_interproscan_results.tsv',
     },
     {
         'tool_name': 'deeploc',
         'block_directory_name': 'BLOCK_deeploc',
+        # Per-species DeepLoc native CSV ( renamed copy ).
         'file_pattern': '*_deeploc_predictions.csv',
     },
     {
         'tool_name': 'signalp',
         'block_directory_name': 'BLOCK_signalp',
-        'file_pattern': '*_signalp_predictions.tsv',
+        # As of 2026-05-23 the SignalP6 wrapper publishes both ( a ) the raw
+        # native output directory ( signalp_raw_output_<phyloname>/ ) AND
+        # ( b ) a per-species CONSOLIDATED TSV produced by script 003 of
+        # BLOCK_signalp/workflow-*/ai/scripts/. The downstream parser ( 005 )
+        # reads the consolidated TSV, not the raw dir.
+        #
+        # Filename pattern: <phyloname>_signalp_<MODE>_predictions.tsv
+        # where MODE is FAST or SLOW ( runs are mode-tagged so fast + slow
+        # outputs coexist in output_to_input/BLOCK_signalp/ ).
+        # 10-column GIGANTIC self-documenting header schema.
+        'file_pattern': '*_signalp_*_predictions.tsv',
     },
     {
         'tool_name': 'tmbed',
         'block_directory_name': 'BLOCK_tmbed',
-        'file_pattern': '*_tmbed_predictions.3line',
+        # As of 2026-05-23 BLOCK_tmbed publishes a per-species CONSOLIDATED
+        # TSV ( 14-column GIGANTIC self-documenting schema, parsed from the
+        # native .3line by script 003 of BLOCK_tmbed/workflow-*/ai/scripts/ ).
+        # The downstream parser ( 006 ) reads this consolidated TSV. The
+        # native .3line stays in the raw RUN dir for archival.
+        'file_pattern': '*_tmbed_predictions.tsv',
     },
     {
         'tool_name': 'metapredict',
         'block_directory_name': 'BLOCK_metapredict',
-        'file_pattern': '*_metapredict_idrs.tsv',
+        # As of 2026-05-23 the MetaPredict wrapper publishes ( a ) the raw
+        # CLI output directory ( metapredict_raw_output_<phyloname>/ with
+        # disorder.csv + idrs.fasta + pLDDT_scores.csv ) AND ( b ) a per-
+        # species CONSOLIDATED TSV produced by script 003 of
+        # BLOCK_metapredict/workflow-*/ai/scripts/. The downstream parser
+        # ( 007 ) reads the consolidated TSV. 6-column GIGANTIC self-
+        # documenting header schema.
+        'file_pattern': '*_metapredict_predictions.tsv',
     },
 ]
 

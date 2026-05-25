@@ -1,5 +1,36 @@
 # TODO: Final AGS cleanup — remove RGS↔genome-proteome duplicate entries
 
+**Status (2026-05-24):** RESOLVED upstream, pending real-run verification.
+
+The RGS↔genome duplication this TODO describes is now addressed by **two
+upstream fixes** applied to STEP_1 itself:
+
+1. **Script 013 patch** (2026-05-23) — adds QUERY-side rejection so that
+   project-DB proteins whose source genome contains the cognate RGS no longer
+   pass the reciprocal-best-hit filter. Synced across all 97 affected COPYME
+   templates (gene_groups + 95 trees_gene_families V1 templates).
+
+2. **Script 008 rewrite** (2026-05-24) — replaces the greedy BLAST-top-hit
+   mapping with: (a) NCBI accession primary key, (b) BLAST identity ≥95%
+   AND symmetric coverage ≥95% + T1 length invariant, (c) BBH cross-check,
+   (d) Hungarian optimal assignment (scipy), (e) strict fail-fast on any
+   unresolved RGS. PLAN file: `gigantic_project-COPYME/subprojects/trees_gene_groups/gene_groups_COPYME/STEP_1-homolog_discovery/PLAN-rgs_identification_improvements.md`.
+   Synced to all 79 STEP_1 workflow-COPYME-rbh_rbf_homologs dirs (gene_groups
+   masters + hugo_hgnc + gene_family_COPYME master + 76 per-family templates).
+
+Together these prevent the `>g_*-<rgs_source>` duplicate from entering the
+CGS/AGS in the first place. The deferred-dedup script (017a) proposed below
+is no longer needed in the planned form, *but the TODO is retained until*
+verified on a real run (e.g., re-run 14_3_3 and innexin_pannexin from the
+patched COPYME and confirm no `>g_*-<rgs_source>` duplicates in the final
+AGS).
+
+**Action when verified:** delete this file. Until then, treat as
+documentation of the historical issue and the in-pipeline fixes that
+superseded it.
+
+---
+
 **Filed:** 2026-04-26
 **Discovered while investigating:** FlyC1 missing-plant-orthologs bug (sono_april2026 / gigantic_project-sono_nih_sequences)
 **Subproject affected:** `trees_gene_families/STEP_1-homolog_discovery`

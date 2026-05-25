@@ -1,197 +1,82 @@
-# AI Guide: STEP_2-phylogenetic_analysis (trees_gene_groups)
+# AI Guide: STEP_2 — Phylogenetic Analysis (trees_gene_groups)
 
-**For AI Assistants**: This guide covers STEP_2 of the trees_gene_groups subproject. For subproject overview, see `../AI_GUIDE-trees_gene_groups.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: Read `../../../AI_GUIDE-project.md` first for GIGANTIC overview. Then `../../AI_GUIDE-trees_gene_groups.md` for subproject concepts. This guide covers STEP_2.
 
-**Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/STEP_2-phylogenetic_analysis/`
+**Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/gene_groups_COPYME/STEP_2-phylogenetic_analysis/`
 
 ---
 
-## CRITICAL: Surface Discrepancies - No Silent Changes
+## CRITICAL: Surface Discrepancies — No Silent Changes
 
 - NEVER silently do something different than requested
 - ALWAYS stop and explain any discrepancy before proceeding
 
 ---
 
-## Quick Reference
-
-| User needs... | Go to... |
-|---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| trees_gene_groups concepts | `../AI_GUIDE-trees_gene_groups.md` |
-| STEP_2 phylogenetic analysis concepts (this step) | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-phylogenetic_analysis_workflow.md` |
-
----
-
 ## What This Step Does
 
-**Purpose**: Build phylogenetic trees from the AGS (All Gene Set) produced by STEP_1.
+**Purpose**: Build phylogenetic trees per gene group from STEP_1's AGS (All Gene Set).
 
-**Process**:
-1. Stage AGS sequences from STEP_1 output
-2. Clean sequences (remove special characters)
-3. Multiple sequence alignment (MAFFT)
-4. Alignment trimming (ClipKit)
-5. Tree building (one or more methods)
-6. Tree visualization (human-friendly and computer-vision)
-7. Export to subproject-root output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
+**Input**: Per-gene-group AGS FASTA files at `output_to_input/<source>/STEP_1-homolog_discovery/gene_group-<name>/`.
+**Output**: Per-gene-group tree newick files at `output_to_input/<source>/STEP_2-phylogenetic_analysis/gene_group-<name>/`.
 
----
+## Single-Script Orchestrator Pattern
 
-## Tree Methods
+The workflow has **one user-runnable script**: `workflow-COPYME-phylogenetic_analysis/RUN-workflow.sh`. The user invokes it from a `workflow-RUN_NN-phylogenetic_analysis/` copy.
 
-Four methods available, configurable in `START_HERE-user_config.yaml`:
+What it does:
 
-| Method | Script | Default | Speed | Best For |
-|--------|--------|---------|-------|----------|
-| **FastTree** | 005_a | ON | Minutes | Default analysis, good ML approximation |
-| **IQ-TREE** | 005_b | OFF | Hours-days | Publication-quality, automatic model selection |
-| **VeryFastTree** | 005_c | OFF | Very fast | Large datasets (>10,000 sequences) |
-| **PhyloBayes** | 005_d | OFF | Days-weeks | Bayesian analysis, site-heterogeneous models |
+1. **Create conda env once** on the login node from `ai/conda_environment.yml` (env name: `aiG-trees_gene_groups-phylogenetic_analysis`)
+2. **Iterate the STEP_0 summary TSV** to enumerate gene groups
+3. For each gene group with a STEP_1 AGS file: create `gene_group-X/workflow-RUN_01-phylogenetic_analysis/` as a sibling at this STEP_2 level (skip if no AGS yet)
+4. Categorize as small (≤ `large_threshold` RGS seqs) or large
+5. Dispatch per `execution_mode`:
+   - `local` — sequential nextflow runs
+   - `slurm-standard` — one sbatch per gene group, standard QOS
+   - `slurm-burst` — chunk into blocks, one sbatch per block, burst QOS
 
-### When to Use Each
+## Pipeline Process (per gene group, inside nextflow)
 
-- **FastTree**: Always run this. Good quality, fast results. Default choice.
-- **IQ-TREE**: For publication. Runs ModelFinder for optimal substitution model. Supports ultrafast bootstrap.
-- **VeryFastTree**: Drop-in FastTree replacement with multi-threading. Use when FastTree is too slow.
-- **PhyloBayes**: Bayesian MCMC. Provides posterior probabilities instead of bootstrap. Uses CAT-GTR model for site-heterogeneous evolution. Very slow but provides different perspective than ML.
+| Process | Tool | What |
+|---------|------|------|
+| 1 | (bash) | Stage AGS from STEP_1 output_to_input |
+| 2 | (bash) | Strip leading/trailing dashes |
+| 3 | MAFFT | Multiple sequence alignment |
+| 4 | ClipKit | Smart-gap alignment trimming |
+| 5_a | FastTree | Fast approximate ML tree (default ON) |
+| 5_b | IQ-TREE | Full ML with bootstrap (publication-quality; very slow) |
+| 5_c | VeryFastTree | Parallelized FastTree alternative |
+| 5_d | PhyloBayes | Bayesian MCMC (very slow) |
+| 6 | python | Pipeline run log |
 
----
+Tree methods are independently toggled in the `tree_methods:` YAML block. At least one must be enabled.
 
-## Inputs
+## Resource Tiers
 
-| Input | Source | Description |
-|-------|--------|-------------|
-| AGS FASTA | `../../output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/` | From STEP_1 |
+Same RGS-count tiering as STEP_1. STEP_2 tends to need more CPU/memory than STEP_1 for the heavier tree methods (IQ-TREE especially).
 
-**Note**: The workflow automatically finds the AGS file in the subproject-root output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery/gene_group-<gene_family>/ directory. Uses `find -L` to follow symlinks.
+## Conda Environment
 
----
+`aiG-trees_gene_groups-phylogenetic_analysis` — auto-created from
+`workflow-COPYME-phylogenetic_analysis/ai/conda_environment.yml` on first run.
 
-## Outputs
-
-### Pipeline Outputs
-
-```
-OUTPUT_pipeline/
-├── 1-output/       # Staged AGS sequences
-├── 2-output/       # Cleaned sequences
-├── 3-output/       # MAFFT alignment
-├── 4-output/       # ClipKit trimmed alignment
-├── 5_a-output/     # FastTree tree (if enabled)
-├── 5_b-output/     # IQ-TREE tree (if enabled)
-├── 5_c-output/     # VeryFastTree tree (if enabled)
-├── 5_d-output/     # PhyloBayes tree (if enabled)
-├── 6-output/       # Human-friendly visualizations
-└── 7-output/       # Computer-vision visualizations
-```
-
-### output_to_input
-
-Trees and alignments exported to the subproject-root output_to_input/:
-
-| Level | Path |
-|-------|------|
-| Subproject-root | `../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/` (symlinks to OUTPUT_pipeline/) |
-
----
-
-## Directory Structure
-
-```
-STEP_2-phylogenetic_analysis/
-├── AI_GUIDE-phylogenetic_analysis.md   # THIS FILE
-├── README.md
-└── workflow-COPYME-phylogenetic_analysis/
-# Note: output symlinked to ../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/
-    ├── README.md
-    ├── RUN-workflow.sh
-    ├── START_HERE-user_config.yaml
-    ├── INPUT_user/
-    ├── OUTPUT_pipeline/
-    └── ai/
-        ├── AI_GUIDE-phylogenetic_analysis_workflow.md
-        ├── main.nf
-        ├── nextflow.config
-        └── scripts/
-            ├── 001_ai-bash-prepare_alignment_input.sh
-            ├── 002_ai-bash-replace_special_characters.sh
-            ├── 003_ai-bash-run_mafft_alignment.sh
-            ├── 004_ai-bash-run_clipkit_trimming.sh
-            ├── 005_a_ai-bash-run_fasttree.sh
-            ├── 005_b_ai-bash-run_iqtree.sh
-            ├── 005_c_ai-bash-run_veryfasttree.sh
-            ├── 005_d_ai-bash-run_phylobayes.sh
-            ├── 006_ai-python-visualize_phylogenetic_trees-human_friendly.py
-            ├── 007_ai-python-visualize_phylogenetic_trees-computer_vision_friendly.py
-            └── 008_ai-python-write_run_log.py
-```
-
----
-
-## Key Files
-
-| File | Purpose | User Edits? |
-|------|---------|-------------|
-| `workflow-*/START_HERE-user_config.yaml` | Gene family, tree methods, alignment settings | **YES** |
-| `../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/` | Final trees | No (auto-created symlinks) |
-
----
-
-## Resource Requirements
-
-| Process | CPU | Memory | Time |
-|---------|-----|--------|------|
-| MAFFT alignment | 50 | 64 GB | 48 hours |
-| ClipKit trimming | 4 | 16 GB | 4 hours |
-| FastTree | 4 | 16 GB | 4 hours |
-| IQ-TREE | 50 | 64 GB | 100 hours |
-| VeryFastTree | configurable | 16 GB | 4 hours |
-| PhyloBayes | 4 | 32 GB | 336 hours (2 weeks) |
-
----
+Includes: python, pyyaml, nextflow, mafft, clipkit, fasttree, iqtree, veryfasttree.
+(PhyloBayes-MPI not included by default; add to yml + rebuild env if needed.)
 
 ## Troubleshooting
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| "AGS file not found" | STEP_1 not complete | Run STEP_1 first |
-| MAFFT out of memory | Large alignment | Increase memory in config |
-| IQ-TREE timeout | Complex dataset | Increase time limit or use FastTree |
-| PhyloBayes not converging | Too few generations | Increase generations in config |
-| Empty tree file | Alignment had too few sequences | Check AGS has enough sequences |
-| Visualization fails | ete3 not installed | Check conda environment |
-| "ClipKit removed all columns" | Very divergent sequences | Try different ClipKit mode |
+| "STEP_1 output_to_input dir not found" | STEP_1 hasn't run | Run STEP_1 first |
+| Many gene groups skipped (no STEP_1 AGS) | STEP_1 still in progress | Wait for STEP_1 to finish; rerun STEP_2 |
+| MAFFT out of memory | Large alignment | Use the `large` resource tier; bump `large_memory_gb` |
+| IQ-TREE timeout | Model selection slow | Increase `large_time_hours` or use FastTree only |
+| All trees fail with ClipKit error | All columns trimmed | Switch ClipKit mode to less aggressive (e.g., `kpic-smart-gap`) |
 
-### Diagnostic Commands
+## Key Files
 
-```bash
-# Check AGS from STEP_1 (use find -L to follow symlinks)
-find -L ../../output_to_input/*/STEP_1-homolog_discovery/ -name "*.aa" -type f
-grep -c ">" ../../output_to_input/*/STEP_1-homolog_discovery/*.aa
-
-# Check alignment
-grep -c ">" OUTPUT_pipeline/3-output/*.mafft
-
-# Check trimmed alignment
-grep -c ">" OUTPUT_pipeline/4-output/*.clipkit*
-
-# Check tree files
-ls OUTPUT_pipeline/5_*-output/
-
-# Check visualizations
-ls OUTPUT_pipeline/6-output/ OUTPUT_pipeline/7-output/
-```
-
----
-
-## Questions to Ask Users
-
-| Situation | Ask |
-|-----------|-----|
-| Starting STEP_2 | "Which tree methods? FastTree (default) is usually sufficient for exploration." |
-| Publication analysis | "For publication, I recommend enabling IQ-TREE alongside FastTree for comparison." |
-| Large dataset | "How many sequences in the AGS? If >10,000, VeryFastTree may be faster than FastTree." |
-| Bayesian needed | "PhyloBayes takes days-weeks. Are you sure you need Bayesian analysis?" |
-| SLURM users | "Set execution_mode: slurm, slurm_account, slurm_qos, slurm_cpus, slurm_memory_gb, slurm_time_hours in START_HERE-user_config.yaml" |
+| File | Purpose | User Edits? |
+|------|---------|-------------|
+| `workflow-COPYME-*/START_HERE-user_config.yaml` | Tree methods, resources, paths | **YES** (in the RUN_NN copy) |
+| `workflow-COPYME-*/ai/conda_environment.yml` | Conda env spec | No (auto-applied) |
+| `workflow-COPYME-*/ai/main.nf`, `nextflow.config`, `scripts/*` | Pipeline | No |

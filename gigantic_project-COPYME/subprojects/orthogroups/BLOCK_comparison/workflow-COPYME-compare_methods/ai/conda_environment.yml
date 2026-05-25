@@ -1,0 +1,43 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Tool-dedicated conda env for the cross-tool orthogroup-clustering
+# comparison BLOCK ( BLOCK_comparison ).
+#
+# This env does NOT run any orthogroup-detection tool ( orthohmm /
+# orthofinder / broccoli have their own envs ). It only reads the
+# completed-run outputs and computes summary tables ( 32 metrics, 7
+# sections ) + visualizations ( 5 plots ).
+#
+# Lightweight pure-Python env: matplotlib + numpy + stdlib.
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-orthogroups-comparison
+
+name: aiG-orthogroups-comparison
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # Comparison-script dependencies
+  - matplotlib   # 5 plots in script 002
+  - numpy        # numeric ops in scripts 001 + 002

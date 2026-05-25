@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument(
         "--max-header-length",
         type = int,
-        default = 253,
+        default = 239,
         help = "Maximum allowed FASTA header line length in characters, including '>'; records exceeding this are dropped (default: 253)",
     )
     return parser.parse_args()

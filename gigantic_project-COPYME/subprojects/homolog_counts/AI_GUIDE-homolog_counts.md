@@ -8,7 +8,7 @@
 |---|---|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
 | Subproject concepts, output schema | This file |
-| Running the workflow | `BLOCK_homolog_counts/workflow-COPYME-homolog_counts/ai/AI_GUIDE-homolog_counts_workflow.md` |
+| Running the workflow | `BLOCK_homolog_counts/workflow-RUN_1-homolog_counts/ai/AI_GUIDE-homolog_counts_workflow.md` |
 
 ## Purpose
 
@@ -26,7 +26,7 @@ homolog_counts/
 │   └── BLOCK_homolog_counts/                     # populated by RUN-workflow.sh
 ├── upload_to_server/                             # curated counts for the GIGANTIC server
 └── BLOCK_homolog_counts/
-    └── workflow-COPYME-homolog_counts/
+    └── workflow-RUN_1-homolog_counts/
         ├── START_HERE-user_config.yaml           # USER edits this before running
         ├── RUN-workflow.sh                       # unified entrypoint: local or SLURM via execution_mode in YAML
         ├── INPUT_user/
@@ -85,5 +85,5 @@ Both will be added in a follow-up round once the wide TSVs are first produced an
 
 ## Where to Look Next
 
-- `BLOCK_homolog_counts/workflow-COPYME-homolog_counts/ai/AI_GUIDE-homolog_counts_workflow.md` — workflow execution
-- `BLOCK_homolog_counts/workflow-COPYME-homolog_counts/START_HERE-user_config.yaml` — edit before running
+- `BLOCK_homolog_counts/workflow-RUN_1-homolog_counts/ai/AI_GUIDE-homolog_counts_workflow.md` — workflow execution
+- `BLOCK_homolog_counts/workflow-RUN_1-homolog_counts/START_HERE-user_config.yaml` — edit before running

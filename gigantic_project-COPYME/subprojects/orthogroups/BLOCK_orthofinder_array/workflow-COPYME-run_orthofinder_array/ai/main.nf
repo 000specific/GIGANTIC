@@ -41,7 +41,7 @@
  *
  * Each numbered script writes to OUTPUT_pipeline/N-output/ via:
  *   - script invocation:  --output-dir N-output  (relative to work dir)
- *   - publishDir:         "${projectDir}/../${params.output_dir}"
+ *   - publishDir:         "${projectDir}/../${params.output.base_dir}"
  *                         which resolves to workflow_root/OUTPUT_pipeline/
  *   - filenames:          N_ai-<description>.<ext>
  *
@@ -74,16 +74,10 @@ nextflow.enable.dsl = 2
 
 
 // ============================================================================
-// PARAMETERS (sourced from nextflow.config which loads START_HERE-user_config.yaml)
+// PARAMETERS (sourced from nextflow.config defaults + -params-file overrides)
 // ============================================================================
-// All defaults below match the COPYME yaml; users edit yaml, not main.nf.
-
-params.proteomes_dir = '../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes'
-params.output_dir = 'OUTPUT_pipeline'
-params.search_method = 'diamond'
-params.mcl_inflation = '1.5'
-params.project_name = 'GIGANTIC'
-params.conda_environment = 'ai_gigantic_orthogroups'
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 
 // ============================================================================
@@ -103,7 +97,7 @@ params.conda_environment = 'ai_gigantic_orthogroups'
 process validate_proteomes {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         val proteomes_dir
@@ -132,7 +126,7 @@ process validate_proteomes {
 process prepare_proteomes {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -171,7 +165,7 @@ process prepare_proteomes {
 process extract_orthofinder_search_commands {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path prepared_proteomes
@@ -189,7 +183,7 @@ process extract_orthofinder_search_commands {
 
     python3 ${projectDir}/scripts/003_ai-python-extract_orthofinder_search_commands.py \\
         --proteomes-dir 3-output/orthofinder_input_proteomes \\
-        --search-method ${params.search_method} \\
+        --search-method ${params.orthofinder.search_method} \\
         --output-dir 3-output
     """
 }
@@ -260,7 +254,7 @@ process run_diamond_pair {
 process pool_and_verify_diamond_outputs {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path "diamond_outputs/*"
@@ -302,7 +296,7 @@ process pool_and_verify_diamond_outputs {
 process run_orthofinder_from_blast {
     label 'orthofinder_finalize'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path pooled_workdir
@@ -319,8 +313,8 @@ process run_orthofinder_from_blast {
         --pooled-workdir ${pooled_workdir} \\
         --output-dir 6-output \\
         --cpus ${task.cpus} \\
-        --search-method ${params.search_method} \\
-        --mcl-inflation ${params.mcl_inflation}
+        --search-method ${params.orthofinder.search_method} \\
+        --mcl-inflation ${params.orthofinder.mcl_inflation}
     """
 }
 
@@ -337,7 +331,7 @@ process run_orthofinder_from_blast {
 process standardize_output {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path orthofinder_output
@@ -369,7 +363,7 @@ process standardize_output {
 process generate_summary_statistics {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -402,7 +396,7 @@ process generate_summary_statistics {
 process qc_analysis_per_species {
     label 'local_step'
 
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
 
     input:
         path proteome_list
@@ -443,7 +437,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/010_ai-python-write_run_log.py \\
         --workflow-name "run_orthofinder_array" \\
         --subproject-name "orthogroups" \\
-        --project-name "${params.project_name}" \\
+        --project-name "${params.project.name}" \\
         --status success
     """
 }
@@ -473,7 +467,7 @@ workflow {
     // -------------------------------------------------------------------
     // Stage 1: Validate inputs and prep
     // -------------------------------------------------------------------
-    validate_proteomes(params.proteomes_dir)
+    validate_proteomes(params.inputs.proteomes_dir)
 
     prepare_proteomes(validate_proteomes.out.proteome_list)
 
@@ -529,32 +523,5 @@ workflow {
 }
 
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Orthogroups - BLOCK_orthofinder_array Pipeline Complete!"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output files in ${params.output_dir}/:"
-        println "  1-output/: Validated proteome list"
-        println "  2-output/: Prepared OrthoFinder input proteomes"
-        println "  3-output/: DIAMOND pair manifest (extracted from OrthoFinder -op)"
-        println "  4-output/: (none — fan-out outputs go to 5-output/)"
-        println "  5-output/: Pooled DIAMOND outputs and verification report"
-        println "  6-output/: OrthoFinder finalize results (clustering + trees + reconciliation)"
-        println "  7-output/: Orthogroups standardized to GIGANTIC format"
-        println "  8-output/: Summary statistics"
-        println "  9-output/: Per-species QC analysis"
-        println ""
-        println "Symlinks created in output_to_input/BLOCK_orthofinder_array/ (by RUN-workflow.sh)"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

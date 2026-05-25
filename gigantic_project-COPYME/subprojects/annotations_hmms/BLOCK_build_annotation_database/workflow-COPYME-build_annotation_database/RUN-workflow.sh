@@ -23,24 +23,62 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # ============================================================================
-# Activate GIGANTIC Environment
+# Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
+# Per-BLOCK conda env. Auto-created on first run from ai/conda_environment.yml.
+# mamba is preferred (much faster); conda is the fallback if mamba is missing.
+
+ENV_NAME="aiG-annotations_hmms-build_annotation_database"
+ENV_YML="ai/conda_environment.yml"
 
 module load conda 2>/dev/null || true
 
-if conda activate ai_gigantic_annotations_hmms 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_annotations_hmms"
-else
-    echo "WARNING: Environment 'ai_gigantic_annotations_hmms' not found."
-    echo ""
-    echo "Please run the environment setup script first:"
-    echo "  cd ../../../../  # Go to project root"
-    echo "  bash RUN-setup_environments.sh"
-    echo ""
-    echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../conda_environments/ai_gigantic_annotations_hmms.yml"
-    echo ""
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
+    echo "On HPC (HiPerGator): module load conda"
+    echo "Otherwise: install conda from https://docs.conda.io/en/latest/miniconda.html"
     exit 1
+fi
+
+# Detect incomplete env (directory exists but missing Python) and rebuild.
+env_is_complete() {
+    local env_prefix=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
+    if [ -z "${env_prefix}" ]; then
+        return 1
+    fi
+    if [ ! -x "${env_prefix}/bin/python" ]; then
+        return 1
+    fi
+    return 0
+}
+
+if ! env_is_complete; then
+    if conda env list 2>/dev/null | awk '{print $1}' | grep -q "^${ENV_NAME}$"; then
+        echo "Removing broken/incomplete env '${ENV_NAME}'..."
+        conda env remove -n "${ENV_NAME}" -y 2>&1 | tail -3
+    fi
+
+    echo "Creating conda env '${ENV_NAME}' from ${ENV_YML}..."
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
+        exit 1
+    fi
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
+    if ! env_is_complete; then
+        echo "ERROR: Environment creation failed -- '${ENV_NAME}' still not complete."
+        exit 1
+    fi
+    echo "Env '${ENV_NAME}' created successfully."
+fi
+
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
 fi
 
 # Ensure NextFlow is available (conda env or system module)
@@ -52,7 +90,7 @@ if ! command -v nextflow &> /dev/null; then
         echo "ERROR: NextFlow not available!"
         echo ""
         echo "Options to resolve:"
-        echo "  1. Install nextflow in conda env: conda install -n ai_gigantic_annotations_hmms -c bioconda nextflow"
+        echo "  1. Install nextflow in conda env: conda install -n ${ENV_NAME} -c bioconda nextflow"
         echo "  2. Load system module: module load nextflow"
         echo "  3. Install globally: https://www.nextflow.io/docs/latest/install.html"
         exit 1
@@ -137,8 +175,33 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
+# ============================================================================
+# Flatten START_HERE-user_config.yaml -> .params.json for NextFlow -params-file
+# ============================================================================
+# NextFlow 26.x cannot import org.yaml.snakeyaml.Yaml from nextflow.config, so
+# the YAML config is flattened to JSON here (Python pyyaml) and passed via
+# -params-file. All keys become params.KEY in nextflow.config at run time.
+
+python3 <<'PYTHON_FLATTEN'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+
+flat = {}
+for k, v in cfg.items():
+    if isinstance( v, dict ):
+        for sk, sv in v.items():
+            flat[ sk ] = sv
+    else:
+        flat[ k ] = v
+
+with open( '.params.json', 'w' ) as f:
+    json.dump( flat, f, indent=2 )
+PYTHON_FLATTEN
+
 nextflow run ai/main.nf ${RESUME_FLAG} \
-    -c ai/nextflow.config
+    -c ai/nextflow.config \
+    -params-file .params.json
 
 EXIT_CODE=$?
 

@@ -1,0 +1,59 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env, no
+#                      suffix needed.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_tmbed ( transmembrane topology
+# prediction using protein language models ).
+#
+# Created on-demand by RUN-workflow.sh via mamba ( conda fallback ).
+#
+# GPU note: tmbed benefits significantly from GPU acceleration ( CUDA via
+# pip-installed PyTorch ). CPU fallback exists but is much slower. Toggle in
+# the workflow's START_HERE-user_config.yaml via use_gpu / cpu_fallback.
+#
+# Install notes:
+#   - Python pinned to 3.10.x for CUDA PyTorch compatibility with this version
+#     of tmbed.
+#   - PyTorch comes from pip via the PyTorch CUDA index URL ( the conda-forge
+#     pytorch is CPU-only ).
+#   - tmbed itself is no longer on PyPI; installed from the BernhoferM/TMbed
+#     GitHub source.
+#   - protobuf is required by the transformers T5 tokenizer that tmbed loads
+#     for SentencePiece parsing.
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-annotations_hmms-tmbed
+
+name: aiG-annotations_hmms-tmbed
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements (Python 3.10 required for CUDA PyTorch compatibility)
+  - python==3.10.*
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # Required for transformers T5 tokenizer (SentencePiece protobuf parsing)
+  - protobuf
+
+  # PyTorch with CUDA + tmbed via pip
+  - pip
+  - pip:
+    - --extra-index-url https://download.pytorch.org/whl/cu121
+    - torch
+    - git+https://github.com/BernhoferM/TMbed.git

@@ -176,7 +176,6 @@ mkdir -p "${OUTPUT_DIR}"
 # =============================================================================
 
 SIGNALP_RAW_DIR="${OUTPUT_DIR}/signalp_raw_output_${PHYLONAME}"
-OUTPUT_PREDICTIONS="${OUTPUT_DIR}/${PHYLONAME}_signalp_predictions.tsv"
 
 # =============================================================================
 # RUN SIGNALP 6
@@ -241,177 +240,39 @@ if [ -z "${SIGNALP_RESULTS_FILE}" ] || [ ! -f "${SIGNALP_RESULTS_FILE}" ]; then
     exit 1
 fi
 
-log_message "Parsing SignalP results from: ${SIGNALP_RESULTS_FILE}"
+log_message "SignalP6 raw output present at: ${SIGNALP_RESULTS_FILE}"
 
 # =============================================================================
-# PARSE SIGNALP OUTPUT AND CREATE FILTERED TSV
+# VALIDATE RAW OUTPUT
 # =============================================================================
-# SignalP 6 output format (tab-separated, with header lines starting with #):
-#   Column 0: ID (protein identifier)
-#   Column 1: Prediction (SP type: Sec/SPI, Sec/SPII, Tat/SPI, or OTHER)
-#   Column 2+: Probability columns (varies by version)
+# We preserve the raw SignalP6 output directory unchanged. No parsing or
+# reduction is performed here — that violates GIGANTIC convention. NextFlow
+# publishes ${SIGNALP_RAW_DIR} into OUTPUT_pipeline/2-output/ as declared in
+# main.nf.
 #
-# We extract: protein ID, prediction type, cleavage site position, and SP probability.
-# Only proteins with predicted signal peptides (prediction != OTHER) are included.
+# SignalP6 raw outputs in ${SIGNALP_RAW_DIR}:
+#   prediction_results.txt         (per-protein predictions: OTHER/SP/LIPO/TAT
+#                                   probabilities + CS Position line)
+#   processed_entries.fasta        (input sequences as processed)
+#   region_output.gff3             (per-protein region annotations)
+#   output_<protein_id>_plot.txt   (per-protein cleavage probability plots,
+#                                   one file per protein predicted as SP)
 # =============================================================================
 
-python3 << PYTHON_PARSE_SCRIPT
-import sys
-from pathlib import Path
-
-input_signalp_results_path = Path( "${SIGNALP_RESULTS_FILE}" )
-output_predictions_path = Path( "${OUTPUT_PREDICTIONS}" )
-
-total_protein_count = 0
-signal_peptide_count = 0
-
-with open( input_signalp_results_path, 'r' ) as input_signalp_results, \
-     open( output_predictions_path, 'w' ) as output_predictions:
-
-    # Write self-documenting header
-    header = 'Protein_Identifier (protein sequence identifier from FASTA header)' + '\t'
-    header += 'Prediction (SignalP prediction type: Sec/SPI for standard signal peptide or Sec/SPII for lipoprotein or Tat/SPI for twin arginine)' + '\t'
-    header += 'Cleavage_Site_Position (amino acid position of signal peptide cleavage site predicted by SignalP)' + '\t'
-    header += 'SP_Probability (probability score for signal peptide prediction from SignalP ranging 0 to 1)' + '\n'
-    output_predictions.write( header )
-
-    for line in input_signalp_results:
-        line = line.strip()
-
-        # Skip empty lines and comment/header lines
-        if not line or line.startswith( '#' ):
-            continue
-
-        parts = line.split( '\t' )
-
-        # Need at least protein ID and prediction columns
-        if len( parts ) < 2:
-            continue
-
-        protein_identifier = parts[ 0 ].strip()
-        prediction = parts[ 1 ].strip()
-
-        total_protein_count += 1
-
-        # Only include proteins WITH predicted signal peptides
-        if prediction == 'OTHER':
-            continue
-
-        signal_peptide_count += 1
-
-        # =====================================================================
-        # Extract cleavage site position and SP probability
-        # =====================================================================
-        # SignalP 6 output varies slightly, but generally:
-        #   - The CS (cleavage site) position is embedded in one of the columns
-        #     as "CS pos: X-Y" where X is the last residue of the signal peptide
-        #   - SP probability is in one of the numeric columns
-        #
-        # We parse all remaining columns to find these values.
-        # =====================================================================
-
-        cleavage_site_position = 'NA'
-        signal_peptide_probability = 'NA'
-
-        # Search through columns for cleavage site information
-        for part_index in range( 2, len( parts ) ):
-            column_value = parts[ part_index ].strip()
-
-            # Look for cleavage site position pattern: "CS pos: X-Y"
-            if 'CS pos:' in column_value or 'CS pos.' in column_value:
-                # Extract the position number
-                # Format examples: "CS pos: 20-21. ..." or "CS pos: 20-21"
-                try:
-                    position_text = column_value.split( 'CS pos' )[ 1 ]
-                    # Remove punctuation after "CS pos" (colon, period, etc.)
-                    position_text = position_text.lstrip( ':. ' )
-                    # Get the cleavage position (the number before the dash)
-                    parts_position = position_text.split( '-' )
-                    if len( parts_position ) >= 1:
-                        cleavage_site_position = parts_position[ 0 ].strip().split()[ 0 ].strip( '.' )
-                except ( IndexError, ValueError ):
-                    pass
-
-        # Look for SP probability in the columns
-        # SignalP 6 typically has probability columns with float values
-        # The SP probability is usually the highest non-OTHER probability
-        for part_index in range( 2, len( parts ) ):
-            column_value = parts[ part_index ].strip()
-            try:
-                probability_value = float( column_value )
-                # Signal peptide probabilities are between 0 and 1
-                if 0.0 <= probability_value <= 1.0:
-                    # Take the first valid probability (typically the SP probability)
-                    if signal_peptide_probability == 'NA':
-                        signal_peptide_probability = str( round( probability_value, 4 ) )
-            except ValueError:
-                pass
-
-        output = protein_identifier + '\t'
-        output += prediction + '\t'
-        output += str( cleavage_site_position ) + '\t'
-        output += str( signal_peptide_probability ) + '\n'
-        output_predictions.write( output )
-
-print( f"Parsed {total_protein_count} total proteins" )
-print( f"Found {signal_peptide_count} proteins with predicted signal peptides" )
-print( f"Filtered output written to: {output_predictions_path}" )
-
-if total_protein_count == 0:
-    print( "CRITICAL ERROR: No proteins found in SignalP output!", file = sys.stderr )
-    print( f"Check SignalP results file: {input_signalp_results_path}", file = sys.stderr )
-    sys.exit( 1 )
-PYTHON_PARSE_SCRIPT
-
-PARSE_EXIT_CODE=$?
-
-if [ ${PARSE_EXIT_CODE} -ne 0 ]; then
-    log_message "CRITICAL ERROR: Failed to parse SignalP output!"
-    log_message "Parse script exited with code ${PARSE_EXIT_CODE}"
+# Verify the SignalP6 raw output dir has the predictions file
+if [ ! -s "${SIGNALP_RESULTS_FILE}" ]; then
+    log_message "CRITICAL ERROR: SignalP6 prediction_results.txt is missing or empty!"
+    log_message "Raw output dir: ${SIGNALP_RAW_DIR}"
+    log_message "Directory contents:"
+    ls -la "${SIGNALP_RAW_DIR}" 2>&1 | tee -a "${LOG_FILE}"
     exit 1
 fi
 
-log_message "Parsed SignalP output to: ${OUTPUT_PREDICTIONS}"
-
-# =============================================================================
-# CLEAN UP RAW OUTPUT
-# =============================================================================
-# Remove the raw SignalP output directory to save disk space.
-# The parsed TSV contains all needed information.
-# =============================================================================
-
-rm -rf "${SIGNALP_RAW_DIR}"
-log_message "Cleaned up raw SignalP output directory"
-
-# =============================================================================
-# VALIDATE OUTPUTS
-# =============================================================================
-
-log_message ""
-log_message "Validating outputs..."
-
-# Check predictions output exists
-if [ ! -f "${OUTPUT_PREDICTIONS}" ]; then
-    log_message "CRITICAL ERROR: Predictions output file was not created!"
-    log_message "Expected: ${OUTPUT_PREDICTIONS}"
-    exit 1
-fi
-
-PREDICTIONS_LINE_COUNT=$(wc -l < "${OUTPUT_PREDICTIONS}")
-log_message "Predictions output: ${PREDICTIONS_LINE_COUNT} lines (including header)"
-
-# The file should have at least the header line
-if [ "${PREDICTIONS_LINE_COUNT}" -lt 1 ]; then
-    log_message "CRITICAL ERROR: Predictions output file is empty!"
-    exit 1
-fi
-
-# Report count of proteins with signal peptides (data lines = total - 1 header)
-SIGNAL_PEPTIDE_COUNT=$((PREDICTIONS_LINE_COUNT - 1))
-log_message "Proteins with predicted signal peptides: ${SIGNAL_PEPTIDE_COUNT}"
+# Report proteins with signal peptide predictions (Prediction != OTHER)
+SIGNAL_PEPTIDE_COUNT=$(awk -F'\t' '!/^#/ && NF>1 && $2 != "OTHER" {c++} END {print c+0}' "${SIGNALP_RESULTS_FILE}")
+log_message "Proteins with non-OTHER prediction (SP/LIPO/TAT): ${SIGNAL_PEPTIDE_COUNT}"
 log_message "Total proteins in input: ${SEQUENCE_COUNT}"
-
-if [ "${SIGNAL_PEPTIDE_COUNT}" -ge 0 ]; then
+if [ "${SEQUENCE_COUNT}" -gt 0 ]; then
     log_message "Signal peptide detection rate: approximately $(echo "scale=1; ${SIGNAL_PEPTIDE_COUNT} * 100 / ${SEQUENCE_COUNT}" | bc 2>/dev/null || echo "N/A")%"
 fi
 
@@ -423,5 +284,5 @@ log_message ""
 log_message "========================================================================"
 log_message "Script 002 completed successfully for: ${PHYLONAME}"
 log_message "========================================================================"
-log_message "Predictions output: ${OUTPUT_PREDICTIONS}"
+log_message "SignalP6 raw output dir: ${SIGNALP_RAW_DIR}"
 log_message "Log file: ${LOG_FILE}"

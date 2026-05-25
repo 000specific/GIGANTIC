@@ -1,0 +1,52 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Tool-dedicated conda env for Broccoli-based orthogroup detection.
+# Only BLOCK_broccoli uses this env.
+#
+# Broccoli pipeline steps:
+#   Step 1: input preparation
+#   Step 2: Diamond pairwise alignment + FastTree gene-tree inference
+#   Step 3: MCL clustering on Broccoli's gene-tree-derived network
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-orthogroups-broccoli
+
+name: aiG-orthogroups-broccoli
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # External tools Broccoli invokes
+  - diamond      # pairwise alignment (Step 2)
+  - fasttree     # gene-tree inference (Step 2/3)
+  - mcl          # network clustering (Step 3)
+
+  # Python deps required by Broccoli
+  - numpy
+  - networkx
+  - ete3
+
+  # Broccoli itself (pip-only)
+  - pip
+  - pip:
+    - broccoli

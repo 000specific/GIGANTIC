@@ -1,0 +1,41 @@
+# GIGANTIC secretome workflow — user-editable config
+# Edit this file before running RUN-workflow.sh.
+#
+# Path style:
+#   While building under ~/secretome/, inputs use absolute /blue/.../ paths.
+#   After rsync into gigantic_project-COPYME/subprojects/secretome/, swap to
+#   relative paths matching the canonical convention:
+#     "../../../<subproject>/output_to_input/..."
+
+project:
+  name: "secretome"
+
+# Execution mode: "local" (run pipeline here, in this shell)
+#                 "slurm" (RUN-workflow.sh self-submits as a SLURM job)
+execution_mode: "local"
+
+# Resource sizing — used both by the SLURM job allocation (when execution_mode
+# is "slurm") AND by NextFlow's local executor concurrency cap.
+# TODO: tune once script workloads are defined.
+cpus: 4
+memory_gb: 16
+time_hours: 4
+
+# SLURM-specific (ignored when execution_mode is "local")
+slurm_account: ""    # <-- EDIT before running with execution_mode: slurm
+slurm_qos: ""        # <-- EDIT before running with execution_mode: slurm
+
+inputs:
+  # species70 canonical phyloname map (genus_species | phyloname | phyloname_taxonid)
+  # Same canonical map used by other GIGANTIC subprojects.
+  species70_phyloname_map: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/phylonames/output_to_input/STEP_1-generate_and_evaluate/maps/species70_map-genus_species_X_phylonames.tsv"
+
+  # TODO — add upstream subproject paths once workflow scripts are defined.
+  # Example placeholders (delete or replace):
+  # upstream_source_a_dir: "/blue/moroz/share/.../subproject_a/output_to_input/..."
+  # upstream_source_b_dir: "/blue/moroz/share/.../subproject_b/output_to_input/..."
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+resume: false

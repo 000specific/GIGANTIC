@@ -109,7 +109,12 @@ bash RUN-workflow.sh
 
 - **genomesDB** subproject must be complete (BLAST databases required)
 - **phylonames** subproject must be complete (species naming)
-- Conda environment: `ai_gigantic_trees_gene_families` (see `../../conda_environments/`)
+- Conda environments are per-workflow and auto-created on first run from
+  `ai/conda_environment.yml` inside each workflow-COPYME-* directory:
+  - STEP_1: `aiG-trees_gene_families-rbh_rbf_homologs` (BLAST + numpy + scipy)
+  - STEP_2: `aiG-trees_gene_families-phylogenetic_analysis` (mafft, clipkit, fasttree, iqtree, veryfasttree)
+  - STEP_3: `aiG-trees_gene_families-visualization` (toytree + toyplot + reportlab; pip-only, no Qt)
+  Each workflow's `RUN-workflow.sh` calls `mamba env create -f ai/conda_environment.yml` on first run (conda fallback). No separate setup script needed.
 
 ## One Gene Family Per Directory
 

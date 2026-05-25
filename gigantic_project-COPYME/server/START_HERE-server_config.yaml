@@ -43,8 +43,8 @@ subproject_order:
   - annotations_hmms
   - dark_proteomes
   - gene_sizes
+  - homolog_counts
   - hotspots
-  - moroz_innovations
   - orthogroups_X_ocl
   - trees_gene_families
   - trees_gene_groups

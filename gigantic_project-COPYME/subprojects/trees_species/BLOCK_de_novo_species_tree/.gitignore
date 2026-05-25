@@ -1,0 +1,16 @@
+# Placeholder BLOCK - NOT YET IMPLEMENTED
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+#
+# This BLOCK is a stub. Its workflow-COPYME-build_species_tree/RUN-workflow.sh
+# exits with code 1 and a "NOT YET IMPLEMENTED" message. Until the de novo
+# species-tree pipeline is implemented (BUSCO -> MAFFT -> ClipKit ->
+# IQ-TREE/FastTree), no real workflow runs here.
+#
+# Ignored so the conda-modernization audits stop flagging it as a workflow
+# that needs an ai/conda_environment.yml or a modern RUN-workflow.sh conda
+# block.
+
+# Ignore everything in this BLOCK except this file
+*
+!.gitignore

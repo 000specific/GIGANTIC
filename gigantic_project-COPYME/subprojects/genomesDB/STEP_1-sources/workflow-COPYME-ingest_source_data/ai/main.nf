@@ -23,13 +23,10 @@
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (from config.yaml via nextflow.config + .params.json)
 // ============================================================================
-
-params.source_manifest = "INPUT_user/source_manifest.tsv"
-params.output_dir = "OUTPUT_pipeline"
-params.overwrite_existing = false
-params.missing_file_action = "error"
+// All defaults live in nextflow.config; users edit START_HERE-user_config.yaml,
+// not this file. Nested params (params.X.Y.Z) mirror the yaml shape.
 
 // Workflow root directory (parent of ai/ where main.nf lives)
 params.workflow_root = "${projectDir}/.."
@@ -54,10 +51,10 @@ process validate_source_manifest {
     script:
     """
     python3 ${projectDir}/scripts/001_ai-python-validate_source_manifest.py \
-        --manifest ${params.workflow_root}/${params.source_manifest} \
-        --output-dir ${params.workflow_root}/${params.output_dir}/1-output \
+        --manifest ${params.workflow_root}/${params.project.source_manifest} \
+        --output-dir ${params.workflow_root}/${params.output.base_dir}/1-output \
         --workflow-dir ${params.workflow_root} \
-        --missing-action ${params.missing_file_action}
+        --missing-action ${params.ingestion.missing_file_action}
     """
 }
 
@@ -80,12 +77,12 @@ process ingest_source_data {
     script:
     """
     python3 ${projectDir}/scripts/002_ai-python-ingest_source_data.py \
-        --manifest ${params.workflow_root}/${params.source_manifest} \
-        --output-dir ${params.workflow_root}/${params.output_dir}/2-output \
+        --manifest ${params.workflow_root}/${params.project.source_manifest} \
+        --output-dir ${params.workflow_root}/${params.output.base_dir}/2-output \
         --workflow-dir ${params.workflow_root} \
-        --project-name ${params.project_name} \
-        --missing-action ${params.missing_file_action} \
-        ${params.overwrite_existing ? '--overwrite' : ''}
+        --project-name ${params.project.name} \
+        --missing-action ${params.ingestion.missing_file_action} \
+        ${params.ingestion.overwrite_existing ? '--overwrite' : ''}
     """
 }
 
@@ -110,7 +107,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/004_ai-python-write_run_log.py \
         --workflow-name "ingest_source_data" \
         --subproject-name "genomesDB" \
-        --project-name "${params.project_name}" \
+        --project-name "${params.project.name}" \
         --status success
     """
 }
@@ -133,25 +130,5 @@ workflow {
     // AFTER this pipeline completes successfully.
 }
 
-// ============================================================================
-// COMPLETION HANDLER
-// ============================================================================
-
-workflow.onComplete {
-    println ""
-    println "========================================================================"
-    println "GIGANTIC Source Data Ingestion - Complete"
-    println "========================================================================"
-    println "Status: ${workflow.success ? 'SUCCESS' : 'FAILED'}"
-    println "Duration: ${workflow.duration}"
-    println ""
-    if (workflow.success) {
-        println "Output:"
-        println "  1-output/  Validation report"
-        println "  2-output/  Ingested data (T1_proteomes, genomes, genome_annotations)"
-        println ""
-        println "Symlinks for STEP_2 will be created by RUN-workflow.sh"
-        println "Run log written to ai/logs/ in this workflow directory"
-    }
-    println "========================================================================"
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

@@ -21,7 +21,7 @@ bash RUN-workflow.sh
 ```
 
 `RUN-workflow.sh` is the single entry point. It:
-1. Creates the `ai_gigantic_orthogroups_broccoli` conda env on-demand if absent (from `../../../../conda_environments/ai_gigantic_orthogroups_broccoli.yml`)
+1. Creates the `aiG-orthogroups-broccoli` conda env on-demand if absent (from per-workflow `ai/conda_environment.yml` — modern GIGANTIC convention)
 2. Reads `execution_mode` from the yaml
 3. If `slurm`: re-invokes itself as a SLURM driver job (with the resources from the yaml)
 4. If `local`: runs NextFlow directly on the calling node
@@ -98,7 +98,7 @@ For smaller datasets (e.g., 5-species test subset), edit the yaml downward.
 
 | Error message | Cause | Solution |
 |---|---|---|
-| `Environment 'ai_gigantic_orthogroups_broccoli' not found` | First run, env not yet created | RUN-workflow.sh creates it on-demand from yml — re-run |
+| `Environment 'aiG-orthogroups-broccoli' not found` | First run, env not yet created | RUN-workflow.sh creates it on-demand from `ai/conda_environment.yml` — re-run |
 | `dir_step3/ not found — broccoli step 3 did not run` | Broccoli failed before step 3 completed | Check `3_ai-log-run_broccoli.log` for the actual broccoli error |
 | `required broccoli output missing: dir_step3/<file>` | Broccoli step 3 ran but didn't produce one of its 9 outputs (per source, all are always produced — this means a real broccoli failure) | Check broccoli log; do not proceed |
 | `short_ids in broccoli output not found in header mapping` | Mismatch between FASTAs broccoli read and FASTAs script 002 wrote | Investigate scripts 002 and 003 — by construction this should be impossible |

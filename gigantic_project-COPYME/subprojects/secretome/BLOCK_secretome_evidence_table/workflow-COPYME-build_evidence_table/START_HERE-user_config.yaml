@@ -1,0 +1,68 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# AI: Claude Code | Opus 4.7 | 2026 May 23 | Purpose: Secretome evidence-table builder configuration
+# Human: Eric Edsinger
+
+# =============================================================================
+# Evidence Table Builder Configuration
+# =============================================================================
+
+# Project name (used in run log naming)
+project_name: "species70_secretome_evidence_table_2026may23"
+
+# Path to the long-format standardized annotation database produced by
+# annotations_hmms/BLOCK_build_annotation_database. Expected layout under
+# this directory:
+#   database_pfam/         gigantic_annotations-database_pfam-<phyloname>.tsv
+#   database_signalp_fast/ gigantic_annotations-database_signalp_fast-<phyloname>.tsv
+#   database_signalp_slow/ gigantic_annotations-database_signalp_slow-<phyloname>.tsv
+#   database_tmbed/        gigantic_annotations-database_tmbed-<phyloname>.tsv
+#   database_metapredict/  gigantic_annotations-database_metapredict-<phyloname>.tsv
+#   database_deeploc/      ( if implemented in BLOCK_build_annotation_database )
+#   database_interproscan/ ( IPR summary )
+#   database_go/           ( GO terms )
+#   database_cdd/  database_funfam/  ... ( IPR sub-databases that were run )
+annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/BLOCK_build_annotation_database/workflow-RUN_1-build_annotation_database/OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# Lightweight workflow ( pure Python TSV pivot ). One driver job; per-species
+# processes are fast.
+
+cpus: 4
+memory_gb: 32
+time_hours: 12
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "slurm"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "moroz"
+slurm_qos: "moroz"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs
+# from scratch.
+#
+# Default: false — stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility.
+
+resume: false

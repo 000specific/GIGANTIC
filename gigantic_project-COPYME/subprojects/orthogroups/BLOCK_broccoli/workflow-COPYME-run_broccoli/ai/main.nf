@@ -22,7 +22,7 @@ nextflow.enable.dsl = 2
 scripts_dir = "${projectDir}/scripts"
 
 process validate_proteomes {
-    publishDir "${params.output_dir}/1-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/1-output", mode: 'copy'
 
     input:
         val proteomes_dir
@@ -40,8 +40,8 @@ process validate_proteomes {
 }
 
 process convert_headers {
-    publishDir "${params.output_dir}/2-output", mode: 'copy', pattern: '2_ai-*'
-    publishDir "${params.output_dir}/2-output/short_header_proteomes", mode: 'copy', pattern: 'short_header_proteomes/*'
+    publishDir "${params.output.base_dir}/2-output", mode: 'copy', pattern: '2_ai-*'
+    publishDir "${params.output.base_dir}/2-output/short_header_proteomes", mode: 'copy', pattern: 'short_header_proteomes/*'
 
     input:
         path proteome_list
@@ -60,7 +60,7 @@ process convert_headers {
 }
 
 process run_broccoli {
-    publishDir "${params.output_dir}/3-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/3-output", mode: 'copy'
 
     input:
         path short_header_proteomes
@@ -85,13 +85,13 @@ process run_broccoli {
     bash ${scripts_dir}/003_ai-bash-run_broccoli.sh \
         --input-dir input_proteomes \
         --output-dir . \
-        --cpus ${params.cpus} \
-        --tree-method ${params.tree_method}
+        --cpus ${params.resources.run_broccoli.cpus} \
+        --tree-method ${params.broccoli.tree_method}
     """
 }
 
 process restore_identifiers {
-    publishDir "${params.output_dir}/4-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/4-output", mode: 'copy'
 
     input:
         path header_mapping
@@ -111,7 +111,7 @@ process restore_identifiers {
 }
 
 process generate_summary_statistics {
-    publishDir "${params.output_dir}/5-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/5-output", mode: 'copy'
 
     input:
         path proteome_list
@@ -132,7 +132,7 @@ process generate_summary_statistics {
 }
 
 process qc_analysis_per_species {
-    publishDir "${params.output_dir}/6-output", mode: 'copy'
+    publishDir "${params.output.base_dir}/6-output", mode: 'copy'
 
     input:
         path proteome_list
@@ -172,7 +172,7 @@ process write_run_log {
     python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \
         --workflow-name "run_broccoli" \
         --subproject-name "orthogroups" \
-        --project-name "${params.project_name}" \
+        --project-name "${params.project.name}" \
         --status success
     """
 }
@@ -185,7 +185,7 @@ process write_run_log {
 // real files to OUTPUT_pipeline/N-output/ directories.
 // ============================================================================
 workflow {
-    validate_proteomes( params.proteomes_dir )
+    validate_proteomes( params.inputs.proteomes_dir )
     convert_headers( validate_proteomes.out.proteome_list )
     run_broccoli( convert_headers.out.short_header_proteomes )
     restore_identifiers(
@@ -203,8 +203,5 @@ workflow {
     write_run_log( qc_analysis_per_species.out.per_species_summary )
 }
 
-workflow.onComplete {
-    if ( workflow.success ) {
-        log.info "Run log written to ai/logs/ in this workflow directory"
-    }
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

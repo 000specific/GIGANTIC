@@ -14,9 +14,13 @@
  *   003: Count HGNC gene group homologs from trees_gene_groups
  *   004: Count curated gene family homologs from trees_gene_families
  *   005: Write run log
+ *   006: Rewrite species column headers (short labels) - runs once per source
+ *        count TSV, producing short-header variants in 6-/7-/8-output/.
  *
  * Scripts 002-004 are independent and run in parallel (all consume the species
  * column order from script 001 to guarantee identical column shape across TSVs).
+ * Script 006 runs three times (once per source TSV), each downstream of its
+ * corresponding count process.
  *
  * Symlinks for output_to_input/BLOCK_homolog_counts/ are created by
  * RUN-workflow.sh AFTER this pipeline completes.
@@ -162,6 +166,87 @@ process count_trees_gene_families {
 }
 
 /*
+ * Process 6a: Rewrite species column headers (short labels) for orthohmm counts
+ * Calls: scripts/006_ai-python-rewrite_species_column_headers.py
+ */
+process rewrite_short_headers_orthohmm {
+    label 'local'
+
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+
+    input:
+        path counts_tsv
+
+    output:
+        path "6-output/6_ai-counts-orthogroups_orthohmm-short_species_headers.tsv", emit: short_headers
+        path "6-output/6_ai-log-rewrite_species_column_headers-orthohmm.log"
+
+    script:
+    """
+    mkdir -p 6-output
+
+    python3 ${projectDir}/scripts/006_ai-python-rewrite_species_column_headers.py \\
+        --input-tsv ${counts_tsv} \\
+        --output-tsv 6-output/6_ai-counts-orthogroups_orthohmm-short_species_headers.tsv \\
+        > 6-output/6_ai-log-rewrite_species_column_headers-orthohmm.log 2>&1
+    """
+}
+
+/*
+ * Process 6b: Rewrite species column headers (short labels) for gene_groups counts
+ * Calls: scripts/006_ai-python-rewrite_species_column_headers.py
+ */
+process rewrite_short_headers_gene_groups {
+    label 'local'
+
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+
+    input:
+        path counts_tsv
+
+    output:
+        path "7-output/7_ai-counts-trees_gene_groups-short_species_headers.tsv", emit: short_headers
+        path "7-output/7_ai-log-rewrite_species_column_headers-gene_groups.log"
+
+    script:
+    """
+    mkdir -p 7-output
+
+    python3 ${projectDir}/scripts/006_ai-python-rewrite_species_column_headers.py \\
+        --input-tsv ${counts_tsv} \\
+        --output-tsv 7-output/7_ai-counts-trees_gene_groups-short_species_headers.tsv \\
+        > 7-output/7_ai-log-rewrite_species_column_headers-gene_groups.log 2>&1
+    """
+}
+
+/*
+ * Process 6c: Rewrite species column headers (short labels) for gene_families counts
+ * Calls: scripts/006_ai-python-rewrite_species_column_headers.py
+ */
+process rewrite_short_headers_gene_families {
+    label 'local'
+
+    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
+
+    input:
+        path counts_tsv
+
+    output:
+        path "8-output/8_ai-counts-trees_gene_families-short_species_headers.tsv", emit: short_headers
+        path "8-output/8_ai-log-rewrite_species_column_headers-gene_families.log"
+
+    script:
+    """
+    mkdir -p 8-output
+
+    python3 ${projectDir}/scripts/006_ai-python-rewrite_species_column_headers.py \\
+        --input-tsv ${counts_tsv} \\
+        --output-tsv 8-output/8_ai-counts-trees_gene_families-short_species_headers.tsv \\
+        > 8-output/8_ai-log-rewrite_species_column_headers-gene_families.log 2>&1
+    """
+}
+
+/*
  * Process 5: Write Run Log
  * Calls: scripts/005_ai-python-write_run_log.py
  *
@@ -205,12 +290,26 @@ workflow {
     count_trees_gene_groups(   validate_species70_manifest.out.species_order )
     count_trees_gene_families( validate_species70_manifest.out.species_order )
 
-    // Step 5: Run log (runs only after all three counters complete)
-    all_counts = count_orthogroups_orthohmm.out.counts
-        .mix( count_trees_gene_groups.out.counts, count_trees_gene_families.out.counts )
+    // Step 6 (a/b/c): Rewrite species column headers to short labels for each
+    // source. Each process is downstream of its corresponding count process.
+    // Outputs to 6-/7-/8-output/ (numbered to match the source count's N+4).
+    rewrite_short_headers_orthohmm(    count_orthogroups_orthohmm.out.counts )
+    rewrite_short_headers_gene_groups( count_trees_gene_groups.out.counts   )
+    rewrite_short_headers_gene_families( count_trees_gene_families.out.counts )
+
+    // Step 5: Run log (waits on all three counters AND all three short-header
+    // rewrites, so the log reflects the complete pipeline state)
+    all_outputs = count_orthogroups_orthohmm.out.counts
+        .mix(
+            count_trees_gene_groups.out.counts,
+            count_trees_gene_families.out.counts,
+            rewrite_short_headers_orthohmm.out.short_headers,
+            rewrite_short_headers_gene_groups.out.short_headers,
+            rewrite_short_headers_gene_families.out.short_headers,
+        )
         .collect()
 
-    write_run_log( all_counts )
+    write_run_log( all_outputs )
 }
 
 // ============================================================================
@@ -232,6 +331,9 @@ workflow.onComplete {
         println "  3-output/: counts from trees_gene_groups"
         println "  4-output/: counts from trees_gene_families"
         println "  5-output/: run log"
+        println "  6-output/: orthohmm counts with short species headers"
+        println "  7-output/: gene_groups counts with short species headers"
+        println "  8-output/: gene_families counts with short species headers"
         println ""
         println "Symlinks created in output_to_input/BLOCK_homolog_counts/ (by RUN-workflow.sh)"
     }

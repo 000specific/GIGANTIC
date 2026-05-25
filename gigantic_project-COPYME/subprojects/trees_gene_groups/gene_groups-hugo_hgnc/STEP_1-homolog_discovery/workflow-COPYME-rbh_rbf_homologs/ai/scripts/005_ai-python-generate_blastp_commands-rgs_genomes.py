@@ -126,13 +126,14 @@ def extract_genome_identifiers_from_rgs(
                 # Parse header to extract genome identifier
                 header = line[1:].strip()
                 
-                # HGNC RGS header format (5 fields): >rgs_{family}-{species}-{gene_symbol}-{source}-{identifier}
-                # Example: >rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1
-                # The species is the second part (index 1)
+                # HGNC RGS header format (5 fields):
+                #   >rgs_{family}-{species}-{gene_symbol}-{source}-{accession}
+                # e.g., rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1
+                # Species/genome short name is parts[1] (e.g., 'human').
                 parts = header.split( '-' )
 
-                if len( parts ) >= 5 and parts[0].startswith( 'rgs_' ):
-                    # The second part (index 1) is the species/genome identifier
+                if len( parts ) >= 5 and parts[ 0 ].startswith( 'rgs_' ):
+                    # The second part (index 1) is the species/genome short name
                     genome_id = parts[1]
                     
                     # Valid genome IDs are non-empty alphabetic strings

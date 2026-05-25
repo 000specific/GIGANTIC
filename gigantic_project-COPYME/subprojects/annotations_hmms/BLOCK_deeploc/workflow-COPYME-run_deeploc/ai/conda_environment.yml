@@ -1,0 +1,62 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env, no
+#                      suffix needed.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_deeploc ( DeepLoc 2.1 subcellular
+# localization prediction on species proteomes ).
+#
+# Created on-demand by RUN-workflow.sh via mamba ( conda fallback ).
+#
+# ⚠️ TWO-STEP INSTALL — academic license required for DeepLoc ⚠️
+#
+#   Step 1 ( automatic on first `bash RUN-workflow.sh` ): create this env.
+#
+#   Step 2 ( MANUAL, user must do once ): install DeepLoc into the env from
+#   the DTU tarball ( academic license required ):
+#     https://services.healthtech.dtu.dk/services/DeepLoc-2.1/
+#   After downloading deeploc-2.1.tar.gz, activate the env and pip-install it:
+#     conda activate aiG-annotations_hmms-deeploc
+#     pip install /path/to/deeploc-2.1.tar.gz
+#
+# Without Step 2, the run_deeploc process will fail because the `deeploc2`
+# command will not be available.
+#
+# Python pinned to 3.10.x ( DeepLoc 2.1 requires 3.10 specifically;
+# incompatible with 3.11+ ).
+#
+# GPU note: DeepLoc benefits from GPU acceleration ( CUDA-compatible ). Toggle
+# in the workflow's START_HERE-user_config.yaml via use_gpu.
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-annotations_hmms-deeploc
+
+name: aiG-annotations_hmms-deeploc
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements (Python 3.10 required by DeepLoc 2.1)
+  - python==3.10.*
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # PyTorch for deep learning (DeepLoc dependency)
+  - pytorch
+  - torchvision
+
+  # pip for DeepLoc installation (manual Step 2, see top-of-file note)
+  - pip

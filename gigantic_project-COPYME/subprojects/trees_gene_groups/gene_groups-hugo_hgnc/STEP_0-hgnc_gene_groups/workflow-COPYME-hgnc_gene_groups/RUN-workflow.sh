@@ -23,44 +23,54 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
 # ============================================================================
-# Activate Environment
+# Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
+# The environment is auto-created on first RUN_1 run from the yml spec
+# colocated at ai/conda_environment.yml. mamba is preferred (much faster);
+# conda is the fallback if mamba is not available.
+
+# Disable NextFlow telemetry/update checks (prevents curl hangs on compute nodes)
+export NXF_OFFLINE=true
+
+ENV_NAME="aiG-trees_gene_groups-hgnc_gene_groups"
+ENV_YML="ai/conda_environment.yml"
 
 module load conda 2>/dev/null || true
 
-if conda activate ai_gigantic_trees_gene_families 2>/dev/null; then
-    echo "Activated conda environment: ai_gigantic_trees_gene_families"
-else
-    echo "WARNING: Environment 'ai_gigantic_trees_gene_families' not found."
-    echo ""
-    echo "Please run the environment setup script first:"
-    echo "  cd ../../../../../  # Go to project root"
-    echo "  bash RUN-setup_environments.sh"
-    echo ""
-    echo "Or create this environment manually:"
-    echo "  mamba env create -f ../../../../../conda_environments/ai_gigantic_trees_gene_families.yml"
-    echo ""
+if ! type conda &>/dev/null; then
+    echo "ERROR: conda is not available."
+    echo "On HPC (HiPerGator): module load conda"
     exit 1
 fi
 
-# Ensure NextFlow is available (conda env or system module)
-if ! command -v nextflow &> /dev/null; then
-    echo "NextFlow not found in conda env. Trying system module..."
-    module load nextflow 2>/dev/null || true
-    if ! command -v nextflow &> /dev/null; then
-        echo ""
-        echo "ERROR: NextFlow not available!"
-        echo ""
-        echo "Options to resolve:"
-        echo "  1. Install nextflow in conda env: conda install -n ai_gigantic_trees_gene_families -c bioconda nextflow"
-        echo "  2. Load system module: module load nextflow"
-        echo "  3. Install globally: https://www.nextflow.io/docs/latest/install.html"
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Conda env '${ENV_NAME}' not found. Creating once from ${ENV_YML}..."
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
     fi
-    echo "Using NextFlow from system module"
-else
-    echo "NextFlow available"
+    if command -v mamba &>/dev/null; then
+        mamba env create -f "${ENV_YML}" -y
+    else
+        conda env create -f "${ENV_YML}" -y
+    fi
 fi
+
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+if ! command -v nextflow &> /dev/null; then
+    echo "NextFlow not found in env. Trying system module..."
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available." >&2
+        exit 1
+    fi
+fi
+echo "NextFlow available"
 echo ""
 
 # ============================================================================
@@ -149,8 +159,32 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
+# Flatten START_HERE-user_config.yaml → .params.json for nextflow -params-file.
+# Compatible with nextflow 26.x strict-mode config parser (no Groovy `import` in nextflow.config).
+python3 - <<'PYTHON_FLATTEN'
+import yaml, json
+from pathlib import Path
+WORKFLOW_ROOT = Path('.').resolve()
+with open('START_HERE-user_config.yaml') as f:
+    cfg = yaml.safe_load(f)
+def resolve(rel):
+    if rel is None: return None
+    return str((WORKFLOW_ROOT / rel).resolve())
+flat = {
+    'human_proteome_path': resolve(cfg.get('inputs', {}).get('human_proteome_path')),
+    'output_dir': cfg.get('output', {}).get('base_dir', 'OUTPUT_pipeline'),
+    'cpus': cfg.get('cpus', 4),
+    'memory_gb': cfg.get('memory_gb', 16),
+    'time_hours': cfg.get('time_hours', 1),
+}
+with open('.params.json', 'w') as f:
+    json.dump(flat, f, indent=2)
+print(f"Wrote .params.json with {len(flat)} keys")
+PYTHON_FLATTEN
+
 nextflow run ai/main.nf ${RESUME_FLAG} \
-    -c ai/nextflow.config
+    -c ai/nextflow.config \
+    -params-file .params.json
 
 EXIT_CODE=$?
 

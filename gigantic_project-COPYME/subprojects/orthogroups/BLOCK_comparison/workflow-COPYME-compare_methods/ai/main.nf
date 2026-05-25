@@ -101,8 +101,5 @@ workflow {
     write_run_log( compare_clustering_runs_visualization.out )
 }
 
-workflow.onComplete {
-    if ( workflow.success ) {
-        log.info "Pipeline complete. Run log written to ai/logs/"
-    }
-}
+// Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
+// NextFlow 26.x strict-mode parser rejects top-level workflow.onComplete blocks.

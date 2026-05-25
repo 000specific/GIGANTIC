@@ -1,53 +1,72 @@
-# STEP_1: Homolog Discovery
+# STEP_1 — Homolog Discovery (RBH/RBF)
 
-Find homologous sequences across project species using Reciprocal Best Hit/Family (RBH/RBF) BLAST.
+Per-source STEP_1: find homologs of each gene group's Reference Gene Set (RGS)
+across all project species via reciprocal best hit / reciprocal best family BLAST.
 
-## Purpose
+## Single user-runnable script
 
-Takes a Reference Gene Set (RGS) of curated protein sequences and finds homologs across all project species through forward BLAST, reciprocal BLAST confirmation, and species filtering. BLAST v5 databases preserve full GIGANTIC identifiers, so no remapping is needed.
-
-## Quick Start
+The workflow inside `workflow-COPYME-rbh_rbf_homologs/` is the template. To run
+STEP_1 for a source:
 
 ```bash
-cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_01-rbh_rbf_homologs
-cd workflow-RUN_01-rbh_rbf_homologs/
-# Edit START_HERE-user_config.yaml (set gene_family name, rgs_file, database paths)
-# Place RGS file and species_keeper_list.tsv in INPUT_user/
+# 1. Inside the per-source instance (e.g., gene_groups-hugo_hgnc/STEP_1-homolog_discovery/),
+#    copy the COPYME → RUN_NN at the same level:
+cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
+
+# 2. Edit the RUN's config (execution_mode, paths, SLURM resources):
+cd workflow-RUN_1-rbh_rbf_homologs
+# edit START_HERE-user_config.yaml
+
+# 3. Run the single user-facing script
 bash RUN-workflow.sh
 ```
 
+`RUN-workflow.sh` is an **orchestrator** that processes all gene groups in the
+STEP_0 summary TSV:
+
+1. Creates the per-workflow conda env on the login node (first run only)
+2. For each gene group: sets up `gene_group-X/workflow-RUN_01-rbh_rbf_homologs/` as a sibling at this STEP_1 directory
+3. Dispatches per `execution_mode` from the YAML:
+   - `local` — sequential local nextflow runs
+   - `slurm-standard` — one `sbatch` per gene group to the standard QOS
+   - `slurm-burst` — chunked: one `sbatch` per BLOCK of gene groups, burst QOS
+
 ## Prerequisites
 
-- **genomesDB** subproject complete (provides BLAST databases and header mapping)
-- RGS FASTA file with curated reference sequences
-- Species keeper list (one Genus_species per line)
+- STEP_0 must have completed for this source (produces the RGS FASTAs in `output_to_input/`)
+- genomesDB subproject must be complete (BLAST databases)
 
-## Pipeline Steps
+## Pipeline steps (inside each per-gene-group nextflow run)
 
-1. Validate RGS FASTA file (fails fast if invalid)
-2. Generate forward BLAST commands against project databases
-3. Execute forward BLAST
-4. Extract blast gene sequences (BGS)
-5. Generate RGS genome BLAST commands
-6. Execute RGS genome BLAST
-7. List RGS BLAST files
-8. Map RGS to reference genome identifiers
-9. Create modified genomes for reciprocal BLAST
-10. Build combined reciprocal BLAST database
-11. Generate reciprocal BLAST commands
-12. Execute reciprocal BLAST
-13. Extract candidate gene sequences (CGS)
-14. Filter by species keeper list
-15. Concatenate RGS + CGS into final AGS (All Gene Set)
-16. Write run log
-
-**Note**: BLAST v5 databases preserve full GIGANTIC identifiers, so no identifier remapping step is needed.
+| # | Script | What it does |
+|---|--------|-------------|
+| 001 | validate_rgs | Validate RGS FASTA file (fail-fast on invalid) |
+| 002–003 | generate + run forward BLAST | RGS vs project species DBs |
+| 004 | extract_gene_set_sequences | Extract BGS (full-length + hit regions) |
+| 005–006 | generate + run RGS-genome BLAST | RGS vs source-organism genomes |
+| 007 | list_rgs_blast_files | Inventory RGS BLAST files |
+| 008 | map_rgs_to_reference_genomes | NCBI-accession + Hungarian-optimal mapping with fail-fast on orphans |
+| 009 | create_modified_genomes | Splice RGS into source genomes for reciprocal BLAST |
+| 010 | generate_makeblastdb_commands | Build combined reciprocal BLAST DB |
+| 011–012 | generate + run reciprocal BLAST | CGS vs combined DB |
+| 013 | extract_reciprocal_best_hits | Filter for QUERY-side and HIT-side RGS-protected RBH/RBF |
+| 014 | filter_species_for_tree_building | Keep only species in the keeper list |
+| 016 | concatenate_sequences | Concatenate RGS + filtered CGS into final AGS |
+| 017 | write_run_log | Pipeline run log |
+| 018 | restore_full_length_rgs_sequences | Conditional: subsequence mode only |
 
 ## Output
 
-Final AGS files are symlinked to:
-- `../../output_to_input/<gene_family>/STEP_1-homolog_discovery/`
+Final AGS files are symlinked at the subproject root:
 
-## For AI Assistants
+```
+trees_gene_groups/output_to_input/<source>/STEP_1-homolog_discovery/gene_group-<name>/16_ai-ags-*.aa
+```
 
-See `AI_GUIDE-homolog_discovery.md` for detailed AI guidance.
+These are STEP_2's input.
+
+## See also
+
+- `AI_GUIDE-homolog_discovery.md` — detailed AI guide for this STEP
+- `workflow-COPYME-rbh_rbf_homologs/ai/AI_GUIDE-rbh_rbf_homologs_workflow.md` — workflow execution guide
+- `PLAN-rgs_identification_improvements.md` — design doc for script 008's RGS mapping

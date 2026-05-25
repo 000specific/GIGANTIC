@@ -1,138 +1,98 @@
-# AI Guide: tree_visualization Workflow
+# AI Guide: tree_visualization Workflow (trees_gene_groups STEP_3)
 
-**For AI Assistants**: Read `../../AI_GUIDE-phylogenetic_visualization.md` first for STEP_3 concepts. This guide covers workflow execution specifics.
+**For AI Assistants**: Read `../../AI_GUIDE-phylogenetic_visualization.md` first for STEP_3 concepts. This guide covers workflow execution.
 
-**Location**: `STEP_3-tree_visualization/workflow-COPYME-tree_visualization/ai/`
-
----
-
-## Quick Reference
-
-| User needs... | Go to... |
-|---------------|----------|
-| Project overview | `../../../../AI_GUIDE-project.md` |
-| Subproject concepts | `../../../AI_GUIDE-trees_gene_groups.md` |
-| STEP_3 concepts, why separated from STEP_2 | `../../AI_GUIDE-phylogenetic_visualization.md` |
-| Workflow execution (this file) | This file |
+**Location**: `gene_groups_COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/`
 
 ---
 
-## Architecture
+## Single user-runnable script
 
-Two scripts, plain bash orchestration (no NextFlow — this workflow is single-process and lightweight):
-
-```
-RUN-workflow.sh
-  ├── validates STEP_2 output exists
-  ├── creates/heals conda env (aiG-trees_gene_groups-visualization)
-  ├── runs 001_ai-python-render_trees.py (soft-fail)
-  ├── runs 002_ai-python-write_run_log.py
-  └── creates symlinks in output_to_input/
-```
-
-## Script Pipeline
-
-| Script | Purpose | Fail Mode |
-|--------|---------|-----------|
-| 001_ai-python-render_trees.py | Discover STEP_2 newicks, render each to PDF + SVG | Soft-fail (writes placeholder, exits 0) |
-| 002_ai-python-write_run_log.py | Write timestamped run log to ai/logs/ | Hard-fail (propagates exit code) |
-
-## Expected Runtime
-
-- Small gene groups (< 100 tips): seconds
-- Medium (100-500 tips): seconds to minutes
-- Large (> 1000 tips): minutes
-- Very large (> 10,000 tips): minutes (labels auto-hidden)
-
-## User Workflow
-
-### Step 1: Copy Template
+The COPYME's `RUN-workflow.sh` is the ONE script the user invokes. Always orchestrator mode. User flow:
 
 ```bash
 cp -r workflow-COPYME-tree_visualization workflow-RUN_1-tree_visualization
-cd workflow-RUN_1-tree_visualization/
-```
-
-### Step 2: Configure
-
-Edit `START_HERE-user_config.yaml`:
-
-```yaml
-gene_family:
-  name: "innexin_pannexin"   # must match STEP_2 output dir
-
-input:
-  output_to_input_dir: "../../../output_to_input"
-
-visualization:
-  show_tip_labels_max_tips: 500
-  color_tips_by_species: true
-  show_branch_support: true
-  # ... other styling options
-```
-
-### Step 3: Run
-
-```bash
+cd workflow-RUN_1-tree_visualization
+# edit START_HERE-user_config.yaml
 bash RUN-workflow.sh
 ```
 
-## Verification Commands
+## Orchestrator behavior
 
-```bash
-# Verify STEP_2 outputs are in place
-find -L ../../../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/ -name "*.treefile" -o -name "*.fasttree"
+`RUN-workflow.sh` reads `START_HERE-user_config.yaml` and:
 
-# Check conda env health
-conda activate aiG-trees_gene_groups-visualization
-python3 -c "import toytree, toyplot, reportlab; print('env OK')"
+1. Creates the conda env `aiG-trees_gene_groups-visualization` ONCE on the
+   login node, before any sbatch. Includes broken-env self-heal: if env dir
+   exists but `bin/python` is missing, it rebuilds (common from a prior failed pip install).
+2. Iterates `gene_group_source_tsv` (STEP_0 summary).
+3. For each gene group with STEP_2 newicks at `step2_output_to_input_dir/gene_group-<name>/`:
+   - Creates sibling `gene_group-X/workflow-RUN_01-tree_visualization/` at the parent STEP_3 dir level
+   - Sed-patches `gene_family.name` in its YAML
+   - Skips if no STEP_2 newicks for that gene group (STEP_2 not done yet)
+4. Categorizes by RGS sequence count (small/large tier; both are small in resource terms).
+5. Dispatches per `execution_mode`:
+   - `local` — sequential renders (default; lightweight)
+   - `slurm-standard` — 1 sbatch per gene group, standard QOS
+   - `slurm-burst` — chunked, 1 sbatch per BLOCK, burst QOS
 
-# Inspect rendered outputs
-ls OUTPUT_pipeline/1-output/
-cat OUTPUT_pipeline/1-output/1_ai-visualization_summary.md
+## Per-gene-group render (no NextFlow)
 
-# If soft-fail triggered, read the placeholder
-cat OUTPUT_pipeline/1-output/1_ai-visualization-placeholder.txt
+Each per-gene-group sub-RUN runs two python scripts directly:
+
+| Script | Purpose | Fail mode |
+|--------|---------|-----------|
+| `ai/scripts/001_ai-python-render_trees.py` | Auto-discover STEP_2 newicks, render each to PDF + SVG | Soft-fail (writes placeholder, exits 0) |
+| `ai/scripts/002_ai-python-write_run_log.py` | Pipeline run log | Hard-fail (propagates exit code) |
+
+No NextFlow needed — rendering is single-process, lightweight.
+
+## YAML schema (key fields)
+
+```yaml
+execution_mode: "local"
+gene_group_source_tsv: "<path to STEP_0 summary>"
+step2_output_to_input_dir: "<path to STEP_2 output_to_input dir>"
+large_threshold: 50
+slurm_account: "moroz"
+slurm_qos_standard: "moroz"
+slurm_qos_burst: "moroz-b"
+small_cpus: 2; small_memory_gb: 8;  small_time_hours: 2; small_time_hours_burst: 12; small_burst_block_size: 50
+large_cpus: 2; large_memory_gb: 16; large_time_hours: 4; large_time_hours_burst: 24; large_burst_block_size: 20
+
+# Per-gene-group settings (template through to each RUN_01):
+gene_family:    { name }
+input:          { output_to_input_dir }
+visualization:  { show_tip_labels_max_tips, color_tips_by_species, tip_label_font_size_px,
+                  show_branch_support, branch_support_font_size_px,
+                  canvas_width_px, canvas_height_per_tip_px, canvas_height_min_px }
+output:         { base_dir }
 ```
 
-## Common Execution Issues
+## Conda env
 
-### "No tree files found"
+`aiG-trees_gene_groups-visualization` — defined in `ai/conda_environment.yml`.
 
-STEP_2 hasn't produced trees for this gene group. Run STEP_2 first.
+Pip-installed inside conda: toytree, toyplot, reportlab. Replaces ete3 (Qt-dependent, unstable on conda-forge).
 
-### "toytree import failed"
+Self-heal: if `bin/python` is missing from the env dir, rebuild from yml.
 
-The conda env is broken. RUN-workflow.sh should self-heal this, but if it persists:
+## Tip color coding
+
+Species parsed from tip labels:
+- RGS headers: `rgs_FAMILY-SPECIES-GENE-SOURCE-ID` → species from `parts[1]`
+- Genome headers: `g_GENE-t_TRANSCRIPT-p_PROTEIN-n_...Genus_species` → Genus_species from taxonomy
+
+Auto-hide tip labels for trees > `show_tip_labels_max_tips` (default 500).
+
+## Verification (after a successful run)
 
 ```bash
-conda env remove -n aiG-trees_gene_groups-visualization -y
-bash RUN-workflow.sh   # will recreate from scratch
+# Count rendered files per gene group
+for d in ../gene_group-*/workflow-RUN_01-tree_visualization/OUTPUT_pipeline/1-output; do
+  echo "$d"
+  ls "$d"/*.{pdf,svg} 2>/dev/null | wc -l
+done
+
+# Output_to_input symlinks
+ls -l ../../../../output_to_input/<source>/STEP_3-tree_visualization/gene_group-*/
 ```
-
-### "Failed to parse newick"
-
-The tree file is malformed (unusual). Inspect:
-
-```bash
-head -c 500 ../../../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis/gene_group-<gene_family>/*.fasttree
-```
-
-### Tip labels unreadable in rendered PDF
-
-Tree has too many tips for the current canvas. Either:
-- Lower `show_tip_labels_max_tips` in config (hide labels sooner)
-- Increase `canvas_height_per_tip_px` (taller canvas, each tip gets more space)
-
-### Wrong species colors
-
-Species parsing from tip labels didn't match expected patterns. Check `extract_species_from_label()` in `001_ai-python-render_trees.py`. Two patterns are supported:
-- RGS headers (`rgs_FAMILY-SPECIES-...`)
-- Genome protein headers (`...-n_Kingdom_..._Genus_species`)
-
-## After Successful Run
-
-1. Verify `1_ai-visualization_summary.md` lists all expected tree methods
-2. Open a PDF to confirm rendering quality
-3. Check symlinks: `ls -l ../../../../output_to_input/gene_groups-hugo_hgnc/STEP_3-tree_visualization/gene_group-<gene_family>/`
-4. Share PDFs with collaborators or use SVGs for publication figure prep

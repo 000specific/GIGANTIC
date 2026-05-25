@@ -1,0 +1,52 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#   subproject       = subprojects/ dir name verbatim
+#   block_or_step    = BLOCK_X or STEP_N-X with the BLOCK_/STEP_N- prefix stripped
+#   optional_details = workflow-distinguishing suffix used ONLY when sibling
+#                      workflow-COPYME-* dirs in the same BLOCK need GENUINELY
+#                      different envs. Default = sibling workflows share env.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 24
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Subproject-shared conda env used by ALL 4 genomesDB STEPs:
+#   STEP_1-sources, STEP_2-standardize_and_evaluate,
+#   STEP_3-databases, STEP_4-create_final_species_set
+# Each STEP has an identical copy of this yml in its own workflow-COPYME-*/ai/
+# so each workflow is self-installable; whichever STEP runs first auto-creates
+# the env, the rest reuse it.
+#
+# Provides every tool any genomesDB STEP can invoke:
+#   - gfastats  ( STEP_2 assembly statistics: N50, scaffold/contig metrics )
+#   - busco     ( STEP_2 proteome completeness evaluation )
+#   - blast     ( STEP_3 BLAST+ for database building + searches )
+# STEP_1 + STEP_4 don't need any of the bio tools but share the env for
+# simplicity ( matches the legacy ai_gigantic_genomesdb pattern ).
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-genomesDB
+
+name: aiG-genomesDB
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0
+
+  # YAML config flattening in RUN-workflow.sh (NextFlow 26.x compatibility)
+  - pyyaml
+
+  # Assembly statistics (N50, scaffold/contig metrics) — STEP_2
+  - gfastats
+
+  # Proteome completeness evaluation — STEP_2
+  - busco
+
+  # BLAST+ for database building and searches — STEP_3
+  - blast

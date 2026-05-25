@@ -1,0 +1,16 @@
+# GIGANTIC secretome - workflow conda environment
+# Per-BLOCK conda env scoped to BLOCK_secretome_per_moroz_17may2026.
+# Auto-created from this file on first run by RUN-workflow.sh
+# (mamba preferred; conda fallback).
+name: aiG-secretome-secretome_per_moroz_17may2026
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - pandas
+  - nextflow
+  # TODO: add domain-specific deps once scripts are defined
+  # (e.g., biopython, signalp / phobius tools if invoked via conda, etc.)

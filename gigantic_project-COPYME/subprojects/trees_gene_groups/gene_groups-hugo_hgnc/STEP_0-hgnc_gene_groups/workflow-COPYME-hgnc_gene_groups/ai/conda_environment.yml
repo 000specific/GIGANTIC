@@ -1,0 +1,17 @@
+# GIGANTIC trees_gene_groups STEP_0 (HGNC gene group RGS generation) conda env
+# Per-workflow conda env, auto-created from this file on first RUN_1 run by
+# RUN-workflow.sh (mamba preferred; conda fallback).
+#
+# STEP_0 needs only:
+#   - python>=3.10 (stdlib only for download + parsing; uses urllib, csv, argparse)
+#   - pyyaml      (config parsing)
+#   - nextflow    (workflow runner)
+name: aiG-trees_gene_groups-hgnc_gene_groups
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - nextflow

@@ -78,8 +78,13 @@ fi
 #   cd ../../../../ && bash RUN-setup_environments.sh
 # ============================================================================
 
-ENV_NAME="ai_gigantic_genomesdb"
-ENV_YML="../../../../conda_environments/${ENV_NAME}.yml"
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+# Per-BLOCK conda env. Auto-created on first run from ai/conda_environment.yml.
+# mamba is preferred (much faster); conda is the fallback if mamba is missing.
+# This env is SHARED across all 4 genomesDB STEPs.
+
+ENV_NAME="aiG-genomesDB"
+ENV_YML="ai/conda_environment.yml"
 
 module load conda 2>/dev/null || true
 
@@ -89,10 +94,19 @@ if ! command -v conda &> /dev/null; then
     exit 1
 fi
 
-# Create environment on-demand if it does not exist
-if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
-    echo "Environment '${ENV_NAME}' not found. Creating on-demand..."
-    echo ""
+env_is_complete() {
+    local env_prefix=$(conda env list 2>/dev/null | awk -v n="${ENV_NAME}" '$1==n {print $NF}')
+    if [ -z "${env_prefix}" ]; then return 1; fi
+    if [ ! -x "${env_prefix}/bin/python" ]; then return 1; fi
+    return 0
+}
+
+if ! env_is_complete; then
+    if conda env list 2>/dev/null | awk '{print $1}' | grep -q "^${ENV_NAME}$"; then
+        echo "Removing broken/incomplete env '${ENV_NAME}'..."
+        conda env remove -n "${ENV_NAME}" -y 2>&1 | tail -3
+    fi
+    echo "Creating conda env '${ENV_NAME}' from ${ENV_YML}..."
     if [ ! -f "${ENV_YML}" ]; then
         echo "ERROR: Environment spec not found at: ${ENV_YML}"
         exit 1
@@ -102,29 +116,25 @@ if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
     else
         conda env create -f "${ENV_YML}" -y
     fi
-    echo ""
-    echo "Environment '${ENV_NAME}' created successfully."
-    echo ""
+    if ! env_is_complete; then
+        echo "ERROR: Environment creation failed -- '${ENV_NAME}' still not complete."
+        exit 1
+    fi
+    echo "Env '${ENV_NAME}' created successfully."
 fi
 
-# Activate the environment
 if conda activate "${ENV_NAME}" 2>/dev/null; then
     echo "Activated conda environment: ${ENV_NAME}"
 else
     echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
 fi
 
-# Ensure NextFlow is available (conda env or system module)
 if ! command -v nextflow &> /dev/null; then
     module load nextflow 2>/dev/null || true
     if ! command -v nextflow &> /dev/null; then
         echo "ERROR: NextFlow not available!"
-        echo "Options: conda install -n ${ENV_NAME} -c bioconda nextflow, or module load nextflow"
         exit 1
     fi
-    echo "Using NextFlow from system module"
-else
-    echo "NextFlow available"
 fi
 echo ""
 
@@ -143,7 +153,21 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-nextflow run ai/main.nf ${RESUME_FLAG}
+# ============================================================================
+# Flatten START_HERE-user_config.yaml -> .params.json for NextFlow -params-file
+# ============================================================================
+# Universal GIGANTIC YAML->params pattern: pass-through json.dump (no flatten).
+
+python3 <<'PYTHON_DUMP'
+import yaml, json
+with open( 'START_HERE-user_config.yaml' ) as f:
+    cfg = yaml.safe_load( f )
+with open( '.params.json', 'w' ) as f:
+    json.dump( cfg, f, indent=2 )
+PYTHON_DUMP
+
+nextflow run ai/main.nf ${RESUME_FLAG} \
+    -params-file .params.json
 
 NF_EXIT_CODE=$?
 
