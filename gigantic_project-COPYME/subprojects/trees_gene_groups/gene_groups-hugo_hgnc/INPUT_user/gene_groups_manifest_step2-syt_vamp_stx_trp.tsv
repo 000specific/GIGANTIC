@@ -1,0 +1,7 @@
+# STEP_2 gene-groups manifest for the SYT/VAMP/STX/TRP trial
+# Format: single 'sanitized_name' column; lines starting with '#' ignored.
+sanitized_name
+syntaxins
+vesicle_associated_membrane_proteins
+synaptotagmins
+transient_receptor_potential_cation_channels

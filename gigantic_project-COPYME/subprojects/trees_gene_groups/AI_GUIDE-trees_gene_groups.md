@@ -20,11 +20,16 @@
 |-------------|--------|
 | GIGANTIC project overview | `../../AI_GUIDE-project.md` |
 | trees_gene_groups concepts (this file) | this file |
-| HGNC source specifics | `gene_groups-hugo_hgnc/AI_GUIDE-hugo_hgnc.md` |
-| STEP_1 concepts | `gene_groups_COPYME/STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
-| STEP_2 concepts | `gene_groups_COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
-| STEP_3 concepts | `gene_groups_COPYME/STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` |
-| Workflow execution details | each `workflow-COPYME-*/ai/AI_GUIDE-*.md` |
+| Generic (source-agnostic) template | `gene_groups-COPYME/README.md` |
+| HGNC-anchored template (newer, two STEP_0 modes) | `gene_groups_hgnc-COPYME/AI_GUIDE-gene_groups_hgnc.md` |
+| HGNC source specifics (legacy instance) | `gene_groups-hugo_hgnc/AI_GUIDE-hugo_hgnc.md` |
+| Canonical HGNC reference data | `output_to_input/hugo_hgnc_database/README.md` |
+| STEP_1 concepts (RBH/RBF) | `gene_groups-COPYME/STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
+| STEP_2 concepts | `gene_groups-COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
+| STEP_3 concepts | `gene_groups-COPYME/STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` |
+| HGNC STEP_0 (batch all HGNC groups) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md` |
+| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md` |
+| Workflow execution details (STEP_1/2/3) | each `workflow-*/ai/AI_GUIDE-*.md` |
 | Shared RBH/RBF methodology with sister subproject | `../trees_gene_families/AI_GUIDE-trees_gene_families.md` |
 
 ---
@@ -42,20 +47,59 @@ Build phylogenetic trees for gene groups across GIGANTIC species. Gene groups ar
 
 ---
 
-## The Two-Workflow Pattern at the Subproject Level
+## Templates and Instances
 
-trees_gene_groups has exactly **two workflows** at the subproject level:
+trees_gene_groups has **two sibling COPYME templates** and a growing
+collection of instances (one per analysis):
 
 ```
 trees_gene_groups/
-├── gene_groups_COPYME/         ← workflow 1: master template (never run from here)
-└── gene_groups-<source>/       ← workflow 2: per-source instance (one per source)
+├── INPUT_user/                                            (none at present;
+│                                                           subproject-level user inputs go here if needed)
+├── output_to_input/
+│   ├── hugo_hgnc_database/                                ← canonical shared HGNC reference (NEW)
+│   │   └── hgnc_complete_set.txt                          (symlink → most recent STEP_0 OUTPUT_pipeline)
+│   └── <instance>/STEP_N-*/...                            ← per-instance outputs
+│
+├── gene_groups-COPYME/                                    ← TEMPLATE 1: source-agnostic
+│   ├── STEP_0-placeholder/                                (empty stub; replace per source)
+│   └── STEP_1, STEP_2, STEP_3                             (shared)
+│
+├── gene_groups_hgnc-COPYME/                               ← TEMPLATE 2: HGNC-anchored (NEW)
+│   ├── INPUT_user/user_gene_set_EXAMPLE.tsv               (for the user_list mode)
+│   ├── STEP_0-hgnc_based_rgs/                             (HGNC-specific)
+│   │   ├── workflow-hgnc_database/                        ← MODE 1: all HGNC groups
+│   │   └── workflow-hgnc_user_list/                       ← MODE 2: ad-hoc user set
+│   └── STEP_1, STEP_2, STEP_3                             (inherited from gene_groups-COPYME)
+│
+└── gene_groups-<instance>/                                ← INSTANCE: copy of one of the templates
+                                                            + its own STEP_0 + per-instance state
 ```
 
-The master `gene_groups_COPYME/` contains STEP_0-placeholder + STEP_1/STEP_2/STEP_3 with their canonical `workflow-COPYME-*/` templates. To add a new source: `cp -r gene_groups_COPYME gene_groups-<source>/`, replace `STEP_0-placeholder/` with the source's STEP_0 code.
+The two templates **coexist forever**. Each one accumulates its own
+instances:
 
-Per-source instances currently:
-- `gene_groups-hugo_hgnc/` — HUGO HGNC gene groups (~1,974)
+- `gene_groups-COPYME` is for non-HGNC sources (Pfam, InterPro, custom
+  classifications) — replace its `STEP_0-placeholder/` with a
+  source-specific STEP_0.
+- `gene_groups_hgnc-COPYME` is for HGNC-anchored analyses (batch or
+  ad-hoc) — already has STEP_0 wired with two workflow modes.
+
+### Why a research codebase keeps both
+
+Old instances are **research notebooks + data archives** of the code
+path that ran them. They are not migrated to new sibling templates,
+even retroactively, because that would erase the historical record
+(which scripts ran, which fixes were applied mid-flight, which
+manifests were used).
+
+Per-instance examples currently:
+- `gene_groups-hugo_hgnc/` — HUGO HGNC gene groups (~1,974); instance of
+  `gene_groups-COPYME` with a source-specific STEP_0 (`STEP_0-hgnc_gene_groups/`).
+  Older code path; **kept as a research artifact**.
+- `gene_groups-snap_family/` — Synaptosomal-Associated Proteins
+  (SNAP23/25/29/47); instance of `gene_groups_hgnc-COPYME` using the
+  `workflow-hgnc_user_list` mode.
 
 ---
 
@@ -94,7 +138,8 @@ Each STEP has its own conda env defined in `workflow-COPYME-*/ai/conda_environme
 
 | STEP | Env name | Key dependencies |
 |------|----------|------------------|
-| STEP_0 (HGNC) | (HGNC's STEP_0 yml) | python, pyyaml, requests |
+| STEP_0 (legacy hugo_hgnc instance) | `aiG-trees_gene_groups-hgnc_gene_groups` | python, pyyaml, nextflow (urllib stdlib for downloads) |
+| STEP_0 (gene_groups_hgnc-COPYME, both workflows) | `aiG-trees_gene_groups-hgnc_based_rgs` | python, pyyaml, nextflow (urllib stdlib only — no `requests`) |
 | STEP_1 | `aiG-trees_gene_groups-rbh_rbf_homologs` | python, pyyaml, nextflow, blast, numpy, scipy |
 | STEP_2 | `aiG-trees_gene_groups-phylogenetic_analysis` | python, pyyaml, nextflow, mafft, clipkit, fasttree, iqtree, veryfasttree |
 | STEP_3 | `aiG-trees_gene_groups-visualization` | python, pyyaml, pip → toytree, toyplot, reportlab |
@@ -134,20 +179,49 @@ Filenames use lowercase: `rgs-`, `bgs-`, `cgs-`, `ags-`.
 
 ---
 
-## Adding a New Gene Group Source
+## Adding a New Analysis
+
+Pick the right template first:
+
+### Case A: HGNC-anchored (human gene symbols → UniProt)
+
+Use `gene_groups_hgnc-COPYME`. The STEP_0 already supports two modes
+(batch HGNC + ad-hoc user list); no STEP_0 customization is needed in
+the common case.
 
 ```bash
-# 1. Copy the master template
-cp -r gene_groups_COPYME gene_groups-pfam
+# 1. Instantiate
+cp -r gene_groups_hgnc-COPYME gene_groups-<my_analysis>
+
+# 2a. Ad-hoc mode: edit INPUT_user/user_gene_set.tsv with your symbols
+#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list && bash RUN-workflow.sh
+
+# 2b. Batch mode: edit STEP_0-hgnc_based_rgs/workflow-hgnc_database/START_HERE-user_config.yaml
+#     to point at your human proteome.
+#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-hgnc_database && bash RUN-workflow.sh
+
+# 3. Run STEP_1 → STEP_2 → STEP_3 from the same instance
+```
+
+### Case B: Non-HGNC source (Pfam, InterPro, custom)
+
+Use `gene_groups-COPYME` (source-agnostic). You must write the STEP_0
+yourself.
+
+```bash
+# 1. Copy the source-agnostic template
+cp -r gene_groups-COPYME gene_groups-pfam
 
 # 2. Replace STEP_0-placeholder with source-specific RGS generation
 rm -r gene_groups-pfam/STEP_0-placeholder
-mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-COPYME-pfam_clans/
+mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-pfam_clans/
 # ... populate with the source's downloader + RGS generator ...
+#     STEP_0 must emit a per-group summary TSV (5-column) that STEP_1's
+#     orchestrator reads (see gene_groups_hgnc-COPYME's STEP_0 for the format).
 
 # 3. Create AI_GUIDE-pfam.md describing source specifics
 
-# 4. Run STEP_0 → STEP_1 → STEP_2 → STEP_3 as for hugo_hgnc
+# 4. Run STEP_0 → STEP_1 → STEP_2 → STEP_3
 ```
 
 ---
@@ -168,12 +242,16 @@ mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-COPYME-pfam_clans/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `gene_groups_COPYME/` | Master template | No (copy it to make new sources) |
-| `gene_groups-<source>/AI_GUIDE-<source>.md` | Source-specific AI guidance | Read only |
-| `gene_groups-<source>/STEP_0-*/workflow-RUN_NN/START_HERE-user_config.yaml` | STEP_0 config | **YES** (in the RUN_NN copy) |
-| `gene_groups-<source>/STEP_1-*/workflow-RUN_NN/START_HERE-user_config.yaml` | STEP_1 config | **YES** |
-| `gene_groups-<source>/STEP_2-*/workflow-RUN_NN/START_HERE-user_config.yaml` | STEP_2 config | **YES** |
-| `gene_groups-<source>/STEP_3-*/workflow-RUN_NN/START_HERE-user_config.yaml` | STEP_3 config | **YES** |
+| `gene_groups-COPYME/` | Source-agnostic master template | No (copy it to make non-HGNC instances) |
+| `gene_groups_hgnc-COPYME/` | HGNC-anchored template (two STEP_0 modes) | No (copy it to make HGNC-anchored instances) |
+| `output_to_input/hugo_hgnc_database/hgnc_complete_set.txt` | Canonical HGNC reference (auto-fetched by STEP_0 000) | No (managed by STEP_0) |
+| `gene_groups_hgnc-COPYME/INPUT_user/user_gene_set_EXAMPLE.tsv` | Template example for the user_list workflow | No (replace in the instance) |
+| `gene_groups-<instance>/INPUT_user/user_gene_set.tsv` | User-supplied gene set for the user_list workflow | **YES** |
+| `gene_groups-<instance>/AI_GUIDE-<instance>.md` (optional) | Instance-specific AI guidance | Read only |
+| `gene_groups-<instance>/STEP_0-*/workflow-*/START_HERE-user_config.yaml` | STEP_0 config | **YES** |
+| `gene_groups-<instance>/STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 config | **YES** |
+| `gene_groups-<instance>/STEP_2-*/workflow-*/START_HERE-user_config.yaml` | STEP_2 config | **YES** |
+| `gene_groups-<instance>/STEP_3-*/workflow-*/START_HERE-user_config.yaml` | STEP_3 config | **YES** |
 
 ---
 

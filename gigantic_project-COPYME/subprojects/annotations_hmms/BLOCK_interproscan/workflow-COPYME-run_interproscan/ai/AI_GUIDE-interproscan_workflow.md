@@ -20,8 +20,10 @@ bash RUN-workflow.sh
 
 1. **Validate inputs** - Check proteome files exist and are valid FASTA format
 2. **Chunk proteomes** - Split large proteomes into smaller batches for parallel InterProScan execution
-3. **Run InterProScan** - Execute InterProScan on each chunk (19 component databases + GO terms)
+3. **Run InterProScan** - Execute InterProScan on each chunk (configurable applications list)
 4. **Combine results** - Merge per-chunk outputs into per-species annotation files
+5. **Detect failed chunks** - Gap detection: writes `6_ai-failed_chunks.tsv` listing any chunks that did not produce results (see "Failure semantics" below)
+6. **Write run log** - Final logging step
 
 ## Key Configuration
 
@@ -54,3 +56,28 @@ ls INPUT_user/*.aa | wc -l
 | `Out of memory` (system) | Reduce chunk size or request more memory in SLURM sbatch |
 | `No input files found` | Check INPUT_user/ contains proteome files and config points to correct directory |
 | Stale cached results after script update | Delete `work/` and `.nextflow*`, re-run without `-resume` |
+| Chunk job dies with exit `0:53` in 1-2 sec, no log | Post-upgrade HiPerGator scheduler race allocating jobs to draining `c0706a-s*` nodes. NOT a pipeline bug — surfaces via `6_ai-failed_chunks.tsv` for follow-up. |
+
+## Failure semantics (BLOCK-specific override)
+
+This workflow uses `errorStrategy = 'ignore'` for the `run_interproscan` process — an **explicit, documented override** of the project CLAUDE.md default ("NEVER use 'ignore'"). Rationale:
+
+- Burst mode submits 1000+ independent chunk jobs.
+- A documented post-upgrade HiPerGator scheduler bug allocates a small percentage of jobs to draining nodes (exit code 0:53). With fail-fast, this kills the whole pipeline.
+- With `'ignore'`, failed chunks produce no output but the other 1000+ chunks complete normally.
+- Step 5 (`detect_failed_chunks`) emits `OUTPUT_pipeline/6-output/6_ai-failed_chunks.tsv` listing every chunk that did not produce a result.
+
+### Recovering from failed chunks
+
+After a run completes, inspect the manifest:
+
+```bash
+wc -l OUTPUT_pipeline/6-output/6_ai-failed_chunks.tsv   # header + N rows
+cat OUTPUT_pipeline/6-output/6_ai-failed_chunks.tsv
+```
+
+To rerun just the failed chunks, build a new proteome manifest from the FASTA paths in column 3 and launch a follow-up RUN_N. (A helper to do this automatically may be added later.)
+
+### Slurm-mode in-allocation parallelism (fix vs prior behavior)
+
+The `withName: 'run_interproscan'` block uses `burst_cpus_per_chunk` / `burst_memory_gb_per_chunk` for per-chunk resources in BOTH `slurm` and `slurm_burst` modes. Previously slurm-mode used `params.cpus` per chunk — which meant each chunk consumed the entire allocation, forcing chunks to run **sequentially** within the single SLURM job (defeating the purpose of the allocation). With the corrected sizing, multiple chunks run in parallel within the slurm-mode allocation up to `allocation_cpus / burst_cpus_per_chunk` concurrency.

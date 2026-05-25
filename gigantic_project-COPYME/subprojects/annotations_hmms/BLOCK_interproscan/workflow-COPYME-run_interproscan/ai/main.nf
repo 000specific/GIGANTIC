@@ -102,6 +102,40 @@ process combine_interproscan_results {
 }
 
 /*
+ * Process: detect_failed_chunks
+ * Calls: scripts/006_ai-python-detect_failed_chunks.py
+ *
+ * Gap-detection step. With errorStrategy='ignore' on run_interproscan, failed
+ * chunks produce no output rather than killing the pipeline. This step compares
+ * expected chunks (2-output/*.fasta) against successful chunks
+ * (3-output/*_interproscan.tsv) and emits a manifest of missing chunks the
+ * user can drive a follow-up RUN_N from.
+ *
+ * Runs locally (no SLURM submission) -- pure filesystem walk.
+ * Triggered by combine_interproscan_results so it runs AFTER all chunks
+ * have had a chance to complete or fail.
+ */
+process detect_failed_chunks {
+    label 'local'
+    publishDir "${params.output_dir}/6-output", mode: 'copy'
+
+    input:
+        val previous_step_done
+
+    output:
+        path '6_ai-failed_chunks.tsv',          emit: failed_chunks_manifest
+        path '6_ai-log-detect_failed_chunks.log'
+
+    script:
+    """
+    python3 ${scripts_dir}/006_ai-python-detect_failed_chunks.py \
+        --chunks-dir  ${projectDir}/../${params.output_dir}/2-output \
+        --results-dir ${projectDir}/../${params.output_dir}/3-output \
+        --output-dir  .
+    """
+}
+
+/*
  * Process 5: Write Run Log
  * Calls: scripts/005_ai-python-write_run_log.py
  *
@@ -157,8 +191,16 @@ workflow {
     // Step 4: Combine chunk results back per species
     // groupTuple() collects all InterProScan result files for each phyloname
     // into a single tuple: [phyloname, [result_1.tsv, result_2.tsv, ...]]
+    // NOTE: With errorStrategy='ignore' on run_interproscan, groupTuple
+    // receives only SUCCESSFUL chunks; failed chunks are silently dropped.
+    // Step 5 below detects which chunks were dropped.
     combine_interproscan_results( run_interproscan.out.interproscan_results.groupTuple() )
 
-    // Write run log (FINAL STEP)
-    write_run_log( combine_interproscan_results.out.combined_results.collect() )
+    // Step 5: Detect failed chunks (gap detection)
+    // Compares 2-output/*.fasta (expected) vs 3-output/*_interproscan.tsv
+    // (successful) and writes 6-output/6_ai-failed_chunks.tsv for follow-up runs.
+    detect_failed_chunks( combine_interproscan_results.out.combined_results.collect() )
+
+    // Write run log (FINAL STEP) -- waits on the gap-detection manifest
+    write_run_log( detect_failed_chunks.out.failed_chunks_manifest.collect() )
 }

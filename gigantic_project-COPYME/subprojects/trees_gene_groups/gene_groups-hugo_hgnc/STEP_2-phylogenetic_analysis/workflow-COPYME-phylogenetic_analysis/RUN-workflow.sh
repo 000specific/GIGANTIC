@@ -15,7 +15,7 @@
 # Pipeline:
 #   1. Create per-workflow conda env once on the login node (if missing)
 #   2. For each gene group in gene_group_source_tsv with a STEP_1 AGS file:
-#        - Set up gene_group-X/workflow-RUN_01-phylogenetic_analysis/ from this COPYME
+#        - Set up gene_group-X/${PARENT_RUN_NAME}/ from this COPYME
 #        - Customize per-gene-group YAML
 #        - Categorize small/large by RGS sequence count from STEP_0 summary
 #        - Skip gene groups whose AGS doesn't exist yet (STEP_1 not done for them)
@@ -30,6 +30,23 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
+# Multi-trial: per-gene-group sub-runs are named after THIS parent dir's basename.
+# So workflow-RUN_1-syt_vamp_stx_trp/ at STEP_2 root creates
+#   gene_group-X/workflow-RUN_1-syt_vamp_stx_trp/ per gene group.
+# This lets multiple STEP_2 trials coexist without colliding.
+PARENT_RUN_NAME="$( basename "${SCRIPT_DIR}" )"
+
+# Fail-fast if invoked from the template (workflow-COPYME-*). Force the user to
+# make a workflow-RUN_<N>-<label>/ sibling and run from there.
+if [[ "${PARENT_RUN_NAME}" == workflow-COPYME-* ]]; then
+    echo "ERROR: RUN-workflow.sh was invoked from the template '${PARENT_RUN_NAME}'." >&2
+    echo "  Templates are not runnable directly. Make a copy and run from it:" >&2
+    echo "    cp -r ${PARENT_RUN_NAME} workflow-RUN_1-<your-label>" >&2
+    echo "    # Edit workflow-RUN_1-<your-label>/START_HERE-user_config.yaml as needed" >&2
+    echo "    bash workflow-RUN_1-<your-label>/RUN-workflow.sh" >&2
+    exit 1
+fi
+
 export NXF_OFFLINE=true
 
 # =============================================================================
@@ -38,7 +55,10 @@ export NXF_OFFLINE=true
 read_config() {
     local key="$1"
     local default="$2"
-    local value=$(grep "^${key}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//' | sed 's/ *#.*$//')
+    # Order matters: strip comment BEFORE stripping quotes. Otherwise inline
+    # comments containing quotes (e.g.,  key: "x"  # e.g. "y") confuse the
+    # outer-quote strip and leak the comment's closing quote into the value.
+    local value=$(grep "^${key}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/[[:space:]]*#.*$//' | sed 's/^"//;s/"$//')
     echo "${value:-$default}"
 }
 
@@ -110,7 +130,7 @@ else
 fi
 
 # =============================================================================
-# Phase 1: setup gene_group-X/workflow-RUN_01-phylogenetic_analysis dirs
+# Phase 1: setup gene_group-X/${PARENT_RUN_NAME} dirs
 # =============================================================================
 STEP2_DIR="$(dirname "${SCRIPT_DIR}")"
 mkdir -p "${STEP2_DIR}/slurm_logs"
@@ -182,7 +202,7 @@ while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filenam
         continue
     fi
 
-    DEST="${STEP2_DIR}/gene_group-${sanitized_name}/workflow-RUN_01-phylogenetic_analysis"
+    DEST="${STEP2_DIR}/gene_group-${sanitized_name}/${PARENT_RUN_NAME}"
 
     if [ "$sequence_count" -gt "$LARGE_THRESHOLD" ] 2>/dev/null; then
         LARGE_GG+=("${sanitized_name}")
@@ -317,15 +337,43 @@ nextflow_run_cmd() {
     echo "cd '${dest}' && nextflow run ai/main.nf ${RESUME_FLAG} -c ai/nextflow.config -params-file .params.json"
 }
 
+# =============================================================================
+# Post-pipeline publish to output_to_input/
+# After each per-gene-group nextflow run succeeds, symlink the tree newicks
+# from OUTPUT_pipeline/5_*-output/ → output_to_input/<instance>/STEP_2-phylogenetic_analysis/${PARENT_RUN_NAME}/gene_group-<gg>/
+# The ${PARENT_RUN_NAME} segment isolates this trial's outputs from other STEP_2
+# trials (e.g., a different gene-group set, or different tree methods).
+# STEP_3 selects which trial to consume via the step2_run_name YAML key.
+# =============================================================================
+INSTANCE_NAME="$( basename "$( dirname "${STEP2_DIR}" )" )"
+OTI_INSTANCE_DIR="$( cd "${STEP2_DIR}/../../output_to_input" 2>/dev/null && pwd )/${INSTANCE_NAME}"
+if [ -z "$( cd "${STEP2_DIR}/../../output_to_input" 2>/dev/null && pwd )" ]; then
+    OTI_INSTANCE_DIR="$( realpath -m "${STEP2_DIR}/../../output_to_input/${INSTANCE_NAME}" )"
+fi
+
+oti_publish_step2() {
+    local gg="$1"
+    local dest="$2"
+    local target="${OTI_INSTANCE_DIR}/STEP_2-phylogenetic_analysis/${PARENT_RUN_NAME}/gene_group-${gg}"
+    # Newicks live in 5_a-output/, 5_b-output/, 5_c-output/, 5_d-output/ depending on which tree methods ran.
+    # Explicit destination filename (not 'TARGET/') — the trailing-slash behavior of GNU coreutils
+    # ln is unreliable on the /blue network FS.
+    # The trailing 'true' guarantees exit 0 even when the LAST glob pattern
+    # in the for loop doesn't match (which leaves [ -f "$f" ] returning 1 on
+    # the final iteration). Without it, an enabled-fasttree-only run would
+    # falsely report FAILED at the wrap layer despite NextFlow succeeding.
+    echo "mkdir -p '${target}' && for f in '${dest}/OUTPUT_pipeline/5_'*-output/*.fasttree '${dest}/OUTPUT_pipeline/5_'*-output/*.treefile '${dest}/OUTPUT_pipeline/5_'*-output/*.veryfasttree '${dest}/OUTPUT_pipeline/5_'*-output/*.phylobayes.nwk; do [ -f \"\$f\" ] && ln -sf \"\$f\" \"${target}/\$( basename \"\$f\" )\"; done; true"
+}
+
 case "${EXECUTION_MODE}" in
     local)
         echo "Execution mode: local (sequential)"
         conda activate "${ENV_NAME}" 2>/dev/null || true
         for gg in "${SMALL_GG[@]}" "${LARGE_GG[@]}"; do
-            DEST="${STEP2_DIR}/gene_group-${gg}/workflow-RUN_01-phylogenetic_analysis"
+            DEST="${STEP2_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
             echo ""
             echo "[$(date)] Running locally: ${gg}"
-            ( cd "${DEST}" && nextflow run ai/main.nf ${RESUME_FLAG} -c ai/nextflow.config -params-file .params.json ) \
+            ( cd "${DEST}" && nextflow run ai/main.nf ${RESUME_FLAG} -c ai/nextflow.config -params-file .params.json && eval "$(oti_publish_step2 "${gg}" "${DEST}")" ) \
                 || echo "  FAILED: ${gg}"
         done
         ;;
@@ -341,8 +389,8 @@ case "${EXECUTION_MODE}" in
                 cpus="${LARGE_CPUS}"; mem="${LARGE_MEM}"; time_h="${LARGE_TIME}"
             fi
             for gg in "${arr[@]}"; do
-                DEST="${STEP2_DIR}/gene_group-${gg}/workflow-RUN_01-phylogenetic_analysis"
-                wrap="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; $(nextflow_run_cmd "${DEST}")"
+                DEST="${STEP2_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
+                wrap="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; ( $(nextflow_run_cmd "${DEST}") && $(oti_publish_step2 "${gg}" "${DEST}") ) || echo \"FAILED: ${gg}\""
                 sbatch \
                     --job-name="s2_${tier}_${gg}" \
                     --account="${SLURM_ACCOUNT}" \
@@ -380,9 +428,9 @@ case "${EXECUTION_MODE}" in
                 j=$i
                 while [ "$j" -lt "$end" ]; do
                     gg="${arr[$j]}"
-                    DEST="${STEP2_DIR}/gene_group-${gg}/workflow-RUN_01-phylogenetic_analysis"
+                    DEST="${STEP2_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
                     runner+="echo '----------'; echo \"[\$(date)] Starting: ${gg}\"; "
-                    runner+="( $(nextflow_run_cmd "${DEST}") ) || echo \"FAILED: ${gg}\"; "
+                    runner+="( $(nextflow_run_cmd "${DEST}") && $(oti_publish_step2 "${gg}" "${DEST}") ) || echo \"FAILED: ${gg}\"; "
                     j=$((j + 1))
                 done
 

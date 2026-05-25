@@ -1,0 +1,7 @@
+{
+  "user_gene_set_file": "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/trees_gene_groups/gene_groups-snap_family/INPUT_user/user_gene_set.tsv",
+  "output_dir": "OUTPUT_pipeline",
+  "cpus": 2,
+  "memory_gb": 4,
+  "time_hours": 1
+}

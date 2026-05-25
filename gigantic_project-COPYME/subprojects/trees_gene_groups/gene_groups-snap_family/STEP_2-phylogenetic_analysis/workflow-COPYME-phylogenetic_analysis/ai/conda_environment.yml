@@ -1,0 +1,30 @@
+# GIGANTIC trees_gene_groups - STEP_2 (phylogenetic analysis) conda env
+# Per-workflow conda env, auto-created from this file on first RUN_1 run by
+# RUN-workflow.sh (mamba preferred; conda fallback).
+#
+# Tools included:
+#   - python, pyyaml         : core deps for any helper scripts
+#   - nextflow               : workflow runner
+#   - mafft                  : multiple sequence alignment
+#   - clipkit                : alignment trimming
+#   - fasttree               : fast approximate ML tree (default; always recommended)
+#   - iqtree                 : full ML tree with model selection + bootstrap (publication)
+#   - veryfasttree           : parallelized FastTree alternative for large alignments
+#
+# phylobayes-mpi is NOT included by default (heavy MPI install; rarely used).
+# If you need Bayesian trees, add `phylobayes-mpi` to dependencies below and
+# delete the env to force a rebuild on next run.
+name: aiG-trees_gene_groups-phylogenetic_analysis
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
+  - mafft
+  - clipkit
+  - fasttree
+  - iqtree
+  - veryfasttree

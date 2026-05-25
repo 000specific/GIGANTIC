@@ -15,7 +15,7 @@
 # Pipeline:
 #   1. Create/heal per-workflow conda env once on the login node (if missing or broken)
 #   2. For each gene group in gene_group_source_tsv with STEP_2 tree newick output:
-#        - Set up gene_group-X/workflow-RUN_01-tree_visualization/ from this COPYME
+#        - Set up gene_group-X/${PARENT_RUN_NAME}/ from this COPYME
 #        - Customize per-gene-group YAML
 #        - Skip if STEP_2 hasn't produced newicks for that gene group
 #   3. Dispatch per execution_mode (local | slurm-standard | slurm-burst)
@@ -28,13 +28,33 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "${SCRIPT_DIR}"
 
+# Multi-trial: per-gene-group sub-runs are named after THIS parent dir's basename.
+# So workflow-RUN_1-syt_vamp_stx_trp/ at STEP_3 root creates
+#   gene_group-X/workflow-RUN_1-syt_vamp_stx_trp/ per gene group.
+# This lets multiple STEP_3 trials coexist without colliding.
+PARENT_RUN_NAME="$( basename "${SCRIPT_DIR}" )"
+
+# Fail-fast if invoked from the template (workflow-COPYME-*). Force the user to
+# make a workflow-RUN_<N>-<label>/ sibling and run from there.
+if [[ "${PARENT_RUN_NAME}" == workflow-COPYME-* ]]; then
+    echo "ERROR: RUN-workflow.sh was invoked from the template '${PARENT_RUN_NAME}'." >&2
+    echo "  Templates are not runnable directly. Make a copy and run from it:" >&2
+    echo "    cp -r ${PARENT_RUN_NAME} workflow-RUN_1-<your-label>" >&2
+    echo "    # Edit workflow-RUN_1-<your-label>/START_HERE-user_config.yaml as needed" >&2
+    echo "    bash workflow-RUN_1-<your-label>/RUN-workflow.sh" >&2
+    exit 1
+fi
+
 # =============================================================================
 # Read flat top-level YAML keys
 # =============================================================================
 read_config() {
     local key="$1"
     local default="$2"
-    local value=$(grep "^${key}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//' | sed 's/ *#.*$//')
+    # Order matters: strip comment BEFORE stripping quotes. Otherwise inline
+    # comments containing quotes (e.g.,  key: "x"  # e.g. "y") confuse the
+    # outer-quote strip and leak the comment's closing quote into the value.
+    local value=$(grep "^${key}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/[[:space:]]*#.*$//' | sed 's/^"//;s/"$//')
     echo "${value:-$default}"
 }
 
@@ -45,6 +65,9 @@ LARGE_THRESHOLD=$(read_config "large_threshold" "50")
 
 # Optional override manifest (empty = visualize all gene groups with STEP_2 newicks)
 GENE_GROUPS_MANIFEST=$(read_config "gene_groups_manifest" "")
+
+# Which STEP_2 trial's newicks to consume (empty = auto-detect single trial)
+STEP2_RUN_NAME=$(read_config "step2_run_name" "")
 
 SLURM_ACCOUNT=$(read_config "slurm_account" "")
 SLURM_QOS_STANDARD=$(read_config "slurm_qos_standard" "")
@@ -77,6 +100,37 @@ if [ ! -d "${STEP2_OUTPUT_TO_INPUT}" ]; then
     echo "Run STEP_2 first." >&2
     exit 1
 fi
+
+# Resolve which STEP_2 trial to consume.
+# Layout: ${STEP2_OUTPUT_TO_INPUT}/<step2_run_name>/gene_group-<name>/*.{fasttree,treefile,...}
+if [ -z "${STEP2_RUN_NAME}" ]; then
+    # Auto-detect: count run dirs directly under STEP2_OUTPUT_TO_INPUT
+    mapfile -t RUN_DIRS < <( find "${STEP2_OUTPUT_TO_INPUT}" -mindepth 1 -maxdepth 1 -type d -name 'workflow-*' -printf '%f\n' | sort )
+    if [ "${#RUN_DIRS[@]}" = "0" ]; then
+        echo "ERROR: No STEP_2 RUN dirs found under ${STEP2_OUTPUT_TO_INPUT}/" >&2
+        echo "  Expected: ${STEP2_OUTPUT_TO_INPUT}/workflow-RUN_N-<label>/gene_group-<name>/*.{fasttree,treefile,...}" >&2
+        echo "  Run STEP_2 first (a workflow-RUN_N-<label> sibling of workflow-COPYME-*)." >&2
+        exit 1
+    fi
+    if [ "${#RUN_DIRS[@]}" -gt 1 ]; then
+        echo "ERROR: Multiple STEP_2 RUN dirs found — set step2_run_name in START_HERE-user_config.yaml to pick one:" >&2
+        printf '  %s\n' "${RUN_DIRS[@]}" >&2
+        exit 1
+    fi
+    STEP2_RUN_NAME="${RUN_DIRS[0]}"
+    echo "Auto-detected STEP_2 trial: ${STEP2_RUN_NAME}"
+else
+    if [ ! -d "${STEP2_OUTPUT_TO_INPUT}/${STEP2_RUN_NAME}" ]; then
+        echo "ERROR: step2_run_name='${STEP2_RUN_NAME}' not found at ${STEP2_OUTPUT_TO_INPUT}/${STEP2_RUN_NAME}" >&2
+        echo "  Available trials under ${STEP2_OUTPUT_TO_INPUT}/:" >&2
+        find "${STEP2_OUTPUT_TO_INPUT}" -mindepth 1 -maxdepth 1 -type d -name 'workflow-*' -printf '    %f\n' >&2
+        exit 1
+    fi
+    echo "Using STEP_2 trial (from config): ${STEP2_RUN_NAME}"
+fi
+
+# Resolve to absolute path for downstream use
+STEP2_RUN_DIR="${STEP2_OUTPUT_TO_INPUT}/${STEP2_RUN_NAME}"
 if [ ! -f "${ENV_YML}" ]; then
     echo "ERROR: conda env spec not found: ${ENV_YML}" >&2
     exit 1
@@ -113,7 +167,7 @@ else
 fi
 
 # =============================================================================
-# Phase 1: setup gene_group-X/workflow-RUN_01-tree_visualization dirs
+# Phase 1: setup gene_group-X/${PARENT_RUN_NAME} dirs
 # =============================================================================
 STEP3_DIR="$(dirname "${SCRIPT_DIR}")"
 mkdir -p "${STEP3_DIR}/slurm_logs"
@@ -180,13 +234,13 @@ while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filenam
     fi
 
     # STEP_2 must have produced at least one newick for this gene group
-    NEWICK_DIR="${STEP2_OUTPUT_TO_INPUT}/gene_group-${sanitized_name}"
+    NEWICK_DIR="${STEP2_RUN_DIR}/gene_group-${sanitized_name}"
     if [ ! -d "${NEWICK_DIR}" ] || ! ls "${NEWICK_DIR}"/*.fasttree "${NEWICK_DIR}"/*.treefile "${NEWICK_DIR}"/*.veryfasttree "${NEWICK_DIR}"/*.phylobayes.nwk &>/dev/null; then
         no_trees_count=$((no_trees_count + 1))
         continue
     fi
 
-    DEST="${STEP3_DIR}/gene_group-${sanitized_name}/workflow-RUN_01-tree_visualization"
+    DEST="${STEP3_DIR}/gene_group-${sanitized_name}/${PARENT_RUN_NAME}"
 
     if [ "$sequence_count" -gt "$LARGE_THRESHOLD" ] 2>/dev/null; then
         LARGE_GG+=("${sanitized_name}")
@@ -204,6 +258,9 @@ while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filenam
 
     CONFIG_FILE="${DEST}/START_HERE-user_config.yaml"
     sed -i "s|^  name: \"PLACEHOLDER\"|  name: \"${sanitized_name}\"|" "${CONFIG_FILE}"
+    # Pin the resolved step2_run_name so render_trees.py uses the same trial the
+    # orchestrator selected (avoids per-gene-group re-detection drift).
+    sed -i "s|^step2_run_name:.*|step2_run_name: \"${STEP2_RUN_NAME}\"|" "${CONFIG_FILE}"
 
     setup_count=$((setup_count + 1))
 done < <(tail -n +2 "${STEP0_SUMMARY}")
@@ -241,7 +298,7 @@ case "${EXECUTION_MODE}" in
         echo "Execution mode: local (sequential)"
         conda activate "${ENV_NAME}" 2>/dev/null || true
         for gg in "${SMALL_GG[@]}" "${LARGE_GG[@]}"; do
-            DEST="${STEP3_DIR}/gene_group-${gg}/workflow-RUN_01-tree_visualization"
+            DEST="${STEP3_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
             echo ""
             echo "[$(date)] Rendering locally: ${gg}"
             ( cd "${DEST}" && python3 ai/scripts/001_ai-python-render_trees.py && python3 ai/scripts/002_ai-python-write_run_log.py ) \
@@ -260,7 +317,7 @@ case "${EXECUTION_MODE}" in
                 cpus="${LARGE_CPUS}"; mem="${LARGE_MEM}"; time_h="${LARGE_TIME}"
             fi
             for gg in "${arr[@]}"; do
-                DEST="${STEP3_DIR}/gene_group-${gg}/workflow-RUN_01-tree_visualization"
+                DEST="${STEP3_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
                 wrap="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; $(render_cmd "${DEST}")"
                 sbatch \
                     --job-name="s3_${tier}_${gg}" \
@@ -299,7 +356,7 @@ case "${EXECUTION_MODE}" in
                 j=$i
                 while [ "$j" -lt "$end" ]; do
                     gg="${arr[$j]}"
-                    DEST="${STEP3_DIR}/gene_group-${gg}/workflow-RUN_01-tree_visualization"
+                    DEST="${STEP3_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
                     runner+="echo '----------'; echo \"[\$(date)] Rendering: ${gg}\"; "
                     runner+="( $(render_cmd "${DEST}") ) || echo \"FAILED: ${gg}\"; "
                     j=$((j + 1))

@@ -1,0 +1,12 @@
+# STEP_1 retry manifest: 6 gene groups that hit JVM startup crashes
+# (NextFlow: "fault occurred in an unsafe memory access operation") on
+# moroz-b node c1105a-s8 during the 2026-05-25 dispatch — same pattern
+# the parallel session sees on c0706a-s7/s9/s12. Likely post-upgrade
+# stale node config. Retry will land on different nodes.
+sanitized_name
+transcription_factor_cp2_family
+solute_carrier_family_76
+nherf_family_pdz_scaffold_proteins
+iswi_complexes
+drebrin_family
+cask_family

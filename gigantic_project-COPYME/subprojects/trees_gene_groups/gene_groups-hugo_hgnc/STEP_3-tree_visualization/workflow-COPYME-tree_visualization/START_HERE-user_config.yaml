@@ -33,6 +33,15 @@ execution_mode: "local"
 gene_group_source_tsv: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_0-hgnc_gene_groups/3_ai-rgs_generation_summary.tsv"
 step2_output_to_input_dir: "../../../output_to_input/gene_groups-hugo_hgnc/STEP_2-phylogenetic_analysis"
 
+# Which STEP_2 trial's newicks to visualize. STEP_2 is multi-trial: its outputs
+# live at step2_output_to_input_dir/<step2_run_name>/gene_group-<name>/.
+#   - Default (empty string): orchestrator auto-detects. If exactly one RUN dir
+#     exists under step2_output_to_input_dir, use it; if multiple, fail-fast and
+#     list them; if none, fail-fast.
+#   - To pin to a specific trial: set to the trial's run dir name, e.g.
+#     "workflow-RUN_1-syt_vamp_stx_trp".
+step2_run_name: ""
+
 # ============================================================================
 # OPTIONAL OVERRIDE MANIFEST (LEAVE EMPTY TO USE DEFAULTS)
 # ============================================================================

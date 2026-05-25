@@ -456,13 +456,21 @@ def main():
         return 0
 
     # Discover trees
-    # trees_gene_groups structure: <output_to_input>/gene_groups-<INSTANCE>/STEP_2-phylogenetic_analysis/gene_group-<name>/
+    # trees_gene_groups structure (multi-trial for STEP_2):
+    #   <output_to_input>/gene_groups-<INSTANCE>/STEP_2-phylogenetic_analysis/<step2_run_name>/gene_group-<name>/
     # Derive the per-source instance dir name from the script's runtime location:
-    #   config_directory = gene_groups-<INSTANCE>/STEP_3-tree_visualization/gene_group-<name>/workflow-RUN_01-tree_visualization/
+    #   config_directory = gene_groups-<INSTANCE>/STEP_3-tree_visualization/gene_group-<name>/<workflow-RUN_NN-...>/
     #   parents[2]       = gene_groups-<INSTANCE>/
-    # This avoids hardcoding any specific instance name.
+    # The step2_run_name is pinned by the STEP_3 orchestrator into this per-gene-group
+    # YAML (top-level step2_run_name key) — either user-specified or auto-detected.
     instance_dir_name = config_directory.resolve().parents[ 2 ].name
-    gene_family_step2_directory = output_to_input_directory / instance_dir_name / 'STEP_2-phylogenetic_analysis' / f'gene_group-{gene_family}'
+    step2_run_name = config.get( 'step2_run_name', '' )
+    if not step2_run_name:
+        logger.error( "CRITICAL ERROR: step2_run_name not set in per-gene-group YAML." )
+        logger.error( "  This should have been pinned by the STEP_3 orchestrator." )
+        write_placeholder( "step2_run_name missing from config" )
+        return 0
+    gene_family_step2_directory = output_to_input_directory / instance_dir_name / 'STEP_2-phylogenetic_analysis' / step2_run_name / f'gene_group-{gene_family}'
     logger.info( f"Looking for trees in: {gene_family_step2_directory}" )
     trees = discover_trees( gene_family_step2_directory )
 
