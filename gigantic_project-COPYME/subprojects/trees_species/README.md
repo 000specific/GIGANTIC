@@ -353,9 +353,8 @@ trees_species/
 │           ├── conda_environment.yml      # env: aiG-trees_species-user_requests
 │           └── scripts/                   # 2 Python scripts (001 select, 002 visualize)
 │
-└── BLOCK_de_novo_species_tree/            # FUTURE (skeletal): build species tree de novo from sequences
-    ├── AI_GUIDE.md
-    └── workflow-COPYME-build_species_tree/  # Scaffold only (placeholder)
+└── BLOCK_de_novo_species_tree/            # FUTURE (planned): build species tree de novo from sequences
+    └── AI_GUIDE.md                        # placeholder — describes planned BUSCO→MAFFT→ClipKit→IQ-TREE pipeline (no scaffold yet)
 ```
 
 ## BLOCKs
@@ -388,11 +387,14 @@ matching structures from the enumerated candidate set (e.g., 105
 structures for 5 unresolved clades). Useful when you want to feed a
 hand-picked subset of structures into downstream OCL analyses.
 
-### BLOCK_de_novo_species_tree (Future - Skeletal)
+### BLOCK_de_novo_species_tree (Future — planned, no scaffold yet)
 
 Classical phylogenomics supermatrix pipeline for building species trees de novo:
 BUSCO sequences → MAFFT alignment → ClipKit trimming → IQ-TREE/FastTree.
-Placeholder for future development.
+Currently only `AI_GUIDE.md` exists (planning doc); the
+`workflow-COPYME-build_species_tree/` scaffold was deleted 2026-05-26
+to avoid shipping a non-functional stub. When work begins, create the
+scaffold following §29 + §35.
 
 ### BLOCK Pipeline Order
 

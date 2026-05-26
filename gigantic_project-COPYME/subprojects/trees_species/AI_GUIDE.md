@@ -46,7 +46,7 @@ origin-conservation-loss (OCL) analyses. Four BLOCKs:
    enumerated structures. User describes topological hypotheses in
    `query_manifest.yaml` and the workflow returns matching structures from
    the candidate set (e.g., 105 for 5 unresolved clades).
-4. **BLOCK_de_novo_species_tree** (future skeletal) - Build species trees from sequence data.
+4. **BLOCK_de_novo_species_tree** (future — planned, no scaffold yet) — Build species trees from sequence data via BUSCO→MAFFT→ClipKit→IQ-TREE. Only `AI_GUIDE.md` exists currently; scaffold to be created when work begins.
 
 **Typical pipeline order**: `BLOCK_gigantic_species_tree` → `BLOCK_permutations_and_features` → (optional) `BLOCK_user_requests` → downstream OCL subprojects.
 
@@ -147,8 +147,8 @@ trees_species/
 │   gigantic_project-COPYME/research_notebook/ per §1, §25; chat captures
 │   land at research_notebook/research_ai/sessions/ per §9)
 │
-├── BLOCK_de_novo_species_tree/            # Future
-│   └── workflow-COPYME-build_species_tree/
+├── BLOCK_de_novo_species_tree/            # Future — planned, no scaffold yet
+│   └── AI_GUIDE.md                        # placeholder doc only
 │
 ├── BLOCK_gigantic_species_tree/           # ACTIVE: standardize + label user-provided species tree
 │   ├── AI_GUIDE.md

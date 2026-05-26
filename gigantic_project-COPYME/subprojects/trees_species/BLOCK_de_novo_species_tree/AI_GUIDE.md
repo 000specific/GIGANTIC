@@ -44,6 +44,13 @@ BLOCK_permutations_and_features.
 
 ## Current State
 
-This directory contains only placeholder structure. No scripts or workflows
-have been implemented yet. When development begins, follow the standard
-GIGANTIC workflow pattern (RUN-workflow.sh, ai/main.nf, ai/scripts/).
+This BLOCK is **planned future work** — not implemented. Only this
+`AI_GUIDE.md` exists; there is no `workflow-COPYME-build_species_tree/`
+scaffolding. (An earlier version shipped a non-functional `RUN-workflow.sh`
+stub that exited with "NOT YET IMPLEMENTED"; that was deleted 2026-05-26
+because it actively misled users who tried to run it.)
+
+When development begins, create `workflow-COPYME-build_species_tree/`
+following the standard GIGANTIC workflow pattern (§29 unified driver +
+`ai/main.nf` + `ai/scripts/NNN_ai-...` + `ai/conda_environment.yml` +
+`START_HERE-user_config.yaml`).
