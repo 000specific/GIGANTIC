@@ -43,6 +43,26 @@ annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/git
 deeploc_csv_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/output_to_input/BLOCK_deeploc"
 
 # =============================================================================
+# Which annotation databases to include in the evidence table (whitelist)
+# =============================================================================
+# Comma-separated list of database short names (the name after `database_` in
+# the annotation_database_dir layout). When EMPTY (""), every discovered
+# database is included — the evidence table is wide (96 cols on the current
+# species70 build, all 17 dbs).
+#
+# Default below is the 6-tool "Leonid simplified" set: Pfam from the IPR
+# family + the 5 non-IPR tools (DeepLoc + MetaPredict + SignalP fast/slow +
+# TMBed). This drops 11 IPR sub-databases (CDD, FunFam, Gene3D, GO,
+# InterProScan-summary, NCBIfam, PANTHER, PRINTS, SFLD, SMART, SUPERFAMILY)
+# that aren't needed for the secretome filter chain. Evidence table goes
+# from ~96 cols to ~48 cols and STEP_2 runs faster.
+#
+# To include EVERYTHING discovered: set this to "" (empty string).
+# To re-add (say) GO and PANTHER: append them, e.g.
+#   "pfam,deeploc,metapredict,signalp_fast,signalp_slow,tmbed,go,panther"
+include_databases: "pfam,deeploc,metapredict,signalp_fast,signalp_slow,tmbed"
+
+# =============================================================================
 # Computational Resources
 # =============================================================================
 # Lightweight workflow ( pure Python TSV pivot ). One driver job; per-species

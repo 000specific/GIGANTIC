@@ -144,6 +144,12 @@ def parse_args():
         required = True,
         help = "Path to the directory of DeepLoc CSV files (annotations_hmms/output_to_input/BLOCK_deeploc/). Used to augment the evidence table with per-compartment probabilities that are NOT preserved in the long-format annotation database.",
     )
+    parser.add_argument(
+        "--include-databases",
+        required = False,
+        default = "",
+        help = "Comma-separated whitelist of database short names to include in the pivot (e.g. 'pfam,deeploc,metapredict,signalp_fast,signalp_slow,tmbed'). When empty (default), every discovered database is included. Use this to keep the evidence table tight by dropping IPR sub-databases the downstream analysis does not need.",
+    )
     return parser.parse_args()
 
 
@@ -187,11 +193,14 @@ def read_proteome_protein_ids_and_lengths( input_fasta_path, logger ):
 # LONG-FORMAT DB — discover and read
 # =============================================================================
 
-def discover_database_files( annotation_database_directory, phyloname, logger ):
+def discover_database_files( annotation_database_directory, phyloname, include_set, logger ):
     """
     Discover every database_<name>/gigantic_annotations-database_<name>-<phyloname>.tsv
     under the annotation_database_directory. Returns ordered dict:
         database_name -> path_to_per_species_tsv
+
+    If `include_set` is non-empty, only databases whose short name is in
+    that set are included. If empty, every discovered database is included.
     """
     annotation_database_directory = Path( annotation_database_directory )
     if not annotation_database_directory.exists():
@@ -199,12 +208,16 @@ def discover_database_files( annotation_database_directory, phyloname, logger ):
         sys.exit( 1 )
 
     database_names___paths = {}
+    skipped_by_include_filter = []
     for database_subdirectory in sorted( annotation_database_directory.iterdir() ):
         if not database_subdirectory.is_dir():
             continue
         if not database_subdirectory.name.startswith( "database_" ):
             continue
         database_name = database_subdirectory.name[ len( "database_" ): ]
+        if include_set and database_name not in include_set:
+            skipped_by_include_filter.append( database_name )
+            continue
         expected_filename = f"gigantic_annotations-database_{database_name}-{phyloname}.tsv"
         tsv_path = database_subdirectory / expected_filename
         if tsv_path.exists():
@@ -212,8 +225,17 @@ def discover_database_files( annotation_database_directory, phyloname, logger ):
         else:
             logger.warning( f"  database {database_name}: no per-species TSV at {tsv_path}" )
 
+    if include_set:
+        missing_from_disk = sorted( include_set - set( database_names___paths.keys() ) - set( skipped_by_include_filter ) )
+        if missing_from_disk:
+            logger.warning( f"  --include-databases names not found on disk for this species: {missing_from_disk}" )
+        if skipped_by_include_filter:
+            logger.info( f"  Skipped by --include-databases filter ({len( skipped_by_include_filter )}): {sorted( skipped_by_include_filter )}" )
+
     if not database_names___paths:
         logger.error( f"CRITICAL ERROR: zero per-species TSVs found for phyloname {phyloname} under {annotation_database_directory}" )
+        if include_set:
+            logger.error( f"  Note: --include-databases filter was active with: {sorted( include_set )}" )
         sys.exit( 1 )
 
     logger.info( f"Discovered {len( database_names___paths )} database TSVs for {phyloname}: {sorted( database_names___paths )}" )
@@ -483,10 +505,13 @@ def main():
     logger.info( "=" * 70 )
     logger.info( "Script 002: Build per-protein evidence table (one species)" )
     logger.info( "=" * 70 )
+    include_set = set( s.strip() for s in args.include_databases.split( "," ) if s.strip() )
+
     logger.info( f"Phyloname:                  {args.phyloname}" )
     logger.info( f"Input FASTA:                {args.input_fasta}" )
     logger.info( f"Annotation database dir:    {args.annotation_database_dir}" )
     logger.info( f"DeepLoc CSV dir:            {args.deeploc_csv_dir}" )
+    logger.info( f"Include databases filter:   {sorted( include_set ) if include_set else '(none — include everything discovered)'}" )
     logger.info( f"Output dir:                 {output_directory}" )
 
     # --- Proteome FASTA: drives row set --------------------------------------
@@ -500,7 +525,7 @@ def main():
 
     # --- Discover available database TSVs ------------------------------------
     database_names___paths = discover_database_files(
-        args.annotation_database_dir, args.phyloname, logger,
+        args.annotation_database_dir, args.phyloname, include_set, logger,
     )
 
     # --- Read each database into protein_id -> records dict ------------------

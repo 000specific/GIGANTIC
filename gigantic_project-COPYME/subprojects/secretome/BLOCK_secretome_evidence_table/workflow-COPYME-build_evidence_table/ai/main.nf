@@ -67,6 +67,7 @@ process build_evidence_table {
         --input-fasta ${proteome_path} \
         --annotation-database-dir ${params.annotation_database_dir} \
         --deeploc-csv-dir ${params.deeploc_csv_dir} \
+        --include-databases '${params.include_databases}' \
         --output-dir . \
         --phyloname ${phyloname}
     """
