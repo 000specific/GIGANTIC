@@ -1018,6 +1018,198 @@ level. Don't invent custom types.
 
 ---
 
+## 42. "Where this fits" header on every doc
+
+Every `README.md` and `AI_GUIDE.md` opens with a short **"Where this fits"**
+block immediately after the AI-attribution comment block (§12), pointing
+the reader UP, DOWN, IN, and OUT:
+
+- **UP**: parent README + parent AI_GUIDE (one level up, and project root)
+- **DOWN**: child docs (children's READMEs / AI_GUIDEs / workflow runbooks)
+- **IN**: where the data this unit consumes comes from (INPUT_user
+  staging, upstream subproject `output_to_input/`, conventions docs)
+- **OUT**: where this unit's outputs go (`output_to_input/`,
+  `upload_to_server/`, downstream consumer subprojects)
+
+The block is **brief** (a 5-line bulleted list, not a section).
+
+**Pattern**:
+
+```markdown
+## Where this fits
+
+`<subproject_or_block>` is the <Nth> subproject/BLOCK you run
+(<one-line orientation>).
+
+- Parent project landing page: [`../../README.md`](../../README.md)
+- Parent project AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- This unit's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Prerequisite: [`../<upstream>/`](../<upstream>/) (provides X)
+- Next step: [`../<downstream>/`](../<downstream>/) (consumes Y)
+```
+
+**Why**: any AI or human walking into a directory cold can navigate the
+project structure from the first 10 lines of the doc, without grep'ing
+or asking. Adopted from the phylonames + genomesDB + trees_species deep
+eval passes (2026-05-26).
+
+---
+
+## 43. Up/down/in/out is the canonical doc evaluation framework
+
+When auditing any `README.md` or `AI_GUIDE.md`, check the four-axis
+integration explicitly:
+
+1. **UP** — Does it link to parent docs (parent README, parent
+   AI_GUIDE, and the project-root pair)?
+2. **DOWN** — Does it link to child docs (children's READMEs,
+   workflow runbooks, BLOCK guides)?
+3. **IN** — Does it name explicitly where this unit's inputs come
+   from (INPUT_user staging slot, upstream subproject's
+   `output_to_input/<path>/<file>`, NCBI / external data sources)?
+4. **OUT** — Does it name explicitly where this unit's outputs go
+   (`output_to_input/<subdir>/`, `upload_to_server/`, listed
+   downstream consumer subprojects per §40)?
+
+A doc missing any axis is incomplete. Use the framework as a checklist
+during deep eval passes (it surfaced multiple integration gaps across
+phylonames, genomesDB, and trees_species during the 2026-05-26 pass —
+including the entire `BLOCK_user_requests` BLOCK that had shipped without
+being added to its subproject README).
+
+---
+
+## 44. Deep eval: cross-check docs against code (main.nf / nextflow.config / scripts / YAML)
+
+Doc-only review is **not enough** for deep eval. Every doc claim about
+scripts, output paths, env names, or workflow structure must be
+cross-checked against the actual file on disk:
+
+| Doc claim | Source of truth |
+|---|---|
+| Script names + count | `ls workflow-COPYME-*/ai/scripts/` |
+| Process names + execution order | `workflow-COPYME-*/ai/main.nf` |
+| Conda env name | `workflow-COPYME-*/ai/conda_environment.yml` (`name:` line) |
+| YAML keys, defaults, structure | `workflow-COPYME-*/START_HERE-user_config.yaml` |
+| Process resources, error strategy | `workflow-COPYME-*/ai/nextflow.config` |
+| Actual output filenames | `find workflow-RUN_*/OUTPUT_pipeline/` |
+| Symlink targets | `ls -la <subproject>/output_to_input/*/maps/` |
+
+The genomesDB workflow-level deep eval pass (2026-05-26, commit
+`332e2f5`) surfaced multiple recurring doc-vs-reality mismatches that
+sed cleanup could not catch — wrong script-count tables, fictional
+script names, output paths off by one directory level, a fictional
+`6_ai-species_selection_manifest.tsv` referenced across 5 docs that
+never existed. **Cross-checking against code catches what doc-only
+review misses.**
+
+---
+
+## 45. `write_run_log` is the canonical final script in every NextFlow workflow
+
+Every workflow's NextFlow `main.nf` ends with a `write_run_log` process
+that invokes `NNN_ai-python-write_run_log.py` (highest script number in
+the workflow's `ai/scripts/` directory). The script writes a
+timestamped per-run audit log to the workflow's `ai/logs/` directory.
+
+This is **easy to forget in doc tables** — the recurring failure mode
+is documenting "the 6 analysis scripts" without mentioning script 007
+write_run_log, then someone reads the doc and is confused when there are
+N+1 scripts on disk. Always include `write_run_log` in script tables;
+mark it explicitly as the audit-log final step.
+
+The script's role:
+- Records workflow name, subproject name, project name, status, timestamp
+- Writes to `ai/logs/run_YYYYMMDD_HHMMSS-<subproject>_success.log`
+- Is **per-run** — separate from project-wide chat captures (§9), which
+  live in `research_notebook/research_ai/sessions/`
+
+---
+
+## 46. Anti-pattern: nested `slurm:` block in `START_HERE-user_config.yaml`
+
+Pre-§29 templates carried a nested YAML block:
+
+```yaml
+slurm:
+  enabled: false
+  account: "your_account"
+  qos: "your_qos"
+  memory: "4gb"
+  time: "1:00:00"
+  cpus: 1
+```
+
+This is **dead code** — §29's unified `RUN-workflow.sh` driver reads
+only the flat keys at the bottom of the YAML:
+
+```yaml
+execution_mode: "local"        # or "slurm"
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+cpus: 2
+memory_gb: 8
+time_hours: 2
+```
+
+When found in a YAML, the stale nested `slurm:` block should be
+removed. (Surfaced and removed from genomesDB STEP_1 YAML during the
+2026-05-26 cleanup; verified absent in genomesDB STEP_2/3/4 + phylonames
+STEP_1/2.)
+
+---
+
+## 47. Frozen-artifact rule: `workflow-RUN_*/` docs are historical, not canonical
+
+When a `workflow-RUN_<K>-*/` directory exists alongside its
+`workflow-COPYME-*/` template, the RUN dir is a **frozen research
+artifact** — a snapshot of the workflow as it was when that specific
+run happened. Its embedded `README.md` and `ai/AI_GUIDE.md` are
+historical documentation of that run.
+
+**Rule**: canonical-pattern refactors and doc-cleanup passes touch
+**only** `workflow-COPYME-*` docs. Leave `workflow-RUN_*` docs alone.
+
+**Why**: editing the RUN docs would rewrite the historical record of
+what the workflow looked like when it executed. Reproducibility and the
+research-notebook nature of the project require those artifacts stay
+frozen.
+
+(See also: §39 canonical-RUN rule for publishing — only the canonical
+RUN gets a live `upload_manifest.tsv`; stale RUNs are left untouched.)
+
+---
+
+## 48. Quick Reference navigation table at top of every AI_GUIDE
+
+Every `AI_GUIDE.md` carries a navigation table near the top, after the
+AI-attribution block and the "Where this fits" block (§42), listing
+**every related doc the reader might want next**:
+
+```markdown
+## Quick Reference
+
+| User needs... | Go to... |
+|---|---|
+| GIGANTIC overview | `../../AI_GUIDE.md` (project root) |
+| Conventions (§1–§48) | `../../ai/ai_FYIs/gigantic_conventions.md` |
+| <subproject> concepts | This file |
+| <BLOCK or STEP> overview | `<BLOCK_or_STEP>/AI_GUIDE.md` |
+| Running the workflow | `<...>/workflow-COPYME-*/ai/AI_GUIDE.md` |
+| Downstream subprojects | `../<consumer>/AI_GUIDE.md` |
+```
+
+The Quick Reference is **denser than "Where this fits"** (§42) — it's a
+full pointer-list for AI navigation, while "Where this fits" is a
+3-sentence orientation. They serve different purposes and **both
+appear** in every AI_GUIDE.
+
+Adopted from the phylonames + genomesDB + trees_species deep eval
+passes (2026-05-26). The pattern was already in some AI_GUIDEs before
+the pass but not uniformly applied.
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
