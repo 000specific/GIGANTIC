@@ -809,6 +809,93 @@ script either produced the expected output or it failed — no third state.
 
 ---
 
+## 37. Project-level data server: one per project, at `server/`
+
+Each GIGANTIC project ships **one** centralized data server at
+`gigantic_project-COPYME/server/`. It is a long-running web service that
+gives collaborators HTTP access to selected pipeline outputs across all
+subprojects of the project. There is no per-subproject server; subprojects
+publish into the single project-level server.
+
+The server is operated through a unified `RUN-start_server.sh` driver
+(§29) governed by `execution_mode` in `START_HERE-server_config.yaml`.
+Full documentation lives in `server/README.md` (user-facing) and
+`server/AI_GUIDE.md` (operation + publishing workflow).
+
+---
+
+## 38. Subproject-to-server interface: `<subproject>/upload_to_server/` + manifests + symlinks
+
+Each subproject exposes selected outputs to the project's data server
+through a fixed interface:
+
+- **`<subproject>/upload_to_server/`** holds the published view of that
+  subproject's data
+- Entries inside are **symlinks** pointing into the canonical
+  `OUTPUT_pipeline/` of the appropriate `workflow-RUN_N-*` directory
+  (per §35; the run-instance dirs hold the actual data)
+- A **`upload_manifest.tsv`** at `<workflow-RUN_*>/upload_manifest.tsv`
+  controls which outputs publish (one manifest per canonical RUN dir;
+  see §39)
+- Each subproject has its own **`RUN-update_upload_to_server.sh`** that
+  invokes the shared helper `gigantic_project-COPYME/server/ai/update_upload_to_server.py`
+  to create/refresh the symlinks in `upload_to_server/`
+- The server reads `upload_to_server/` symlinks transparently — **there
+  is no copy or sync step**. Follow-the-symlink at HTTP request time.
+
+This parallels the `output_to_input/` symlink pattern (§2) but serves a
+different consumer (the data server / collaborators, not downstream
+subprojects).
+
+`upload_to_server/` ships only `.gitkeep` + `README.md` + `upload_manifest.tsv`
+(canonical templates of the manifest); actual published symlinks are
+gitignored as runtime content.
+
+---
+
+## 39. Canonical-RUN rule for publishing — ONE manifest per unit, in the canonical RUN only
+
+When a subproject's workflow has been retried multiple times, the
+filesystem can hold `workflow-RUN_1`, `workflow-RUN_2`, `workflow-RUN_3`
+in the same step directory. The **canonical** RUN is the one whose
+`OUTPUT_pipeline/` is symlinked from `<subproject>/output_to_input/`.
+The others are stale.
+
+**Rule**: place `upload_manifest.tsv` **only** in the canonical RUN per
+unit. Never leave a stale RUN with its own manifest.
+
+**Why**: if a stale RUN keeps a manifest, the publisher copies its
+(partial / wrong / outdated) outputs into `upload_to_server/`
+side-by-side with the canonical RUN's outputs. The server then shows
+collaborators **two trees** or **two alignments** or **two structure
+sets** for the same unit, with no UI hint that one is stale. This is a
+**research-integrity failure** under `AI_BEHAVIOR.md`'s zero-tolerance
+rule for silent artifacts.
+
+How to find the canonical RUN per unit (example pattern; adapt the file
+glob to the subproject):
+
+```bash
+SUB=<subproject>
+for d in $SUB/output_to_input/*/; do
+  unit=$(basename "$d")
+  raw=$(ls $d/STEP_*/<canonical-file-glob> 2>/dev/null | head -1)
+  if [ -L "$raw" ]; then
+    canonical=$(readlink "$raw" | grep -oE 'workflow-RUN_[0-9]+')
+    echo "$unit -> $canonical"
+  fi
+done
+```
+
+When in doubt during a publish: dry-run the publisher
+(`RUN-update_upload_to_server.sh --dry-run`) and reconcile the file
+counts before going live.
+
+Full publishing workflow lives in `server/AI_GUIDE.md` ("Publishing
+workflow" section).
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
