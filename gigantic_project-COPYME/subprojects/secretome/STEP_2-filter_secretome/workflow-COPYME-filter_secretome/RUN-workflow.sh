@@ -217,14 +217,15 @@ WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 # output_to_input is at subproject root
 
 # Real files live at:
-#   OUTPUT_pipeline/3-output/<phyloname>_<run_label>_secretome.tsv
-RESULT_DIR="OUTPUT_pipeline/3-output"
+#   OUTPUT_pipeline/2-output/<phyloname>_<run_label>.tsv   ← final filtered secretome
+# (3-output / 5-output / 6-output hold the intermediate augmented evidence
+#  tables; they stay in the workflow dir and are not symlinked downstream.)
+RESULT_DIR="OUTPUT_pipeline/2-output"
 SYMLINK_COUNT=0
 
-for result_file in ${RESULT_DIR}/*_${RUN_LABEL}_secretome.tsv; do
+for result_file in ${RESULT_DIR}/*_${RUN_LABEL}.tsv; do
     if [ -f "$result_file" ]; then
         filename="$(basename "$result_file")"
-        # Symlink target is RELATIVE: output_to_input/STEP_2-filter_secretome/  →  ../../STEP_2-filter_secretome/<workflow>/OUTPUT_pipeline/3-output/<file>
         ln -sf "../../STEP_2-filter_secretome/${WORKFLOW_DIR_NAME}/${result_file}" "${OUTPUT_TO_INPUT_DIR}/${filename}"
         SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
     fi

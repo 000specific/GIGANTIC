@@ -31,6 +31,15 @@ proteome_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-giganti
 # compute pfam_Max_Hits_Per_Single_Accession in script 003).
 annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/BLOCK_build_annotation_database/workflow-RUN_1-build_annotation_database/OUTPUT_pipeline/annotation_databases"
 
+# Orthogroups (single big TSV; cols 2+ are space-separated protein IDs in the
+# orthogroup). Script 005 builds per-protein orthogroup lookups + extracts
+# model-species (human/fly/worm/aplysia) ortholog lists.
+orthogroups_tsv: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/orthogroups/output_to_input/BLOCK_orthohmm/orthogroups_gigantic_ids.tsv"
+
+# BLASTP top-10 hits per protein (one TSV per species). Includes the new
+# Top_10_Hit_E_Values column (commit 56e423f, 2026-05-25).
+blastp_top_hits_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/one_direction_homologs/output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits"
+
 # ----------------------------------------------------------------------------
 # Resources
 # ----------------------------------------------------------------------------

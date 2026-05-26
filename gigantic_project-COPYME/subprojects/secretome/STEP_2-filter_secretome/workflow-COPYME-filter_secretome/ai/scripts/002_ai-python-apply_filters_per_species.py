@@ -196,13 +196,23 @@ def main():
         reader = csv.DictReader( fin, delimiter = "\t" )
         header_map = header_short_to_full( reader.fieldnames )
 
-        # Pre-check: every column referenced by a clause must exist
+        # Pre-check: WARN (do not fail) on columns referenced by clauses but
+        # missing from this species' evidence table. Missing columns are
+        # most often a sign of upstream gaps (e.g., a tool BLOCK that hasn't
+        # produced data for this species → build_annotation_database
+        # skipped its database for this species → the evidence-table
+        # column was never emitted). Clauses referencing missing columns
+        # are scored as FALSE — meaning proteins from this species will be
+        # filtered out via those clauses. Pipeline continues so the
+        # well-covered species (typically 65 of 70) still produce their
+        # secretomes; the gaps are visible in the per-species log.
+        missing_columns_by_filter = []
         for i, fl in enumerate( filters ):
             for c in fl[ "clauses" ]:
                 col_short = c[ "column" ]
                 if col_short not in header_map:
-                    logger.error( f"CRITICAL: column '{col_short}' referenced by filter #{i} not in evidence table" )
-                    sys.exit( 1 )
+                    missing_columns_by_filter.append( ( i, fl[ "feature" ], col_short ) )
+                    logger.warning( f"missing column '{col_short}' referenced by filter #{i} ({fl[ 'feature' ]!r}) — clauses on this column will score FALSE for every protein in this species" )
 
         writer = csv.DictWriter( fout, fieldnames = reader.fieldnames, delimiter = "\t" )
         writer.writeheader()

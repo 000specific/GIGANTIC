@@ -1,29 +1,33 @@
 #!/usr/bin/env nextflow
-// AI: Claude Code | Opus 4.7 | 2026 May 25 | Purpose: STEP_2 - Apply secretome filter manifest to STEP_1 evidence tables
+// AI: Claude Code | Opus 4.7 | 2026 May 25 | Purpose: STEP_2 - augment STEP_1 evidence tables then filter to produce per-species secretome
 // Human: Eric Edsinger
 
 nextflow.enable.dsl = 2
 
 // =============================================================================
-// STEP_2: secretome filter pipeline
+// STEP_2: secretome filter pipeline (Stage 2 — full chain)
 // =============================================================================
 //
-// One run = one secretome variant defined by ONE filter manifest. Per-species
-// processing (parallel via NextFlow local executor). No cross-species combine
-// stage (per user direction 2026-05-25).
+// Per species, in this order:
+//   001 validate_filter_manifest         — JSON syntax + structure
+//   003 augment_with_derived_columns     — cysteine count, pfam max-per-accession
+//   005 augment_with_orthogroups         — OG_ID + total members + 4 model-species ortholog cols
+//   006 augment_with_blastp_top10        — top 10 NCBI nr hits + e-values + headers
+//   002 apply_filters_per_species        — filter manifest applied AFTER augment so
+//                                          filter clauses can reference derived cols
+//                                          (e.g. Pfam_Max_Hits_Per_Single_Accession ≤ 4)
+//   004 write_run_log                    — final marker
 //
-// STAGE 1 (this scaffold):
-//   001 validate_filter_manifest    — JSON syntax + minimum structure
-//   002 apply_filters_per_species   — apply filter chain → keep matching rows
-//   003 augment_with_derived_columns — add cysteine_count + pfam max-per-accession
-//   004 write_run_log
+// Per-stage output dirs:
+//   1-output  validated manifest snapshot
+//   3-output  derived-augmented per-species TSV
+//   5-output  + orthogroup-augmented
+//   6-output  + blastp-augmented   (this is the "full evidence" per-species TSV)
+//   2-output  filtered secretome   (subset of 6-output rows that pass the manifest)
+//   4-output  run log
 //
-// STAGE 2 (next iteration):
-//   005 augment_with_orthogroups        — OG_ID + members + model species orthologs
-//   006 augment_with_blastp_top10       — top 10 NCBI nr hits + e-values
-//
-// All process outputs are tagged with `params.run_label` (e.g.
-// `secretome_001` or `secretome_001_moroz_strict`) for cross-run provenance.
+// Per-species final secretome filename: <phyloname>_<run_label>.tsv
+// where run_label = "secretome_NNN[_<optional_name>]" (set by RUN-workflow.sh).
 // =============================================================================
 
 scripts_dir = "${projectDir}/scripts"
@@ -47,47 +51,91 @@ process validate_filter_manifest {
     """
 }
 
-process apply_filters_per_species {
-    publishDir "${params.output_dir}/2-output", mode: 'copy'
+process augment_with_derived_columns {
+    publishDir "${params.output_dir}/3-output", mode: 'copy'
 
     input:
         tuple val( phyloname ), path( evidence_table )
-        path validated_manifest
 
     output:
-        tuple val( phyloname ), path( "${phyloname}_${params.run_label}_filtered.tsv" ), emit: filtered
-        path "${phyloname}_${params.run_label}_log-apply_filters.log"
+        tuple val( phyloname ), path( "${phyloname}_${params.run_label}_derived_augmented.tsv" ), emit: augmented
+        path "${phyloname}_${params.run_label}_log-augment_derived.log"
 
     script:
     """
-    python3 ${scripts_dir}/002_ai-python-apply_filters_per_species.py \
-        --evidence-table ${evidence_table} \
-        --manifest ${validated_manifest} \
+    python3 ${scripts_dir}/003_ai-python-augment_with_derived_columns.py \
+        --filtered-tsv ${evidence_table} \
+        --proteome-fasta ${params.proteome_dir}/${phyloname}-T1-proteome.aa \
+        --pfam-long-format-tsv ${params.annotation_database_dir}/database_pfam/gigantic_annotations-database_pfam-${phyloname}.tsv \
+        --run-label ${params.run_label} \
+        --phyloname ${phyloname} \
+        --output-dir .
+    mv ${phyloname}_${params.run_label}_secretome.tsv ${phyloname}_${params.run_label}_derived_augmented.tsv
+    """
+}
+
+process augment_with_orthogroups {
+    publishDir "${params.output_dir}/5-output", mode: 'copy'
+
+    input:
+        tuple val( phyloname ), path( input_tsv )
+
+    output:
+        tuple val( phyloname ), path( "${phyloname}_${params.run_label}_orthogroups_augmented.tsv" ), emit: augmented
+        path "${phyloname}_${params.run_label}_log-augment_orthogroups.log"
+
+    script:
+    """
+    python3 ${scripts_dir}/005_ai-python-augment_with_orthogroups.py \
+        --input-tsv ${input_tsv} \
+        --orthogroups-tsv ${params.orthogroups_tsv} \
         --run-label ${params.run_label} \
         --phyloname ${phyloname} \
         --output-dir .
     """
 }
 
-process augment_with_derived_columns {
-    publishDir "${params.output_dir}/3-output", mode: 'copy'
+process augment_with_blastp_top10 {
+    publishDir "${params.output_dir}/6-output", mode: 'copy'
 
     input:
-        tuple val( phyloname ), path( filtered_tsv )
+        tuple val( phyloname ), path( input_tsv )
 
     output:
-        tuple val( phyloname ), path( "${phyloname}_${params.run_label}_secretome.tsv" ), emit: secretome
-        path "${phyloname}_${params.run_label}_log-augment_derived.log"
+        tuple val( phyloname ), path( "${phyloname}_${params.run_label}_blastp_augmented.tsv" ), emit: augmented
+        path "${phyloname}_${params.run_label}_log-augment_blastp.log"
 
     script:
     """
-    python3 ${scripts_dir}/003_ai-python-augment_with_derived_columns.py \
-        --filtered-tsv ${filtered_tsv} \
-        --proteome-fasta ${params.proteome_dir}/${phyloname}-T1-proteome.aa \
-        --pfam-long-format-tsv ${params.annotation_database_dir}/database_pfam/gigantic_annotations-database_pfam-${phyloname}.tsv \
+    python3 ${scripts_dir}/006_ai-python-augment_with_blastp_top10.py \
+        --input-tsv ${input_tsv} \
+        --blastp-top-hits-tsv ${params.blastp_top_hits_dir}/${phyloname}_top_hits.tsv \
         --run-label ${params.run_label} \
         --phyloname ${phyloname} \
         --output-dir .
+    """
+}
+
+process apply_filters_per_species {
+    publishDir "${params.output_dir}/2-output", mode: 'copy'
+
+    input:
+        tuple val( phyloname ), path( augmented_tsv )
+        path validated_manifest
+
+    output:
+        tuple val( phyloname ), path( "${phyloname}_${params.run_label}.tsv" ), emit: secretome
+        path "${phyloname}_${params.run_label}_log-apply_filters.log"
+
+    script:
+    """
+    python3 ${scripts_dir}/002_ai-python-apply_filters_per_species.py \
+        --evidence-table ${augmented_tsv} \
+        --manifest ${validated_manifest} \
+        --run-label ${params.run_label} \
+        --phyloname ${phyloname} \
+        --output-dir .
+    mv ${phyloname}_${params.run_label}_filtered.tsv ${phyloname}_${params.run_label}.tsv
     """
 }
 
@@ -115,10 +163,13 @@ process write_run_log {
 // =============================================================================
 workflow {
     // Step 1: validate manifest
-    validate_filter_manifest( params.filter_manifest_path )
+    def manifest_file = file( params.filter_manifest_path )
+    if ( !manifest_file.isAbsolute() ) {
+        manifest_file = file( "${workflow.launchDir}/${params.filter_manifest_path}" )
+    }
+    validate_filter_manifest( manifest_file )
 
-    // Step 2: per-species filter
-    // Channel: each evidence table file in the input dir → tuple (phyloname, path)
+    // Per-species evidence-table input
     species_channel = Channel
         .fromPath( "${params.evidence_table_dir}/*_evidence_table.tsv" )
         .map { f ->
@@ -127,14 +178,21 @@ workflow {
             tuple( phyloname, f )
         }
 
+    // Step 3: derived-column augment
+    augment_with_derived_columns( species_channel )
+
+    // Step 5: orthogroup augment
+    augment_with_orthogroups( augment_with_derived_columns.out.augmented )
+
+    // Step 6: BLASTP top-10 augment
+    augment_with_blastp_top10( augment_with_orthogroups.out.augmented )
+
+    // Step 2: apply filter manifest (now has all augmented cols available)
     apply_filters_per_species(
-        species_channel,
+        augment_with_blastp_top10.out.augmented,
         validate_filter_manifest.out.validated_manifest
     )
 
-    // Step 3: augment with derived columns
-    augment_with_derived_columns( apply_filters_per_species.out.filtered )
-
-    // Step 4: write run log (after all augment outputs land)
-    write_run_log( augment_with_derived_columns.out.secretome.collect() )
+    // Step 4: write run log (final marker after all secretomes land)
+    write_run_log( apply_filters_per_species.out.secretome.collect() )
 }
