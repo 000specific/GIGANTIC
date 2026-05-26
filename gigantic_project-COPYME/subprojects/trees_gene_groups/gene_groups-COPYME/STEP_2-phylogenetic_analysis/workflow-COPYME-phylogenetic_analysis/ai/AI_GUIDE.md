@@ -18,7 +18,7 @@ Human:   Eric Edsinger
 
 **For AI Assistants**: Read `../../AI_GUIDE.md` first for STEP_2 concepts. This guide covers workflow execution.
 
-**Location**: `gene_groups_COPYME/STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/`
+**Location**: `gene_groups-COPYME/STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/`
 
 ---
 

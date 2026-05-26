@@ -16,7 +16,7 @@ Human:   Eric Edsinger
 
 **For AI Assistants**: Read `../../AI_GUIDE.md` first for STEP_3 concepts. This guide covers workflow execution.
 
-**Location**: `gene_groups_COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/`
+**Location**: `gene_groups-COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/`
 
 ---
 

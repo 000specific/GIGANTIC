@@ -44,15 +44,15 @@ Human:   Eric Edsinger
 | trees_gene_groups concepts (this file) | this file |
 | Generic (source-agnostic) template | `gene_groups-COPYME/README.md` |
 | HGNC-anchored template (newer, two STEP_0 modes) | `gene_groups_hgnc-COPYME/AI_GUIDE.md` |
-| HGNC source specifics (legacy instance) | `gene_groups-hugo_hgnc/AI_GUIDE-hugo_hgnc.md` |
+| HGNC source specifics (legacy instance) | `gene_groups-hugo_hgnc/AI_GUIDE-hugo_hgnc.md` (now in gitignored data dir; read on disk, not in git) |
 | Canonical HGNC reference data | `output_to_input/hugo_hgnc_database/README.md` |
 | STEP_1 concepts (RBH/RBF) | `gene_groups-COPYME/STEP_1-homolog_discovery/AI_GUIDE.md` |
 | STEP_2 concepts | `gene_groups-COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE.md` |
 | STEP_3 concepts | `gene_groups-COPYME/STEP_3-tree_visualization/AI_GUIDE.md` |
-| HGNC STEP_0 (batch all HGNC groups) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md` |
-| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md` |
+| HGNC STEP_0 (batch all HGNC groups) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md` |
+| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md` |
 | Workflow execution details (STEP_1/2/3) | each `workflow-*/ai/AI_GUIDE-*.md` |
-| Shared RBH/RBF methodology with sister subproject | `../trees_gene_families/AI_GUIDE-trees_gene_families.md` |
+| Shared RBH/RBF methodology with sister subproject | `../trees_gene_families/AI_GUIDE.md` |
 
 ---
 
@@ -90,8 +90,8 @@ trees_gene_groups/
 ├── gene_groups_hgnc-COPYME/                               ← TEMPLATE 2: HGNC-anchored (NEW)
 │   ├── INPUT_user/user_gene_set_EXAMPLE.tsv               (for the user_list mode)
 │   ├── STEP_0-hgnc_based_rgs/                             (HGNC-specific)
-│   │   ├── workflow-hgnc_database/                        ← MODE 1: all HGNC groups
-│   │   └── workflow-hgnc_user_list/                       ← MODE 2: ad-hoc user set
+│   │   ├── workflow-COPYME-hgnc_database/                        ← MODE 1: all HGNC groups
+│   │   └── workflow-COPYME-hgnc_user_list/                       ← MODE 2: ad-hoc user set
 │   └── STEP_1, STEP_2, STEP_3                             (inherited from gene_groups-COPYME)
 │
 └── gene_groups-<instance>/                                ← INSTANCE: copy of one of the templates
@@ -121,7 +121,7 @@ Per-instance examples currently:
   Older code path; **kept as a research artifact**.
 - `gene_groups-snap_family/` — Synaptosomal-Associated Proteins
   (SNAP23/25/29/47); instance of `gene_groups_hgnc-COPYME` using the
-  `workflow-hgnc_user_list` mode.
+  `workflow-COPYME-hgnc_user_list` mode.
 
 ---
 
@@ -146,9 +146,9 @@ and Improvements 2–4 in script 008) was removed as dead code. RGS produced by
 either STEP_0 workflow always resolves cleanly via one of:
 
 - **Improvement 0** — strict gene-symbol search (4-field uniprot-sourced
-  RGS from `workflow-hgnc_user_list`)
+  RGS from `workflow-COPYME-hgnc_user_list`)
 - **Improvement 1** — exact NCBI accession match (5-field hgnc/ncbi-sourced
-  RGS from `workflow-hgnc_database`)
+  RGS from `workflow-COPYME-hgnc_database`)
 
 Both are strict and fail-fast. Forward + reciprocal BLAST against species70
 (the homolog discovery itself) is unchanged.
@@ -236,11 +236,11 @@ the common case.
 cp -r gene_groups_hgnc-COPYME gene_groups-<my_analysis>
 
 # 2a. Ad-hoc mode: edit INPUT_user/user_gene_set.tsv with your symbols
-#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list && bash RUN-workflow.sh
+#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list && bash RUN-workflow.sh
 
-# 2b. Batch mode: edit STEP_0-hgnc_based_rgs/workflow-hgnc_database/START_HERE-user_config.yaml
+# 2b. Batch mode: edit STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/START_HERE-user_config.yaml
 #     to point at your human proteome.
-#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-hgnc_database && bash RUN-workflow.sh
+#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database && bash RUN-workflow.sh
 
 # 3. Run STEP_1 → STEP_2 → STEP_3 from the same instance
 ```
@@ -261,7 +261,7 @@ mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-pfam_clans/
 #     STEP_0 must emit a per-group summary TSV (5-column) that STEP_1's
 #     orchestrator reads (see gene_groups_hgnc-COPYME's STEP_0 for the format).
 
-# 3. Create AI_GUIDE-pfam.md describing source specifics
+# 3. Create gene_groups-pfam/AI_GUIDE.md describing source specifics (bare AI_GUIDE.md per §3)
 
 # 4. Run STEP_0 → STEP_1 → STEP_2 → STEP_3
 ```

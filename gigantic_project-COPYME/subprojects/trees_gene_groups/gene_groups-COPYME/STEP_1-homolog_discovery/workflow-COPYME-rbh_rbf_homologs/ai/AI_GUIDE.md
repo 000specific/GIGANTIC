@@ -20,7 +20,7 @@ Human:   Eric Edsinger
 
 **For AI Assistants**: Read `../../AI_GUIDE.md` first for STEP_1 concepts. This guide covers workflow execution and orchestrator internals.
 
-**Location**: `gene_groups_COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/`
+**Location**: `gene_groups-COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/`
 
 ---
 

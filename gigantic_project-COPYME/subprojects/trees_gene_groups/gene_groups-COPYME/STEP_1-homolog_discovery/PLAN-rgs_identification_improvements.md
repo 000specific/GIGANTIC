@@ -1,17 +1,17 @@
 # PLAN: Improve RGS Identification in Reference Proteomes
 
-**Status**: IMPLEMENTED in `gene_groups_COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008_ai-python-map_rgs_to_reference_genomes.py` (2026-05-24). Pending real-run verification on the next HGNC rerun.
+**Status**: IMPLEMENTED in `gene_groups-COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008_ai-python-map_rgs_to_reference_genomes.py` (2026-05-24). Pending real-run verification on the next HGNC rerun.
 **Original status**: Design — not yet implemented
 **Last updated**: 2026-05-24 (status); 2026-05-23 (content)
 **Author**: Eric Edsinger (with Claude Code, Opus 4.7)
-**Applies to**: `script 008_ai-python-map_rgs_to_reference_genomes.py` in `gene_groups_COPYME/.../workflow-COPYME-rbh_rbf_homologs/` (the canonical master for trees_gene_groups). The trees_gene_families version of script 008 follows the same design.
+**Applies to**: `script 008_ai-python-map_rgs_to_reference_genomes.py` in `gene_groups-COPYME/.../workflow-COPYME-rbh_rbf_homologs/` (the canonical master for trees_gene_groups). The trees_gene_families version of script 008 follows the same design.
 **Out of scope of this plan but related**: `RUN-update_upload_to_server.sh`, scripts 009/013, downstream re-runs.
 
 ---
 
 ## IMPLEMENTATION SUMMARY (2026-05-24)
 
-All 5 improvements have been implemented in the master `gene_groups_COPYME` script 008:
+All 5 improvements have been implemented in the master `gene_groups-COPYME` script 008:
 
 1. ✅ **NCBI accession match** — primary mechanism (deterministic for NCBI-sourced RGS)
 2. ✅ **Identity ≥95% AND symmetric coverage ≥95%** BLAST fallback with T1 length-invariant check
@@ -374,7 +374,7 @@ Recommended order — each phase is independently shippable:
 ## 11. Files affected (when implementing)
 
 ### Direct
-- `gene_groups_COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008_ai-python-map_rgs_to_reference_genomes.py` (rewrite of `create_rgs_genome_mapping` + new helper functions)
+- `gene_groups-COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008_ai-python-map_rgs_to_reference_genomes.py` (rewrite of `create_rgs_genome_mapping` + new helper functions)
 - `gene_family_COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008_ai-python-map_rgs_to_reference_genomes.py` (apply same changes — keep in sync)
 
 ### Indirect (may need updates depending on phase)
@@ -383,7 +383,7 @@ Recommended order — each phase is independently shippable:
 - `RUN-workflow.sh` — likely no change; the changes are inside Python only
 
 ### Downstream propagation (after master is fixed)
-- Per the master/instance pattern documented in [project_trees_gene_x_ags_rgs_duplication_bug](../../../../memory/project_trees_gene_x_ags_rgs_duplication_bug.md): after updating `gene_groups_COPYME/.../008` and `gene_family_COPYME/.../008`, propagate to:
+- Per the master/instance pattern documented in [project_trees_gene_x_ags_rgs_duplication_bug](../../../../memory/project_trees_gene_x_ags_rgs_duplication_bug.md): after updating `gene_groups-COPYME/.../008` and `gene_family_COPYME/.../008`, propagate to:
   - `gene_groups-<INSTANCE>/.../workflow-COPYME-rbh_rbf_homologs/ai/scripts/008` (downstream instance)
   - All 76 `trees_gene_families/gene_family-*/workflow-COPYME-rbh_rbf_homologs/ai/scripts/008` (downstream per-family instances)
   - Verify via md5sum that all 78 stay in sync after each phase

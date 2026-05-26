@@ -35,7 +35,7 @@ are hand-curated per family.
 | Path | Type | Purpose |
 |------|------|---------|
 | `gene_groups-COPYME/` | **Template (generic)** | Master pattern for non-HGNC sources. Has empty `STEP_0-placeholder/` for user to fill in source-specific RGS prep. Per §47 + memory `feedback_instance_naming_follows_template_prefix`, instances of THIS template are named `gene_groups-<source>/`. |
-| `gene_groups_hgnc-COPYME/` | **Template (HGNC-specialized)** | Master pattern for HGNC-derived sources, with concrete `STEP_0-hgnc_based_rgs/` containing two workflows: `workflow-hgnc_database/` (full HGNC download) and `workflow-hgnc_user_list/` (curated subset). Per §47 + the same naming memory, instances of THIS template are named `gene_groups_hgnc-<source>/`. |
+| `gene_groups_hgnc-COPYME/` | **Template (HGNC-specialized)** | Master pattern for HGNC-derived sources, with concrete `STEP_0-hgnc_based_rgs/` containing two workflows: `workflow-COPYME-hgnc_database/` (full HGNC download) and `workflow-COPYME-hgnc_user_list/` (curated subset). Per §47 + the same naming memory, instances of THIS template are named `gene_groups_hgnc-<source>/`. |
 | `gene_groups-hugo_hgnc/` | **FROZEN instance** | Older HGNC instance (~1,974 protein-coding groups) — predates `gene_groups_hgnc-COPYME`, uses its own pre-rework STEP_0 structure. Frozen per memory `feedback_research_instances_are_frozen_artifacts`. |
 | `gene_groups-snap_family/` | **FROZEN instance** | SNAP family experiment using newer STEP_0-hgnc_based_rgs layout. Frozen per the same rule. |
 | `output_to_input/` | Subproject output | Auto-populated by workflows |
@@ -48,7 +48,7 @@ are hand-curated per family.
 
 Both templates share STEPs 1-3; STEP_0 differs:
 - **Generic template** (`gene_groups-COPYME`): `STEP_0-placeholder/` — user fills in source-specific RGS prep
-- **HGNC template** (`gene_groups_hgnc-COPYME`): `STEP_0-hgnc_based_rgs/` with `workflow-hgnc_database/` + `workflow-hgnc_user_list/`
+- **HGNC template** (`gene_groups_hgnc-COPYME`): `STEP_0-hgnc_based_rgs/` with `workflow-COPYME-hgnc_database/` + `workflow-COPYME-hgnc_user_list/`
 
 | Step | Name | What |
 |------|------|------|
@@ -69,9 +69,6 @@ cp -r gene_groups_hgnc-COPYME gene_groups_hgnc-<your_source>
 # 2. Inside, for each STEP, copy the COPYME workflow to a RUN_N copy
 cd gene_groups_hgnc-<your_source>/STEP_1-homolog_discovery/
 cp -r workflow-COPYME-rbh_rbf_homologs workflow-RUN_1-rbh_rbf_homologs
-# NOTE: STEP_1 + STEP_0 hgnc workflows currently lack the COPYME prefix on disk
-# (workflow-rbh_rbf_homologs, workflow-hgnc_database, workflow-hgnc_user_list).
-# Pre-§3/§29 naming; deferred to a future rename pass.
 
 # 3. Edit RUN's config (execution_mode, paths, SLURM resources)
 cd workflow-RUN_1-rbh_rbf_homologs

@@ -51,7 +51,7 @@ gene_groups-COPYME/
 
 ```bash
 # 1. Copy the master template to a per-source instance
-cp -r gene_groups_COPYME gene_groups-mysource
+cp -r gene_groups-COPYME gene_groups-mysource
 
 # 2. Replace STEP_0-placeholder with source-specific RGS generation code
 rm -r gene_groups-mysource/STEP_0-placeholder/
@@ -59,7 +59,7 @@ mkdir -p gene_groups-mysource/STEP_0-mysource/workflow-COPYME-mysource/
 # ... populate with the source's STEP_0 pipeline ...
 
 # 3. Per-source AI_GUIDE
-# Create gene_groups-mysource/AI_GUIDE-mysource.md describing source specifics
+# Create gene_groups-mysource/AI_GUIDE.md describing source specifics (bare AI_GUIDE.md per §3)
 
 # 4. Edit each STEP's START_HERE-user_config.yaml inside the per-source instance
 #    to point at the right STEP_0 output and pick execution_mode (local | slurm-standard | slurm-burst)
@@ -99,7 +99,7 @@ The `trees_gene_groups/` subproject has exactly two workflows:
 
 | Workflow | Purpose |
 |----------|---------|
-| `gene_groups_COPYME/` | This master template (never run from here) |
+| `gene_groups-COPYME/` | This master template (never run from here) |
 | `gene_groups-<source>/` | Per-source instance (copy of master + source-specific STEP_0) |
 
 To add a new source (Pfam, InterPro, custom): make another `gene_groups-<source>/`.

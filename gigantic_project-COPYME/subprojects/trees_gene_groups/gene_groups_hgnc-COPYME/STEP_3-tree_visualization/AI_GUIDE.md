@@ -18,7 +18,7 @@ Human:   Eric Edsinger
 
 **For AI Assistants**: Read `../../../AI_GUIDE.md` first for GIGANTIC overview. Then `../../AI_GUIDE.md` for subproject concepts. This guide covers STEP_3.
 
-**Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/gene_groups_COPYME/STEP_3-tree_visualization/`
+**Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/gene_groups-COPYME/STEP_3-tree_visualization/`
 
 ---
 
