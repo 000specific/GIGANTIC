@@ -1,0 +1,60 @@
+# ============================================================================
+# STEP_2-filter_secretome — user-editable workflow config
+# ============================================================================
+# Apply secretome filter manifest to STEP_1 evidence tables to produce one
+# per-species secretome TSV per RUN.
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 25
+# Human: Eric Edsinger
+# ============================================================================
+
+project_name: "species70_secretome_2026may"
+
+# ----------------------------------------------------------------------------
+# Inputs
+# ----------------------------------------------------------------------------
+
+# Filter manifest (JSON). User authors via the HTML builder colocated in
+# INPUT_user/ (open `secretome_filter_manifest_builder.html` in a browser).
+# Default points at the canonical file the HTML builder downloads to.
+filter_manifest_path: "INPUT_user/secretome_filter_manifest.json"
+
+# STEP_1 evidence tables: one per species (96-column wide TSVs). Driven by
+# the species set used in STEP_1.
+evidence_table_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/secretome/output_to_input/BLOCK_secretome_evidence_table"
+
+# Proteome FASTAs (canonical species70). Used for cysteine counting in
+# script 003.
+proteome_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+# Long-format annotation database (for re-reading per-protein pfam rows to
+# compute pfam_Max_Hits_Per_Single_Accession in script 003).
+annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/BLOCK_build_annotation_database/workflow-RUN_1-build_annotation_database/OUTPUT_pipeline/annotation_databases"
+
+# ----------------------------------------------------------------------------
+# Resources
+# ----------------------------------------------------------------------------
+# Lightweight — Python TSV/JSON parsing across 70 species (one process per
+# species, parallel via NextFlow local executor).
+
+cpus: 8
+memory_gb: 16
+time_hours: 4
+
+# ----------------------------------------------------------------------------
+# Execution mode
+# ----------------------------------------------------------------------------
+# "local" → run on this host (recommended while HiPerGator is unstable)
+# "slurm" → submit as a SLURM job
+
+execution_mode: "local"
+slurm_account: "moroz"
+slurm_qos: "moroz"
+
+# ----------------------------------------------------------------------------
+# Resume cached work
+# ----------------------------------------------------------------------------
+# Default false. STEP_2 is fast (minutes per run) so re-running clean is
+# usually fine.
+
+resume: false

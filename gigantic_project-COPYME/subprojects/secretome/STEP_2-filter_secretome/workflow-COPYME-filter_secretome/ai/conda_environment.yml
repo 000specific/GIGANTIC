@@ -1,0 +1,29 @@
+# GIGANTIC env naming convention: aiG-<subproject>-<block_or_step>-<optional_details>
+#
+# AI: Claude Code | Opus 4.7 | 2026 May 25
+# Human: Eric Edsinger
+# ===========================================================================
+#
+# Per-STEP conda env scoped to secretome/STEP_2-filter_secretome.
+# Auto-created from this file on first run by RUN-workflow.sh
+# (mamba preferred; conda fallback).
+#
+# Pure Python — operates on STEP_1 evidence tables + orthogroups +
+# diamond_ncbi_nr top_hits TSVs. No heavy tool deps.
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-secretome-filter_secretome
+
+name: aiG-secretome-filter_secretome
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  - python>=3.10
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
+  - pyyaml
+  - openjdk

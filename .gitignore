@@ -18,7 +18,10 @@ OUTPUT_pipeline/
 # Test/production run directories (contain large data, not templates)
 workflow-RUN_*/
 
-# INPUT_user contents (user staging area; only docs ship with the template)
+# INPUT_user contents — single staging arena between user data and GIGANTIC.
+# Per gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md §17, §20.
+# Ships only documentation (*.md at any depth); user content (symlinks,
+# manifests, species lists, etc.) stays on local disk only.
 /gigantic_project-COPYME/INPUT_user/**
 !/gigantic_project-COPYME/INPUT_user/**/
 !/gigantic_project-COPYME/INPUT_user/**/*.md
@@ -36,16 +39,31 @@ slurm_logs/
 # cleaned up by RUN-workflow.sh but occasionally orphan if interrupted)
 .species_keeper_list_*.tsv
 
-# Research notebook contents (personal data, not for git)
+# Research notebook contents — personal sandbox + GIGANTIC AI sandbox.
+# Per gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md §1, §9, §25.
+# See also gigantic_project-COPYME/research_notebook/.gitignore for the
+# canonical fine-grained rules at that subtree.
 **/research_notebook/*
 !**/research_notebook/.gitkeep
 !**/research_notebook/README.md
+# Un-ignore the two known sandbox subdirectories so git descends into
+# them; finer rules below + nested .gitignore handle their contents.
+!**/research_notebook/research_ai/
+!**/research_notebook/research_user/
+
+# research_ai/ is GIGANTIC's own AI-infrastructure sandbox. Ships its
+# docs + sessions/.gitkeep (the capture destination per §9). Captured
+# .jsonl.gz session transcripts stay local (nested .gitignore handles).
+!**/research_notebook/research_ai/.gitkeep
+!**/research_notebook/research_ai/README.md
+!**/research_notebook/research_ai/sessions/
+!**/research_notebook/research_ai/sessions/.gitkeep
 
 # research_user/ is a true wild-west sandbox — only the directory itself
 # ships (via .gitkeep) so users have somewhere to put their personal stuff;
 # nothing inside regardless of depth, including no README at this level.
 # The shipped research_notebook/README.md covers what research_user/ is for.
-# Per gigantic_conventions.md §1.
+# Per gigantic_conventions.md §25.
 **/research_notebook/research_user/**
 !**/research_notebook/research_user/.gitkeep
 
