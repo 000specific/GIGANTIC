@@ -30,7 +30,7 @@ Hook configuration (in ~/.claude/settings.json or .claude/settings.json):
                     "hooks": [
                         {
                             "type": "command",
-                            "command": "python3 \\"$CLAUDE_PROJECT_DIR\\"/ai/tools/002_ai-python-hook_precompact_capture_transcript.py"
+                            "command": "python3 \\"$CLAUDE_PROJECT_DIR\\"/ai/ai_scripts/002_ai-python-hook_precompact_capture_transcript.py"
                         }
                     ]
                 }

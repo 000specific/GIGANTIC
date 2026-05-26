@@ -10,7 +10,7 @@ JSONL files and writes them to human-readable markdown in the GIGANTIC
 research_notebook structure.
 
 Usage:
-    python3 ai/tools/001_ai-python-extract_claude_sessions.py [--output-dir PATH]
+    python3 ai/ai_scripts/001_ai-python-extract_claude_sessions.py [--output-dir PATH]
 
 The script:
 1. Finds Claude's project directory based on current working directory

@@ -32,10 +32,11 @@ the repo from GitHub, they get this directory tree. It contains:
 - Standard repository files (`LICENSE`, `CITATION.cff`, `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md`, `.github/`)
 - Branding assets, a demo placeholder
-- Three top-level documents: this file (`AI_GUIDE.md`), the user-facing
-  `README.md`, and `CLAUDE.md` — the behavior/posture document for
-  research-grade work (full documentation, transparency, archival,
-  replication)
+- Two top-level documents at this level: this file (`AI_GUIDE.md`) and the
+  user-facing `README.md`. The research-grade behavior/posture document
+  (`CLAUDE.md` / `AI_BEHAVIOR.md`) lives inside `gigantic_project-COPYME/`
+  because research-grade posture is project-scoped and ships with each
+  renamed project copy
 
 `GIGANTIC/` itself is not where a user does science. It is the framework. It
 ships; the user copies it.
@@ -90,6 +91,39 @@ up inputs, or work with their data, redirect them:
 
 ---
 
+## Capture for framework-development sessions
+
+Framework-development sessions (rooted at `GIGANTIC/`) are also research-worthy
+work — architectural decisions, naming conventions, design pivots — and
+deserve the same lossless capture that project sessions get. The
+`GIGANTIC/.claude/` directory is gitignored, so it stays developer-personal,
+but the developer can add the PreCompact hook locally:
+
+```json
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/gigantic_project-COPYME/ai/ai_scripts/002_ai-python-hook_precompact_capture_transcript.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+With this in place, framework-dev sessions capture into the same
+`gigantic_project-COPYME/research_notebook/research_ai/sessions/` directory
+(gitignored, so captures stay local). See
+`gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md` §9 for the full
+chat-as-research-notebook architecture.
+
+---
+
 *The canonical list of conventions surfaced during the ongoing documentation
 cleanup lives at
-[`gigantic_project-COPYME/ai_FYIs/gigantic_conventions.md`](gigantic_project-COPYME/ai_FYIs/gigantic_conventions.md).*
+[`gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md`](gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md).*

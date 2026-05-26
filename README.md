@@ -80,8 +80,10 @@ renamed project directory is where you actually do science.
 - **AI-assistant-facing guidance for the framework itself**:
   [`AI_GUIDE.md`](AI_GUIDE.md) in this directory.
 - **Behavior and posture for research-grade work** (full documentation,
-  transparency, archival, replication): [`CLAUDE.md`](CLAUDE.md) in this
-  directory.
+  transparency, archival, replication): see `CLAUDE.md` and `AI_BEHAVIOR.md`
+  inside `gigantic_project-COPYME/` (these travel with each renamed project
+  copy — research-grade posture belongs at the project level, not at the
+  framework level).
 - **Standard repository files**: [`LICENSE`](LICENSE),
   [`CITATION.cff`](CITATION.cff), [`CONTRIBUTING.md`](CONTRIBUTING.md),
   [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
