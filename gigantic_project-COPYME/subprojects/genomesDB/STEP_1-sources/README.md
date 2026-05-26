@@ -1,13 +1,24 @@
-# STEP_1-sources - Ingest Source Proteomes
+# STEP_1-sources — Ingest Source Genomes/Proteomes/Annotations
 
-**AI**: Claude Code | Opus 4.5 | 2026 February 12
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.5 | 2026 February 12 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent subproject: [`../README.md`](../README.md) — genomesDB overview
+- Parent project: [`../../../README.md`](../../../README.md)
+- This STEP's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow to run: [`workflow-COPYME-ingest_source_data/README.md`](workflow-COPYME-ingest_source_data/README.md)
+- **Next STEP**: [`../STEP_2-standardize_and_evaluate/`](../STEP_2-standardize_and_evaluate/) — standardize + evaluate
 
 ---
 
 ## Purpose
 
-STEP_1 of the genomesDB pipeline. **Ingests user-provided proteome files** into GIGANTIC for downstream processing.
+STEP_1 of the genomesDB pipeline. **Ingests user-provided genome, proteome, and annotation files** into GIGANTIC for downstream processing.
 
 **Part of**: genomesDB subproject (see `../README.md`)
 
@@ -103,10 +114,7 @@ cd workflow-COPYME-ingest_source_data/
 # 1. Create your manifest with all 4 columns
 nano INPUT_user/source_manifest.tsv
 
-# 2. Local execution:
-bash RUN-workflow.sh
-
-# 3. Or SLURM (edit account/qos first):
+# 2. Run (unified driver — local or SLURM via execution_mode YAML key, §29)
 bash RUN-workflow.sh
 ```
 
@@ -117,10 +125,10 @@ See `workflow-COPYME-ingest_source_data/README.md` for detailed instructions.
 ## Outputs
 
 - **Hard copies**: `OUTPUT_pipeline/1-output/proteomes/` (archived for reproducibility)
-- **Symlinks**: `output_to_input/proteomes/` (passed to STEP_2)
+- **Symlinks**: `output_to_input/STEP_1-sources/T1_proteomes/` (passed to STEP_2)
 - **Ingestion log**: Tracks what was ingested and when
 
-**Passed to STEP_2 via**: `output_to_input/proteomes/`
+**Passed to STEP_2 via**: `output_to_input/STEP_1-sources/T1_proteomes/`
 
 ---
 
@@ -160,7 +168,6 @@ STEP_1-sources/
 └── workflow-COPYME-ingest_source_data/  # The ingestion workflow template
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   └── source_manifest.tsv  # 4-column manifest (genus_species, genome, genome_annotation, proteome)

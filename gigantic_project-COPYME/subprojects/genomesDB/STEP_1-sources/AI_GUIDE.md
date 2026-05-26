@@ -161,7 +161,7 @@ Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 
 **Outputs**:
 - Archived proteome copies in `OUTPUT_pipeline/1-output/proteomes/`
-- Symlinks in `output_to_input/proteomes/` passed to STEP_2-standardize_and_evaluate
+- Symlinks in `output_to_input/STEP_1-sources/T1_proteomes/` passed to STEP_2-standardize_and_evaluate
 
 ---
 
@@ -188,8 +188,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 |------|---------|-------------|
 | `workflow-*/INPUT_user/source_manifest.tsv` | 4-column manifest | **YES** (required) |
 | `workflow-*/START_HERE-user_config.yaml` | Project name, options | **YES** (project name) |
-| `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
-| `output_to_input/proteomes/` | Symlinks for STEP_2 | No (auto-created) |
+| `output_to_input/STEP_1-sources/T1_proteomes/` | Symlinks for STEP_2 | No (auto-created) |
 | `research_notebook/research_user/` | User's personal source data | Personal space |
 
 ---
@@ -274,7 +273,6 @@ STEP_1-sources/
 └── workflow-COPYME-ingest_source_data/
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   ├── source_manifest.tsv      # User creates this (4 columns)

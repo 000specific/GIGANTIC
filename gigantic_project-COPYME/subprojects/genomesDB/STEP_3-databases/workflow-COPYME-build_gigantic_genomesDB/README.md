@@ -1,7 +1,19 @@
 # STEP_3 Workflow: Build GIGANTIC GenomesDB BLAST Databases
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 06
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 06 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_3-databases overview
+- Parent subproject: [`../../README.md`](../../README.md) — genomesDB overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`
+- **Next workflow**: `../../STEP_4-create_final_species_set/workflow-COPYME-*/`
+- **Downstream consumers** (per §40): `trees_gene_families`, `trees_gene_groups` (homolog discovery via BLAST)
 
 ---
 
@@ -14,7 +26,7 @@ Build per-genome BLAST protein databases from ALL standardized proteomes in STEP
 ## Prerequisites
 
 1. **STEP_2 complete**: Standardized proteomes in `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`
-2. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `ai_gigantic_genomesdb` conda environment)
+2. **BLAST+ tools available**: `makeblastdb` must be in PATH (available in `aiG-genomesDB` conda environment)
 
 ---
 
@@ -22,13 +34,11 @@ Build per-genome BLAST protein databases from ALL standardized proteomes in STEP
 
 ```bash
 cd workflow-COPYME-build_gigantic_genomesDB/
-
-# Local:
-bash RUN-workflow.sh
-
-# SLURM:
 bash RUN-workflow.sh
 ```
+
+The unified driver runs locally or self-submits to SLURM based on
+`execution_mode` in `START_HERE-user_config.yaml` (per §29).
 
 ---
 
@@ -83,7 +93,6 @@ blastp \
 ```
 workflow-COPYME-build_gigantic_genomesDB/
 ├── RUN-workflow.sh              # Local execution script
-├── RUN-workflow.sbatch          # SLURM submission script
 ├── README.md                    # This file
 ├── START_HERE-user_config.yaml  # Workflow configuration
 ├── OUTPUT_pipeline/

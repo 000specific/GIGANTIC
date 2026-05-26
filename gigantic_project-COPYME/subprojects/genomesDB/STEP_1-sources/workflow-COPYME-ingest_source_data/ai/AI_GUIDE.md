@@ -245,12 +245,12 @@ ls OUTPUT_pipeline/2-output/genome_annotations/ | wc -l
 head OUTPUT_pipeline/2-output/2_ai-ingestion_log.tsv
 
 # Are symlinks in place?
-ls ../../output_to_input/T1_proteomes/ | wc -l
-ls ../../output_to_input/genomes/ | wc -l
-ls ../../output_to_input/genome_annotations/ | wc -l
+ls ../../output_to_input/STEP_1-sources/T1_proteomes/ | wc -l
+ls ../../output_to_input/STEP_1-sources/genomes/ | wc -l
+ls ../../output_to_input/STEP_1-sources/genome_annotations/ | wc -l
 
 # Verify symlinks resolve
-head ../../output_to_input/T1_proteomes/*.aa | head -5
+head ../../output_to_input/STEP_1-sources/T1_proteomes/*.aa | head -5
 
 # Check symlink manifest
 head OUTPUT_pipeline/3-output/3_ai-symlink_manifest.tsv
@@ -298,7 +298,7 @@ chmod +x ai/scripts/*.sh
 
 **Diagnose**:
 ```bash
-ls -la ../../output_to_input/T1_proteomes/ | head -5
+ls -la ../../output_to_input/STEP_1-sources/T1_proteomes/ | head -5
 ```
 
 **Fix**: Re-run the workflow or manually re-run script 003:
@@ -348,7 +348,7 @@ bash ai/scripts/003_ai-bash-create_output_symlinks.sh \
 ## After Successful Run
 
 1. **Verify output**: Check all three `OUTPUT_pipeline/` subdirectories
-2. **Check symlinks**: `ls ../../output_to_input/T1_proteomes/`
+2. **Check symlinks**: `ls ../../output_to_input/STEP_1-sources/T1_proteomes/`
 3. **Next step**: Run **STEP_2-standardize_and_evaluate** to:
    - Standardize proteome formats with phylonames
    - Generate genome N50 statistics

@@ -1,7 +1,19 @@
 # workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb
 
-**AI**: Claude Code | Opus 4.6 | 2026 February 27
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 27 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_2-standardize_and_evaluate overview
+- Parent subproject: [`../../README.md`](../../README.md) — genomesDB overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../output_to_input/STEP_1-sources/` (T1_proteomes, genomes, genome_annotations)
+  + `../../../phylonames/output_to_input/maps/` (species naming mapping)
+- **Next workflow**: `../../STEP_3-databases/workflow-COPYME-*/`
 
 ---
 
@@ -56,16 +68,14 @@ cd workflow-RUN_01-standardize_evaluate_build_gigantic_genomesdb
 nano START_HERE-user_config.yaml
 ```
 
-**Run locally:**
+**Run:**
 ```bash
 bash RUN-workflow.sh
 ```
 
-**Run on SLURM:**
-```bash
-# Edit `START_HERE-user_config.yaml` to set `execution_mode: "slurm"` + `slurm.account` + `slurm.qos`
-bash RUN-workflow.sh
-```
+The unified driver runs locally or self-submits to SLURM based on
+`execution_mode` in `START_HERE-user_config.yaml` (per §29). For SLURM,
+also set `slurm_account` / `slurm_qos` in that YAML.
 
 The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all 6 scripts sequentially, with explicit outputs at each step for research transparency.
 
@@ -75,7 +85,7 @@ The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all 6 script
 
 - **STEP_1-sources** complete (provides proteomes, genomes, annotations)
 - **phylonames subproject** complete (provides species naming)
-- **Conda environment**: `ai_gigantic_genomesdb` with `gfastats` and `busco` installed
+- **Conda environment**: `aiG-genomesDB` with `gfastats` and `busco` installed
 - **INPUT_user/busco_lineages.txt**: BUSCO lineage assignments for each species
 
 ---
@@ -86,7 +96,6 @@ The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all 6 script
 workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 ├── README.md                              # This file
 ├── RUN-workflow.sh            # Local runner (calls NextFlow)
-├── RUN-workflow.sbatch        # SLURM wrapper
 ├── START_HERE-user_config.yaml       # User-editable configuration
 ├── INPUT_user/                            # User-provided inputs
 │   └── busco_lineages.txt                 # BUSCO lineage assignments

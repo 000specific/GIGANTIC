@@ -57,7 +57,7 @@ This workflow applies GIGANTIC phyloname conventions to data from STEP_1 and cal
    - Check: `../../phylonames/output_to_input/maps/{project_name}_map-genus_species_X_phylonames.tsv` exists
 
 3. **Conda environment** (for script 003):
-   - Environment: `ai_gigantic_genomesdb`
+   - Environment: `aiG-genomesDB`
    - Required tool: `gfastats`
 
 ---
@@ -114,7 +114,7 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 | "Phylonames mapping not found" | phylonames subproject not run | Run phylonames first |
 | "Input proteomes directory not found" | STEP_1-sources not run | Run STEP_1 first |
 | "genus_species not found in phylonames mapping" | Species mismatch | Check spelling in STEP_1 sources vs phylonames |
-| gfastats command not found | Conda environment not activated | `conda activate ai_gigantic_genomesdb` |
+| gfastats command not found | Conda environment not activated | `conda activate aiG-genomesDB` |
 
 ---
 

@@ -1,9 +1,30 @@
-# genomesDB - GIGANTIC Genome Database System
+# genomesDB — GIGANTIC Genome Database System
 
-**AI**: Claude Code | Opus 4.5 | 2026 February 12
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.5 | 2026 February 12 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+Purpose: User-facing description of the genomesDB subproject — what it does,
+         the four-STEP architecture (sources / standardize+evaluate /
+         databases / final species set), where its outputs go, and which
+         subprojects consume them.
+============================================================================ -->
 
 **Status**: The active genomesDB. Build outputs live in `workflow-RUN_1` of each STEP.
+
+## Where this fits
+
+`genomesDB` is the **second** subproject you run in any GIGANTIC project
+(after `phylonames`). It takes user-provided genomic resources (proteomes,
+genomes, annotations), standardizes them by phyloname, evaluates quality
+(BUSCO + gfastats), builds per-species BLAST databases, and produces the
+final species set that every downstream subproject consumes.
+
+- Parent project landing page: [`../../README.md`](../../README.md)
+- Parent project AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- This subproject's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Prerequisite subproject: [`../phylonames/`](../phylonames/) (provides
+  the species-naming mapping that STEP_2 applies)
 
 ---
 
@@ -11,7 +32,7 @@
 
 The genomesDB subproject manages genome and proteome data for GIGANTIC projects. It provides a standardized pipeline for collecting, evaluating, and building genome databases from multiple sources.
 
-**This subproject runs early** - most other GIGANTIC subprojects depend on the genome databases produced here.
+**This subproject runs second** — after `phylonames`. Most other GIGANTIC subprojects depend on the standardized proteomes, BLAST databases, and final species set produced here. See [Outputs Shared Downstream](#outputs-shared-downstream-output_to_input) below for the full consumer list.
 
 ---
 
@@ -326,22 +347,44 @@ Workflow run logs are saved to each workflow's own `ai/logs/` directory.
 
 ## Outputs Shared Downstream (`output_to_input/`)
 
-Other GIGANTIC subprojects reference genomesDB outputs via:
+Other GIGANTIC subprojects reference genomesDB outputs via the
+subproject-root `output_to_input/` tree (per §38, §2). Per-STEP
+subdirectories make the source visible:
+
 ```
 genomesDB/output_to_input/
+├── STEP_1-sources/             # ingested raw (T1_proteomes, genomes, genome_annotations)
+├── STEP_2-standardize_and_evaluate/  # phyloname-standardized proteomes, BUSCO + gfastats reports
+├── STEP_3-databases/           # per-species BLAST databases
+└── STEP_4-create_final_species_set/  # final speciesN set (proteomes + BLAST + annotations)
 ```
 
-**Dependent subprojects**:
-- **annotations_hmms** - Uses proteome files for functional annotation
-- **orthogroups** - Uses proteome files for ortholog identification
-- **trees_gene_families** - Uses BLAST databases for homolog searches
-- **All other subprojects** - Reference proteomes and databases
+**Downstream consumers (per §40)** — every "real" GIGANTIC subproject
+reads from `genomesDB/output_to_input/` at some point:
+
+- **annotations_hmms** — reads STEP_2 standardized proteomes (`.aa` files)
+  for InterProScan, DeepLoc, SignalP, TMBed, MetaPredict
+- **orthogroups** — reads STEP_2 standardized proteomes for OrthoHMM,
+  OrthoFinder, Broccoli
+- **trees_species** — uses the final species set defined in STEP_4 as
+  input for species-tree topology generation
+- **trees_gene_families**, **trees_gene_groups** — STEP_1 (homolog
+  discovery) reads BLAST databases from STEP_3 for RBH/RBF searches
+- **gene_sizes** — reads STEP_2 standardized genomes + annotations
+- **hotspots**, **secretome**, **one_direction_homologs**,
+  **dark_proteomes** — all consume STEP_2 / STEP_4 proteomes
+- **orthogroups_X_ocl**, **annotations_X_ocl** — indirect (through
+  their producer subprojects)
 
 ---
 
 ## Dependencies
 
-genomesDB workflows depend on the `phylonames` subproject for species naming. Run phylonames first to generate the species mapping.
+| Dependency | What it provides | When |
+|---|---|---|
+| **phylonames** subproject | Species naming mapping (`output_to_input/maps/`) read by STEP_2 to standardize file names and FASTA headers | Run phylonames first |
+| `aiG-genomesDB` conda env | Python 3, NextFlow, BLAST+, gfastats, busco. Auto-created on first run by each workflow's `RUN-workflow.sh` from `ai/conda_environment.yml` | Auto |
+| `module load conda` | HPC systems only (HiPerGator) — `RUN-workflow.sh` runs this automatically | Auto on HPC |
 
 ---
 

@@ -1,7 +1,19 @@
 # Source Data Ingestion Workflow
 
-**AI**: Claude Code | Opus 4.5 | 2026 February 13
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.5 | 2026 February 13 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_1-sources overview
+- Parent subproject: [`../../README.md`](../../README.md) — genomesDB overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Input staging arena: project-level `INPUT_user/genomic_resources/`
+  (symlinks per §17, §18; see [`../../../../INPUT_user/AI_GUIDE.md`](../../../../INPUT_user/AI_GUIDE.md))
+- **Next workflow**: `../../STEP_2-standardize_and_evaluate/workflow-COPYME-*/`
 
 ---
 

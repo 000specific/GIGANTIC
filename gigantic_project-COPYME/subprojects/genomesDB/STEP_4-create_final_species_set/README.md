@@ -1,7 +1,22 @@
-# STEP_4-create_final_species_set - Create Final Species Set
+# STEP_4-create_final_species_set — Assemble the Final speciesN Set
 
-**AI**: Claude Code | Opus 4.6 | 2026 February 28
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 28 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent subproject: [`../README.md`](../README.md) — genomesDB overview
+- Parent project: [`../../../README.md`](../../../README.md)
+- This STEP's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow to run: [`workflow-COPYME-create_final_species_set/README.md`](workflow-COPYME-create_final_species_set/README.md)
+- Reads from: [`../STEP_2-standardize_and_evaluate/`](../STEP_2-standardize_and_evaluate/) (cleaned proteomes + annotations)
+  + [`../STEP_3-databases/`](../STEP_3-databases/) (BLAST databases)
+- **This is the last STEP in genomesDB.** Output `speciesN_*` directories
+  feed into every downstream subproject — `orthogroups`, `annotations_hmms`,
+  `trees_species`, `trees_gene_families`, `trees_gene_groups`, etc.
 
 ---
 
@@ -40,10 +55,7 @@ nano START_HERE-user_config.yaml
 # 3. Optional: edit species selection (defaults to all species)
 nano INPUT_user/selected_species.txt
 
-# 4. Run locally:
-bash RUN-workflow.sh
-
-# 4b. Or on SLURM (edit account/qos first):
+# 4. Run (unified driver — local or SLURM via execution_mode YAML key, §29)
 bash RUN-workflow.sh
 ```
 
@@ -75,7 +87,7 @@ Where N = count of selected species (e.g., species71).
 
 - **STEP_2-standardize_and_evaluate** must complete first (provides cleaned proteomes)
 - **STEP_3-databases** must complete first (provides BLAST databases)
-- **Conda environment**: `ai_gigantic_genomesdb` with NextFlow installed
+- **Conda environment**: `aiG-genomesDB` with NextFlow installed
 
 ---
 
@@ -97,7 +109,6 @@ STEP_4-create_final_species_set/
 └── workflow-COPYME-create_final_species_set/
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   └── selected_species.txt           # Species selection (optional)

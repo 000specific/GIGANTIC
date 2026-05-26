@@ -55,8 +55,10 @@ STEP_2 reads from STEP_1's outputs in the subproject-root `output_to_input/` dir
 | Genomes | 64 | `genomes/` | `.fasta` files |
 | Genome annotations | 69 | `genome_annotations/` | `.gff3` and `.gtf` files |
 
-**Phylonames mapping** (from phylonames subproject):
-- `../../phylonames/STEP_1-generate_and_evaluate/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
+**Phylonames mapping** (from phylonames subproject, via output_to_input per §2):
+- `../../../phylonames/output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv`
+  — the convenience symlink that auto-points at STEP_2 output (with user
+  overrides) if STEP_2 was run, otherwise STEP_1 (NCBI-only)
 
 ---
 
@@ -112,13 +114,13 @@ Each script:
 - N50 (bp) - weighted median scaffold length at 50% of total size
 - N90 (bp) - weighted median scaffold length at 90% of total size
 
-**Requires**: `ai_gigantic_genomesdb` conda environment with `gfastats` installed.
+**Requires**: `aiG-genomesDB` conda environment with `gfastats` installed.
 
 ### 5. BUSCO Proteome Evaluation
 
 **What it does**: Runs BUSCO to assess proteome completeness using lineage-specific databases.
 
-**Requires**: `ai_gigantic_genomesdb` conda environment with `busco` installed. BUSCO lineage assignments in `INPUT_user/busco_lineages.txt`.
+**Requires**: `aiG-genomesDB` conda environment with `busco` installed. BUSCO lineage assignments in `INPUT_user/busco_lineages.txt`.
 
 ### 6. Quality Summary and Species Manifest
 
@@ -180,7 +182,6 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `workflow-*/INPUT_user/` | Input from STEP_1 | No |
-| `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM) |
 | `workflow-*/ai/scripts/` | Analysis scripts | No (AI-generated) |
 | `output_to_input/` | Standardized data for STEP_3 | No |
 

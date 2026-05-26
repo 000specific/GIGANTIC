@@ -1,7 +1,22 @@
 # workflow-COPYME-create_final_species_set
 
-**AI**: Claude Code | Opus 4.6 | 2026 February 27
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 27 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_4-create_final_species_set overview
+- Parent subproject: [`../../README.md`](../../README.md) — genomesDB overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../output_to_input/STEP_2-standardize_and_evaluate/` (cleaned proteomes + annotations)
+  + `../../output_to_input/STEP_3-databases/` (BLAST databases)
+- **Downstream consumers** (per §40): every "real" GIGANTIC subproject —
+  `orthogroups`, `annotations_hmms`, `trees_species`, `trees_gene_families`,
+  `trees_gene_groups`, `gene_sizes`, `hotspots`, etc. all read the
+  `speciesN_*` outputs from `output_to_input/STEP_4-create_final_species_set/`.
 
 ---
 
@@ -45,16 +60,14 @@ nano START_HERE-user_config.yaml
 nano INPUT_user/selected_species.txt
 ```
 
-**Run locally:**
+**Run:**
 ```bash
 bash RUN-workflow.sh
 ```
 
-**Run on SLURM:**
-```bash
-# Edit `START_HERE-user_config.yaml` to set `execution_mode: "slurm"` + `slurm.account` + `slurm.qos`
-bash RUN-workflow.sh
-```
+The unified driver runs locally or self-submits to SLURM based on
+`execution_mode` in `START_HERE-user_config.yaml` (per §29). For SLURM,
+also set `slurm_account` / `slurm_qos` in that YAML.
 
 ---
 
@@ -63,7 +76,7 @@ bash RUN-workflow.sh
 - **STEP_2** complete (provides cleaned proteomes and quality metrics)
 - **STEP_3** complete (provides BLAST databases)
 - **User evaluation** of STEP_2 quality metrics to decide species selection
-- **Conda environment**: `ai_gigantic_genomesdb` with NextFlow installed
+- **Conda environment**: `aiG-genomesDB` with NextFlow installed
 
 ---
 
@@ -73,7 +86,6 @@ bash RUN-workflow.sh
 workflow-COPYME-create_final_species_set/
 ├── README.md                              # This file
 ├── RUN-workflow.sh        # Local runner (calls NextFlow)
-├── RUN-workflow.sbatch    # SLURM wrapper
 ├── START_HERE-user_config.yaml          # User-editable configuration
 ├── INPUT_user/                            # User inputs
 │   └── selected_species.txt               # Species selection (optional)

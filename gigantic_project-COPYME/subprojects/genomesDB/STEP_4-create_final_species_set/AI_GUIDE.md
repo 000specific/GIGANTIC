@@ -20,11 +20,13 @@
 ## Quick Reference
 
 | User needs... | Go to... |
-|---------------|----------|
+|---|---|
 | GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
 | genomesDB concepts, pipeline architecture | `../AI_GUIDE.md` |
-| STEP_4 concepts and troubleshooting (this step) | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE.md` |
+| STEP_2 (prerequisite — provides cleaned proteomes) | `../STEP_2-standardize_and_evaluate/AI_GUIDE.md` |
+| STEP_3 (prerequisite — provides BLAST databases) | `../STEP_3-databases/AI_GUIDE.md` |
+| STEP_4 concepts and troubleshooting (this file) | This file |
+| Running the STEP_4 workflow | `workflow-COPYME-create_final_species_set/ai/AI_GUIDE.md` |
 
 ---
 
@@ -32,19 +34,47 @@
 
 STEP_4 is the **final step** in the genomesDB pipeline. It creates the definitive species set that all downstream subprojects use.
 
-**What it does**: Selects and copies proteomes (from STEP_2) and BLAST databases (from STEP_3) based on user configuration. This is a **copy/filter** step, not a processing step.
+**What it does**: Selects and copies proteomes (from STEP_2), BLAST databases (from STEP_3), and genome annotations (from STEP_2) based on user configuration. This is a **copy/filter** step, not a processing step.
 
 **Why a separate step?** After STEP_2 evaluates genome/proteome quality, the user may want to exclude certain species (poor assembly quality, contamination, etc.). STEP_4 gives the user explicit control over which species enter the downstream analyses.
 
----
+## Inputs (what STEP_4 reads)
+
+| Source | What | Where |
+|---|---|---|
+| STEP_2 cleaned proteomes | `phyloname-proteome.aa` files | `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` |
+| STEP_3 per-species BLAST databases | `phyloname-proteome.aa.{phr,pin,psq,...}` | `../../output_to_input/STEP_3-databases/gigantic-T1-blastp/` |
+| STEP_2 standardized genome annotations | `phyloname-genome_annotations.gff3` | `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_genome_annotations/` |
+| User species selection (optional) | One species per line; defaults to ALL STEP_2 species if absent | `workflow-*/INPUT_user/selected_species.txt` |
+
+## Outputs (what STEP_4 produces)
+
+Output directory names embed the species count as `speciesN_` (e.g.
+`species71_gigantic_T1_proteomes/`). N is computed automatically by
+script 001.
+
+| Output | Location | Consumed by |
+|---|---|---|
+| Final proteomes | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` | `orthogroups`, `annotations_hmms`, `gene_sizes`, `secretome`, `hotspots`, `one_direction_homologs`, `dark_proteomes`, etc. |
+| Final BLAST databases | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` | `trees_gene_families` STEP_1, `trees_gene_groups` STEP_1 (homolog discovery) |
+| Final genome annotations | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/` | `gene_sizes`, anything reasoning about gene coordinates / introns |
+| Copy manifest | `workflow-*/OUTPUT_pipeline/2-output/2_ai-copy_manifest.tsv` | Reproducibility audit |
+
+## Downstream consumers (per §40)
+
+**Every "real" GIGANTIC subproject reads from this STEP's
+`output_to_input/`.** This is the final handoff from genomesDB to the
+rest of the platform. See the subproject-level AI_GUIDE's "Downstream
+consumers" section for the comprehensive list with per-subproject usage
+patterns.
 
 ## Prerequisites
 
 | Prerequisite | Why | How to verify |
-|-------------|-----|---------------|
-| STEP_2 complete | Provides cleaned, standardized proteomes | Check `../STEP_2-*/workflow-RUN_*/OUTPUT_pipeline/` for proteome files |
-| STEP_3 complete | Provides BLAST databases | Check `../STEP_3-databases/workflow-RUN_*/OUTPUT_pipeline/` for blastp files |
-| User evaluation | User must decide which species to keep | User reviews STEP_2 quality metrics |
+|---|---|---|
+| STEP_2 complete | Provides cleaned, standardized proteomes | `ls ../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` should be non-empty |
+| STEP_3 complete | Provides BLAST databases | `ls ../../output_to_input/STEP_3-databases/gigantic-T1-blastp/` should be non-empty |
+| User evaluation | User decides which species to keep (or accepts the default of all) | User reviews STEP_2 quality metrics (`6_ai-quality_summary.tsv`); optionally edits `INPUT_user/selected_species.txt` |
 
 ---
 
@@ -69,7 +99,6 @@ STEP_3 (BLAST databases)   ──┘                                   ├──
 | `workflow-*/START_HERE-user_config.yaml` | Paths to STEP_2 and STEP_3 outputs | **YES** (required) |
 | `workflow-*/INPUT_user/selected_species.txt` | Species selection list | **YES** (optional - defaults to all) |
 | `workflow-*/RUN-workflow.sh` | Local execution script | No |
-| `workflow-*/RUN-workflow.sbatch` | SLURM execution script | **YES** (account/qos) |
 | `workflow-*/ai/scripts/001_ai-python-validate_species_selection.py` | Validates species selection | No (AI-generated) |
 | `workflow-*/ai/scripts/002_ai-python-copy_selected_files.py` | Copies selected files | No (AI-generated) |
 | `output_to_input/` | Final species set for downstream | No (auto-populated) |
@@ -144,7 +173,6 @@ STEP_4-create_final_species_set/
 └── workflow-COPYME-create_final_species_set/
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/
     │   └── selected_species.txt           # User species selection (optional)

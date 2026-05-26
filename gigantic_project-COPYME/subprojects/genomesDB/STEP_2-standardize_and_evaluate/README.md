@@ -1,7 +1,20 @@
-# STEP_2-standardize_and_evaluate - Standardize and Evaluate Genomes
+# STEP_2-standardize_and_evaluate — Standardize and Evaluate Genomes/Proteomes
 
-**AI**: Claude Code | Opus 4.5 | 2026 February 13
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.5 | 2026 February 13 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent subproject: [`../README.md`](../README.md) — genomesDB overview
+- Parent project: [`../../../README.md`](../../../README.md)
+- This STEP's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow to run: [`workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/README.md`](workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/README.md)
+- Reads from: [`../STEP_1-sources/`](../STEP_1-sources/) (ingested raw)
+  + [`../../phylonames/output_to_input/maps/`](../../phylonames/output_to_input/maps/) (species naming mapping)
+- **Next STEP**: [`../STEP_3-databases/`](../STEP_3-databases/) — build BLAST databases
 
 ---
 
@@ -87,7 +100,9 @@ Source data from STEP_1-sources, accessed via `output_to_input/`:
 | Genome annotations | 69 | `../output_to_input/STEP_1-sources/genome_annotations/` |
 
 Also requires:
-- **Phylonames mapping**: `../../phylonames/STEP_1-generate_and_evaluate/workflow-RUN_01-generate_phylonames/OUTPUT_pipeline/4-output/final_project_mapping.tsv`
+- **Phylonames mapping** (read from `output_to_input/` per §2): `../../../phylonames/output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv`
+  — the convenience symlink that auto-points at phylonames STEP_2 output
+  (with user overrides) if it was run, otherwise STEP_1 (NCBI-only).
 
 ---
 
@@ -116,12 +131,11 @@ All outputs in `workflow-*/OUTPUT_pipeline/`:
 ```bash
 cd workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 
-# Local:
-bash RUN-workflow.sh
-
-# SLURM:
 bash RUN-workflow.sh
 ```
+
+The unified driver runs locally or self-submits to SLURM based on
+`execution_mode` in `START_HERE-user_config.yaml` (per §29).
 
 ---
 
@@ -129,7 +143,7 @@ bash RUN-workflow.sh
 
 - **STEP_1-sources** must complete first (provides proteomes, genomes, GFFs)
 - **phylonames** subproject must complete first (provides species naming)
-- **Conda environment**: `ai_gigantic_genomesdb` with `gfastats` and `busco` installed
+- **Conda environment**: `aiG-genomesDB` with `gfastats` and `busco` installed
 
 ---
 

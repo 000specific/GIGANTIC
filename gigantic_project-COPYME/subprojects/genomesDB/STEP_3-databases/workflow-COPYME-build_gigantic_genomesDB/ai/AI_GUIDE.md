@@ -53,7 +53,7 @@ Default paths work if STEP_2 has been run and its `RUN-workflow.sh` created the 
 
 - STEP_2 must be complete (proteomes cleaned and symlinked to `output_to_input/`)
 - Species selection manifest must have `Include=YES` for species to include
-- `ai_gigantic_genomesdb` conda environment must be available (or BLAST+, NextFlow, Python3 in PATH)
+- `aiG-genomesDB` conda environment must be available (or BLAST+, NextFlow, Python3 in PATH)
 
 ### 4. Run the workflow
 
@@ -141,7 +141,7 @@ cat OUTPUT_pipeline/2-output/2_ai-log-build_per_genome_blastdbs.log
 | "Species selection manifest not found" | STEP_2 not run or symlinks missing | Run STEP_2 first; verify `../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv` exists |
 | "Proteomes directory not found" | STEP_2 symlinks missing | Verify `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` exists |
 | "No species have Include=YES" | Manifest not edited or all species excluded | Edit `species_selection_manifest.tsv` and set `Include=YES` for species to include |
-| "makeblastdb not found" | BLAST+ not installed or not in PATH | Activate conda environment: `module load conda && conda activate ai_gigantic_genomesdb` |
+| "makeblastdb not found" | BLAST+ not installed or not in PATH | Activate conda environment: `module load conda && conda activate aiG-genomesDB` |
 | "Proteome file not found: ..." | Species in manifest but proteome missing | Check STEP_2 output; ensure proteome exists for this species |
 | Pipeline cached stale results | Old `work/` directory from previous run | Remove NextFlow cache: `rm -rf work .nextflow .nextflow.log*` and re-run |
 
