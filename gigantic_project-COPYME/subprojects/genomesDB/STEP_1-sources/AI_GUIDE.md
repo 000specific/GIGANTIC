@@ -1,6 +1,6 @@
 # AI Guide: STEP_1-sources (genomesDB)
 
-**For AI Assistants**: This guide covers STEP_1 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_1 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE.md`. For GIGANTIC overview, see `../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_1-sources/`
 
@@ -21,10 +21,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| genomesDB concepts, four-step structure | `../AI_GUIDE-genomesDB.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| genomesDB concepts, four-step structure | `../AI_GUIDE.md` |
 | STEP_1 sources concepts (this step) | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-ingest_sources_workflow.md` |
+| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ---
 
@@ -47,8 +47,8 @@ Unlike other GIGANTIC subprojects that automatically download or generate data, 
 - Users may have custom or unpublished genomes
 - Complete control over what enters GIGANTIC
 
-**user_research/ directory**:
-- Located at `STEP_1-sources/user_research/`
+**research_notebook/research_user/ directory**:
+- Located at `research_notebook/research_user/`
 - User's personal workspace for source data
 - NOT part of GIGANTIC (only README is version-controlled)
 - Can contain anything: raw downloads, scripts, notes, analyses
@@ -190,7 +190,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 | `workflow-*/START_HERE-user_config.yaml` | Project name, options | **YES** (project name) |
 | `workflow-*/RUN-*.sbatch` | SLURM account/qos | **YES** (SLURM users) |
 | `output_to_input/proteomes/` | Symlinks for STEP_2 | No (auto-created) |
-| `user_research/` | User's personal source data | Personal space |
+| `research_notebook/research_user/` | User's personal source data | Personal space |
 
 ---
 
@@ -264,12 +264,12 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 ```
 STEP_1-sources/
 ├── README.md                    # Human-readable overview
-├── AI_GUIDE-sources.md          # THIS FILE
+├── AI_GUIDE.md          # THIS FILE
 ├── output_to_input/             # Symlinks passed to STEP_2
 │   └── proteomes/               # Created by workflow
 │       ├── Species1.aa -> ...
 │       └── proteome_manifest.tsv
-├── user_research/               # User's personal workspace
+├── research_notebook/research_user/               # User's personal workspace
 │   └── README.md                # Only this is part of GIGANTIC
 └── workflow-COPYME-ingest_source_data/
     ├── README.md
@@ -284,7 +284,7 @@ STEP_1-sources/
     │       ├── proteomes/           # Hard copies
     │       └── ingestion_log.tsv
     └── ai/
-        ├── AI_GUIDE-ingest_sources_workflow.md
+        ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
         └── scripts/

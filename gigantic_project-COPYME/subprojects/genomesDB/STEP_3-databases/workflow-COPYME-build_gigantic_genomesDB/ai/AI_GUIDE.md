@@ -1,6 +1,6 @@
 # AI Guide: STEP_3 Workflow - Build GIGANTIC GenomesDB BLAST Databases
 
-**For AI Assistants**: Read the subproject guide (`../../AI_GUIDE-databases.md`) first for STEP_3 concepts and troubleshooting. This guide focuses on running the workflow.
+**For AI Assistants**: Read the subproject guide (`../../AI_GUIDE.md`) first for STEP_3 concepts and troubleshooting. This guide focuses on running the workflow.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_3-databases/workflow-COPYME-build_gigantic_genomesDB/ai/`
 
@@ -10,9 +10,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE-project.md` |
-| genomesDB concepts, pipeline architecture | `../../../AI_GUIDE-genomesDB.md` |
-| STEP_3 concepts, troubleshooting | `../../AI_GUIDE-databases.md` |
+| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE.md` |
+| genomesDB concepts, pipeline architecture | `../../../AI_GUIDE.md` |
+| STEP_3 concepts, troubleshooting | `../../AI_GUIDE.md` |
 | Running the workflow (this guide) | This file |
 
 ---

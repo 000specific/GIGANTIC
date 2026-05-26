@@ -44,7 +44,7 @@ nano INPUT_user/selected_species.txt
 bash RUN-workflow.sh
 
 # 4b. Or on SLURM (edit account/qos first):
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh
 ```
 
 ---
@@ -90,7 +90,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 ```
 STEP_4-create_final_species_set/
 ├── README.md                              # This file
-├── AI_GUIDE-create_final_species_set.md   # Guide for AI assistants
+├── AI_GUIDE.md   # Guide for AI assistants
 ├── RUN-clean_and_record_subproject.sh     # Cleanup and session recording
 ├── RUN-update_upload_to_server.sh         # Manage upload_to_server/ symlinks
 ├── output_to_input/                       # Final species set for downstream subprojects
@@ -103,7 +103,7 @@ STEP_4-create_final_species_set/
     ├── INPUT_user/
     │   └── selected_species.txt           # Species selection (optional)
     └── ai/
-        ├── AI_GUIDE-create_final_species_set_workflow.md
+        ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
         └── scripts/

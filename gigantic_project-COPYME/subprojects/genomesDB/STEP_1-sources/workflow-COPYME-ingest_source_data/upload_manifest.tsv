@@ -1,0 +1,20 @@
+# GIGANTIC upload_manifest.tsv — genomesDB STEP_1 ingest_source_data template
+# ============================================================================
+# When workflow-COPYME-ingest_source_data is copied to workflow-RUN_N-ingest_source_data,
+# this manifest travels with it and describes which terminal files from
+# OUTPUT_pipeline/N-output/ get published to the project's data server.
+#
+# The surrounding hierarchy (subproject / step / workflow) is INFERRED from
+# the manifest's location by the shared helper at
+# gigantic_project-COPYME/server/ai/update_upload_to_server.py.
+#
+# STEP_1 ingests user-provided genomic resources (proteomes, genomes,
+# annotations) per the source_manifest.tsv. Most outputs are operational
+# (logs, validation reports) rather than collaborator-facing; defaults
+# reflect that. Flip to "yes" anything you want collaborators to browse.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/1-output/*_validation_report.tsv	no		Source manifest validation report	qc	Per-species validation status for the input source_manifest.tsv.	10
+OUTPUT_pipeline/2-output/ingested_resources_summary.tsv	no		Ingested resources summary	summary	Inventory of proteomes / genomes / annotations ingested in this run.	20
+OUTPUT_pipeline/4-output/4_ai-run_log.txt	no		STEP_1 run log	log	Per-run audit log.	90

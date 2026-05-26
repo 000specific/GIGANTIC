@@ -1,6 +1,6 @@
 # AI Guide: STEP_4-create_final_species_set (genomesDB)
 
-**For AI Assistants**: This guide covers STEP_4 of the genomesDB subproject. For genomesDB overview and pipeline architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_4 of the genomesDB subproject. For genomesDB overview and pipeline architecture, see `../AI_GUIDE.md`. For GIGANTIC overview, see `../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_4-create_final_species_set/`
 
@@ -21,10 +21,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| genomesDB concepts, pipeline architecture | `../AI_GUIDE-genomesDB.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| genomesDB concepts, pipeline architecture | `../AI_GUIDE.md` |
 | STEP_4 concepts and troubleshooting (this step) | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-create_final_species_set_workflow.md` |
+| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ---
 
@@ -136,7 +136,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 ```
 STEP_4-create_final_species_set/
 ├── README.md                              # Human-readable overview
-├── AI_GUIDE-create_final_species_set.md   # THIS FILE
+├── AI_GUIDE.md   # THIS FILE
 ├── RUN-clean_and_record_subproject.sh     # Cleanup and session recording
 ├── RUN-update_upload_to_server.sh         # Manage upload_to_server/ symlinks
 ├── output_to_input/                       # Final species set for downstream
@@ -154,7 +154,7 @@ STEP_4-create_final_species_set/
     │   ├── 1-output/                      # Validated species list
     │   └── 2-output/                      # Copied species files
     └── ai/
-        ├── AI_GUIDE-create_final_species_set_workflow.md
+        ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
         └── scripts/

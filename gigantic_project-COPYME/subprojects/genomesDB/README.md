@@ -177,71 +177,67 @@ genomesDB/
 
 ```
 genomesDB/
-├── README.md                           # This file
-├── AI_GUIDE-genomesDB.md               # AI assistant guidance (subproject level)
-├── RUN-clean_and_record_subproject.sh  # Cleanup script for entire subproject
-├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
-├── output_to_input/                    # Final outputs for downstream subprojects
-├── upload_to_server/                   # Files to share via GIGANTIC server
+├── README.md                                # This file
+├── AI_GUIDE.md                              # AI assistant guidance (subproject level)
 │
-├── STEP_0-prepare_proteomes/           # (OPTIONAL) Prepare T1 from evigene transcriptomes
-│   ├── README.md
-│   ├── output_to_input/                # T1 proteomes for STEP_1
-│   └── workflow-COPYME-prepare_proteomes/
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── ai/
+├── RUN-clean_and_record_subproject.sh       # Subproject-level cleanup + session recording
+├── RUN-update_upload_to_server.sh           # Subproject-level publisher (§38)
+│
+├── upload_to_server/                        # Single publish destination per §38
+│                                            # (auto-populated by RUN-update_upload_to_server.sh)
+│
+├── output_to_input/                         # Outputs for downstream subprojects (§2)
+│   ├── STEP_1-sources/
+│   ├── STEP_2-standardize_and_evaluate/
+│   ├── STEP_3-databases/
+│   └── STEP_4-create_final_species_set/    # The final species set canonically lives here
+│
+├── research_notebook/                       # Personal workspace + AI session captures (§1, §25)
 │
 ├── STEP_1-sources/
-│   ├── README.md                       # Step-specific documentation
-│   ├── AI_GUIDE-sources.md             # AI guidance for this step
-│   ├── RUN-clean_and_record_subproject.sh  # Step-level cleanup
-│   ├── output_to_input/                # Outputs passed to STEP_2
+│   ├── README.md
+│   ├── AI_GUIDE.md                          # STEP-level guide
 │   └── workflow-COPYME-ingest_source_data/
-│       ├── INPUT_user/                 # Source manifest goes here
-│       ├── OUTPUT_pipeline/            # Workflow outputs
-│       ├── RUN-workflow.sh             # Local execution
-│       ├── RUN-workflow.sbatch         # SLURM execution
-│       └── ai/                         # Pipeline scripts
+│       ├── README.md
+│       ├── RUN-workflow.sh                  # Unified driver — local or SLURM via execution_mode (§29)
+│       ├── START_HERE-user_config.yaml      # Config: project name, execution_mode, slurm.*
+│       ├── upload_manifest.tsv              # Server publish manifest (§38, §39)
+│       ├── INPUT_user/                      # Source manifest goes here
+│       ├── OUTPUT_pipeline/                 # Workflow outputs
+│       └── ai/                              # NextFlow pipeline + scripts
 │
 ├── STEP_2-standardize_and_evaluate/
 │   ├── README.md
-│   ├── AI_GUIDE-standardize_and_evaluate.md
-│   ├── RUN-clean_and_record_subproject.sh
-│   ├── output_to_input/                # Outputs passed to STEP_3
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh             # Local execution
-│       ├── RUN-workflow.sbatch         # SLURM execution
+│       ├── README.md, RUN-workflow.sh, START_HERE-user_config.yaml
+│       ├── upload_manifest.tsv              # Server publish manifest
+│       ├── INPUT_user/, OUTPUT_pipeline/
 │       └── ai/
 │
 ├── STEP_3-databases/
 │   ├── README.md
-│   ├── AI_GUIDE-databases.md
-│   ├── RUN-clean_and_record_subproject.sh
-│   ├── output_to_input/                # Step outputs (also copied to subproject root)
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-build_gigantic_genomesDB/
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh             # Local execution
-│       ├── RUN-workflow.sbatch         # SLURM execution
+│       ├── README.md, RUN-workflow.sh, START_HERE-user_config.yaml
+│       ├── upload_manifest.tsv              # Server publish manifest
+│       ├── INPUT_user/, OUTPUT_pipeline/
 │       └── ai/
 │
 └── STEP_4-create_final_species_set/
     ├── README.md
-    ├── AI_GUIDE-create_final_species_set.md
-    ├── RUN-clean_and_record_subproject.sh
-    ├── output_to_input/                # Final species set for downstream subprojects
+    ├── AI_GUIDE.md
     └── workflow-COPYME-create_final_species_set/
-        ├── INPUT_user/
-        ├── OUTPUT_pipeline/
-        ├── RUN-workflow.sh             # Local execution
-        ├── RUN-workflow.sbatch         # SLURM execution
+        ├── README.md, RUN-workflow.sh, START_HERE-user_config.yaml
+        ├── upload_manifest.tsv              # Server publish manifest
+        ├── INPUT_user/, OUTPUT_pipeline/
         └── ai/
 ```
+
+Per §38 + §41, genomesDB is a STEP-organized subproject with ONE
+subproject-level `upload_to_server/` (no per-STEP `upload_to_server/`).
+Per §29, the unified `RUN-workflow.sh` drives both local and SLURM
+execution via the YAML `execution_mode` key.
 
 ---
 

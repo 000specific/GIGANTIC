@@ -9,7 +9,7 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 
 ## Quick Start
 
-1. Place your source files in the project-level `INPUT_user/genomic_resources/` subdirectories (genomes/, proteomes/, annotations/) or somewhere else accessible (e.g., `../user_research/`)
+1. Place your source files in the project-level `INPUT_user/genomic_resources/` subdirectories (genomes/, proteomes/, annotations/) or somewhere else accessible (e.g., `../../research_notebook/research_user/`)
 
 2. **Ensure files follow GIGANTIC naming convention**:
    ```
@@ -48,7 +48,7 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 
 6. Run the workflow:
    - **Local**: `bash RUN-workflow.sh`
-   - **SLURM**: Edit account/qos in `RUN-workflow.sbatch`, then `sbatch RUN-workflow.sbatch`
+   - **SLURM**: Edit account/qos in `RUN-workflow.sh` (unified driver; §29), then `bash RUN-workflow.sh` (with `execution_mode: "slurm"` in the YAML config; §29)
 
 ## What This Workflow Does (3 Steps)
 
@@ -95,4 +95,4 @@ After ingestion, run **STEP_2-standardize_and_evaluate** to:
 
 ## Need Help?
 
-Ask your AI assistant to read `ai/AI_GUIDE-ingest_sources_workflow.md` for detailed guidance.
+Ask your AI assistant to read `ai/AI_GUIDE.md` for detailed guidance.

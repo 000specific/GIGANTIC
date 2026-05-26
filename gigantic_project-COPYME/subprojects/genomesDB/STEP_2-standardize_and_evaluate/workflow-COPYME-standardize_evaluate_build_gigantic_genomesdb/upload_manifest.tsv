@@ -1,0 +1,23 @@
+# GIGANTIC upload_manifest.tsv — genomesDB STEP_2 standardize_evaluate_build template
+# ============================================================================
+# When workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb is copied to
+# workflow-RUN_N-..., this manifest travels with it and describes which
+# terminal files from OUTPUT_pipeline/N-output/ get published to the
+# project's data server.
+#
+# The surrounding hierarchy (subproject / step / workflow) is INFERRED from
+# the manifest's location by the shared helper at
+# gigantic_project-COPYME/server/ai/update_upload_to_server.py.
+#
+# STEP_2 standardizes proteomes/genomes/annotations by phyloname and runs
+# quality evaluation (BUSCO + gfastats). Quality outputs are highly
+# collaborator-relevant — most defaults are "yes".
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/4-output/*_genome_assembly_statistics.tsv	yes		Genome assembly statistics	qc	Per-species genome assembly metrics from gfastats.	10
+OUTPUT_pipeline/5-output/*_busco_summary.tsv	yes		BUSCO completeness (proteome mode)	qc	Per-species BUSCO C/M/F percentages (protein-mode evaluation).	20
+OUTPUT_pipeline/5-output/*_busco_per_species/*	no		BUSCO per-species detailed outputs	qc	Full BUSCO outputs per species — large; flip to yes only if needed.	25
+OUTPUT_pipeline/6-output/*_quality_summary.tsv	yes		Combined quality summary	summary	Combined BUSCO + assembly stats with quality flags per species.	30
+OUTPUT_pipeline/6-output/*_quality_summary.html	yes		Combined quality summary (HTML)	summary	Human-readable HTML view of the combined quality summary.	31
+OUTPUT_pipeline/7-output/7_ai-run_log.txt	no		STEP_2 run log	log	Per-run audit log.	90

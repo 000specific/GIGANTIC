@@ -120,7 +120,7 @@ cd workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 bash RUN-workflow.sh
 
 # SLURM:
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh
 ```
 
 ---

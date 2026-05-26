@@ -20,9 +20,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE-project.md` |
-| genomesDB subproject overview | `../../../AI_GUIDE-genomesDB.md` |
-| STEP_2 concepts, troubleshooting | `../../AI_GUIDE-standardize_and_evaluate.md` |
+| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE.md` |
+| genomesDB subproject overview | `../../../AI_GUIDE.md` |
+| STEP_2 concepts, troubleshooting | `../../AI_GUIDE.md` |
 | Running this workflow | This file |
 
 ---

@@ -1,6 +1,6 @@
 # AI Guide: genomesDB Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers genomesDB-specific concepts and the four-step architecture.
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers genomesDB-specific concepts and the four-step architecture.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/`
 
@@ -23,7 +23,7 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | genomesDB concepts, pipeline structure | This file |
 | STEP_0 prepare_proteomes workflow | `STEP_0-prepare_proteomes/workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 | STEP_1 sources workflow | `STEP_1-sources/workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
@@ -233,69 +233,68 @@ Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa
 
 ```
 genomesDB/
-├── README.md                           # Human documentation
-├── AI_GUIDE-genomesDB.md               # THIS FILE
-├── RUN-clean_and_record_subproject.sh  # Cleanup for entire subproject
-├── RUN-update_upload_to_server.sh      # Update server symlinks
+├── README.md                                # User-facing documentation
+├── AI_GUIDE.md                              # THIS FILE
 │
-├── output_to_input/                    # Final outputs for downstream
-├── upload_to_server/                   # Server sharing
+├── RUN-clean_and_record_subproject.sh       # Subproject-level cleanup + session recording
+├── RUN-update_upload_to_server.sh           # Subproject-level publisher (§38; thin wrapper around shared helper)
 │
-├── STEP_0-prepare_proteomes/           # (OPTIONAL) Prepare T1 from evigene transcriptomes
-│   ├── README.md
-│   ├── output_to_input/                # T1 proteomes for STEP_1
-│   └── workflow-COPYME-prepare_proteomes/
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── ai/
+├── upload_to_server/                        # Single publish destination (§38)
+│
+├── output_to_input/                         # Outputs for downstream subprojects (§2)
+│   ├── STEP_1-sources/
+│   ├── STEP_2-standardize_and_evaluate/
+│   ├── STEP_3-databases/
+│   └── STEP_4-create_final_species_set/
+│
+├── research_notebook/                       # Personal workspace + AI session captures (§1, §25)
 │
 ├── STEP_1-sources/
 │   ├── README.md
-│   ├── AI_GUIDE-sources.md
-│   ├── RUN-clean_and_record_subproject.sh
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-ingest_source_data/
+│       ├── README.md
+│       ├── RUN-workflow.sh                  # Unified driver (§29)
+│       ├── START_HERE-user_config.yaml
+│       ├── upload_manifest.tsv              # Server publish manifest (§38, §39)
 │       ├── INPUT_user/
-│       │   └── source_manifest.tsv     # User creates this
+│       │   └── source_manifest.tsv          # User creates this
 │       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh             # Local execution
-│       ├── RUN-workflow.sbatch         # SLURM execution
-│       └── ai/
+│       └── ai/                              # NextFlow pipeline + scripts
 │
 ├── STEP_2-standardize_and_evaluate/
 │   ├── README.md
-│   ├── AI_GUIDE-standardize_and_evaluate.md
-│   ├── RUN-clean_and_record_subproject.sh
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh             # Local execution
-│       ├── RUN-workflow.sbatch         # SLURM execution
+│       ├── README.md, RUN-workflow.sh, START_HERE-user_config.yaml
+│       ├── upload_manifest.tsv
+│       ├── INPUT_user/, OUTPUT_pipeline/
 │       └── ai/
 │
 ├── STEP_3-databases/
 │   ├── README.md
-│   ├── AI_GUIDE-databases.md
-│   ├── RUN-clean_and_record_subproject.sh
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-build_gigantic_genomesDB/
-│       ├── INPUT_user/
-│       ├── OUTPUT_pipeline/
-│       ├── RUN-workflow.sh             # Local execution
-│       ├── RUN-workflow.sbatch         # SLURM execution
+│       ├── README.md, RUN-workflow.sh, START_HERE-user_config.yaml
+│       ├── upload_manifest.tsv
+│       ├── INPUT_user/, OUTPUT_pipeline/
 │       └── ai/
 │
 └── STEP_4-create_final_species_set/
     ├── README.md
-    ├── AI_GUIDE-create_final_species_set.md
-    ├── RUN-clean_and_record_subproject.sh
+    ├── AI_GUIDE.md
     └── workflow-COPYME-create_final_species_set/
-        ├── INPUT_user/
-        ├── OUTPUT_pipeline/
-        ├── RUN-workflow.sh             # Local execution
-        ├── RUN-workflow.sbatch         # SLURM execution
+        ├── README.md, RUN-workflow.sh, START_HERE-user_config.yaml
+        ├── upload_manifest.tsv
+        ├── INPUT_user/, OUTPUT_pipeline/
         └── ai/
 ```
+
+Per §38 + §41, genomesDB is a STEP-organized subproject with ONE
+subproject-level `upload_to_server/` and one subproject-level
+`output_to_input/` (no per-STEP duplicates of either; deleted in the
+2026-05-26 cleanup). Per §29, unified `RUN-workflow.sh` drives both
+local and SLURM execution via the YAML `execution_mode` key.
 
 ---
 
@@ -400,7 +399,7 @@ ls output_to_input/STEP_4-create_final_species_set/
 | `STEP_4-create_final_species_set/workflow-*/START_HERE-user_config.yaml` | Paths to STEP_2/STEP_3 outputs | **YES** |
 | `STEP_4-create_final_species_set/workflow-*/INPUT_user/selected_species.txt` | Species selection (optional) | **YES** (optional) |
 | `output_to_input/STEP_4-create_final_species_set/` | Final species set | No |
-| `upload_to_server/upload_manifest.tsv` | What to share | **YES** |
+| `STEP_*/workflow-COPYME-*/upload_manifest.tsv` | Per-workflow publish manifest (§38) | **YES** (to customize what publishes) |
 
 ---
 
@@ -420,9 +419,40 @@ ls output_to_input/STEP_4-create_final_species_set/
 
 ---
 
+## Downstream consumers (per §40)
+
+genomesDB feeds essentially every downstream subproject that operates on
+standardized proteomes / genomes / annotations:
+
+- **annotations_hmms** — reads standardized proteomes (`.aa` files) from
+  `genomesDB/output_to_input/STEP_2-standardize_and_evaluate/proteomes/`
+  to run InterProScan, DeepLoc, SignalP, TMBed, MetaPredict
+- **orthogroups** — reads the same standardized proteomes to run
+  OrthoHMM, OrthoFinder, Broccoli
+- **trees_gene_families** — STEP_1 (homolog discovery) reads BLAST
+  databases from `genomesDB/output_to_input/STEP_3-databases/` for
+  RBH/RBF searches
+- **trees_gene_groups** — same dependency as trees_gene_families
+- **trees_species** — uses the species set defined in
+  `genomesDB/output_to_input/STEP_4-create_final_species_set/` as input
+  for species-tree topology generation
+- **gene_sizes** — reads genomes + annotations from STEP_2 outputs
+- **hotspots**, **secretome**, **one_direction_homologs**,
+  **dark_proteomes**, etc. — all consume standardized proteomes
+- **orthogroups_X_ocl**, **annotations_X_ocl** — indirect (through
+  their producer subprojects)
+
+In practice every "real" GIGANTIC subproject reads from
+`genomesDB/output_to_input/` at some point. **genomesDB must run
+second** in any GIGANTIC project (after phylonames).
+
 ## Next Steps After genomesDB
 
 Guide users to:
-1. **annotations_hmms** - Run functional annotations on proteomes
-2. **orthogroups** - Identify ortholog groups across species
-3. **trees_gene_families** - Build gene family phylogenies
+1. **annotations_hmms** — run functional annotations on standardized
+   proteomes
+2. **orthogroups** — identify ortholog groups across species
+3. **trees_species** — generate candidate species-tree topologies for
+   the final species set
+4. **trees_gene_families** / **trees_gene_groups** — build per-gene
+   phylogenies (depend on BLAST databases from STEP_3)

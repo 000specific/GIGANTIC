@@ -1,6 +1,6 @@
 # AI Guide: Source Data Ingestion Workflow
 
-**For AI Assistants**: This guide covers workflow execution. For genomesDB concepts and four-step architecture, see `../../../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers workflow execution. For genomesDB concepts and four-step architecture, see `../../../AI_GUIDE.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_1-sources/workflow-COPYME-ingest_source_data/`
 
@@ -59,9 +59,9 @@ cd workflow-RUN_01-ingest_source_data
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| genomesDB concepts, four-step architecture | `../../../AI_GUIDE-genomesDB.md` |
-| STEP_1 sources concepts | `../../AI_GUIDE-sources.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` |
+| genomesDB concepts, four-step architecture | `../../../AI_GUIDE.md` |
+| STEP_1 sources concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ---
@@ -95,7 +95,7 @@ workflow-COPYME-ingest_source_data/
 │       └── 3_ai-symlink_manifest.tsv
 │
 └── ai/                             # Internal - users don't touch
-    ├── AI_GUIDE-ingest_sources_workflow.md  # THIS FILE
+    ├── AI_GUIDE.md  # THIS FILE
     ├── main.nf
     ├── nextflow.config
     └── scripts/
@@ -125,7 +125,7 @@ Users must have data files in the project-level `INPUT_user/genomic_resources/` 
 - `../../../../INPUT_user/genomic_resources/proteomes/` - Project-level proteome files (.aa)
 - `../../../../INPUT_user/genomic_resources/annotations/` - Project-level annotation files (.gff3/.gtf)
 - `../../../../INPUT_user/genomic_resources/maps/` - Identifier mapping files (.tsv)
-- `../user_research/` - Personal research data (alternative)
+- `../../research_notebook/research_user/` - Personal research data (alternative)
 - Any accessible path on the system
 
 ### Step 2: Ensure Files Follow GIGANTIC Naming Convention
@@ -356,9 +356,9 @@ bash ai/scripts/003_ai-bash-create_output_symlinks.sh \
 
 ---
 
-## What's NOT in user_research/
+## What's NOT in research_notebook/research_user/
 
-**Important**: The `user_research/` directory at the STEP_1 level is:
+**Important**: The `research_notebook/research_user/` directory at the STEP_1 level is:
 - NOT part of GIGANTIC (only the README is)
 - User's personal space for source data
 - Can contain anything the user wants

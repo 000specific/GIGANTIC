@@ -1,6 +1,6 @@
 # AI Guide: STEP_4 Workflow - Create Final Species Set
 
-**For AI Assistants**: Read the subproject guide (`../AI_GUIDE-create_final_species_set.md`) first for STEP_4 concepts and troubleshooting. This guide focuses on running the workflow.
+**For AI Assistants**: Read the subproject guide (`../AI_GUIDE.md`) first for STEP_4 concepts and troubleshooting. This guide focuses on running the workflow.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_4-create_final_species_set/workflow-COPYME-create_final_species_set/ai/`
 
@@ -10,9 +10,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE-project.md` |
-| genomesDB concepts, pipeline architecture | `../../../AI_GUIDE-genomesDB.md` |
-| STEP_4 concepts, troubleshooting | `../../AI_GUIDE-create_final_species_set.md` |
+| GIGANTIC overview, directory structure | `../../../../../AI_GUIDE.md` |
+| genomesDB concepts, pipeline architecture | `../../../AI_GUIDE.md` |
+| STEP_4 concepts, troubleshooting | `../../AI_GUIDE.md` |
 | Running the workflow (this guide) | This file |
 
 ---

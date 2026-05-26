@@ -1,6 +1,6 @@
 # AI Guide: STEP_2-standardize_and_evaluate (genomesDB)
 
-**For AI Assistants**: This guide covers STEP_2 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE-genomesDB.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_2 of the genomesDB subproject. For genomesDB overview and four-step architecture, see `../AI_GUIDE.md`. For GIGANTIC overview, see `../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/genomesDB/STEP_2-standardize_and_evaluate/`
 
@@ -21,8 +21,8 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| genomesDB concepts, four-step structure | `../AI_GUIDE-genomesDB.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| genomesDB concepts, four-step structure | `../AI_GUIDE.md` |
 | STEP_2 standardize_and_evaluate concepts (this step) | This file |
 | Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-*_workflow.md` |
 

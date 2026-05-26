@@ -63,8 +63,8 @@ bash RUN-workflow.sh
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-workflow.sbatch to set --account and --qos
-sbatch RUN-workflow.sbatch
+# Edit `START_HERE-user_config.yaml` to set `execution_mode: "slurm"` + `slurm.account` + `slurm.qos`
+bash RUN-workflow.sh
 ```
 
 The workflow uses NextFlow internally (`ai/main.nf`) to orchestrate all 6 scripts sequentially, with explicit outputs at each step for research transparency.
@@ -100,7 +100,7 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
-    ├── AI_GUIDE-standardize_evaluate_workflow.md
+    ├── AI_GUIDE.md
     └── scripts/
         ├── 001_ai-python-standardize_proteome_phylonames.py
         ├── 002_ai-python-clean_proteome_invalid_residues.py

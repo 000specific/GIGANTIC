@@ -1,0 +1,21 @@
+# GIGANTIC upload_manifest.tsv — genomesDB STEP_4 create_final_species_set template
+# ============================================================================
+# When workflow-COPYME-create_final_species_set is copied to
+# workflow-RUN_N-create_final_species_set, this manifest travels with it and
+# describes which terminal files from OUTPUT_pipeline/N-output/ get
+# published to the project's data server.
+#
+# The surrounding hierarchy (subproject / step / workflow) is INFERRED from
+# the manifest's location by the shared helper at
+# gigantic_project-COPYME/server/ai/update_upload_to_server.py.
+#
+# STEP_4 finalizes the species set for downstream subprojects (e.g.,
+# species70, species71 selections). The final species manifest and the
+# selection report are highly collaborator-relevant.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/1-output/*_selected_species_manifest.tsv	yes		Final species manifest	summary	Authoritative list of species selected for the project (e.g., species70).	10
+OUTPUT_pipeline/1-output/*_selection_decisions.tsv	yes		Species selection decisions	summary	Per-species decision: included | excluded | reason. Useful for transparency about QC cutoffs.	20
+OUTPUT_pipeline/2-output/*_species_files_inventory.tsv	yes		Inventory of files per selected species	summary	What files (proteome, genome, annotation) are present for each selected species.	30
+OUTPUT_pipeline/3-output/3_ai-run_log.txt	no		STEP_4 run log	log	Per-run audit log.	90

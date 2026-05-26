@@ -52,8 +52,8 @@ bash RUN-workflow.sh
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-workflow.sbatch to set --account and --qos
-sbatch RUN-workflow.sbatch
+# Edit `START_HERE-user_config.yaml` to set `execution_mode: "slurm"` + `slurm.account` + `slurm.qos`
+bash RUN-workflow.sh
 ```
 
 ---

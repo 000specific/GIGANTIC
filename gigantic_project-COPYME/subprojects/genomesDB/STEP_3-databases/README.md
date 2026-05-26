@@ -22,7 +22,7 @@ cd workflow-COPYME-build_gigantic_genomesDB/
 bash RUN-workflow.sh
 
 # SLURM:
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh
 ```
 
 ---

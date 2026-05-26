@@ -19,7 +19,7 @@ Unlike other GIGANTIC subprojects, **STEP_1 does NOT automatically download data
 
 Users:
 1. Obtain proteomes from their own sources (NCBI downloads, lab data, collaborator files, etc.)
-2. Store them anywhere accessible (e.g., `user_research/`)
+2. Store them anywhere accessible (e.g., `research_notebook/research_user/`)
 3. Create a manifest listing paths to their genome, genome annotation, and proteome files
 4. Run the ingestion workflow to bring them into GIGANTIC
 
@@ -107,7 +107,7 @@ nano INPUT_user/source_manifest.tsv
 bash RUN-workflow.sh
 
 # 3. Or SLURM (edit account/qos first):
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh
 ```
 
 See `workflow-COPYME-ingest_source_data/README.md` for detailed instructions.
@@ -124,9 +124,9 @@ See `workflow-COPYME-ingest_source_data/README.md` for detailed instructions.
 
 ---
 
-## user_research/ Directory
+## research_notebook/research_user/ Directory
 
-The `user_research/` directory is your personal workspace:
+The `research_notebook/research_user/` directory is the user's personal workspace (per gigantic_conventions §1, §25):
 - Store source genomes/proteomes before ingestion
 - Keep custom scripts, analyses, notes
 - Organize however you want
@@ -152,10 +152,10 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 ```
 STEP_1-sources/
 ├── README.md                    # This file
-├── AI_GUIDE-sources.md          # Guide for AI assistants
+├── AI_GUIDE.md          # Guide for AI assistants
 ├── output_to_input/             # Symlinks passed to STEP_2
 │   └── proteomes/               # Created by workflow
-├── user_research/               # Your personal workspace (not part of GIGANTIC)
+├── research_notebook/research_user/               # Your personal workspace (not part of GIGANTIC)
 │   └── README.md                # Only this README is in GIGANTIC
 └── workflow-COPYME-ingest_source_data/  # The ingestion workflow template
     ├── README.md

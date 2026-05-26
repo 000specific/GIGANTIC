@@ -1,0 +1,22 @@
+# GIGANTIC upload_manifest.tsv — genomesDB STEP_3 build_gigantic_genomesDB template
+# ============================================================================
+# When workflow-COPYME-build_gigantic_genomesDB is copied to
+# workflow-RUN_N-build_gigantic_genomesDB, this manifest travels with it and
+# describes which terminal files from OUTPUT_pipeline/N-output/ get
+# published to the project's data server.
+#
+# The surrounding hierarchy (subproject / step / workflow) is INFERRED from
+# the manifest's location by the shared helper at
+# gigantic_project-COPYME/server/ai/update_upload_to_server.py.
+#
+# STEP_3 builds per-species BLASTP databases. The DBs themselves are
+# very large; what collaborators want is the summary of what was built,
+# not the binary database files.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/1-output/blastdb_index.tsv	yes		BLAST database index	summary	One row per species: phyloname, source proteome, number of sequences in the BLASTP DB.	10
+OUTPUT_pipeline/1-output/*.phr	no		BLAST DB files (per-species, large)	database	Raw BLASTP DB files. Usually NOT published to the server (large; downstream subprojects access via output_to_input/).	80
+OUTPUT_pipeline/1-output/*.pin	no		BLAST DB files (per-species, large)	database		81
+OUTPUT_pipeline/1-output/*.psq	no		BLAST DB files (per-species, large)	database		82
+OUTPUT_pipeline/2-output/2_ai-run_log.txt	no		STEP_3 run log	log	Per-run audit log.	90
