@@ -18,6 +18,11 @@ OUTPUT_pipeline/
 # Test/production run directories (contain large data, not templates)
 workflow-RUN_*/
 
+# INPUT_user contents (user staging area; only docs ship with the template)
+/gigantic_project-COPYME/INPUT_user/**
+!/gigantic_project-COPYME/INPUT_user/**/
+!/gigantic_project-COPYME/INPUT_user/**/*.md
+
 # Gene family instance directories (copies of gene_family_COPYME, contain large data)
 gene_family-*/
 

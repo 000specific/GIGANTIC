@@ -1,63 +1,99 @@
-# INPUT_user - Start Here
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 25
+Human:   Eric Edsinger
+Purpose: User-facing description of INPUT_user — the single staging arena
+         where the user makes outside data available to GIGANTIC.
+History:
+  2026-05-25  Rewritten for the symlink-into-research_notebook architecture
+              (see gigantic_conventions.md §1 and the framework's chat-as-
+              research-notebook principles).
+============================================================================ -->
 
-**Before running ANY GIGANTIC subproject, place your species list and genomic resource files in this directory.**
+# `INPUT_user/` — Single Staging Arena
 
-This is the first thing you do when starting a GIGANTIC project. Everything else depends on having your species and their data here.
+`INPUT_user/` is the **one and only** directory through which you make
+outside data available to GIGANTIC subprojects. There is no other.
+
+It is the interface between **your world** (raw data you've downloaded or
+prepared) and **GIGANTIC's world** (workflows that read structured inputs).
 
 ---
 
-## Directory Structure
+## How it works
+
+1. **You bring data into your sandbox first.** `research_notebook/research_user/`
+   is your open workspace — no rules, no structure requirements. Download
+   files there, name them however you like, organize however suits you. AIs
+   can help you with this (downloading, renaming, formatting) freely.
+
+2. **You expose what GIGANTIC needs via symlinks in `INPUT_user/`.**
+   Each file you want GIGANTIC subprojects to read becomes a symlink from
+   `INPUT_user/` into `research_notebook/research_user/`. Use **relative**
+   symlinks (`ln -srf <target> <link>`) so they survive when the whole
+   project is moved or archived.
+
+3. **GIGANTIC subprojects read only from `INPUT_user/`.** Per the
+   `research_notebook/` sandbox rule (gigantic_conventions §1), GIGANTIC
+   never reaches into your sandbox directly.
+
+**Net result**: clean separation. Your raw downloads, intermediate files,
+and exploratory work all live in `research_notebook/research_user/` with
+no structure constraints. Anything GIGANTIC needs becomes a deliberate,
+visible symlink in `INPUT_user/`. The directory listing of `INPUT_user/`
+is a complete catalog of what your project feeds into GIGANTIC.
+
+---
+
+## What ships with the template vs. what stays local
+
+Everything in `INPUT_user/` **except documentation** (`README.md`,
+`AI_GUIDE.md`, and similar) is gitignored. Your symlinks, manifest files,
+species lists, and any other content you stage here remain on your local
+disk only — they do not get pushed to GitHub. This protects your project
+data from accidental publication and keeps the shipped template clean.
+
+The shipped template contains only the doc scaffold. When you copy the
+template into your own renamed project, `INPUT_user/` arrives essentially
+empty (just the README files), and you populate it from your sandbox as
+your project takes shape.
+
+---
+
+## Conventional structure (driven by current subprojects)
+
+Subprojects drive what they expect to find in `INPUT_user/`. The structure
+below reflects what current GIGANTIC subprojects expect. You can deviate
+when your project needs differ — but most subprojects assume this layout
+by default.
 
 ```
 INPUT_user/
-├── README.md                          # This file
+├── README.md                          # This file (template ships)
+├── AI_GUIDE.md                        # AI-facing guide for INPUT_user (template ships)
 ├── species_set/
-│   └── species_list.txt               # Your species list (one per line)
-└── genomic_resources/
-    ├── genomes/                        # Genome assembly FASTA files
-    ├── proteomes/                      # Proteome amino acid files
-    ├── annotations/                    # GFF3/GTF gene annotation files
-    └── maps/                           # Identifier mapping files
+│   └── species_list.txt               # Symlink → research_notebook/research_user/...
+├── genomic_resources/
+│   ├── genomes/                       # Symlinks to .fasta / .fna genome assemblies
+│   ├── proteomes/                     # Symlinks to .aa proteome amino acid files
+│   ├── annotations/                   # Symlinks to .gff3 / .gtf gene annotations
+│   └── maps/                          # Symlinks to .tsv identifier mapping files
+└── phylonames/
+    ├── README.md                      # Template ships
+    └── user_phylonames.tsv            # Symlink → research_notebook/research_user/...
 ```
 
 Files are flat within each subdirectory (no further nesting).
 
 ---
 
-## What Goes in This Directory
+## Conventional file naming (when subprojects expect it)
 
-### 1. Species List (`species_set/species_list.txt`)
-
-A simple text file listing the organisms in your study:
-
-```
-# One species per line, Genus_species format
-# Lines starting with # are comments (ignored)
-# Use official NCBI scientific names for best results
-Homo_sapiens
-Mus_musculus
-Drosophila_melanogaster
-Octopus_bimaculoides
-Aplysia_californica
-```
-
-**Rules:**
-- One species per line
-- `Genus_species` format with underscore (not space)
-- Use official NCBI scientific names
-- Lines starting with `#` are comments
-
-### 2. Genomic Resource Files (`genomic_resources/`)
-
-Place your genome, proteome, and annotation files in the appropriate subdirectory. All files must follow the GIGANTIC naming convention.
-
-#### File Naming Convention (Required)
+Most subprojects that operate on genomic data assume this filename pattern:
 
 ```
 Genus_species-genome_source_identifier-downloaded_date.filetype
 ```
 
-**Components:**
 | Component | Description | Example |
 |-----------|-------------|---------|
 | `Genus_species` | Species name | `Homo_sapiens` |
@@ -65,84 +101,75 @@ Genus_species-genome_source_identifier-downloaded_date.filetype
 | `downloaded_date` | When downloaded | `downloaded_20240115` |
 | `filetype` | Data type by extension | `.fasta` (genome), `.gff3` (annotation), `.aa` (proteome) |
 
-#### Where Each File Type Goes
+Apply the naming to the file in `research_notebook/research_user/`; the
+symlink in `INPUT_user/` keeps the same name (no rename at the symlink
+boundary).
 
-| Subdirectory | Extension | Content | Example |
-|-------------|-----------|---------|---------|
-| `genomic_resources/genomes/` | `.fasta` | Genome assemblies | `Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.fasta` |
-| `genomic_resources/proteomes/` | `.aa` | Proteome amino acid sequences | `Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.aa` |
-| `genomic_resources/annotations/` | `.gff3` / `.gtf` | Gene annotations | `Homo_sapiens-genome_ncbi_GCF_000001405.40-downloaded_20240115.gff3` |
-| `genomic_resources/maps/` | `.tsv` | Identifier mapping files | `ncbi_genomes-map-genome_identifiers.tsv` |
+### Proteome FASTA header convention
 
-#### Proteome FASTA Header Convention (Required for .aa files)
-
-Proteome files must have standardized FASTA headers:
+Proteome `.aa` files must have standardized headers:
 
 ```
 >Genus_species-source_gene_id-source_transcript_id-source_protein_id
 ```
 
-**Examples:**
+Examples:
 ```
 >Homo_sapiens-ENSG00000139618-ENST00000380152-ENSP00000369497
 >Mus_musculus-MGI:87853-NM_007393-NP_031419
 >Drosophila_melanogaster-FBgn0000003-FBtr0071763-FBpp0071429
 ```
 
-**Rules:**
-- Each field separated by `-` (dash)
+- Each field separated by `-`
 - `Genus_species` must match the species list and file name
-- Source IDs should come from the original database (Ensembl, NCBI, FlyBase, etc.)
-
-#### What Data Types Are Required?
-
-| Data Type | Extension | Required? | Used By |
-|-----------|-----------|-----------|---------|
-| Proteome | `.aa` | **Yes** - needed for most analyses | genomesDB, orthogroups, annotations, trees |
-| Genome | `.fasta` | Recommended | gene_sizes, synteny |
-| Annotation (GFF) | `.gff3` | Recommended | gene_sizes, genomesDB evaluation |
-
-At minimum, you need proteome files for every species. Genome and GFF files are recommended but some subprojects can run without them.
+- Source IDs from the original database (Ensembl, NCBI, FlyBase, etc.)
 
 ---
 
-## What Happens Next
+## What each data type is for
 
-1. **Run phylonames first** - Generates standardized taxonomic names for your species
-2. **Run genomesDB** - Ingests, standardizes, and evaluates your genomic resources
-3. **Run downstream subprojects** - Orthogroups, trees, annotations, etc.
+| Data type | Extension | Used by |
+|-----------|-----------|---------|
+| Proteome | `.aa` | genomesDB, orthogroups, annotations_hmms, trees_gene_families, trees_gene_groups, secretome, dark_proteomes |
+| Genome assembly | `.fasta` / `.fna` | gene_sizes, synteny, hotspots |
+| Annotation | `.gff3` / `.gtf` | gene_sizes, genomesDB evaluation |
+| Identifier mapping | `.tsv` | genomesDB ingestion (when source IDs differ from final IDs) |
 
-The `genomesDB` subproject will read files from this directory. Its workflow uses a `source_manifest.tsv` (in the genomesDB workflow's `INPUT_user/`) that points to the files you placed here.
+At minimum, most analyses need proteome `.aa` files. Genome and annotation
+files unlock additional subprojects.
 
 ---
 
-## How It Works
+## Workflow override pattern (advanced)
 
-### Genomic Resources
-1. **You place your files here** (the canonical source)
-2. **Subproject workflows reference** these files via manifests (e.g., `source_manifest.tsv`)
-3. **genomesDB ingests** files into its standardized structure
-
-### Species List (Override Design)
-The species list uses a **workflow override** pattern:
-
-1. **Project-level default** (`INPUT_user/species_set/species_list.txt`) - The canonical species list for the entire project. This is used automatically by all workflows unless overridden.
-2. **Workflow-level override** (workflow `INPUT_user/species_list.txt`) - If a workflow has its own `species_list.txt`, it takes priority over the project default. This lets you run a workflow with a different species set without changing the project-wide list.
+A project-wide `INPUT_user/species_set/species_list.txt` is the default
+for every workflow. Individual workflows can override it with their own
+`INPUT_user/species_list.txt` inside their `workflow-COPYME-*/INPUT_user/`
+directory.
 
 **Priority order** (checked by each `RUN-workflow.sh`):
-1. Workflow `INPUT_user/species_list.txt` (user override) - used if present
-2. Project `INPUT_user/species_set/species_list.txt` (default) - copied to workflow if no override exists
+1. Workflow-local `INPUT_user/species_list.txt` (override) — used if present
+2. Project-level `INPUT_user/species_set/species_list.txt` (default) —
+   copied into the workflow if no override
 
-This gives you:
-- Single project-wide species list as the default
-- Per-workflow override capability when needed
-- Archived copy in each workflow run for reproducibility
+This lets you run one workflow with a different species set without
+touching the project-wide list. The copied workflow-local file also
+serves as the archived input for that specific run, for reproducibility.
 
 ---
 
 ## Tips
 
-- **Organizing raw downloads**: Use `research_notebook/research_user/` as your personal workspace to organize raw downloads and do formatting work before placing final files here
-- **File sizes**: Genomic files can be large (gigabytes). This is expected - GIGANTIC needs the actual data, not just references to it
-- **Adding species later**: You can add more species and re-run genomesDB. The final species set is determined by you in genomesDB STEP_4
-- **Naming help**: If unsure about source identifiers, use the download URL or database accession
+- **Use relative symlinks**, not absolute. `ln -srf` makes them relative
+  automatically. Absolute symlinks break when the project moves machines
+  or gets archived elsewhere.
+- **Broken symlinks fail loudly**. If you reorganize
+  `research_notebook/research_user/` and forget to update `INPUT_user/`,
+  your workflows will error out with file-not-found. That's the right
+  behavior — fix the symlink, re-run. No silent stale-data risk.
+- **Audit your symlinks**: `find INPUT_user -xtype l` finds all broken
+  ones; `find INPUT_user -type l -exec ls -la {} \;` shows where each
+  symlink points.
+- **Large files belong in `research_notebook/research_user/`**, not as
+  literal copies in `INPUT_user/`. Symlinks cost nothing; copies waste
+  disk and create staleness ambiguity.
