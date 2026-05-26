@@ -170,22 +170,38 @@ GIGANTIC creates:    Kingdom1 (A species), Kingdom2 (B species), Kingdom3 (C spe
 
 **1. Run STEP_1 first** and review the taxonomy summary and mapping output.
 
-**2. Create** `INPUT_user/user_phylonames.tsv` in the STEP_2 workflow directory:
+**2. Stage `user_phylonames.tsv` via the canonical INPUT_user arena**
+(see `../../INPUT_user/phylonames/README.md`):
+
+```bash
+# Real file lives in the user sandbox
+cd ../../INPUT_user/phylonames
+ln -srf ../../research_notebook/research_user/<your-path>/user_phylonames.tsv user_phylonames.tsv
+```
+
+For quick exploratory runs the file can also be written directly into the
+workflow's local `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames.tsv`,
+but the canonical pattern is the project-level INPUT_user slot. Format:
+
 ```tsv
 genus_species	custom_phyloname
 Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
 ```
 
-An example file is provided at `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames_example.tsv`.
+An example template ships at `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames_example.tsv`.
 
 **3. Edit** `START_HERE-user_config.yaml` in the STEP_2 workflow directory:
 ```yaml
 project:
+  name: "my_project"                              # MUST match STEP_1
   user_phylonames: "INPUT_user/user_phylonames.tsv"
-  mark_unofficial: true  # or false
+  mark_unofficial: true                           # or false
 ```
 
-**4. Run STEP_2 workflow** - Script 001 applies user overrides to the STEP_1 mapping
+**4. Run the STEP_2 workflow** — Script 001 applies user overrides to the
+STEP_1 mapping; the convenience symlink at `output_to_input/maps/` is
+re-pointed at the STEP_2 mapping so downstream subprojects pick up the
+user-overridden version automatically.
 
 ### UNOFFICIAL Suffix
 
@@ -282,15 +298,16 @@ workflow-*/ai/logs/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `../../INPUT_user/species_set/species_list.txt` | Project-wide default species list | **YES** |
-| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 project name and options | **YES** |
-| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 project name, execution_mode, slurm.account/qos | **YES** |
-| `STEP_1-*/workflow-*/INPUT_user/species_list.txt` | STEP_1 species list override (optional, auto-copied from project default) | **YES** (to override) |
-| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | STEP_2 project name, user phylonames path, unofficial marking, execution_mode, slurm.account/qos | **YES** |
-| `STEP_2-*/workflow-*/INPUT_user/user_phylonames.tsv` | User-provided phyloname overrides | **YES** |
-| `output_to_input/maps/*.tsv` | Output for downstream subprojects (symlink to latest STEP) | No |
-| `output_to_input/STEP_1-*/maps/*.tsv` | STEP_1 mapping output | No |
-| `output_to_input/STEP_2-*/maps/*.tsv` | STEP_2 mapping output (with user overrides) | No |
+| `../../INPUT_user/species_set/species_list.txt` | Project-wide default species list (consumed by STEP_1 if no workflow-local override) | **YES** |
+| `../../INPUT_user/phylonames/user_phylonames.tsv` | Project-level staging slot for STEP_2 user overrides (canonical INPUT_user arena, symlink to research_notebook/research_user/...) | **YES** |
+| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 project name, execution_mode, slurm_account/qos, NCBI download options | **YES** |
+| `STEP_1-*/workflow-*/INPUT_user/species_list.txt` | STEP_1 species list override (optional, auto-copied from project default if absent) | **YES** (to override) |
+| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | STEP_2 project name, user_phylonames path, mark_unofficial, execution_mode, slurm_account/qos | **YES** |
+| `STEP_2-*/workflow-*/INPUT_user/user_phylonames.tsv` | STEP_2 user phyloname overrides (workflow-local copy, archived with the run) | **YES** |
+| `output_to_input/maps/*.tsv` | Convenience handle for downstream subprojects (symlink to whichever STEP ran last) | No |
+| `output_to_input/STEP_1-*/maps/*.tsv` | STEP_1 mapping (NCBI-only) | No |
+| `output_to_input/STEP_2-*/maps/*.tsv` | STEP_2 mapping (with user overrides applied) | No |
+| `upload_to_server/STEP_*-*/workflow-RUN_*-*/N-output/*` | Server-publishing tree (assembled by RUN-update_upload_to_server.sh from per-workflow upload_manifest.tsv) | No |
 
 ---
 

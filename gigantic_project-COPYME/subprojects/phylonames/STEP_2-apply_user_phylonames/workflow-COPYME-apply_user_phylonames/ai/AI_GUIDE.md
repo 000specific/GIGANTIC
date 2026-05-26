@@ -32,6 +32,38 @@ Applies a user-provided `user_phylonames.tsv` to STEP_1's output mapping,
 optionally marking divergent clades with `UNOFFICIAL`. Produces the
 project's authoritative final mapping plus an updated taxonomy summary.
 
+## Workflow Directory Structure
+
+```
+workflow-COPYME-apply_user_phylonames/
+│
+├── README.md                    # User-facing quick start
+├── RUN-workflow.sh              # Unified driver (§29; local or SLURM via execution_mode)
+├── START_HERE-user_config.yaml  # project.name (must match STEP_1), user_phylonames,
+│                                # mark_unofficial, execution_mode, slurm_account/qos
+├── upload_manifest.tsv          # Server publish manifest (§38, §39)
+│
+├── INPUT_user/                  # User-provided phylonames input (staged from project INPUT_user/phylonames/)
+│   ├── user_phylonames_example.tsv
+│   └── user_phylonames.tsv      # Real file (or symlink); read by script 001
+│
+├── OUTPUT_pipeline/             # All outputs
+│   ├── 1-output/                # Final mapping + unofficial_clades_report.tsv
+│   └── 2-output/                # Updated taxonomy summary (Markdown + HTML)
+│
+└── ai/                          # Internal — users don't touch by hand
+    ├── AI_GUIDE.md              # THIS FILE
+    ├── main.nf                  # NextFlow workflow definition
+    ├── nextflow.config          # NextFlow config
+    ├── conda_environment.yml    # env name: aiG-phylonames (shared with STEP_1; auto-created)
+    ├── logs/                    # Per-run audit logs (lab notebook)
+    ├── validation/              # Validation outputs
+    └── scripts/
+        ├── 001_ai-python-apply_user_phylonames.py
+        ├── 002_ai-python-generate_taxonomy_summary.py
+        └── 003_ai-python-write_run_log.py
+```
+
 ## Pipeline (3 scripts)
 
 | # | Script | Output dir | Purpose |

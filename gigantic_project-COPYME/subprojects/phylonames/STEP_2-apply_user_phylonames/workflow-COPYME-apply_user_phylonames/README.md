@@ -12,12 +12,24 @@ History:
 **STEP_2** applies your custom phylonames to override the NCBI-generated
 phylonames from STEP_1.
 
+## Where this fits
+
+- Parent STEP: [`../AI_GUIDE.md`](../AI_GUIDE.md) — STEP_2 overview
+- Parent subproject: [`../../README.md`](../../README.md) — phylonames overview
+- Prerequisite: STEP_1 must have been run; mapping read from
+  `../../output_to_input/STEP_1-generate_and_evaluate/maps/`
+- Project-level staging arena for `user_phylonames.tsv`:
+  [`../../../INPUT_user/phylonames/`](../../../INPUT_user/phylonames/)
+
 ## Prerequisites
 
 1. Run STEP_1 first to generate initial phylonames
 2. Review the STEP_1 taxonomy summary to identify species needing
    overrides (NOTINNCBI species, numbered clades, NCBI misclassifications)
-3. Create `INPUT_user/user_phylonames.tsv` with your custom phylonames
+3. Stage `user_phylonames.tsv` — canonical pattern is the project-level
+   `INPUT_user/phylonames/` arena (symlink into your sandbox); a quick
+   workflow-local `INPUT_user/user_phylonames.tsv` also works for
+   exploratory runs.
 
 ## Quick Start
 

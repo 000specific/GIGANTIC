@@ -1,7 +1,24 @@
-# phylonames - GIGANTIC Phylogenetic Naming System
+# phylonames — GIGANTIC Phylogenetic Naming System
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+Purpose: User-facing description of the phylonames subproject — what it does,
+         how to run STEP_1 and (optional) STEP_2, where its outputs go, and
+         which subprojects consume them.
+============================================================================ -->
+
+## Where this fits
+
+`phylonames` is the **first** subproject you run in any GIGANTIC project.
+Its output (a TSV mapping `genus_species` → `phyloname` →
+`phyloname_taxonid`) is the canonical species identifier used by every
+downstream subproject in this `gigantic_project-*` tree.
+
+- Parent project landing page: [`../../README.md`](../../README.md)
+- Parent project AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- This subproject's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
 
 ---
 
@@ -9,7 +26,7 @@
 
 The phylonames subproject provides a standardized naming system for species across GIGANTIC. It downloads the NCBI taxonomy database and generates phylogenetically-informative species identifiers that encode the complete taxonomic lineage.
 
-**This subproject MUST run first** - all other GIGANTIC subprojects depend on phylonames.
+**This subproject MUST run first** — all other GIGANTIC subprojects depend on phylonames. See [Outputs Shared Downstream](#outputs-shared-downstream-output_to_input) below for the full consumer list.
 
 ---
 
@@ -174,36 +191,41 @@ phylonames/
 │
 ├── RUN-update_upload_to_server.sh           # Subproject-level publisher (§38)
 │
-├── upload_to_server/                        # Single publish destination (§38)
+├── upload_to_server/                        # Single publish destination per §38
+│                                            # (auto-populated; no per-STEP upload_to_server)
 │
 ├── output_to_input/                         # Outputs for downstream subprojects (§2)
 │   ├── STEP_1-generate_and_evaluate/
-│   │   └── maps/                            # STEP_1 mapping (NCBI-only phylonames)
-│   │       └── [project]_map-genus_species_X_phylonames.tsv
+│   │   └── maps/
+│   │       └── [project]_map-genus_species_X_phylonames.tsv  (symlink into STEP_1 OUTPUT_pipeline)
 │   ├── STEP_2-apply_user_phylonames/
-│   │   └── maps/                            # STEP_2 mapping (with user overrides)
-│   │       └── [project]_map-genus_species_X_phylonames.tsv
-│   └── maps/                                # Convenience symlink to latest STEP output
-│       └── [project]_map-genus_species_X_phylonames.tsv
+│   │   └── maps/
+│   │       └── [project]_map-genus_species_X_phylonames.tsv  (symlink into STEP_2 OUTPUT_pipeline)
+│   └── maps/                                # Convenience landing dir; the .tsv inside is a symlink
+│       └── [project]_map-genus_species_X_phylonames.tsv      (symlink, updated to whichever STEP ran last)
 │
-├── research_notebook/                       # Personal workspace + AI session captures (§1, §25)
+├── research_notebook/                       # Sandbox + AI session captures (§1, §9, §25)
+│   ├── research_user/                       # User-controlled (ships empty)
+│   └── research_ai/sessions/                # Captured chat transcripts (.jsonl.gz)
 │
 ├── STEP_1-generate_and_evaluate/
 │   ├── AI_GUIDE.md                          # STEP-level AI guide
 │   │
 │   └── workflow-COPYME-generate_phylonames/
-│       ├── README.md                        # Quick start
+│       ├── README.md                        # User-facing quick start
 │       ├── RUN-workflow.sh                  # Unified driver — local or SLURM via execution_mode (§29)
-│       ├── START_HERE-user_config.yaml      # Project name, execution_mode, slurm.*
+│       ├── START_HERE-user_config.yaml      # Project name, execution_mode, slurm_account/qos, etc.
 │       ├── upload_manifest.tsv              # Server publish manifest (§38, §39)
-│       ├── INPUT_user/                      # Workflow-specific inputs (archived copy)
+│       ├── INPUT_user/                      # Species list (auto-copied from project default if absent)
 │       │   └── species_list_example.txt     # Example species list (template)
-│       ├── OUTPUT_pipeline/                 # Generated phylonames and mappings
-│       └── ai/                              # Internal (don't touch)
+│       ├── OUTPUT_pipeline/                 # Generated phylonames and mappings (1-output .. 5-output)
+│       └── ai/                              # Internal (don't touch by hand)
 │           ├── AI_GUIDE.md
 │           ├── main.nf
 │           ├── nextflow.config
-│           ├── conda_environment.yml
+│           ├── conda_environment.yml        # env name: aiG-phylonames (auto-created on first run)
+│           ├── logs/                        # Per-run audit logs (lab notebook)
+│           ├── validation/                  # Validation outputs
 │           └── scripts/
 │               ├── 001_ai-bash-download_ncbi_taxonomy.sh
 │               ├── 002_ai-python-generate_phylonames.py
@@ -215,54 +237,53 @@ phylonames/
     ├── AI_GUIDE.md                          # STEP-level AI guide
     │
     └── workflow-COPYME-apply_user_phylonames/
-        ├── README.md                        # Quick start
+        ├── README.md                        # User-facing quick start
         ├── RUN-workflow.sh                  # Unified driver (§29)
-        ├── START_HERE-user_config.yaml      # Project name, user_phylonames path, etc.
+        ├── START_HERE-user_config.yaml      # Project name, user_phylonames path, mark_unofficial, etc.
         ├── upload_manifest.tsv              # Server publish manifest
-        ├── INPUT_user/                      # User-provided phylonames input
+        ├── INPUT_user/                      # User-provided phylonames input (staged from project INPUT_user/phylonames/)
         │   └── user_phylonames_example.tsv  # Example (copy to user_phylonames.tsv)
-        ├── OUTPUT_pipeline/                 # Final mapping with user overrides
-        └── ai/                              # Internal (don't touch)
+        ├── OUTPUT_pipeline/                 # Final mapping with user overrides (1-output .. 3-output)
+        └── ai/                              # Internal (don't touch by hand)
             ├── AI_GUIDE.md
             ├── main.nf
             ├── nextflow.config
-            ├── conda_environment.yml
+            ├── conda_environment.yml        # env name: aiG-phylonames (shared with STEP_1)
+            ├── logs/
+            ├── validation/
             └── scripts/
                 ├── 001_ai-python-apply_user_phylonames.py
                 ├── 002_ai-python-generate_taxonomy_summary.py
                 └── 003_ai-python-write_run_log.py
 ```
 
-**AI Documentation**: Each workflow run creates a timestamped log in its own `ai/logs/` directory:
-```
-workflow-*/ai/logs/
-```
-
-This serves as an **AI lab notebook** - documenting what the workflow did, when, with what inputs, and what it produced. This ensures transparency and reproducibility of AI-assisted research.
+**AI lab-notebook logs**: Each workflow run creates a timestamped log in
+its own `ai/logs/` directory. This documents what the workflow did, when,
+with what inputs, and what it produced. Captured AI chat transcripts live
+separately in `research_notebook/research_ai/sessions/` (project-wide).
 
 ---
 
 ## Quick Start
 
-### Step 0: Set Up Environment (One-Time)
+### Environment (automatic)
 
-If you haven't already, run the environment setup script from the project root:
-
-```bash
-cd ../../  # Go to gigantic_project-[name] root
-bash RUN-setup_environments.sh
-```
-
-This creates the `ai_gigantic_phylonames` conda environment with all required dependencies.
+There is **no separate environment setup step**. The conda env
+`aiG-phylonames` is created automatically on the first run from
+`ai/conda_environment.yml`, shared by STEP_1 and STEP_2. On HiPerGator
+and similar HPC systems, `RUN-workflow.sh` runs `module load conda`
+first; elsewhere it expects conda on `$PATH`.
 
 ### Step 1: Edit Your Species List
 
-**Recommended**: Edit the project-wide species list at the project root:
+**Recommended (project-wide list)**: edit the project-level default
+that all subprojects can reference:
 ```
 ../../INPUT_user/species_set/species_list.txt
 ```
 
-Or edit the workflow-specific copy (for advanced use):
+**Override for this STEP_1 run only**: place a `species_list.txt`
+inside the workflow's local `INPUT_user/`:
 ```
 STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/INPUT_user/species_list.txt
 ```
@@ -274,7 +295,11 @@ Aplysia_californica
 Octopus_bimaculoides
 ```
 
-**Note**: The RUN script automatically copies from the project-level `INPUT_user/` to the workflow's `INPUT_user/` at runtime, creating an archival record for each workflow run.
+**Note**: `RUN-workflow.sh` checks the workflow's local
+`INPUT_user/species_list.txt` first; if absent, it copies the project
+default from `INPUT_user/species_set/species_list.txt` into the
+workflow's `INPUT_user/` at runtime so each run archives its own
+snapshot.
 
 ### Step 2: Edit Configuration (Optional)
 
@@ -313,16 +338,26 @@ Review the phylonames for your species. If all look correct, you are done - STEP
 
 If you need to override any phylonames (for example, to replace numbered unknown clades with names from the literature), proceed to STEP_2.
 
-### Step 5: Run STEP_2 (Optional - User Phyloname Overrides)
+### Step 5: Run STEP_2 (optional — user phyloname overrides)
 
 If you have custom phylonames to apply:
 
-1. Edit the user phylonames input file:
+1. **Stage your overrides via the project-level INPUT_user arena**
+   (canonical pattern). Put the real file in your sandbox under
+   `research_notebook/research_user/`, then symlink it into the
+   project-level `INPUT_user/phylonames/` slot:
+   ```bash
+   cd ../../INPUT_user/phylonames
+   ln -srf ../../research_notebook/research_user/<your_path>/user_phylonames.tsv user_phylonames.tsv
+   ```
+   See `../../INPUT_user/AI_GUIDE.md` for the full staging rationale.
+   For quick exploratory runs you can also write the file directly into
+   the workflow's local `INPUT_user/`:
    ```
    STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames.tsv
    ```
 
-2. Edit the STEP_2 config:
+2. Edit the STEP_2 config (project name must match STEP_1):
    ```
    STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/START_HERE-user_config.yaml
    ```
@@ -338,6 +373,9 @@ If you have custom phylonames to apply:
 STEP_2 will:
 1. Apply your user-provided phylonames with UNOFFICIAL marking (if enabled)
 2. Generate a taxonomy summary report for the final mapping
+3. Update the convenience symlink at `output_to_input/maps/` to point at
+   the STEP_2 mapping (so downstream subprojects pick up the
+   user-overridden version automatically)
 
 ### Output
 
@@ -521,21 +559,18 @@ bash RUN-update_upload_to_server.sh
 
 ## Dependencies
 
-All dependencies are provided by the `ai_gigantic_phylonames` conda environment:
-
-```bash
-# Set up (from project root - run once)
-bash RUN-setup_environments.sh
-```
-
-**Note:** `RUN-workflow.sh` automatically activates and deactivates the conda environment - no manual activation required.
+All dependencies are provided by the `aiG-phylonames` conda environment,
+shared by STEP_1 and STEP_2. It is **created automatically on first run**
+by `RUN-workflow.sh` from `ai/conda_environment.yml`; you do not need
+to set anything up by hand.
 
 **Environment provides:**
-- Python 3.9+
-- NextFlow 23.0+
-- wget (for NCBI download)
+- Python 3.9+ (standard library only — Python scripts have no external pip deps)
+- NextFlow ≥23, <26 (pinned per project conventions §gconv)
+- wget (for the NCBI taxonomy download in STEP_1)
 
-**Note:** The Python scripts use only standard library modules - no external packages required.
+On HPC systems, `RUN-workflow.sh` runs `module load conda` automatically
+before checking for the env; elsewhere it expects `conda` on `$PATH`.
 
 ---
 

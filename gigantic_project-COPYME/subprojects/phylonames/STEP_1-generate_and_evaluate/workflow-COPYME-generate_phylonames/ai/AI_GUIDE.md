@@ -58,24 +58,28 @@ cd workflow-RUN_01-generate_phylonames
 ```
 workflow-COPYME-generate_phylonames/
 │
-├── README.md                    # Quick start guide
-├── RUN-workflow.sh               # Unified driver: bash RUN-workflow.sh
-│                                 # (self-submits to SLURM if execution_mode: slurm)
-├── START_HERE-user_config.yaml       # Project name + execution_mode + SLURM options
+├── README.md                    # User-facing quick start
+├── RUN-workflow.sh              # Unified driver: bash RUN-workflow.sh
+│                                # (self-submits to SLURM if execution_mode: slurm; §29)
+├── START_HERE-user_config.yaml  # Project name + execution_mode + SLURM options
+├── upload_manifest.tsv          # Server publish manifest (§38, §39)
 │
 ├── INPUT_user/                  # Species list resolved at runtime (see override design below)
 │   └── species_list.txt         # Species to process (override or auto-copied default)
 │
 ├── OUTPUT_pipeline/             # All outputs
-│   ├── 1-output/                # NCBI taxonomy database
-│   ├── 2-output/                # Master phylonames for all NCBI species
-│   ├── 3-output/                # Project-specific mapping
-│   └── 4-output/                # Taxonomy summary (MD and HTML)
+│   ├── 1-output/                # NCBI taxonomy database (versioned dir + 'latest' symlink)
+│   ├── 2-output/                # Master phylonames for all NCBI species (phylonames, phylonames_taxonid, NCBI info mapping)
+│   ├── 3-output/                # Project-specific mapping ([project]_map-genus_species_X_phylonames.tsv)
+│   └── 4-output/                # Taxonomy summary (Markdown + HTML)
 │
-└── ai/                          # Internal - users don't touch
-    ├── AI_GUIDE.md  # THIS FILE
-    ├── main.nf
-    ├── nextflow.config
+└── ai/                          # Internal — users don't touch by hand
+    ├── AI_GUIDE.md              # THIS FILE
+    ├── main.nf                  # NextFlow workflow definition
+    ├── nextflow.config          # NextFlow config (params, retry, etc.)
+    ├── conda_environment.yml    # env name: aiG-phylonames (auto-created on first run)
+    ├── logs/                    # Per-run audit logs (lab notebook)
+    ├── validation/              # Validation outputs (created on run)
     └── scripts/
         ├── 001_ai-bash-download_ncbi_taxonomy.sh
         ├── 002_ai-python-generate_phylonames.py

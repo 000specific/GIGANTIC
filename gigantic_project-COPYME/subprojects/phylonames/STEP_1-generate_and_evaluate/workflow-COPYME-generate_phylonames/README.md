@@ -15,6 +15,12 @@ This is **STEP_1** of the 2-STEP phylonames architecture. It downloads
 NCBI taxonomy, generates phylonames for all species, creates your
 project-specific mapping, and produces a taxonomy summary for review.
 
+## Where this fits
+
+- Parent STEP: [`../AI_GUIDE.md`](../AI_GUIDE.md) — STEP_1 overview
+- Parent subproject: [`../../README.md`](../../README.md) — phylonames overview
+- Optional follow-on: `../../STEP_2-apply_user_phylonames/` — apply custom phylonames
+
 ## Quick Start
 
 1. Edit `START_HERE-user_config.yaml` with your project name (and
