@@ -59,8 +59,8 @@ state existed. That record is part of reproducibility.
 | trees_gene_groups subproject concepts | `../AI_GUIDE.md` |
 | This template's overview (this file) | this file |
 | STEP_0 concepts (HGNC-based RGS generation) | `STEP_0-hgnc_based_rgs/AI_GUIDE.md` |
-| STEP_0 workflow: process all HGNC gene groups | `STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md` |
-| STEP_0 workflow: ad-hoc user-supplied gene set | `STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md` |
+| STEP_0 workflow: process all HGNC gene groups | `STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md` |
+| STEP_0 workflow: ad-hoc user-supplied gene set | `STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md` |
 | STEP_1 concepts (RBH/RBF homolog discovery) | `STEP_1-homolog_discovery/AI_GUIDE.md` |
 | STEP_2 concepts (alignment + tree) | `STEP_2-phylogenetic_analysis/AI_GUIDE.md` |
 | STEP_3 concepts (tree visualization) | `STEP_3-tree_visualization/AI_GUIDE.md` |
@@ -91,7 +91,7 @@ This template has **one** STEP_0 (`STEP_0-hgnc_based_rgs/`) that contains
 **two** workflow subdirectories — pick the one that matches your use
 case:
 
-### Mode 1: `workflow-hgnc_database` — Batch all HGNC gene groups
+### Mode 1: `workflow-COPYME-hgnc_database` — Batch all HGNC gene groups
 
 Process every gene group HGNC curates (~2060 groups). Sequences come
 from a GIGANTIC human T1 proteome (configured in the workflow's
@@ -101,7 +101,7 @@ Run this when you want comprehensive coverage of HGNC's curated
 classification — useful for whole-proteome questions like "which
 membrane transporter families are conserved across X clade."
 
-### Mode 2: `workflow-hgnc_user_list` — Ad-hoc user gene set
+### Mode 2: `workflow-COPYME-hgnc_user_list` — Ad-hoc user gene set
 
 Take a user-supplied TSV of (group_name, gene_symbol) rows and produce
 one RGS FASTA per group. Symbols resolve to UniProt accessions via the
@@ -178,7 +178,7 @@ template portable to arbitrary instance names.
 
 ### Conda env shared across the two workflows
 
-Both `workflow-hgnc_database` and `workflow-hgnc_user_list` declare the
+Both `workflow-COPYME-hgnc_database` and `workflow-COPYME-hgnc_user_list` declare the
 same conda env (`aiG-trees_gene_groups-hgnc_based_rgs`) — same
 dependencies (python + pyyaml + nextflow stdlib only; UniProt fetches
 use urllib, not `requests`). The env is auto-created on first run of
@@ -190,11 +190,11 @@ The two STEP_0 workflows emit different header shapes; STEP_1's script
 008 dispatches on shape:
 
 ```
-# workflow-hgnc_database (5-field):
+# workflow-COPYME-hgnc_database (5-field):
 >rgs_<group>-<species>-<symbol>-hgnc_gg<NNN>_<group_name>-<NP_or_XP_accession>
 # example: rgs_syntaxins-human-STX10-hgnc_gg818_Syntaxins-NP_003756_1
 
-# workflow-hgnc_user_list (4-field, source+id concatenated):
+# workflow-COPYME-hgnc_user_list (4-field, source+id concatenated):
 >rgs_<group>-<species>-<symbol>-uniprot<accession>
 # example: rgs_snap_family-human-SNAP25-uniprotP60880
 ```
@@ -219,8 +219,8 @@ Both modes produce a per-group summary TSV with 5 columns:
 materialize one `gene_group-<sanitized>/workflow-RUN_01-*/` per gene
 group.
 
-For `workflow-hgnc_database` this is `3_ai-rgs_generation_summary.tsv`
-(emitted by script 003). For `workflow-hgnc_user_list` this is
+For `workflow-COPYME-hgnc_database` this is `3_ai-rgs_generation_summary.tsv`
+(emitted by script 003). For `workflow-COPYME-hgnc_user_list` this is
 `2_ai-rgs_generation_summary.tsv` (emitted by script 002).
 
 ---
@@ -230,5 +230,5 @@ For `workflow-hgnc_database` this is `3_ai-rgs_generation_summary.tsv`
 - [README.md](README.md) — User-facing instantiation guide
 - [../output_to_input/hugo_hgnc_database/README.md](../output_to_input/hugo_hgnc_database/README.md) — canonical reference data
 - [STEP_0-hgnc_based_rgs/AI_GUIDE.md](STEP_0-hgnc_based_rgs/AI_GUIDE.md) — STEP_0 concepts
-- [STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md)
-- [STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md)
+- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md)
+- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md)

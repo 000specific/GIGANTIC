@@ -1,0 +1,79 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_list
+# AI: Claude Code | Opus 4.7 | 2026 May 25
+# Human: Eric Edsinger
+#
+# WHAT THIS WORKFLOW DOES
+# -----------------------
+# Takes a user-supplied list of human gene symbols organized into one or
+# more named groups (defined in INPUT_user/user_gene_set.tsv at the
+# instance level), resolves each symbol to a UniProt accession via the
+# locally-cached HGNC complete_set, fetches the canonical Swiss-Prot
+# FASTA from the UniProt REST API, and emits per-group RGS FASTAs in the
+# format STEP_1 (homolog discovery) expects.
+#
+# Unlike workflow-COPYME-hgnc_database (which processes all ~2060 HGNC-curated
+# gene groups), this workflow is for ad-hoc gene sets including groups
+# that don't exist in HGNC's curated gene-group taxonomy (e.g., the SNAP
+# family — SNAP23/25/29/47 — where SNAP47 is outside HGNC's "SNAREs"
+# group).
+#
+# USAGE
+# -----
+#   1. Instantiate this template:
+#        cp -r ../../../gene_groups_hgnc-COPYME ../../../gene_groups-<your_name>
+#        cd ../../../gene_groups-<your_name>
+#   2. Edit INPUT_user/user_gene_set.tsv (see user_gene_set_EXAMPLE.tsv).
+#   3. Run:
+#        cd STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/
+#        bash RUN-workflow.sh
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (usually don't need editing)
+# ============================================================================
+
+inputs:
+  # User gene set TSV at instance-level INPUT_user/. Defaults assume the
+  # canonical instance layout. Path is relative to this workflow dir.
+  user_gene_set_file: "../../INPUT_user/user_gene_set.tsv"
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# Computational Resources
+# ============================================================================
+# This workflow is lightweight - small HTTP fetches + TSV parsing only.
+# Values are used by BOTH NextFlow (process resources) and SLURM (job resources).
+
+cpus: 2
+memory_gb: 4
+time_hours: 1
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# "local" - Run directly on this machine (default; recommended)
+# "slurm" - Submit as a SLURM cluster job (overkill for this workflow)
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# ============================================================================
+# Resume from cached NextFlow work directory
+# ============================================================================
+# Default: false — set true only when explicitly resuming after a known
+# interruption (e.g., transient network failure during UniProt fetches).
+
+resume: false

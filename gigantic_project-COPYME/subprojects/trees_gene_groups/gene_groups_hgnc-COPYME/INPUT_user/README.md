@@ -2,10 +2,10 @@
 
 Instance-level user inputs for this gene-groups instance.
 
-## Files used by workflow-hgnc_user_list
+## Files used by workflow-COPYME-hgnc_user_list
 
 **`user_gene_set.tsv`** — User-defined gene set(s) to characterize. Read by
-`STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/` to:
+`STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/` to:
 
 1. Resolve each human gene symbol → UniProt accession via the locally-cached
    `output_to_input/hugo_hgnc_database/hgnc_complete_set.txt` (no network
@@ -18,7 +18,7 @@ See `user_gene_set_EXAMPLE.tsv` for the format. When you instantiate this
 template (e.g., `cp -r gene_groups_hgnc-COPYME gene_groups-snap_family`),
 replace the example with your own `user_gene_set.tsv`.
 
-## Files used by workflow-hgnc_database
+## Files used by workflow-COPYME-hgnc_database
 
 This workflow doesn't need anything from INPUT_user — it processes all
 ~2060 HGNC-curated gene groups from the downloaded reference data. Other

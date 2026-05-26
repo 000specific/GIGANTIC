@@ -12,7 +12,7 @@ Human:   Eric Edsinger
 - Parent (template): [`../README.md`](../README.md) — gene_groups-COPYME (generic)
 - Parent (subproject): [`../../README.md`](../../README.md) + [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
 - Parent (project): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
-- Workflow template: [`workflow-rbh_rbf_homologs/`](workflow-rbh_rbf_homologs/) (pre-§3 name — lacks COPYME prefix)
+- Workflow template: [`workflow-COPYME-rbh_rbf_homologs/`](workflow-COPYME-rbh_rbf_homologs/)
 - Reads FROM: per-gene-group RGS FASTAs from STEP_0 + `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/`
 - Outputs TO: `../../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/`
 - Downstream STEP: `../STEP_2-phylogenetic_analysis/`

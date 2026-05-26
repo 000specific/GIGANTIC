@@ -30,7 +30,7 @@ gene_groups-COPYME/
 ├── STEP_1-homolog_discovery/                          # shared RBH/RBF homolog discovery
 │   ├── AI_GUIDE.md
 │   ├── README.md
-│   └── workflow-rbh_rbf_homologs/                     # the STEP_1 workflow template (pre-§3 naming — lacks COPYME prefix)
+│   └── workflow-COPYME-rbh_rbf_homologs/                     # the STEP_1 workflow template
 │       ├── RUN-workflow.sh                            # the SINGLE user-runnable script
 │       ├── START_HERE-user_config.yaml                # user config
 │       ├── INPUT_user/

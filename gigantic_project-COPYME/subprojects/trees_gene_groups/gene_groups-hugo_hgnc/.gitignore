@@ -1,0 +1,11 @@
+# gene_groups-hugo_hgnc is a research INSTANCE — generated data, run logs,
+# intermediate outputs, and per-gene-group sub-runs. Not source code.
+#
+# Workflow templates are tracked in the sibling -COPYME directories:
+#   ../gene_groups-COPYME/             (source-agnostic template)
+#   ../gene_groups_hgnc-COPYME/        (HGNC-anchored template)
+#
+# Everything in this instance directory is treated as data. The .gitignore
+# itself is the only tracked file (so the directory's presence is recorded).
+*
+!.gitignore

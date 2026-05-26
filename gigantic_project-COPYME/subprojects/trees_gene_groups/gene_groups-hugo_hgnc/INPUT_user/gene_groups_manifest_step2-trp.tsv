@@ -1,4 +1,0 @@
-# STEP_2 gene-groups manifest for the TRP re-run (after RUN_1 OOM at MAFFT)
-# Format: single 'sanitized_name' column; lines starting with '#' ignored.
-sanitized_name
-transient_receptor_potential_cation_channels

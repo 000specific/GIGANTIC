@@ -11,7 +11,7 @@ Human:   Eric Edsinger
 - Parent STEP README: [`README.md`](README.md)
 - Parent (template): [`../README.md`](../README.md) + [`../AI_GUIDE.md`](../AI_GUIDE.md)
 - Parent (subproject AI guide): [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
-- Workflow template: [`workflow-rbh_rbf_homologs/`](workflow-rbh_rbf_homologs/)
+- Workflow template: [`workflow-COPYME-rbh_rbf_homologs/`](workflow-COPYME-rbh_rbf_homologs/)
 - Reads FROM: per-gene-group RGS FASTAs from STEP_0 + `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/`
 - Outputs TO: `../../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/`
 - Downstream STEP: `../STEP_2-phylogenetic_analysis/`
@@ -83,8 +83,8 @@ mechanism per RGS:
 
 | RGS header format | Producer | Mechanism |
 |---|---|---|
-| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-hgnc_user_list` | **Improvement 0** — strict gene-symbol search against the proteome's `>g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
-| 5-field hgnc/ncbi-sourced (`rgs_<group>-<species>-<symbol>-<source>-<NP_id>`) | `workflow-hgnc_database` | **Improvement 1** — exact NCBI accession match against the proteome's `p_<accession>` |
+| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-COPYME-hgnc_user_list` | **Improvement 0** — strict gene-symbol search against the proteome's `>g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
+| 5-field hgnc/ncbi-sourced (`rgs_<group>-<species>-<symbol>-<source>-<NP_id>`) | `workflow-COPYME-hgnc_database` | **Improvement 1** — exact NCBI accession match against the proteome's `p_<accession>` |
 
 Both mechanisms are strict and **fail-fast**. There is no BLAST rescue path
 for RGS that doesn't cleanly resolve via its header's primary key. This is

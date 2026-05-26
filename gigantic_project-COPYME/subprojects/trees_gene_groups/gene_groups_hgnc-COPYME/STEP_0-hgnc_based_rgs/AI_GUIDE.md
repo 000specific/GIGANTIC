@@ -12,9 +12,9 @@ Human:   Eric Edsinger
 - Parent (template README): [`../README.md`](../README.md)
 - Parent (subproject AI guide): [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
 - Two workflow modes (both required):
--   - [`workflow-hgnc_database/`](workflow-hgnc_database/) — downloads HGNC + produces ALL gene-group RGSs
--   - [`workflow-hgnc_user_list/`](workflow-hgnc_user_list/) — curated user subset
-- Reads FROM: HGNC public database (network download by workflow-hgnc_database) + `INPUT_user/user_gene_set_*.tsv` (workflow-hgnc_user_list mode)
+-   - [`workflow-COPYME-hgnc_database/`](workflow-COPYME-hgnc_database/) — downloads HGNC + produces ALL gene-group RGSs
+-   - [`workflow-COPYME-hgnc_user_list/`](workflow-COPYME-hgnc_user_list/) — curated user subset
+- Reads FROM: HGNC public database (network download by workflow-COPYME-hgnc_database) + `INPUT_user/user_gene_set_*.tsv` (workflow-COPYME-hgnc_user_list mode)
 - Outputs TO: per-gene-group RGS FASTAs consumed by `../STEP_1-homolog_discovery/`
 - Conda env: `aiG-trees_gene_groups-hgnc_based_rgs`
 - 2026-05-26: BLAST-fallback in STEP_1 was removed; both STEP_0 workflows produce RGS that resolve cleanly via gene-symbol or NCBI-accession matching (no source-genome BLAST chain needed)
@@ -59,14 +59,14 @@ STEP_1 doesn't know or care.
 
 ```
 STEP_0-hgnc_based_rgs/
-├── workflow-hgnc_database/      # MODE 1: batch process all ~2060 HGNC gene groups
-└── workflow-hgnc_user_list/     # MODE 2: ad-hoc user-supplied gene set
+├── workflow-COPYME-hgnc_database/      # MODE 1: batch process all ~2060 HGNC gene groups
+└── workflow-COPYME-hgnc_user_list/     # MODE 2: ad-hoc user-supplied gene set
 ```
 
 | Mode | Group source | Sequence source | When to use |
 |---|---|---|---|
-| `workflow-hgnc_database` | HGNC's curated `family.csv` + `hgnc_gene_groups_all.tsv` | Local GIGANTIC human T1 proteome (`.aa`) | Comprehensive coverage of HGNC's classification |
-| `workflow-hgnc_user_list` | User TSV at instance-level `INPUT_user/user_gene_set.tsv` | UniProt REST API (per-accession FASTA fetch) | Custom gene sets, especially groups HGNC doesn't curate (e.g., SNAP family with SNAP47) |
+| `workflow-COPYME-hgnc_database` | HGNC's curated `family.csv` + `hgnc_gene_groups_all.tsv` | Local GIGANTIC human T1 proteome (`.aa`) | Comprehensive coverage of HGNC's classification |
+| `workflow-COPYME-hgnc_user_list` | User TSV at instance-level `INPUT_user/user_gene_set.tsv` | UniProt REST API (per-accession FASTA fetch) | Custom gene sets, especially groups HGNC doesn't curate (e.g., SNAP family with SNAP47) |
 
 Each mode has its own AI_GUIDE under `ai/AI_GUIDE-*_workflow.md`.
 
@@ -122,14 +122,14 @@ rm -rf ../../../output_to_input/hugo_hgnc_database/
 
 ### Workflow output dirs
 
-- `workflow-hgnc_database` produces 4 N-output dirs: 0, 1, 2, 3
+- `workflow-COPYME-hgnc_database` produces 4 N-output dirs: 0, 1, 2, 3
   (one per script: 000 → 001 → 002 → 003).
-- `workflow-hgnc_user_list` produces 3 N-output dirs: 0, 1, 2.
+- `workflow-COPYME-hgnc_user_list` produces 3 N-output dirs: 0, 1, 2.
 
 ### Per-group RGS filenames
 
-- `workflow-hgnc_database`: `rgs_hugo_hgnc-human-<sanitized_group_name>.aa`
-- `workflow-hgnc_user_list`: `rgs_hgnc_user-human-<sanitized_group_name>.aa`
+- `workflow-COPYME-hgnc_database`: `rgs_hugo_hgnc-human-<sanitized_group_name>.aa`
+- `workflow-COPYME-hgnc_user_list`: `rgs_hgnc_user-human-<sanitized_group_name>.aa`
 
 The different filename prefixes (`hugo_hgnc` vs `hgnc_user`) document
 which mode produced the RGS at a glance. STEP_1 doesn't care about the
@@ -143,17 +143,17 @@ script 008 dispatches on the format and uses a different identification
 mechanism for each:
 
 ```
-# workflow-hgnc_database (5-field, hgnc/ncbi-sourced):
+# workflow-COPYME-hgnc_database (5-field, hgnc/ncbi-sourced):
 >rgs_<group>-<species>-<symbol>-hgnc_gg<NNN>_<group_name>-<NP_or_XP_accession>
 
-# workflow-hgnc_user_list (4-field, uniprot-sourced; concatenated source+id):
+# workflow-COPYME-hgnc_user_list (4-field, uniprot-sourced; concatenated source+id):
 >rgs_<group>-<species>-<symbol>-uniprot<accession>
 ```
 
 | Mode | Field count | Field 4 | Field 5 | STEP_1 mechanism |
 |---|---|---|---|---|
-| `workflow-hgnc_database` | 5 | `hgnc_gg<NNNN>_<group_name>` | NCBI RefSeq accession (`NP_003756_1`) | Improvement 1 (exact NCBI accession match) |
-| `workflow-hgnc_user_list` | 4 | `uniprot<accession>` (concatenated, e.g. `uniprotO00161`) | — | Improvement 0 (strict gene-symbol search) |
+| `workflow-COPYME-hgnc_database` | 5 | `hgnc_gg<NNNN>_<group_name>` | NCBI RefSeq accession (`NP_003756_1`) | Improvement 1 (exact NCBI accession match) |
+| `workflow-COPYME-hgnc_user_list` | 4 | `uniprot<accession>` (concatenated, e.g. `uniprotO00161`) | — | Improvement 0 (strict gene-symbol search) |
 
 The concatenation of source + accession in the 4-field format
 (`uniprotP60880` rather than `uniprot-P60880`) is deliberate — it keeps
@@ -173,10 +173,10 @@ rgs_fastas_dir:        "../../../output_to_input/<INSTANCE>/STEP_0-hgnc_based_rg
 ```
 
 Per workflow mode:
-- `workflow-hgnc_database` → `3_ai-rgs_generation_summary.tsv`
-- `workflow-hgnc_user_list` → `2_ai-rgs_generation_summary.tsv`
+- `workflow-COPYME-hgnc_database` → `3_ai-rgs_generation_summary.tsv`
+- `workflow-COPYME-hgnc_user_list` → `2_ai-rgs_generation_summary.tsv`
 
-STEP_1 iterates the summary TSV's rows, copies its `workflow-rbh_rbf_homologs`
+STEP_1 iterates the summary TSV's rows, copies its `workflow-COPYME-rbh_rbf_homologs`
 template once per gene group into `gene_group-<sanitized>/workflow-RUN_01-rbh_rbf_homologs/`,
 and dispatches BLAST.
 
@@ -188,16 +188,16 @@ and dispatches BLAST.
 |---|---|---|
 | `RUN-workflow.sh: refuses to run from COPYME directory` | Running from the template instead of an instance | `cp -r gene_groups_hgnc-COPYME gene_groups-<your_name>` and run from the instance |
 | `hgnc_complete_set.txt download failed` | No network from compute node, or genenames.org unreachable | Check `curl https://storage.googleapis.com/...` from the node; consider running STEP_0 on the login node first to populate canonical |
-| `workflow-hgnc_user_list` 001 prints `NOT_FOUND: <symbol>` and exits | User-supplied symbol isn't an HGNC-approved symbol or alias | Check spelling, consult genenames.org for the current canonical symbol |
-| `workflow-hgnc_user_list` 002 reports `FAILED_FETCH` for an accession | UniProt API unavailable, or accession withdrawn | Re-run later; or check `https://rest.uniprot.org/uniprotkb/<accession>.fasta` directly |
-| STEP_1 says "no such file or directory" for the summary TSV | STEP_1 config still has `<INSTANCE>` placeholder | Edit `STEP_1-homolog_discovery/workflow-rbh_rbf_homologs/START_HERE-user_config.yaml`, replace placeholders with actual instance name + workflow's N-output number |
+| `workflow-COPYME-hgnc_user_list` 001 prints `NOT_FOUND: <symbol>` and exits | User-supplied symbol isn't an HGNC-approved symbol or alias | Check spelling, consult genenames.org for the current canonical symbol |
+| `workflow-COPYME-hgnc_user_list` 002 reports `FAILED_FETCH` for an accession | UniProt API unavailable, or accession withdrawn | Re-run later; or check `https://rest.uniprot.org/uniprotkb/<accession>.fasta` directly |
+| STEP_1 says "no such file or directory" for the summary TSV | STEP_1 config still has `<INSTANCE>` placeholder | Edit `STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/START_HERE-user_config.yaml`, replace placeholders with actual instance name + workflow's N-output number |
 
 ---
 
 ## See Also
 
-- `workflow-hgnc_database/ai/AI_GUIDE.md` — batch HGNC workflow
-- `workflow-hgnc_user_list/ai/AI_GUIDE.md` — user-list workflow
+- `workflow-COPYME-hgnc_database/ai/AI_GUIDE.md` — batch HGNC workflow
+- `workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md` — user-list workflow
 - `../README.md` — instantiation guide for the template
 - `../AI_GUIDE.md` — template-level AI guide
 - `../../output_to_input/hugo_hgnc_database/README.md` — canonical reference data

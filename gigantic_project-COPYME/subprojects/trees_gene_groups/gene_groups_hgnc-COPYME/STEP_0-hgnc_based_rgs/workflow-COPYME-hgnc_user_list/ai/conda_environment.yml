@@ -1,0 +1,20 @@
+# GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs conda env
+# Per-workflow conda env, auto-created from this file on first run by
+# RUN-workflow.sh (mamba preferred; conda fallback).
+#
+# Shared by BOTH workflows under STEP_0-hgnc_based_rgs (workflow-COPYME-hgnc_database
+# and workflow-COPYME-hgnc_user_list) — same dependency surface, single env name.
+#
+# Needs:
+#   - python>=3.10 (stdlib urllib for HTTP, csv, argparse — no `requests` needed)
+#   - pyyaml       (config parsing in RUN-workflow.sh)
+#   - nextflow     (workflow runner)
+name: aiG-trees_gene_groups-hgnc_based_rgs
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows

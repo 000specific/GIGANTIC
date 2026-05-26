@@ -1,0 +1,11 @@
+# gene_groups-snap_family is a research INSTANCE — generated data, run logs,
+# intermediate outputs, and per-gene-group sub-runs. Not source code.
+#
+# Workflow template is tracked at:
+#   ../gene_groups_hgnc-COPYME/        (HGNC-anchored template; this instance
+#                                       was instantiated from there)
+#
+# Everything in this instance directory is treated as data. The .gitignore
+# itself is the only tracked file (so the directory's presence is recorded).
+*
+!.gitignore
