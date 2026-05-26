@@ -230,6 +230,403 @@ equivalent periodic raw-copy into `research_notebook/research_ai/sessions/`.
 
 ---
 
+## 10. Three documentation roles: CLAUDE.md, AI_GUIDE.md, README.md
+
+Each level of the project carries up to three docs with **distinct audiences
+and roles**:
+
+| File | Audience | Role |
+|------|----------|------|
+| `CLAUDE.md` | AI | **Behavior / posture** in this work — research-grade, full documentation, transparency, archival, replication-enabling. *Not* technical conventions. |
+| `AI_GUIDE.md` | AI | **How to work** in this directory / subproject / workflow — operational, navigational, "do X then Y." |
+| `README.md` | User | **Biology + technology background**, technical specifics and requirements the user needs to know. |
+
+Keep them in their roles. Don't drift technical conventions into `CLAUDE.md`;
+don't drift user-facing background into `AI_GUIDE.md`. Each doc earns its
+keep by serving exactly one audience.
+
+---
+
+## 11. `CLAUDE.md` is a one-line `@AI_BEHAVIOR.md` import
+
+`AI_BEHAVIOR.md` holds the canonical research-grade behavior content (any
+AI can read it directly). `CLAUDE.md` is one line — `@AI_BEHAVIOR.md` —
+which Claude Code auto-loads-and-expands via its documented `@`-import
+syntax. Single source of truth, no drift, no symlink fragility.
+
+Verified Anthropic feature: `@path/to/file.md` import in CLAUDE.md is
+supported (relative resolves from the file containing the import; max
+5 hops of recursive imports).
+
+---
+
+## 12. AI attribution headers on AI-authored files
+
+Every AI-authored script or substantive doc carries an attribution comment
+block at the top. Two equivalent forms:
+
+**Single-line (Python/bash scripts)**:
+```python
+# AI: Claude Code | Opus 4.7 (1M context) | 2026 May 25 | Purpose: Brief description
+# Human: Eric Edsinger
+```
+
+**Multi-line HTML comment block (markdown docs)**:
+```markdown
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 25
+Human:   Eric Edsinger
+Purpose: One-paragraph statement of why this file exists
+Scope:   What this file covers and what it does not
+History:
+  2026-05-25  Initial version (Opus 4.7).
+============================================================================ -->
+```
+
+Markdown HTML comments are stripped by Claude Code before injection into
+context, so they cost no AI context tokens.
+
+---
+
+## 13. Empty placeholder docs are an antipattern
+
+Don't ship `README.md` or `AI_GUIDE.md` files that are 0 bytes or
+"to-be-filled" stubs. Either fill them with real content, or delete them
+and rely on the parent-directory docs.
+
+An empty doc that other docs reference creates the worst combination:
+the reader expects content (because it's referenced), opens the file, and
+finds nothing. The empty-then-referenced `AI_GUIDE-project.md` in
+`gigantic_project-COPYME/` and the empty `CLAUDE.md` in `GIGANTIC/` were
+both surfaced and removed during the 2026-05-25 cleanup pass.
+
+---
+
+## 14. User flow: clone → copy template → rename → root AI session there
+
+The canonical way to start a GIGANTIC project:
+
+1. `git clone` the GIGANTIC repo
+2. `cp -r GIGANTIC/gigantic_project-COPYME /path/outside/GIGANTIC/gigantic_project-<your-project-name>`
+3. Start a **fresh, naive AI assistant session rooted at the renamed
+   project directory** (not at `GIGANTIC/`)
+4. All subsequent project work happens through AI sessions rooted at the
+   renamed project.
+
+Project naming convention: `gigantic_project-<your_project_name>`. The
+copied directory lives **outside** the `GIGANTIC/` clone so framework
+updates can be pulled without touching the user's project.
+
+---
+
+## 15. The renamed project directory is self-contained and archivable
+
+Every input, output, workflow, subproject, AI session record, conda env
+spec, and piece of project-specific documentation lives **inside** the
+renamed `gigantic_project-<name>/` directory. The directory travels
+independently of `GIGANTIC/` and can be archived (or shared with
+collaborators) as the **complete record of one research project**.
+
+Implication: no project-specific information should ever be required from
+the surrounding GIGANTIC clone or from the user's broader machine —
+everything needed must live inside the renamed project (or under
+`~/.claude/`, which is per-user not per-project).
+
+---
+
+## 16. Framework-development sessions are a separate scope
+
+AI sessions rooted at `GIGANTIC/` are for **framework development** —
+improving the template, conventions, top-level docs. They are not for
+project work.
+
+This is why the research-grade behavior docs (`CLAUDE.md`,
+`AI_BEHAVIOR.md`) live at the `gigantic_project-COPYME/` level, not at
+`GIGANTIC/` root: research-grade posture is project-scope.
+
+If a user opens an AI session at `GIGANTIC/` and asks for project work,
+the AI redirects them per the project root's `AI_GUIDE.md`.
+
+---
+
+## 17. INPUT_user is the single staging arena between user data and GIGANTIC
+
+There is **one and only one** `INPUT_user/` directory in any GIGANTIC
+project: at `gigantic_project-COPYME/INPUT_user/`. It is the **sole**
+interface through which the user makes outside data available to GIGANTIC
+subprojects. No other path through which user data reaches subprojects
+exists by design.
+
+Inside subprojects, individual workflows may download outside resources
+specific to their needs (e.g., reference databases); that handling is
+per-subproject. But anything the user themselves provides flows through
+`INPUT_user/`.
+
+---
+
+## 18. INPUT_user contains symlinks (relative, via `ln -srf`), not data files — at any depth
+
+All non-doc content inside `INPUT_user/` — at every depth, including
+subproject-specific subdirs like `INPUT_user/phylonames/user_phylonames.tsv`
+or `INPUT_user/genomic_resources/genomes/<species>.fasta` — is a **symlink**
+into `research_notebook/research_user/` (the user's sandbox per §1).
+
+Use **relative** symlinks: `ln -srf <target> <link>` creates them
+automatically. Relative symlinks survive when the entire project is moved,
+copied to another machine, or archived. Absolute symlinks break.
+
+The user's actual files live in `research_notebook/research_user/`
+unstructured per §1; `INPUT_user/` exposes specific files to GIGANTIC via
+deliberate symlinks. The symlink graph of `INPUT_user/` is the complete
+catalog of what the project feeds into GIGANTIC.
+
+Audit commands:
+- `find INPUT_user -xtype l` — broken symlinks (sandbox file moved or deleted)
+- `find INPUT_user -type l -exec ls -la {} \;` — all symlinks and their targets
+
+---
+
+## 19. INPUT_user structure is subproject-driven
+
+The conventional subdirectories inside `INPUT_user/` (e.g., `species_set/`,
+`genomic_resources/{genomes,proteomes,annotations,maps}/`, `phylonames/`)
+reflect what current GIGANTIC subprojects expect. The structure is not
+hard-coded by the framework — it grows as subprojects declare their input
+requirements.
+
+When a new subproject needs a new kind of user-provided input that
+doesn't fit existing locations, the convention is:
+
+1. Add the new subdir under `INPUT_user/<subproject>/` (or extend an
+   existing subdir if the input type fits).
+2. Add a `README.md` in the new subdir describing what gets staged there.
+3. Document the requirement in the subproject's own docs as well.
+4. Update `INPUT_user/README.md` if the new convention is broad.
+
+This is mirrored by §22 below: `ai/ai_FYIs/` uses similar subproject-first
+naming for related documents.
+
+---
+
+## 20. INPUT_user ships only documentation; user content is gitignored
+
+The shipped GIGANTIC template provides only the doc scaffold inside
+`INPUT_user/` (README.md, AI_GUIDE.md, subdir READMEs). All actual user
+content — symlinks, manifests, species lists, custom phyloname overrides
+— is gitignored. The user's project-specific staging arena stays on their
+local disk only.
+
+`.gitignore` enforces this with: `**/gigantic_project-COPYME/INPUT_user/**`
+ignored, with `*.md` files un-ignored at any depth so the doc scaffold
+travels with the template.
+
+---
+
+## 21. AI scripts: `NNN_ai-<lang>-<descriptor>.<ext>` naming
+
+Scripts inside `ai/ai_scripts/` (and any AI-authored scripts elsewhere)
+follow the convention:
+
+```
+NNN_ai-<lang>-<descriptor>.<ext>
+```
+
+- `NNN` — sequential three-digit number (001, 002, 003, ...)
+- `_ai-` — marks the script as AI-authored
+- `<lang>` — language indicator (`python`, `bash`, etc.)
+- `<descriptor>` — concise underscore-separated description
+- `<ext>` — file extension matching the language
+
+Examples:
+- `002_ai-python-hook_precompact_capture_transcript.py`
+- `003_ai-python-copy_session_jsonls.py`
+- `004_ai-bash-create_output_to_input_symlinks.sh`
+
+When a script is invoked by another system (a hook, another script), the
+invoking system uses the **literal filename** — not wildcards like
+`003_*.py` — so future siblings (e.g., `003_X-other.py`) don't create
+ambiguity.
+
+---
+
+## 22. `ai/ai_FYIs/` file naming: subproject-prefix where applicable
+
+Files inside `ai/ai_FYIs/` follow this naming hierarchy:
+
+- **Subproject-specific docs**: prefix with the subproject name —
+  `<subproject>-<descriptor>.md` (e.g., `phylonames-overview-old.md`,
+  `trees_gene_groups-HANDOFF-2026may25-snap_family_and_step2_3_state.md`).
+  This keeps related FYIs sorted together alphabetically.
+- **Project-wide docs**: no subproject prefix
+  (e.g., `gigantic_conventions.md`, `NEXTFLOW_26_COMPATIBILITY.md`,
+  `publication_scrub_guide.md`).
+- **Archived versions of deprecated docs**: suffix with `-old`
+  (e.g., `phylonames-overview-old.md`).
+
+---
+
+## 23. NextFlow source files use `${projectDir}` for path construction
+
+The relative-path convention (§5) holds for NextFlow `.nf` files via the
+`${projectDir}` idiom. `${projectDir}` is a NextFlow built-in that
+resolves to the absolute path of the directory containing the running
+`main.nf` at runtime.
+
+```groovy
+script:
+"""
+python3 ${projectDir}/scripts/001_ai-python-validate_inputs.py \\
+    --config ${projectDir}/../START_HERE-user_config.yaml \\
+    --output_dir ${projectDir}/../${params.output.base_dir}
+"""
+
+publishDir "${projectDir}/../${params.output.base_dir}/1-output", mode: 'copy'
+```
+
+Source stays portable (paths are relative to `projectDir`); resolved
+paths at runtime are absolute (and unique per workflow run). Both
+properties hold simultaneously — no exception to §5 is needed for
+NextFlow.
+
+---
+
+## 24. NextFlow runtime artifacts are gitignored
+
+Files NextFlow generates at run time contain absolute paths and per-run
+state. They never ship with the template:
+
+- `work/` — staging directory for process executions
+- `.nextflow/` — internal NextFlow state
+- `.nextflow.log*` — NextFlow logs
+- `.params.json` — per-run flattened-JSON params file (contains absolute
+  paths from `${projectDir}` expansion)
+
+All four are in `.gitignore`. When clearing a stuck run, deleting these
++ re-running fresh (no `-resume`) is the canonical reset.
+
+---
+
+## 25. `research_user/` ships as empty directory; `research_ai/` ships with documentation
+
+Refines §1:
+
+- `research_notebook/research_user/` is the user's wild-west sandbox. The
+  template ships only the empty directory (`.gitkeep` only — no README,
+  no scaffolding). Per §1, GIGANTIC never reaches into it; users
+  organize however they want.
+- `research_notebook/research_ai/` is **GIGANTIC's own sandbox**.
+  Documentation appropriate to AI infrastructure (capture system, etc.)
+  ships here, including `README.md` and the `sessions/.gitkeep` so the
+  capture destination is preserved.
+
+Captured session transcripts (per §9) land in
+`research_notebook/research_ai/sessions/` and are gitignored as runtime
+content — they never ship.
+
+---
+
+## 26. TRANSCRIPT_CAPTURE_LOG.md schema and trigger vocabulary
+
+The capture log written by 002 (hook) and 003 (Save Chat! script) uses
+exactly this schema:
+
+```markdown
+| Date | Session ID | Model | Trigger | Transcript Size | Output File |
+|------|------------|-------|---------|-----------------|-------------|
+```
+
+**Trigger values**:
+- `auto` — PreCompact hook fired automatically
+- `manual` — PreCompact hook invoked manually
+- `save_chat` — On-demand "Save Chat!" via 003
+
+Both scripts produce schema-compatible rows; they share the file.
+
+---
+
+## 27. Session capture filename format (Claude Code)
+
+The PreCompact hook (002) and Save Chat! script (003) both produce
+`.jsonl.gz` files in `research_notebook/research_ai/sessions/` with this
+filename format:
+
+```
+YYYYMMDD_HHMMSS-claude_code-<model-with-underscores>-<8-char-session-id>.jsonl.gz
+```
+
+Example:
+```
+20260306_014426-claude_code-claude_opus_4_6-44529712.jsonl.gz
+```
+
+- Timestamp = last-message timestamp from the JSONL content (so the same
+  source file at the same state produces the same destination filename,
+  enabling idempotent re-runs)
+- Model with hyphens replaced by underscores (e.g., `claude-opus-4-7` →
+  `claude_opus_4_7`)
+- First 8 characters of the session UUID
+
+For other AIs, use an analogous format with the AI's name in the
+`claude_code` slot.
+
+---
+
+## 28. Per-subproject conda environments — no central `conda_environments/`
+
+Each subproject manages its own conda environment(s), usually defined in
+the subproject's `ai/conda_environment.yml` (or per-tool yml files for
+multi-tool subprojects). The subproject's `RUN-workflow.sh` creates the
+environment lazily on first run if it doesn't already exist.
+
+A central `gigantic_project-COPYME/conda_environments/` directory existed
+in older GIGANTIC versions but is deprecated and removed. It produced a
+disconnect between "where I'm working" and "where my env definition
+lives"; the per-subproject pattern keeps everything co-located.
+
+Env naming convention: `aiG-<subproject>-<block_or_step>-<optional_details>`
+(established earlier; verify against subproject's `ai/conda_environment.yml`
+header comment).
+
+---
+
+## 29. Unified `RUN-workflow.sh` is the canonical driver
+
+Each workflow has a single canonical entry point: `RUN-workflow.sh`. It
+handles local execution AND self-submits to SLURM when the YAML config's
+`execution_mode` key is set to `slurm`. There is no separate
+`RUN-workflow.sbatch` in the canonical pattern — that was an older
+two-file approach now deprecated.
+
+The unified driver:
+- Reads `START_HERE-user_config.yaml`
+- Sets up conda env on first run
+- For SLURM: writes a per-run sbatch wrapper and submits it
+- For local: invokes NextFlow directly
+- Cleans up runtime artifacts on exit
+
+The canonical example (most recently modernized) is the
+`annotations_X_ocl` subproject's workflow.
+
+---
+
+## 30. This file is the canonical source of truth for conventions
+
+`gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md` is the
+authoritative list of GIGANTIC conventions. Other documents reference
+section numbers here rather than duplicating content:
+
+```markdown
+See `ai/ai_FYIs/gigantic_conventions.md` §9 for the chat-as-research-notebook
+architecture.
+```
+
+When a convention is updated here, downstream references stay valid as
+long as they point at section numbers. **Don't renumber existing
+sections** — append new ones; if a section is genuinely deprecated, mark
+it `~~§N~~ DEPRECATED — see §M`.
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
