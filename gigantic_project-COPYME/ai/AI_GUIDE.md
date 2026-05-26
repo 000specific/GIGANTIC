@@ -86,3 +86,36 @@ expands the exception and must be justified.
 - Do not add user-facing tools here. If a tool is meant for the user to
   run directly during research (not for AI orchestration), it belongs in
   a project-root `RUN-*.sh` or inside the relevant subproject.
+
+---
+
+## Save Chat! — troubleshooting
+
+When the user types "Save Chat!" and you run
+`ai/ai_scripts/003_ai-python-copy_session_jsonls.py`, you may see one of
+the following outputs. Diagnose and respond appropriately:
+
+| Output | Diagnosis | What to tell the user |
+|--------|-----------|----------------------|
+| `Newly captured: N (with N > 0)` | Working as intended; N transcripts gzipped into `research_notebook/research_ai/sessions/` | Print the script's summary; mention any cumulative `Already captured` count from prior runs |
+| `Newly captured: 0` + `Already captured: N` | No source has changed since the last capture; nothing new to do | Reassure the user that all sessions are already captured up to their last state |
+| `No Claude session storage found for this project` | The AI session is rooted somewhere other than this project's root, OR the user just opened the session and Claude Code has not flushed the JSONL yet | Verify with the user: is your session rooted at the project's renamed `gigantic_project-*` directory? If yes and the session is brand-new, send a few more messages and re-run. |
+| `No session JSONL files in source directory` | Claude project storage dir exists but is empty (rare; usually means a stale empty dir) | Recommend `cleanupPeriodDays` settings check; user may have set a very low TTL and lost everything |
+| `! Skipping (no session_id / timestamp): <file>` for one or more files | A specific JSONL has malformed or empty metadata | Usually safe to ignore (these are typically zero-length or aborted sessions); flag if the count is high |
+| `! Error processing <file>: <exception>` | A specific JSONL failed to parse | Inspect the file manually; may be corrupt — leave it alone and capture the rest |
+| `--dry-run` was used; nothing was written | User wanted to preview only | Confirm what would have been captured; run again without `--dry-run` when they're ready |
+
+If the user wants to know what 003 *would* do without actually writing
+files, invoke with `--dry-run`. Re-runs without `--dry-run` are
+idempotent (sources unchanged since last capture are skipped).
+
+---
+
+## First-run note for fresh AI sessions
+
+If the user just opened a brand-new Claude Code session and immediately
+asks you to "Save Chat!", Claude Code may not yet have written the JSONL
+for the current session to `~/.claude/projects/<encoded-path>/`. Send a
+few more messages first, or wait until after a context compaction (which
+forces a write), then run 003. Previously-recorded sessions for this
+project will be captured immediately regardless.

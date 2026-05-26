@@ -90,18 +90,32 @@ and publish the cleaned copies. The originals in
 Your AI can help walk you through what to scrub: collaborator names in
 unflattering context, leaked credentials, internal lab politics, draft
 hypotheses, frustrated language, anything else that doesn't belong in a
-public artifact. Plan this work near the end of your project, when you
-know what you actually want to publish.
+public artifact. The full step-by-step walkthrough (categories, output
+format choices, the `SCRUB_NOTES.md` template) lives in
+[`ai/ai_FYIs/publication_scrub_guide.md`](ai/ai_FYIs/publication_scrub_guide.md).
+Read it (or ask your AI to read it) before starting a scrub.
+
+Plan this work near the end of your project, when you know what you
+actually want to publish.
 
 ### Other AIs work too — the principle is the same
 
-If you use Cursor, ChatGPT, Gemini, or another AI assistant, the capture
-system needs a small bit of setup specific to that AI (each one stores
-session data differently). Your AI can walk you through it on first use
-— ask it to read `AI_GUIDE.md` in this directory and help you wire up
-equivalent capture. The principle is identical regardless of AI:
-lossless, permanent, never-edited captures landing in
-`research_notebook/research_ai/sessions/`.
+If you use Cursor, ChatGPT/Codex, Gemini, or another AI assistant, the
+capture system needs a small bit of setup specific to that AI (each one
+stores session data differently). Concrete starting points (verified
+May 2026; check your AI's current docs):
+
+- **OpenAI Codex CLI**: sessions live at `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`
+- **Gemini CLI**: use the built-in `/export jsonl` or `/export markdown` command
+- **Cursor IDE**: storage at `~/.cursor/projects/` plus a SQLite file
+- **Cursor CLI**: `~/.cursor/chats/`
+- **ChatGPT web UI**: manual export per conversation
+
+Your AI can walk you through the setup on first use — ask it to read
+`AI_GUIDE.md` in this directory (the table there has more detail) and
+help you wire up an equivalent capture script in `ai/ai_scripts/`. The
+principle is identical regardless of AI: lossless, permanent,
+never-edited captures landing in `research_notebook/research_ai/sessions/`.
 
 ### Why this matters
 

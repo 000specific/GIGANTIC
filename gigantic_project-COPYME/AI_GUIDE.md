@@ -73,8 +73,17 @@ after 30 days).
      stop here", "I'll come back tomorrow")
    - Periodically during long sessions
 3. **Recommend the user set `cleanupPeriodDays` high** in their global
-   `~/.claude/settings.json` (one-line manual change) so the source JSONLs
-   survive long enough for "Save Chat!" to copy them.
+   `~/.claude/settings.json` so the source JSONLs survive long enough for
+   "Save Chat!" to capture them. Recommended value: `3650` (10 years —
+   effectively never auto-delete during a typical project lifespan).
+   Concrete snippet to add or merge into `~/.claude/settings.json`:
+   ```json
+   {
+     "cleanupPeriodDays": 3650
+   }
+   ```
+   If `~/.claude/settings.json` already has other top-level keys, merge
+   `cleanupPeriodDays` in alongside them rather than overwriting the file.
 
 ### Captures are originals — never edit, never delete
 
@@ -95,39 +104,57 @@ that it has not been retouched.
 ### Publication scrub (downstream, on copies)
 
 When the user prepares public-facing materials from the project (journal
-supplementary materials, public archive, etc.), they will want to scrub
-copies of selected transcripts. Help them by:
+supplementary materials, public archive, AI-disclosure appendix, etc.),
+they will want to scrub copies of selected transcripts. The full
+walkthrough — categories to scrub, choice of output format, the
+`SCRUB_NOTES.md` template — is in
+[`ai/ai_FYIs/publication_scrub_guide.md`](ai/ai_FYIs/publication_scrub_guide.md).
+Read that with the user before starting a scrub; never improvise.
 
-- Copying the relevant `.jsonl.gz` files to a separate working location
-  outside `research_notebook/research_ai/sessions/`.
-- Walking through what should be scrubbed: collaborator names in
-  unflattering context, leaked credentials or tokens, internal lab
-  politics, draft hypotheses they're not ready to publish, frustrated
-  language.
-- Producing a curated, human-readable form (e.g., markdown summary plus
-  selected raw excerpts) suited to the publication venue.
-- Leaving the originals in `research_notebook/research_ai/sessions/`
-  exactly as captured.
+The originals in `research_notebook/research_ai/sessions/` are **never**
+touched. Scrubbing always happens on copies kept in
+`research_notebook/research_user/publication-<paper-name>/chat-captures-scrubbed/`
+(or similar user-sandbox location).
 
-### For non-Claude AIs (Cursor, ChatGPT, Gemini, etc.)
+### For non-Claude AIs (Cursor, ChatGPT/Codex, Gemini, etc.)
 
-The principle is the same: lossless, permanent, never-edited captures to
+The principle is the same: lossless, permanent, never-edited captures into
 `research_notebook/research_ai/sessions/`. The mechanism differs by AI.
-Work with the user to:
+Here is the concrete starting point for each (verified as of May 2026 — verify
+with current vendor docs since storage layouts evolve):
 
-1. Locate where your AI stores session data (each AI has its own
-   convention; check the vendor docs).
-2. Set up a periodic or on-demand raw copy into
-   `research_notebook/research_ai/sessions/` using a similar
-   `.jsonl.gz`-style naming convention.
-3. Wire "Save Chat!" as a phrase the user can type to trigger your on-demand
-   capture.
-4. Document your specific setup in `ai/ai_FYIs/` so the project's
-   provenance system is fully described regardless of which AI was used.
+| AI | Where transcripts live | Format | Native export |
+|----|------------------------|--------|---------------|
+| **OpenAI Codex CLI** | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` | JSONL (full conversation + tool calls + tool results, timestamped) | No native export command as of May 2026; raw-copy the JSONLs |
+| **Gemini CLI** | (in-memory by default; can `--resume`) | n/a until exported | `/export jsonl` or `/export markdown` (built-in command); pass `--output <path>` to write to a file |
+| **Cursor IDE** | `~/.cursor/projects/` + `state.vscdb` (SQLite) | mixed: transcripts + SQLite blobs | No simple native export; transcripts must be reconstructed from SQLite |
+| **Cursor CLI** | `~/.cursor/chats/` | JSONL-ish | No native export; raw-copy |
+| **Cursor ACP mode** | `~/.cursor/acp-sessions/` | similar | No native export; raw-copy |
 
-This is a real piece of work to set up the first time and worth doing
-properly. Captured chat history may be the difference between a
-reproducible project and an irreproducible one.
+For each AI you use in this project:
+
+1. **Locate the storage path** above on the user's machine (or verify with
+   current vendor docs).
+2. **Set up a Save-Chat! script** in `ai/ai_scripts/` modeled on
+   `003_ai-python-copy_session_jsonls.py`. Use a `NNN_ai-python-` prefix
+   (next available number) and the convention
+   `save_chat_<ai_name>.py` for clarity.
+3. **Document the AI's setup in `ai/ai_FYIs/`** as
+   `<ai_name>-chat_capture_setup.md` so the provenance system is fully
+   described regardless of which AI was used.
+4. **Recognize "Save Chat!"** as a trigger and run the appropriate script
+   when the user types it.
+
+For AIs without filesystem-level session storage (e.g., ChatGPT in a web
+browser without an API/CLI hook), the user must manually export each
+conversation via the AI's UI and drop the export into
+`research_notebook/research_ai/sessions/`. Help them with naming
+(`YYYYMMDD_HHMMSS-<ai_name>-<topic>.<ext>`) and document the manual
+workflow in `ai/ai_FYIs/`.
+
+This is a real piece of work to set up the first time per AI. Captured
+chat history may be the difference between a reproducible project and an
+irreproducible one — worth the setup cost.
 
 ---
 

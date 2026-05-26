@@ -18,7 +18,9 @@ each context compaction. 003 (this script) catches:
     recent capture
 
 Usage:
-    python3 ai/ai_scripts/003_ai-python-copy_session_jsonls.py
+    python3 ai/ai_scripts/003_ai-python-copy_session_jsonls.py [--dry-run]
+
+    --dry-run    Print what would be captured without writing anything.
 
 The script:
   1. Locates Claude's per-project JSONL directory based on this project's path
@@ -152,11 +154,11 @@ def append_to_capture_log( log_path: Path, captured: list ):
         with open( log_path, 'w' ) as log_file:
             output = (
                 '# Transcript Capture Log\n\n'
-                'Captures of full session transcripts.\n'
-                'Trigger `precompact` = auto from hook (002); '
-                'trigger `save_chat` = on-demand from "Save Chat!" script (003).\n\n'
-                '| Date | Session ID | Model | Trigger | Source Size | Output File |\n'
-                '|------|------------|-------|---------|-------------|-------------|\n'
+                'Automatic captures of full session transcripts. Trigger column:\n'
+                '  - `auto` / `manual`  : PreCompact hook (002)\n'
+                '  - `save_chat`        : on-demand "Save Chat!" script (003)\n\n'
+                '| Date | Session ID | Model | Trigger | Transcript Size | Output File |\n'
+                '|------|------------|-------|---------|-----------------|-------------|\n'
             )
             log_file.write( output )
 
@@ -175,17 +177,22 @@ def append_to_capture_log( log_path: Path, captured: list ):
 
 
 def main():
+    dry_run = '--dry-run' in sys.argv
+
     script_directory = Path( __file__ ).resolve().parent
     project_root = find_gigantic_project_root( script_directory )
     claude_jsonl_directory = get_claude_project_jsonl_directory( project_root )
 
-    print( f"\n=== Save Chat! ===" )
+    print( f"\n=== Save Chat!{ '  (DRY RUN — no files written)' if dry_run else '' } ===" )
     print( f"  Project root:  { project_root }" )
     print( f"  Source JSONLs: { claude_jsonl_directory }" )
 
     if not claude_jsonl_directory.exists():
         print( f"\n  No Claude session storage found for this project." )
-        print( f"  This is expected if you have not yet used Claude Code in this directory." )
+        print( f"  This is expected if you have not yet used Claude Code in this directory," )
+        print( f"  or if the AI session is rooted somewhere other than this project's root." )
+        print( f"  Claude Code stores transcripts continuously once a session is active;" )
+        print( f"  if you just opened the session, send a few messages first then re-run." )
         sys.exit( 0 )
 
     session_jsonls = sorted( claude_jsonl_directory.glob( '*.jsonl' ) )
@@ -194,7 +201,8 @@ def main():
         sys.exit( 0 )
 
     destination_directory = project_root / 'research_notebook' / 'research_ai' / 'sessions'
-    destination_directory.mkdir( parents=True, exist_ok=True )
+    if not dry_run:
+        destination_directory.mkdir( parents=True, exist_ok=True )
     print( f"  Destination:   { destination_directory }" )
     print( f"  Sessions found: { len( session_jsonls ) }" )
 
@@ -218,11 +226,24 @@ def main():
                 skipped_count += 1
                 continue
 
+            source_size_mb = jsonl_path.stat().st_size / ( 1024 * 1024 )
+
+            if dry_run:
+                print( f"  ~ would write: { output_filename } ({ source_size_mb:.1f } MB source)" )
+                captured.append( {
+                    'filename': output_filename,
+                    'session_short_id': metadata[ 'session_id' ][ :8 ],
+                    'model': metadata[ 'model' ] or 'unknown',
+                    'timestamp': metadata[ 'last_timestamp' ],
+                    'source_size_mb': source_size_mb,
+                    'destination_size_mb': 0.0,
+                } )
+                continue
+
             with open( jsonl_path, 'rb' ) as source_file:
                 with gzip.open( output_path, 'wb' ) as destination_file:
                     shutil.copyfileobj( source_file, destination_file )
 
-            source_size_mb = jsonl_path.stat().st_size / ( 1024 * 1024 )
             destination_size_mb = output_path.stat().st_size / ( 1024 * 1024 )
 
             captured.append( {
@@ -238,15 +259,15 @@ def main():
             print( f"  ! Error processing { jsonl_path.name }: { exception }" )
             error_count += 1
 
-    if captured:
+    if captured and not dry_run:
         log_path = destination_directory / 'TRANSCRIPT_CAPTURE_LOG.md'
         append_to_capture_log( log_path, captured )
 
-    print( f"\n  Newly captured:   { len( captured ) }" )
+    print( f"\n  Newly captured:   { len( captured ) }{ ' (dry-run, not written)' if dry_run else '' }" )
     print( f"  Already captured: { skipped_count }" )
     if error_count:
         print( f"  Errors:           { error_count }" )
-    if captured:
+    if captured and not dry_run:
         total_destination_mb = sum( c[ 'destination_size_mb' ] for c in captured )
         print( f"  Total written:    { total_destination_mb:.1f } MB (gzipped)" )
     print( f"\nDone. Captures are lossless gzipped JSONL — never edit or delete." )
