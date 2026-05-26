@@ -245,6 +245,7 @@ def main():
             "Query_Sequence_ID (query protein identifier from species proteome)",
             "Top_10_Hit_IDs (comma delimited list of top 10 NCBI nr hit sequence IDs)",
             "Top_10_Hit_Headers (comma delimited list of top 10 NCBI nr hit descriptions)",
+            "Top_10_Hit_E_Values (comma delimited list of top 10 NCBI nr hit DIAMOND BLASTp e-values matched 1:1 with Top_10_Hit_IDs)",
             "Top_Non_Self_Hit_ID (sequence ID of first hit classified as non-self)",
             "Top_Non_Self_Hit_Header (NCBI description of top non-self hit)",
             "Top_Non_Self_Hit_Percent_Identity (percent identity of top non-self hit)",
@@ -265,9 +266,12 @@ def main():
             # Take top 10 hits (already sorted by DIAMOND by bitscore)
             hits_top_10 = hits[ :10 ]
 
-            # Collect top 10 IDs and headers
+            # Collect top 10 IDs, headers, and e-values (e-value at tuple index 7 per
+            # hits_top_10 schema: subject_id, pident, alignment_length, mismatch,
+            # gapopen, qstart, qend, evalue, bitscore, stitle).
             top_10_ids = [ hit[ 0 ] for hit in hits_top_10 ]
             top_10_headers = [ hit[ 9 ] for hit in hits_top_10 ]
+            top_10_evalues = [ str( hit[ 7 ] ) for hit in hits_top_10 ]
 
             # Find top non-self hit and top self-hit
             top_non_self_hit_id = ""
@@ -321,6 +325,7 @@ def main():
                 query_id,
                 ", ".join( top_10_ids ),
                 ", ".join( top_10_headers ),
+                ", ".join( top_10_evalues ),
                 top_non_self_hit_id,
                 top_non_self_hit_header,
                 top_non_self_hit_pident,
