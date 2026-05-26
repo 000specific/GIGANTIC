@@ -61,6 +61,7 @@ subproject_order:
   - homolog_counts
   - hotspots
   - orthogroups_X_ocl
+  - secretome
   - trees_gene_families
   - trees_gene_groups
   - trees_species
@@ -116,8 +117,11 @@ exclude_file_patterns:
 # file directly.
 
 slurm:
-  account: "your_account"        # REQUIRED for slurm mode — your HPC account
-  qos: "your_qos"                # REQUIRED for slurm mode — your HPC qos
+  # REQUIRED for slurm mode: account + qos. Inline comments on these
+  # values get included in the value by the bash YAML reader, so keep
+  # commentary on its own lines (or above the keys).
+  account: "moroz"
+  qos: "moroz"
   partition: "hpg-default"
   time_hours: 720
   memory_gb: 4
