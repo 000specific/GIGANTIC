@@ -65,7 +65,6 @@ would do this for orthogroups only. This subproject generalizes that idea:
 parsimony_tree_structures/
 ├── README.md
 ├── AI_GUIDE-parsimony_tree_structures.md      # THIS FILE
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/                            # Downstream output

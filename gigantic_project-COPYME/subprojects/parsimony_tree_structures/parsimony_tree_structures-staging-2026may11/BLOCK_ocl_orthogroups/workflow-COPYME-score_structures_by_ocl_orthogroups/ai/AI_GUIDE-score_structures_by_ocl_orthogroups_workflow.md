@@ -103,9 +103,6 @@ NextFlow leaves `work/`, `.nextflow/`, and `.nextflow.log*` behind. To clean:
 rm -rf work .nextflow .nextflow.log*
 ```
 
-For routine cleanup across the whole subproject use
-`../../../RUN-clean_and_record_subproject.sh --clean`.
-
 ---
 
 ## Questions to Ask

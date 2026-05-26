@@ -73,7 +73,6 @@ STEP_3 (BLAST databases)   ──┘                                   ├──
 | `workflow-*/ai/scripts/001_ai-python-validate_species_selection.py` | Validates species selection | No (AI-generated) |
 | `workflow-*/ai/scripts/002_ai-python-copy_selected_files.py` | Copies selected files | No (AI-generated) |
 | `output_to_input/` | Final species set for downstream | No (auto-populated) |
-| `RUN-clean_and_record_subproject.sh` | Cleanup and session recording | No |
 | `RUN-update_upload_to_server.sh` | Manage upload_to_server/ symlinks | No |
 
 ---
@@ -137,7 +136,6 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 STEP_4-create_final_species_set/
 ├── README.md                              # Human-readable overview
 ├── AI_GUIDE.md   # THIS FILE
-├── RUN-clean_and_record_subproject.sh     # Cleanup and session recording
 ├── RUN-update_upload_to_server.sh         # Manage upload_to_server/ symlinks
 ├── output_to_input/                       # Final species set for downstream
 │   ├── speciesN_gigantic_T1_proteomes/    # Created by workflow

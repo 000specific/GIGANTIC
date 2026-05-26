@@ -53,7 +53,6 @@ gene_sizes/
 ├── upload_to_server/
 └── BLOCK_analyze_gene_sizes/
     ├── AI_GUIDE-analyze_gene_sizes.md
-    ├── RUN-clean_and_record_subproject.sh
     ├── workflow-COPYME-analyze_gene_sizes-all_inclusive/   # Tier 1 template
     │   ├── README.md
     │   ├── RUN-workflow.sh

@@ -49,13 +49,14 @@ cd BLOCK_interproscan/workflow-RUN_01-run_interproscan/
 vi START_HERE-user_config.yaml
 
 # 3. Run (conda environment is activated automatically by the script)
-bash RUN-workflow.sh       # Local
-sbatch RUN-workflow.sbatch # SLURM (edit account/qos first)
+bash RUN-workflow.sh       # unified entry point; self-submits to SLURM
+                           # if execution_mode in the YAML is "slurm" or
+                           # "slurm_burst" (set in START_HERE-user_config.yaml).
 ```
 
 Same pattern for all 5 BLOCKs. Run tool BLOCKs first, then BLOCK_build_annotation_database.
 
-**Note:** Each `RUN-workflow.sh` automatically activates and deactivates its own conda environment. No manual activation required.
+**Note:** Each `RUN-workflow.sh` automatically activates and deactivates its own conda environment. No manual activation required. The legacy `RUN-workflow.sbatch` is deprecated — use `RUN-workflow.sh` with `execution_mode` set in the YAML.
 
 ---
 
@@ -84,7 +85,6 @@ annotations_hmms/
 ├── README.md                                # This file
 ├── AI_GUIDE-annotations_hmms.md             # AI assistant guide (Level 2)
 ├── upload_to_server/
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/                         # Consolidated outputs for downstream
@@ -134,6 +134,22 @@ annotations_hmms/
         ├── RUN-workflow.sbatch
         └── START_HERE-user_config.yaml
 ```
+
+---
+
+## Cluster-Side Failure Pattern: Drain-Node Race (HiPerGator post-upgrade)
+
+Since the HiPerGator OS/SLURM upgrade (~May 2026), a small fraction of burst-submitted chunk jobs die in 0-1 sec with `ExitCode 0:53` (SIGRTMIN+19) and `Reason=ReqNodeNotAvail` — the SLURM scheduler allocates jobs to nodes that have already begun their DRAIN transition (most commonly observed on `c0706a-s7`, `c0706a-s9`, `c0706a-s10`, `c0706a-s12`). The chunk has no `.command.log` because bash never started.
+
+This is **not a workflow bug** — it is a cluster-side scheduler bug. The empirical hit rate on high-volume burst runs is roughly 1-3% of submissions.
+
+**Canonical handling pattern (implemented in BLOCK_interproscan, reference for other chunked workflows):**
+
+1. `errorStrategy = 'ignore'` on the chunked process — failed chunks are silently dropped instead of killing the pipeline. This is an **explicit, documented override** of the project CLAUDE.md default ("NEVER use 'ignore'"), justified by this known cluster-side failure mode.
+2. A gap-detection step (`detect_failed_chunks`, script 006) compares expected chunks (publishDir 2-output) against successful chunks (publishDir 3-output) and writes `6_ai-failed_chunks.tsv` listing what to rerun.
+3. User drives a follow-up RUN_N targeting just the failed chunks.
+
+See [BLOCK_interproscan/AI_GUIDE-interproscan.md](BLOCK_interproscan/AI_GUIDE-interproscan.md) for full details.
 
 ---
 

@@ -274,7 +274,6 @@ identifier representations.
 trees_species/
 ├── README.md                              # THIS FILE
 ├── AI_GUIDE-trees_species.md              # AI guidance
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/                       # Single canonical downstream location

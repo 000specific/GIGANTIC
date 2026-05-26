@@ -70,7 +70,6 @@ trees_gene_families/
 ├── RUN-setup_and_submit_step1_burst.sh             # Burst: set up + submit STEP_1 (original RGS set)
 ├── RUN-setup_and_submit_step2_burst.sh             # Burst: set up + submit STEP_2 (with size filter)
 ├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh # Burst: STEP_1 for new RGS set (TRP, kinome, phosphatome, etc.)
-├── RUN-clean_and_record_subproject.sh              # Cleanup temp files + record AI sessions
 ├── RUN-update_upload_to_server.sh                  # Update upload_to_server/ symlinks
 ├── AI_GUIDE-trees_gene_families.md
 └── README.md

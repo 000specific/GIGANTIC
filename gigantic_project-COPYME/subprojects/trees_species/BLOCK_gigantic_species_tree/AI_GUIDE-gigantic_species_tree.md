@@ -201,7 +201,6 @@ visualization scripts which encountered the same ete3/Qt headless issues.
 | `workflow-COPYME-*/ai/main.nf` | NextFlow pipeline definition | No (AI-generated) |
 | `workflow-COPYME-*/ai/nextflow.config` | NextFlow settings | No (unless resource tuning needed) |
 | `workflow-COPYME-*/ai/scripts/*.py` | 7 pipeline scripts | No (AI-generated) |
-| `RUN-clean_and_record_subproject.sh` | Cleanup NextFlow artifacts from COPYME | No |
 | `RUN-update_upload_to_server.sh` | Manage upload_to_server/ symlinks | No |
 
 ---

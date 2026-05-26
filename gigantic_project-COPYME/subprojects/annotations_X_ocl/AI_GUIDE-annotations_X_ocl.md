@@ -44,7 +44,6 @@ architectures:
 annotations_X_ocl/
 ├── README.md
 ├── AI_GUIDE-annotations_X_ocl.md              # THIS FILE
-├── RUN-clean_and_record_subproject.sh
 ├── research_notebook/
 │   └── ai_research/
 ├── output_to_input/                            # Downstream output

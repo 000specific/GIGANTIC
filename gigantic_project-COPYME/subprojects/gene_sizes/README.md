@@ -63,7 +63,6 @@ gene_sizes/
 ├── upload_to_server/                  # Curated data for GIGANTIC server
 └── BLOCK_analyze_gene_sizes/
     ├── AI_GUIDE-analyze_gene_sizes.md # BLOCK-level AI guidance
-    ├── RUN-clean_and_record_subproject.sh
     └── workflow-COPYME-analyze_gene_sizes/
         ├── README.md                  # Quick start guide
         ├── RUN-workflow.sh            # Run locally

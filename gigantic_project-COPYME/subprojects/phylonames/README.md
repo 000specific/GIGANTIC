@@ -172,7 +172,6 @@ phylonames/
 ├── README.md                                # This file
 ├── AI_GUIDE.md                              # AI assistant guidance (subproject level)
 │
-├── RUN-clean_and_record_subproject.sh       # Subproject-level cleanup + session recording
 ├── RUN-update_upload_to_server.sh           # Subproject-level publisher (§38)
 │
 ├── upload_to_server/                        # Single publish destination (§38)

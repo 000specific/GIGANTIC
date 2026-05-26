@@ -228,12 +228,10 @@ See `research_notebook/README.md` for full specification.
 trees_gene_families/
 ├── AI_GUIDE-trees_gene_families.md    # THIS FILE
 ├── README.md                          # Human documentation
-├── RUN-clean_and_record_subproject.sh # Cleanup + session recording
 ├── RUN-setup_and_submit_step1_burst.sh                # Burst: STEP_1 for original RGS set
 ├── RUN-setup_and_submit_step2_burst.sh                # Burst: STEP_2 with size filter
 ├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh    # Burst: STEP_1 for new RGS set
 ├── RUN-setup_and_submit_sono_mechanosensitive_burst.sh # Burst: STEP_1 for 8 sono gene families
-├── RUN-clean_and_record_subproject.sh                 # Cleanup + AI session recording
 ├── RUN-update_upload_to_server.sh                     # Update server symlinks
 │
 ├── research_notebook/                 # RGS preparation + personal workspace

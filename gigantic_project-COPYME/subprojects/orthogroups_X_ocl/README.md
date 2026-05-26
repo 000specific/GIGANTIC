@@ -107,7 +107,6 @@ Occam's-razor (fewest-losses) criterion.
 orthogroups_X_ocl/
 ├── README.md                              # THIS FILE
 ├── AI_GUIDE-orthogroups_X_ocl.md          # AI guidance
-├── RUN-clean_and_record_subproject.sh
 │
 ├── output_to_input/
 │   └── BLOCK_ocl_analysis/               # Populated by RUN-workflow.sh symlinks

@@ -81,7 +81,6 @@ orthogroups/
 │   ├── BLOCK_broccoli/                  # Broccoli standardized outputs
 │   └── BLOCK_comparison/               # Comparison standardized outputs
 ├── upload_to_server/
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── BLOCK_orthofinder/                   # OrthoFinder project (6 scripts)

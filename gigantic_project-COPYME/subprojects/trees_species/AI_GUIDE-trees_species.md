@@ -115,7 +115,6 @@ definitions and the Resolved vs Unresolved input species tree distinction.)
 trees_species/
 ├── README.md
 ├── AI_GUIDE-trees_species.md              # THIS FILE
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/                       # Single canonical downstream location
@@ -138,7 +137,6 @@ trees_species/
 │
 ├── BLOCK_gigantic_species_tree/           # ACTIVE: standardize + label user-provided species tree
 │   ├── AI_GUIDE-gigantic_species_tree.md
-│   ├── RUN-clean_and_record_subproject.sh
 │   ├── RUN-update_upload_to_server.sh
 │   └── workflow-COPYME-gigantic_species_tree/
 │       ├── README.md

@@ -23,8 +23,8 @@ research_notebook/
 - Score variants under consideration but not yet implemented in the pipeline.
 - Sanity-check analyses comparing `parsimony_tree_structures` output to
   alternative ranking criteria.
-- Session documentation (auto-populated by
-  `RUN-clean_and_record_subproject.sh --record-sessions`).
+- Session documentation (auto-populated by the PreCompact hook and
+  on-demand `Save Chat!` capture; see project-level `ai/ai_FYIs/gigantic_conventions.md` §9).
 
 ## What Does NOT Belong Here
 

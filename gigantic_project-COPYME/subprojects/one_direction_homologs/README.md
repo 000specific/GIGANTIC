@@ -111,7 +111,6 @@ one_direction_homologs/
 │
 └── BLOCK_diamond_ncbi_nr/
     ├── AI_GUIDE-diamond_ncbi_nr.md             # BLOCK-level AI guidance
-    ├── RUN-clean_and_record_subproject.sh      # Cleanup + AI session recording
     ├── RUN-update_upload_to_server.sh          # Update server sharing symlinks
     │
     └── workflow-COPYME-diamond_ncbi_nr/

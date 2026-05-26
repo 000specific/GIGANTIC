@@ -76,7 +76,6 @@ structures are statistically tied with the best.
 parsimony_tree_structures/
 ├── README.md                                  # THIS FILE
 ├── AI_GUIDE-parsimony_tree_structures.md      # AI guidance
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/

@@ -143,7 +143,6 @@ ocl_using_simple_taxonomy/
 ├── README.md                                       # Subproject overview
 ├── AI_GUIDE-ocl_using_simple_taxonomy.md           # Level 2 AI guide
 ├── DESIGN-ocl_using_simple_taxonomy.md             # THIS FILE (kept after impl as design record)
-├── RUN-clean_and_record_subproject.sh
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/

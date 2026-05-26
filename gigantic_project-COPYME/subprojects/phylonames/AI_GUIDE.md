@@ -56,7 +56,6 @@ phylonames/
 ├── README.md                                   # User-facing documentation
 ├── AI_GUIDE.md                                 # THIS FILE
 │
-├── RUN-clean_and_record_subproject.sh          # Subproject-level cleanup + session recording
 ├── RUN-update_upload_to_server.sh              # Subproject-level publisher (thin wrapper around shared helper, §38)
 │
 ├── upload_to_server/                           # Single publish destination per §38

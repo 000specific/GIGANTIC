@@ -187,7 +187,6 @@ genomesDB/
 ├── README.md                                # This file
 ├── AI_GUIDE.md                              # AI assistant guidance (subproject level)
 │
-├── RUN-clean_and_record_subproject.sh       # Subproject-level cleanup + session recording
 ├── RUN-update_upload_to_server.sh           # Subproject-level publisher (§38)
 │
 ├── upload_to_server/                        # Single publish destination per §38
@@ -301,15 +300,16 @@ bash RUN-workflow.sh
 
 ### Cleanup After Completion
 
-```bash
-# Clean entire subproject (all steps)
-cd genomesDB/
-bash RUN-clean_and_record_subproject.sh --all
+NextFlow leaves `work/`, `.nextflow/`, and `.nextflow.log*` behind in
+each `workflow-RUN_*/` directory. To clean a single run:
 
-# Or clean individual steps
-cd STEP_1-sources/
-bash RUN-clean_and_record_subproject.sh --all
+```bash
+cd <STEP_X-*>/workflow-RUN_*/
+rm -rf work .nextflow .nextflow.log*
 ```
+
+Keep `OUTPUT_pipeline/` and the `output_to_input/` symlinks until the
+downstream subprojects you ran have finished consuming them.
 
 ---
 

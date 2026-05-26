@@ -48,7 +48,6 @@ one_direction_homologs/
 │
 └── BLOCK_diamond_ncbi_nr/
     ├── AI_GUIDE-diamond_ncbi_nr.md     # BLOCK-level AI guidance
-    ├── RUN-clean_and_record_subproject.sh
     ├── RUN-update_upload_to_server.sh
     │
     └── workflow-COPYME-diamond_ncbi_nr/

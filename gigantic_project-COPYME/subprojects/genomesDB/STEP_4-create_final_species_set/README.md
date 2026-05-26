@@ -91,7 +91,6 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 STEP_4-create_final_species_set/
 ├── README.md                              # This file
 ├── AI_GUIDE.md   # Guide for AI assistants
-├── RUN-clean_and_record_subproject.sh     # Cleanup and session recording
 ├── RUN-update_upload_to_server.sh         # Manage upload_to_server/ symlinks
 ├── output_to_input/                       # Final species set for downstream subprojects
 ├── upload_to_server/                      # Curated data for GIGANTIC server
