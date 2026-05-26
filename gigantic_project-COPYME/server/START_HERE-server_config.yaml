@@ -4,14 +4,29 @@
 #
 # Edit this file before starting the server.
 #
-# To start the server:
-#   Local:  bash RUN-start_server.sh
-#   SLURM:  sbatch RUN-start_server.sbatch
+# To start the server (one canonical command, both local and SLURM):
+#   bash RUN-start_server.sh
+#
+# The driver reads execution_mode below and either runs locally OR self-submits
+# to SLURM using the slurm.* settings at the bottom of this file.
+# Per gigantic_conventions.md §29.
 #
 # ============================================================================
 
-# AI: Claude Code | Opus 4.7 | 2026 April 20 | Purpose: GIGANTIC data server configuration (drill-down hierarchy)
+# AI: Claude Code | Opus 4.7 (1M context) | 2026 May 26 | Purpose: GIGANTIC data server configuration
 # Human: Eric Edsinger
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# 'local' — runs the server in the foreground of your current shell.
+#           Best for laptops, single-user machines, brief demos.
+# 'slurm' — submits the server as a long-running SLURM job. RUN-start_server.sh
+#           generates an sbatch wrapper from the slurm.* settings below and
+#           submits it. Best for HPC clusters where a long-lived process
+#           needs to outlive your shell session.
+
+execution_mode: "local"
 
 # ============================================================================
 # Server Settings
@@ -94,18 +109,19 @@ exclude_file_patterns:
   - ".section_metadata.tsv"
 
 # ============================================================================
-# SLURM Settings (used by RUN-start_server.sbatch)
+# SLURM Settings (used when execution_mode: "slurm")
 # ============================================================================
+# RUN-start_server.sh reads these and writes a one-shot sbatch wrapper to
+# logs/.run_server_<pid>.sbatch before submitting. You do not edit any sbatch
+# file directly.
 
 slurm:
-  account: "your_account"
-  qos: "your_qos"
+  account: "your_account"        # REQUIRED for slurm mode — your HPC account
+  qos: "your_qos"                # REQUIRED for slurm mode — your HPC qos
   partition: "hpg-default"
-  time_hours: 725
+  time_hours: 720
   memory_gb: 4
   cpus: 1
-  # Email notifications (optional - comment out to disable)
-  # mail_user: "your_email@university.edu"
 
 # ============================================================================
 # Credits (shown in page footer)
