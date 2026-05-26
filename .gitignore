@@ -18,6 +18,13 @@ OUTPUT_pipeline/
 # Test/production run directories (contain large data, not templates)
 workflow-RUN_*/
 
+# GIGANTIC/ai_FYIs/ — local-only historic-dev reference dump (Eric's working
+# copy of older docs to consult while walking through subprojects). Not part
+# of the shipped framework. The leading `/` anchors this to the GIGANTIC repo
+# root, so the rule does NOT match gigantic_project-COPYME/ai/ai_FYIs/ (which
+# ships and is the canonical home of gigantic_conventions.md per §30).
+/ai_FYIs/
+
 # INPUT_user contents — single staging arena between user data and GIGANTIC.
 # Per gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md §17, §20.
 # Ships only documentation (*.md at any depth); user content (symlinks,

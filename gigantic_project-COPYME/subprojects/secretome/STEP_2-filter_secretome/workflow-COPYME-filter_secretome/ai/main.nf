@@ -103,10 +103,9 @@ process write_run_log {
     script:
     """
     python3 ${scripts_dir}/004_ai-python-write_run_log.py \
-        --workflow-name "filter_secretome" \
+        --workflow-name "filter_secretome-${params.run_label}" \
         --subproject-name "secretome" \
         --project-name "${params.project_name}" \
-        --run-label "${params.run_label}" \
         --status success
     """
 }
