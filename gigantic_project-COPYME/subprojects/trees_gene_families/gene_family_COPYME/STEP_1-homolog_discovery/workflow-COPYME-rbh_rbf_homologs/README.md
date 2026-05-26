@@ -1,7 +1,19 @@
 # workflow-COPYME-rbh_rbf_homologs
 
-**AI**: Claude Code | Opus 4.6 | 2026 February 27
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 27 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_1-homolog_discovery overview
+- Parent subproject: [`../../../README.md`](../../../README.md) — trees_gene_families overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_{proteomes,blast_databases}/` + `INPUT_user/` (RGS FASTAs + species keeper list)
+- Outputs to: `../../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` via symlinks from `OUTPUT_pipeline/`
+- Downstream STEP: `../../STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/` (consumes the final AGS)
 
 ---
 

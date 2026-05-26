@@ -1,5 +1,24 @@
 # STEP_3: Tree Visualization
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../../README.md`](../../README.md) — trees_gene_families overview
+- STEP-level AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow template: [`workflow-COPYME-tree_visualization/`](workflow-COPYME-tree_visualization/)
+- Reads FROM: `../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (newicks from STEP_2)
+- Outputs TO: `../../../output_to_input/<gene_family>/STEP_3-tree_visualization/` — PDFs + SVGs + summary
+- Sibling STEPs: `../STEP_1-homolog_discovery/`, `../STEP_2-phylogenetic_analysis/`
+- 2 scripts: 001 render + 002 `write_run_log` (canonical final per §45)
+- **Decoupling rationale**: render is presentation, never invalidates STEP_2 newicks; toytree + toyplot + reportlab avoids ete3/PyQt5 install instability
+
+---
+
 Render phylogenetic trees (produced by STEP_2) as PDF + SVG using toytree.
 
 ## Purpose
@@ -51,4 +70,4 @@ Rendered files are symlinked to:
 
 ## For AI Assistants
 
-See `AI_GUIDE-phylogenetic_visualization.md` for detailed guidance.
+See `AI_GUIDE.md` for detailed guidance.

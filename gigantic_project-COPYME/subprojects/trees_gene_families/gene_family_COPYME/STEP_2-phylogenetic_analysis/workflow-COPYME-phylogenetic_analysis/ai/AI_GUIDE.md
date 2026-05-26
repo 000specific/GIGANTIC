@@ -1,8 +1,23 @@
 # AI Guide: Phylogenetic Analysis Workflow
 
-**For AI Assistants**: This guide covers workflow execution. For STEP_2 concepts, see `../../AI_GUIDE-phylogenetic_analysis.md`. For trees_gene_families overview, see `../../../AI_GUIDE-trees_gene_families.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE-project.md`.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**Location**: `trees_gene_families/STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/`
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — STEP_2 concepts + tree methods
+- Parent subproject: [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- Parent project: [`../../../../../../AI_GUIDE.md`](../../../../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (final AGS)
+- Outputs to: `OUTPUT_pipeline/` → symlinked into `../../../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/`
+- 9 scripts: 001 stage / 002 clean / 003 MAFFT / 004 ClipKit / 005 a/b/c/d (configurable tree methods) / 006 `write_run_log`
+- Conda env: `aiG-trees_gene_families-phylogenetic_analysis`
+
+**Location**: `trees_gene_families/gene_family_COPYME/STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/`
 
 ---
 
@@ -17,9 +32,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| trees_gene_families concepts | `../../../AI_GUIDE-trees_gene_families.md` |
-| STEP_2 phylogenetic analysis | `../../AI_GUIDE-phylogenetic_analysis.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` |
+| trees_gene_families concepts | `../../../AI_GUIDE.md` |
+| STEP_2 phylogenetic analysis | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ---
@@ -46,7 +61,7 @@ workflow-COPYME-phylogenetic_analysis/
 │   └── 5_d-output/     # PhyloBayes (if enabled)
 │
 └── ai/
-    ├── AI_GUIDE-phylogenetic_analysis_workflow.md  # THIS FILE
+    ├── AI_GUIDE.md  # THIS FILE
     ├── main.nf
     ├── nextflow.config
     └── scripts/

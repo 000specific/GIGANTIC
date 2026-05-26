@@ -1,8 +1,24 @@
 # AI Guide: STEP_3 Tree Visualization
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview. Then read `../AI_GUIDE-trees_gene_families.md` for subproject concepts. This guide covers STEP_3-specific details.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**Location**: `gene_family_COPYME/STEP_3-tree_visualization/`
+## Where this fits
+
+- Parent (subproject): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — trees_gene_families overview + STEP_2/STEP_3 decoupling rationale
+- Parent (project): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- STEP-level README: [`README.md`](README.md)
+- Workflow template: [`workflow-COPYME-tree_visualization/`](workflow-COPYME-tree_visualization/) (plain bash orchestrator — no NextFlow)
+- Reads FROM: `../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (newick trees)
+- Outputs TO: `../../../output_to_input/<gene_family>/STEP_3-tree_visualization/` — PDFs + SVGs + summary
+- Sibling STEPs: `../STEP_1-homolog_discovery/`, `../STEP_2-phylogenetic_analysis/`
+- 2 scripts: 001 render + 002 `write_run_log` (canonical final per §45)
+- Conda env: `aiG-trees_gene_families-visualization` (pip → toytree + toyplot + reportlab; no Qt)
+
+**Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/gene_family_COPYME/STEP_3-tree_visualization/`
 
 ---
 
@@ -10,10 +26,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Subproject concepts, three-phase architecture | `../AI_GUIDE-trees_gene_families.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Subproject concepts, three-phase architecture | `../../AI_GUIDE.md` |
 | STEP_3 concepts (this file) | This file |
-| Running the workflow | `workflow-COPYME-tree_visualization/ai/AI_GUIDE-tree_visualization_workflow.md` |
+| Running the workflow | `workflow-COPYME-tree_visualization/ai/AI_GUIDE.md` |
 
 ---
 
@@ -89,7 +105,7 @@ STEP_3 handles these via:
 
 ```
 STEP_3-tree_visualization/
-├── AI_GUIDE-phylogenetic_visualization.md    # THIS FILE
+├── AI_GUIDE.md    # THIS FILE
 ├── README.md
 └── workflow-COPYME-tree_visualization/
     ├── README.md
@@ -98,7 +114,7 @@ STEP_3-tree_visualization/
     ├── INPUT_user/                            # (empty; reserved for future overrides)
     └── ai/
         ├── conda_environment.yml              # aiG-trees_gene_families-visualization
-        ├── AI_GUIDE-tree_visualization_workflow.md
+        ├── AI_GUIDE.md
         └── scripts/
             ├── 001_ai-python-render_trees.py  # Core rendering (soft-fail)
             └── 002_ai-python-write_run_log.py

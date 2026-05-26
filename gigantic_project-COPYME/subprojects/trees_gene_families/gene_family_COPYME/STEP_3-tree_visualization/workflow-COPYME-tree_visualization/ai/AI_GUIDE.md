@@ -1,8 +1,24 @@
 # AI Guide: tree_visualization Workflow
 
-**For AI Assistants**: Read `../../AI_GUIDE-phylogenetic_visualization.md` first for STEP_3 concepts. This guide covers workflow execution specifics.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**Location**: `STEP_3-tree_visualization/workflow-COPYME-tree_visualization/ai/`
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — STEP_3 decoupling rationale + toytree engine notes
+- Parent subproject: [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- Parent project: [`../../../../../../AI_GUIDE.md`](../../../../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (newicks)
+- Outputs to: `OUTPUT_pipeline/1-output/` → symlinked into `../../../../../output_to_input/<gene_family>/STEP_3-tree_visualization/`
+- 2 scripts: 001 render + 002 `write_run_log`
+- Plain bash orchestrator (no NextFlow); soft-fail rendering policy
+- Conda env: `aiG-trees_gene_families-visualization` (pip → toytree, toyplot, reportlab; no Qt)
+
+**Location**: `trees_gene_families/gene_family_COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/ai/`
 
 ---
 
@@ -10,9 +26,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| Project overview | `../../../../AI_GUIDE-project.md` |
-| Subproject concepts | `../../../AI_GUIDE-trees_gene_families.md` |
-| STEP_3 concepts, why separated from STEP_2 | `../../AI_GUIDE-phylogenetic_visualization.md` |
+| Project overview | `../../../../../../AI_GUIDE.md` |
+| Subproject concepts | `../../../../AI_GUIDE.md` |
+| STEP_3 concepts, why separated from STEP_2 | `../../AI_GUIDE.md` |
 | Workflow execution (this file) | This file |
 
 ---

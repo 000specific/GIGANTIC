@@ -1,5 +1,31 @@
 # trees_gene_families - Gene Family Phylogenetic Analysis
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent: [`../../README.md`](../../README.md) — gigantic_project-COPYME overview
+- Subproject AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- **Reads from**:
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` — proteomes for BLAST
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_blast_databases/` — pre-built BLAST databases (RGS as query)
+  - `../phylonames/` — species naming conventions (referenced by RGS headers + downstream tree labels)
+  - `../../research_notebook/research_user/subproject-trees_gene_families/` — curated RGS FASTAs (per §1 consolidation; was per-subproject `research_notebook/` pre-2026-05-26)
+- **Outputs to** (`output_to_input/<gene_family>/`):
+  - `STEP_1-homolog_discovery/` — AGS FASTAs (homolog sequences)
+  - `STEP_2-phylogenetic_analysis/` — newick trees + alignments
+  - `STEP_3-tree_visualization/` — PDFs + SVGs + visualization summaries
+- **Downstream consumers**:
+  - `orthogroups_X_trees/` (when present) — cross-references gene-family trees with orthogroup assignments
+  - `upload_to_server/` (subproject root) — curated subset of trees/alignments for the GIGANTIC server
+- Sibling subproject (similar pattern, different scope): `../trees_gene_groups/` (gene groups via HGNC + curated lists; same three-STEP architecture)
+
+---
+
 Build phylogenetic trees for individual gene families across GIGANTIC project species.
 
 **Current scale**: 76 gene family analyses covering channels, receptors, enzymes (kinases, phosphatases), ligands, transporters, transcription factors, and structural proteins.
@@ -14,22 +40,22 @@ The full workflow has four phases:
 
 | Phase | Where | Purpose |
 |-------|-------|---------|
-| RGS Preparation | `research_notebook/` | Source, curate, and format reference gene sequences |
+| RGS Preparation | `../../research_notebook/research_user/subproject-trees_gene_families/` | Source, curate, and format reference gene sequences |
 | STEP_1 | `gene_family-*/STEP_1-homolog_discovery/` | Validate RGS, find homologs via RBH/RBF BLAST |
 | STEP_2 | `gene_family-*/STEP_2-phylogenetic_analysis/` | Align, trim, build trees (produces newick files) |
 | STEP_3 | `gene_family-*/STEP_3-tree_visualization/` | Render trees as PDF + SVG using toytree |
 
 ## RGS Preparation (Before the Pipeline)
 
-Before running the three-step pipeline, RGS FASTA files must be prepared in GIGANTIC standard format. This happens in `research_notebook/`.
+Before running the three-step pipeline, RGS FASTA files must be prepared in GIGANTIC standard format. This happens in the project-root research sandbox at `../../research_notebook/research_user/subproject-trees_gene_families/` (per §1 consolidation; was per-subproject `research_notebook/` pre-2026-05-26).
 
 **RGS filename format**: `rgs_<category>-<source_species>-<description>.aa`
 
 **RGS header format**: `>rgs_<family_subfamily>-<species>-<gene>-<source>-<accession>`
 
-Within each dash-separated field, only letters, numbers, and underscores are allowed. See `research_notebook/README.md` for full specification and examples.
+Within each dash-separated field, only letters, numbers, and underscores are allowed. See `../../research_notebook/research_user/subproject-trees_gene_families/README.md` for full specification and examples.
 
-**RGS sources include**: HGNC gene groups, UniProt, kinase/phosphatome databases, and curated sets from prior GIGANTIC work. Conversion scripts in `research_notebook/rgs_from_before/rgs_for_trees/` reformat legacy headers to GIGANTIC standard and produce mapping TSVs for traceability.
+**RGS sources include**: HGNC gene groups, UniProt, kinase/phosphatome databases, and curated sets from prior GIGANTIC work. Conversion scripts in `../../research_notebook/research_user/subproject-trees_gene_families/rgs_from_before/rgs_for_trees/` reformat legacy headers to GIGANTIC standard and produce mapping TSVs for traceability.
 
 ## Three-Step Pipeline
 
@@ -65,13 +91,15 @@ trees_gene_families/
 │
 ├── output_to_input/                       # Shared outputs for downstream subprojects
 ├── upload_to_server/                      # Curated data for GIGANTIC server
-├── research_notebook/                     # Personal notes and exploratory work
 ├── slurm_logs/                            # SLURM job logs from burst submissions
+# Note: no per-subproject research_notebook/ — per §1, the project-root
+# research_notebook/research_user/subproject-trees_gene_families/ holds
+# the RGS preparation sandbox (rgs_from_before/, species_keeper_list, etc.)
 ├── RUN-setup_and_submit_step1_burst.sh             # Burst: set up + submit STEP_1 (original RGS set)
 ├── RUN-setup_and_submit_step2_burst.sh             # Burst: set up + submit STEP_2 (with size filter)
 ├── RUN-setup_and_submit_new_rgs_31mar2026_burst.sh # Burst: STEP_1 for new RGS set (TRP, kinome, phosphatome, etc.)
 ├── RUN-update_upload_to_server.sh                  # Update upload_to_server/ symlinks
-├── AI_GUIDE-trees_gene_families.md
+├── AI_GUIDE.md
 └── README.md
 ```
 
@@ -232,7 +260,7 @@ bash RUN-setup_and_submit_step2_burst.sh
 
 ### RUN-setup_and_submit_new_rgs_31mar2026_burst.sh
 
-Same pattern as the STEP_1 burst script, but for **new RGS files** prepared in `research_notebook/rgs_from_before/rgs_for_trees/new_rgs_31mar2026/`. This script:
+Same pattern as the STEP_1 burst script, but for **new RGS files** prepared in `../../research_notebook/research_user/subproject-trees_gene_families/rgs_from_before/rgs_for_trees/new_rgs_31mar2026/`. This script:
 
 1. Automatically derives gene family names from RGS filenames
 2. Creates gene_family directories from the COPYME template
@@ -282,4 +310,4 @@ STEP_3 runs locally and writes its own logs into `gene_family-*/STEP_3-tree_visu
 
 ## For AI Assistants
 
-See `AI_GUIDE-trees_gene_families.md` for detailed AI guidance.
+See `AI_GUIDE.md` for detailed AI guidance.

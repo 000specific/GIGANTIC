@@ -1,7 +1,23 @@
 # AI Guide: gene_groups_hgnc-COPYME (HGNC-Anchored Template)
 
-**For AI Assistants**: Read `../../../AI_GUIDE-project.md` first for the
-GIGANTIC project overview. Then `../AI_GUIDE-trees_gene_groups.md` for
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (template README): [`README.md`](README.md)
+- Parent (subproject AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Parent (project): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling template (generic): [`../gene_groups-COPYME/`](../gene_groups-COPYME/) — for non-HGNC sources
+- STEP_0: [`STEP_0-hgnc_based_rgs/AI_GUIDE.md`](STEP_0-hgnc_based_rgs/AI_GUIDE.md) — two workflow modes
+
+---
+
+**For AI Assistants**: Read `../../../AI_GUIDE.md` first for the
+GIGANTIC project overview. Then `../AI_GUIDE.md` for
 the subproject's concepts. This file covers the HGNC-anchored template
 specifically.
 
@@ -39,15 +55,15 @@ state existed. That record is part of reproducibility.
 
 | User needs… | Go to… |
 |---|---|
-| GIGANTIC project overview | `../../../AI_GUIDE-project.md` |
-| trees_gene_groups subproject concepts | `../AI_GUIDE-trees_gene_groups.md` |
+| GIGANTIC project overview | `../../../AI_GUIDE.md` |
+| trees_gene_groups subproject concepts | `../AI_GUIDE.md` |
 | This template's overview (this file) | this file |
-| STEP_0 concepts (HGNC-based RGS generation) | `STEP_0-hgnc_based_rgs/AI_GUIDE-hgnc_based_rgs.md` |
-| STEP_0 workflow: process all HGNC gene groups | `STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md` |
-| STEP_0 workflow: ad-hoc user-supplied gene set | `STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md` |
-| STEP_1 concepts (RBH/RBF homolog discovery) | `STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
-| STEP_2 concepts (alignment + tree) | `STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
-| STEP_3 concepts (tree visualization) | `STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` |
+| STEP_0 concepts (HGNC-based RGS generation) | `STEP_0-hgnc_based_rgs/AI_GUIDE.md` |
+| STEP_0 workflow: process all HGNC gene groups | `STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md` |
+| STEP_0 workflow: ad-hoc user-supplied gene set | `STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md` |
+| STEP_1 concepts (RBH/RBF homolog discovery) | `STEP_1-homolog_discovery/AI_GUIDE.md` |
+| STEP_2 concepts (alignment + tree) | `STEP_2-phylogenetic_analysis/AI_GUIDE.md` |
+| STEP_3 concepts (tree visualization) | `STEP_3-tree_visualization/AI_GUIDE.md` |
 
 ---
 
@@ -213,6 +229,6 @@ For `workflow-hgnc_database` this is `3_ai-rgs_generation_summary.tsv`
 
 - [README.md](README.md) — User-facing instantiation guide
 - [../output_to_input/hugo_hgnc_database/README.md](../output_to_input/hugo_hgnc_database/README.md) — canonical reference data
-- [STEP_0-hgnc_based_rgs/AI_GUIDE-hgnc_based_rgs.md](STEP_0-hgnc_based_rgs/AI_GUIDE-hgnc_based_rgs.md) — STEP_0 concepts
-- [STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md](STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md)
-- [STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md](STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md)
+- [STEP_0-hgnc_based_rgs/AI_GUIDE.md](STEP_0-hgnc_based_rgs/AI_GUIDE.md) — STEP_0 concepts
+- [STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md)
+- [STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md)

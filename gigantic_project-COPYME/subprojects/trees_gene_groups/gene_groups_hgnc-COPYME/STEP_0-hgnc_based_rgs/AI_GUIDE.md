@@ -1,8 +1,29 @@
 # AI Guide: STEP_0 — HGNC-Based RGS (trees_gene_groups)
 
-**For AI Assistants**: Read `../../../AI_GUIDE-project.md` first, then
-`../../AI_GUIDE-trees_gene_groups.md` for the subproject, then
-`../AI_GUIDE-gene_groups_hgnc.md` for this template. This file covers
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (template AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Parent (template README): [`../README.md`](../README.md)
+- Parent (subproject AI guide): [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Two workflow modes (both required):
+-   - [`workflow-hgnc_database/`](workflow-hgnc_database/) — downloads HGNC + produces ALL gene-group RGSs
+-   - [`workflow-hgnc_user_list/`](workflow-hgnc_user_list/) — curated user subset
+- Reads FROM: HGNC public database (network download by workflow-hgnc_database) + `INPUT_user/user_gene_set_*.tsv` (workflow-hgnc_user_list mode)
+- Outputs TO: per-gene-group RGS FASTAs consumed by `../STEP_1-homolog_discovery/`
+- Conda env: `aiG-trees_gene_groups-hgnc_based_rgs`
+- 2026-05-26: BLAST-fallback in STEP_1 was removed; both STEP_0 workflows produce RGS that resolve cleanly via gene-symbol or NCBI-accession matching (no source-genome BLAST chain needed)
+
+---
+
+**For AI Assistants**: Read `../../../AI_GUIDE.md` first, then
+`../../AI_GUIDE.md` for the subproject, then
+`../AI_GUIDE.md` for this template. This file covers
 STEP_0 specifically.
 
 **Location**: `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/`
@@ -175,8 +196,8 @@ and dispatches BLAST.
 
 ## See Also
 
-- `workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md` — batch HGNC workflow
-- `workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md` — user-list workflow
+- `workflow-hgnc_database/ai/AI_GUIDE.md` — batch HGNC workflow
+- `workflow-hgnc_user_list/ai/AI_GUIDE.md` — user-list workflow
 - `../README.md` — instantiation guide for the template
-- `../AI_GUIDE-gene_groups_hgnc.md` — template-level AI guide
+- `../AI_GUIDE.md` — template-level AI guide
 - `../../output_to_input/hugo_hgnc_database/README.md` — canonical reference data

@@ -1,5 +1,24 @@
 # STEP_3 — Tree Visualization
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (template): [`../README.md`](../README.md)
+- Parent (subproject): [`../../README.md`](../../README.md)
+- STEP-level AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow template: [`workflow-COPYME-tree_visualization/`](workflow-COPYME-tree_visualization/)
+- Reads FROM: `../../../output_to_input/<gene_group>/STEP_2-phylogenetic_analysis/`
+- Outputs TO: `../../../output_to_input/<gene_group>/STEP_3-tree_visualization/`
+- 2 scripts: 001 render + 002 `write_run_log`
+- Conda env: `aiG-trees_gene_groups-visualization`
+
+---
+
 Per-source STEP_3: render the tree newicks produced by STEP_2 as PDF + SVG using
 toytree (pure Python, no Qt).
 
@@ -54,5 +73,5 @@ artifact regardless of rendering outcome.
 
 ## See also
 
-- `AI_GUIDE-phylogenetic_visualization.md` — detailed AI guide
-- `workflow-COPYME-tree_visualization/ai/AI_GUIDE-tree_visualization_workflow.md` — workflow execution guide
+- `AI_GUIDE.md` — detailed AI guide
+- `workflow-COPYME-tree_visualization/ai/AI_GUIDE.md` — workflow execution guide

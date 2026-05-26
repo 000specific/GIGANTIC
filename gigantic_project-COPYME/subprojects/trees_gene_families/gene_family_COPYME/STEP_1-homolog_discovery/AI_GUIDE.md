@@ -1,8 +1,23 @@
 # AI Guide: STEP_1-homolog_discovery (trees_gene_families)
 
-**For AI Assistants**: This guide covers STEP_1 of the trees_gene_families subproject. For subproject overview, see `../AI_GUIDE-trees_gene_families.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/STEP_1-homolog_discovery/`
+## Where this fits
+
+- Parent (subproject): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — trees_gene_families overview + three-STEP architecture
+- Parent (project): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md) — GIGANTIC overview
+- STEP-level README: [`README.md`](README.md)
+- Workflow template: [`workflow-COPYME-rbh_rbf_homologs/`](workflow-COPYME-rbh_rbf_homologs/) (one per gene_family instance)
+- Reads FROM: `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_{proteomes,blast_databases}/` + `INPUT_user/` (RGS FASTAs, species keeper list)
+- Outputs TO: `../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (symlinked from workflow `OUTPUT_pipeline/`)
+- Downstream STEP: STEP_2 consumes the final AGS (`16-output/` or `18-output/` if subsequence mode)
+- Sibling STEP: `../STEP_2-phylogenetic_analysis/` (tree inference) + `../STEP_3-tree_visualization/` (rendering)
+
+**Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/gene_family_COPYME/STEP_1-homolog_discovery/`
 
 ---
 
@@ -17,10 +32,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| trees_gene_families concepts | `../AI_GUIDE-trees_gene_families.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| trees_gene_families concepts | `../AI_GUIDE.md` |
 | STEP_1 homolog discovery concepts (this step) | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-rbh_rbf_homologs_workflow.md` |
+| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ---
 
@@ -152,7 +167,7 @@ OUTPUT_pipeline/
 
 ```
 STEP_1-homolog_discovery/
-├── AI_GUIDE-homolog_discovery.md      # THIS FILE
+├── AI_GUIDE.md      # THIS FILE
 ├── README.md
 └── workflow-COPYME-rbh_rbf_homologs/
 # Note: output symlinked to ../../output_to_input/<gene_family>/STEP_1-homolog_discovery/
@@ -166,7 +181,7 @@ STEP_1-homolog_discovery/
     ├── OUTPUT_pipeline/
     │   └── 1-output/ through 16-output/
     └── ai/
-        ├── AI_GUIDE-rbh_rbf_homologs_workflow.md
+        ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
         └── scripts/

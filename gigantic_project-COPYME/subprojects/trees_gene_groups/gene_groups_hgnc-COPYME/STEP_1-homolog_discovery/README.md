@@ -1,5 +1,25 @@
 # STEP_1 — Homolog Discovery (RBH/RBF)
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (template): [`../README.md`](../README.md)
+- Parent (subproject): [`../../README.md`](../../README.md)
+- STEP-level AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow template: [`workflow-rbh_rbf_homologs/`](workflow-rbh_rbf_homologs/) (pre-§3 name — lacks COPYME prefix)
+- Reads FROM: per-gene-group RGS FASTAs from STEP_0 + `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/`
+- Outputs TO: `../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/`
+- Downstream STEP: `../STEP_2-phylogenetic_analysis/`
+- 2026-05-26: BLAST-fallback chain removed in THIS variant (RGS from STEP_0 resolves cleanly via gene-symbol or NCBI-accession); sibling `gene_groups-COPYME/STEP_1` still has fallback
+- Conda env: `aiG-trees_gene_groups-rbh_rbf_homologs`
+
+---
+
 Per-source STEP_1: find homologs of each gene group's Reference Gene Set (RGS)
 across all project species via reciprocal best hit / reciprocal best family BLAST.
 
@@ -67,6 +87,6 @@ These are STEP_2's input.
 
 ## See also
 
-- `AI_GUIDE-homolog_discovery.md` — detailed AI guide for this STEP
-- `workflow-COPYME-rbh_rbf_homologs/ai/AI_GUIDE-rbh_rbf_homologs_workflow.md` — workflow execution guide
+- `AI_GUIDE.md` — detailed AI guide for this STEP
+- `workflow-COPYME-rbh_rbf_homologs/ai/AI_GUIDE.md` — workflow execution guide
 - `PLAN-rgs_identification_improvements.md` — design doc for script 008's RGS mapping

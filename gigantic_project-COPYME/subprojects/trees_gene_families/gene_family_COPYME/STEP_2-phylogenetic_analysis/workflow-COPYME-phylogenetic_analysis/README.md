@@ -1,7 +1,20 @@
 # workflow-COPYME-phylogenetic_analysis
 
-**AI**: Claude Code | Opus 4.6 | 2026 February 27
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 27 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_2-phylogenetic_analysis overview
+- Parent subproject: [`../../../README.md`](../../../README.md) — trees_gene_families overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (the final AGS produced by STEP_1)
+- Outputs to: `../../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` — newick trees + alignments (symlinks)
+- Downstream STEP: `../../STEP_3-tree_visualization/workflow-COPYME-tree_visualization/` (consumes newicks)
+- 9 scripts: 001 stage / 002 clean / 003 MAFFT / 004 ClipKit / 005 a/b/c/d (FastTree/IQ-TREE/VeryFastTree/PhyloBayes) / 006 `write_run_log`
 
 ---
 

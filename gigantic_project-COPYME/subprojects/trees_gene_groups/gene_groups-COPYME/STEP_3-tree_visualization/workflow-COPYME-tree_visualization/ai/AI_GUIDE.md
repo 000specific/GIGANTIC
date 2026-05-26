@@ -1,6 +1,21 @@
 # AI Guide: tree_visualization Workflow (trees_gene_groups STEP_3)
 
-**For AI Assistants**: Read `../../AI_GUIDE-phylogenetic_visualization.md` first for STEP_3 concepts. This guide covers workflow execution.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (template): [`../../../../README.md`](../../../../README.md)
+- Workflow README: [`../README.md`](../README.md)
+- Conda env: `aiG-trees_gene_groups-visualization`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for STEP_3 concepts. This guide covers workflow execution.
 
 **Location**: `gene_groups_COPYME/STEP_3-tree_visualization/workflow-COPYME-tree_visualization/`
 

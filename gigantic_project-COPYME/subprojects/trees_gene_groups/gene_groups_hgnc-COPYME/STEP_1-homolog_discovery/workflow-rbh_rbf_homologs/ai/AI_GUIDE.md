@@ -1,6 +1,22 @@
 # AI Guide: RBH/RBF Homolog Discovery Workflow (trees_gene_groups STEP_1)
 
-**For AI Assistants**: Read `../../AI_GUIDE-homolog_discovery.md` first for
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (template): [`../../../../README.md`](../../../../README.md)
+- Workflow README: [`../README.md`](../README.md)
+- BLAST-fallback chain removed in this variant (script 005 + `blast_rgs_versus_rgs_genomes` NF process + Improvements 2-4 in script 008 deleted)
+- Conda env: `aiG-trees_gene_groups-rbh_rbf_homologs`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for
 STEP_1 concepts. This guide covers workflow execution and orchestrator
 internals.
 

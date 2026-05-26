@@ -1,5 +1,23 @@
 # workflow-COPYME-tree_visualization
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 27 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_3-tree_visualization overview + soft-fail rationale
+- Parent subproject: [`../../../README.md`](../../../README.md) — trees_gene_families overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` (newicks from STEP_2)
+- Outputs to: `../../../../output_to_input/<gene_family>/STEP_3-tree_visualization/` — PDFs + SVGs + summary (via symlinks)
+- 2 scripts: 001 render + 002 `write_run_log`
+- Plain bash orchestrator (no NextFlow — single lightweight process)
+
+---
+
 GIGANTIC trees_gene_families STEP_3 workflow template. Renders phylogenetic trees (produced by STEP_2) as PDF + SVG using toytree.
 
 ## Purpose
@@ -58,7 +76,7 @@ workflow-COPYME-tree_visualization/
 ├── INPUT_user/                                # (empty; reserved)
 └── ai/
     ├── conda_environment.yml                  # aiG-trees_gene_families-visualization
-    ├── AI_GUIDE-tree_visualization_workflow.md
+    ├── AI_GUIDE.md
     └── scripts/
         ├── 001_ai-python-render_trees.py      # Core renderer
         └── 002_ai-python-write_run_log.py

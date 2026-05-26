@@ -1,6 +1,30 @@
 # AI Guide: trees_gene_families Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers trees_gene_families-specific concepts and the three-step architecture.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- Reads FROM:
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` — proteomes
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_blast_databases/` — pre-built BLAST databases
+  - `../phylonames/` — species naming (RGS headers reference; tree labels resolve via)
+  - `../../research_notebook/research_user/subproject-trees_gene_families/` — curated RGS FASTAs (per §1 consolidation; was per-subproject `research_notebook/` pre-2026-05-26)
+- Outputs TO (`output_to_input/<gene_family>/`):
+  - `STEP_1-homolog_discovery/` — AGS FASTAs
+  - `STEP_2-phylogenetic_analysis/` — newick trees + alignments
+  - `STEP_3-tree_visualization/` — PDFs + SVGs
+- Downstream consumers:
+  - `orthogroups_X_trees/` (when present) — cross-references gene-family trees with orthogroup assignments
+  - `upload_to_server/` — curated subset for the GIGANTIC server
+- Sibling: `../trees_gene_groups/` — gene groups via HGNC + curated lists, same three-STEP architecture
+
+**Read this guide first** for trees_gene_families-specific concepts and the three-step architecture, then drill into the STEP-level guides linked below.
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/`
 
@@ -21,12 +45,12 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | trees_gene_families concepts, pipeline architecture | This file |
-| RGS preparation, naming conventions | `research_notebook/README.md` |
-| STEP_1 homolog discovery | `gene_family_COPYME/STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
-| STEP_2 phylogenetic analysis | `gene_family_COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
-| STEP_3 tree visualization | `gene_family_COPYME/STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` |
+| RGS preparation, naming conventions | `../../research_notebook/research_user/subproject-trees_gene_families/README.md` |
+| STEP_1 homolog discovery | `gene_family_COPYME/STEP_1-homolog_discovery/AI_GUIDE.md` |
+| STEP_2 phylogenetic analysis | `gene_family_COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE.md` |
+| STEP_3 tree visualization | `gene_family_COPYME/STEP_3-tree_visualization/AI_GUIDE.md` |
 
 ---
 
@@ -34,23 +58,13 @@
 
 **Purpose**: Build phylogenetic trees for individual gene families across GIGANTIC species.
 
-**Current scale (sono project)**: 8 mechanosensitive channel gene families for Salk sonogenetics collaboration.
+**Current scale**: 76 gene family instances on disk under `gene_family-<name>/` covering channels (ion / mechanosensitive / chloride / TRP), receptors (GPCR / nuclear hormone / glutamate / glycine / nicotinic), enzymes (kinases, phosphatases, soluble + transmembrane guanylate cyclases, nitric oxide synthases, NDK), ligands (FGF / TGFβ / VEGF / WNT / GH), transporters (solute carriers, ABC, aquaporins), transcription factors (Fox/Forkhead, homeobox), and structural proteins (histones, stomatin, etc.). Includes the 8 Salk sonogenetics mechanosensitive families and the multi-batch HGNC + curated additions (`new_rgs_25mar2026/`, `new_rgs_31mar2026/`).
 
-**The 8 Gene Families**:
-
-| Gene Family | RGS Mode | RGS Seeds | Description |
-|-------------|----------|-----------|-------------|
-| acid_sensing_ion_channel_subunits | full-length | HGNC human | ASIC channels |
-| piezo_type_mechanosensitive_ion_channel_components | full-length | HGNC human | Piezo mechanosensors |
-| potassium_two_pore_domain_channel_subfamily_k | full-length | HGNC human | KCNK channels |
-| solute_carrier_family_26 | full-length | HGNC human | SLC26 / Prestin family |
-| stomatin_family | full-length | HGNC human | Stomatin scaffold proteins |
-| tmem63_osca_flyc1_mechanosensitive | full-length | HGNC human + venus flytrap | TMEM63/OSCA/FLYC1 |
-| transmembrane_channel_like_family | full-length | HGNC human | TMC channels |
-| transient_receptor_potential_cation_channels | **subsequence** | multi-species pore regions | TRP channels (pore-region RGS) |
+**Mechanosensitive (sono project) families** (8 — full-length except TRP which uses subsequence mode):
+acid_sensing_ion_channel_subunits, piezo_type_mechanosensitive_ion_channel_components, potassium_two_pore_domain_channel_subfamily_k, solute_carrier_family_26, stomatin_family, tmem63_osca_flyc1_mechanosensitive, transmembrane_channel_like_family, transient_receptor_potential_cation_channels.
 
 **Four-Phase Workflow**:
-1. **RGS Preparation** - Source, curate, and format reference gene sequences in `research_notebook/`
+1. **RGS Preparation** - Source, curate, and format reference gene sequences in `../../research_notebook/research_user/subproject-trees_gene_families/`
 2. **Homolog Discovery (STEP_1)** - Validate RGS, then find homologs via Reciprocal Best Hit / Reciprocal Best Family (RBH/RBF)
 3. **Phylogenetic Analysis (STEP_2)** - Align sequences, trim, build tree newick files (FastTree, IQ-TREE, VeryFastTree, PhyloBayes)
 4. **Tree Visualization (STEP_3)** - Render newick files as PDF + SVG using toytree (decoupled from STEP_2)
@@ -157,9 +171,9 @@ Full-length:   >rgs_channel-human-TRPV1-uniprot-Q8NER1
 Subsequence:   >rgs_channel-human-TRPV1-uniprot-Q8NER1_subsequence
 ```
 
-### RGS Preparation (research_notebook)
+### RGS Preparation (project-root research sandbox)
 
-RGS files are sourced, curated, and reformatted in `research_notebook/rgs_from_before/`. The flow:
+RGS files are sourced, curated, and reformatted in `../../research_notebook/research_user/subproject-trees_gene_families/rgs_from_before/` (per §1 consolidation; was per-subproject `research_notebook/` pre-2026-05-26). The flow:
 
 1. **Raw sources** in `rgs_sources/` - varied legacy formats from HGNC, UniProt, kinase/phosphatome databases
 2. **Conversion scripts** in `rgs_for_trees/new_rgs_*/` - reformat to GIGANTIC standard, produce mapping TSVs
@@ -168,7 +182,7 @@ RGS files are sourced, curated, and reformatted in `research_notebook/rgs_from_b
 
 Each conversion batch includes `mapping-*.tsv` files mapping original headers to new GIGANTIC headers for traceability.
 
-See `research_notebook/README.md` for full specification.
+See `../../research_notebook/research_user/subproject-trees_gene_families/README.md` for full specification.
 
 ---
 
@@ -226,7 +240,7 @@ See `research_notebook/README.md` for full specification.
 
 ```
 trees_gene_families/
-├── AI_GUIDE-trees_gene_families.md    # THIS FILE
+├── AI_GUIDE.md    # THIS FILE
 ├── README.md                          # Human documentation
 ├── RUN-setup_and_submit_step1_burst.sh                # Burst: STEP_1 for original RGS set
 ├── RUN-setup_and_submit_step2_burst.sh                # Burst: STEP_2 with size filter
@@ -234,13 +248,15 @@ trees_gene_families/
 ├── RUN-setup_and_submit_sono_mechanosensitive_burst.sh # Burst: STEP_1 for 8 sono gene families
 ├── RUN-update_upload_to_server.sh                     # Update server symlinks
 │
-├── research_notebook/                 # RGS preparation + personal workspace
-│   └── rgs_from_before/              # RGS sources and formatted files
-│       ├── rgs_sources/              # Raw/legacy RGS files
-│       └── rgs_for_trees/            # GIGANTIC-formatted RGS files
-│           ├── new_rgs_25mar2026/    # Batch: channel subfamilies
-│           └── new_rgs_31mar2026/    # Batch: TRP, kinome, phosphatome, etc.
 ├── upload_to_server/                  # Server sharing
+# Note: no per-subproject research_notebook/ — per §1 consolidation,
+# RGS preparation sandbox lives at ../../research_notebook/research_user/subproject-trees_gene_families/
+#   ├── rgs_from_before/
+#   │   ├── rgs_sources/                  (raw/legacy RGS files)
+#   │   └── rgs_for_trees/                (GIGANTIC-formatted)
+#   │       ├── new_rgs_25mar2026/        (batch: channel subfamilies)
+#   │       └── new_rgs_31mar2026/        (batch: TRP, kinome, phosphatome, etc.)
+#   └── species_keeper_list-species70.tsv
 │
 ├── output_to_input/                   # FINAL OUTPUTS for downstream (gene family first)
 │   └── <gene_family>/                # One directory per gene family
@@ -270,10 +286,11 @@ trees_gene_families/
 ## Data Flow: Full Pipeline
 
 ```
-research_notebook/rgs_sources/         Raw/legacy RGS files from databases
+../../research_notebook/research_user/subproject-trees_gene_families/
+    rgs_from_before/rgs_sources/       Raw/legacy RGS files from databases
        │
        ▼
-research_notebook/rgs_for_trees/       Format to GIGANTIC standard (conversion scripts + mapping TSVs)
+    rgs_from_before/rgs_for_trees/     Format to GIGANTIC standard (conversion scripts + mapping TSVs)
        │
        ▼
 RUN-setup_and_submit_*_burst.sh        Automate: create gene_family dirs, populate inputs, submit SLURM
@@ -311,15 +328,17 @@ output_to_input/<gene_family>/STEP_3-tree_visualization/
 
 | Subproject | What | Path |
 |------------|------|------|
-| genomesDB | BLAST databases (per-species .aa files) | `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` |
+| genomesDB | BLAST databases + proteomes | `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_{proteomes,blast_databases}/` |
 | phylonames | Species name mappings | `../phylonames/output_to_input/maps/` |
+| (project-root) | Curated RGS FASTAs + species keeper list | `../../research_notebook/research_user/subproject-trees_gene_families/` |
 
 ### Outputs TO
 
 | Location | What | Consumers |
 |----------|------|-----------|
-| `output_to_input/<gene_family>/STEP_1-homolog_discovery/` | AGS homolog sets | Internal (STEP_2) |
-| `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` | Phylogenetic trees | Publication, downstream |
+| `output_to_input/<gene_family>/STEP_1-homolog_discovery/` | AGS homolog sets | Internal (STEP_2); downstream cross-ref subprojects |
+| `output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` | Newick trees + alignments | Publication, downstream; `orthogroups_X_trees/` when present |
+| `output_to_input/<gene_family>/STEP_3-tree_visualization/` | PDFs + SVGs + visualization summaries | `upload_to_server/`; publication figures |
 
 ---
 
@@ -347,15 +366,15 @@ Each workflow has its own conda env, defined in `workflow-COPYME-*/ai/conda_envi
 | STEP_2 | phylogenetic_analysis | `aiG-trees_gene_families-phylogenetic_analysis` | python, pyyaml, nextflow, mafft, clipkit, fasttree, iqtree, veryfasttree |
 | STEP_3 | tree_visualization | `aiG-trees_gene_families-visualization` | python, pyyaml, pip → toytree, toyplot, reportlab (no Qt) |
 
-**Migration note (2026-05-24)**: The old shared `ai_gigantic_trees_gene_families` env is deprecated. The per-workflow envs above replace it. numpy + scipy in STEP_1 are required by the rewritten script 008 (Hungarian optimal RGS-assignment); without them the script falls back to greedy assignment that fails-fast on residual ambiguity per the [PLAN](../trees_gene_groups/gene_groups_COPYME/STEP_1-homolog_discovery/PLAN-rgs_identification_improvements.md). STEP_3's env-creation includes broken-env self-heal (rebuilds if `bin/python` is missing).
+**Migration note (2026-05-24)**: The old shared `ai_gigantic_trees_gene_families` env is deprecated. The per-workflow envs above replace it. numpy + scipy in STEP_1 are required by the rewritten script 008 (Hungarian optimal RGS-assignment); without them the script falls back to greedy assignment that fails-fast on residual ambiguity per the [PLAN](../trees_gene_groups/gene_groups-COPYME/STEP_1-homolog_discovery/PLAN-rgs_identification_improvements.md). STEP_3's env-creation includes broken-env self-heal (rebuilds if `bin/python` is missing).
 
 ---
 
 ## Research Notebook Location
 
-AI sessions save to the project-wide sessions directory:
+AI sessions save to the project-root sessions directory (per §1 + §9):
 ```
-research_notebook/research_ai/sessions/
+../../research_notebook/research_ai/sessions/
 ```
 
 Workflow run logs save to each workflow's own `ai/logs/` directory:
@@ -399,7 +418,7 @@ ls output_to_input/*/STEP_3-tree_visualization/
 
 | File | Purpose | User Edits? |
 |------|---------|-------------|
-| `research_notebook/rgs_from_before/rgs_for_trees/` | Formatted RGS FASTA files | **YES** (source data) |
+| `../../research_notebook/research_user/subproject-trees_gene_families/rgs_from_before/rgs_for_trees/` | Formatted RGS FASTA files | **YES** (source data) |
 | `RUN-setup_and_submit_step1_burst.sh` | Burst setup + submit STEP_1 (original RGS) | **YES** (SLURM settings) |
 | `RUN-setup_and_submit_new_rgs_31mar2026_burst.sh` | Burst setup + submit STEP_1 (new RGS) | **YES** (SLURM settings, RGS path) |
 | `RUN-setup_and_submit_sono_mechanosensitive_burst.sh` | Burst setup + submit STEP_1 (8 sono families) | **YES** (SLURM settings) |

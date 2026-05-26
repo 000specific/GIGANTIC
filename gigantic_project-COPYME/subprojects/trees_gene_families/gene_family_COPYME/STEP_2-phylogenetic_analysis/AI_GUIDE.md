@@ -1,8 +1,24 @@
 # AI Guide: STEP_2-phylogenetic_analysis (trees_gene_families)
 
-**For AI Assistants**: This guide covers STEP_2 of the trees_gene_families subproject. For subproject overview, see `../AI_GUIDE-trees_gene_families.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/STEP_2-phylogenetic_analysis/`
+## Where this fits
+
+- Parent (subproject): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — trees_gene_families overview
+- Parent (project): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- STEP-level README: [`README.md`](README.md)
+- Workflow template: [`workflow-COPYME-phylogenetic_analysis/`](workflow-COPYME-phylogenetic_analysis/)
+- Reads FROM: `../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (final AGS from upstream STEP)
+- Outputs TO: `../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` — newick trees + alignments (symlinks)
+- Downstream STEP: `../STEP_3-tree_visualization/` consumes the newick files
+- 9 scripts: 001 stage → 002 clean → 003 MAFFT → 004 ClipKit → 005 a/b/c/d (FastTree/IQ-TREE/VeryFastTree/PhyloBayes — configurable) → 006 `write_run_log` (canonical final per §45)
+- Conda env: `aiG-trees_gene_families-phylogenetic_analysis` (mafft, clipkit, fasttree, iqtree, veryfasttree, phylobayes)
+
+**Location**: `gigantic_project-COPYME/subprojects/trees_gene_families/gene_family_COPYME/STEP_2-phylogenetic_analysis/`
 
 ---
 
@@ -17,10 +33,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| trees_gene_families concepts | `../AI_GUIDE-trees_gene_families.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| trees_gene_families concepts | `../AI_GUIDE.md` |
 | STEP_2 phylogenetic analysis concepts (this step) | This file |
-| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE-phylogenetic_analysis_workflow.md` |
+| Running the workflow | `workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ---
 
@@ -103,7 +119,7 @@ Trees and alignments exported to the subproject-root output_to_input/:
 
 ```
 STEP_2-phylogenetic_analysis/
-├── AI_GUIDE-phylogenetic_analysis.md   # THIS FILE
+├── AI_GUIDE.md   # THIS FILE
 ├── README.md
 └── workflow-COPYME-phylogenetic_analysis/
 # Note: output symlinked to ../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/
@@ -113,7 +129,7 @@ STEP_2-phylogenetic_analysis/
     ├── INPUT_user/
     ├── OUTPUT_pipeline/
     └── ai/
-        ├── AI_GUIDE-phylogenetic_analysis_workflow.md
+        ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
         └── scripts/

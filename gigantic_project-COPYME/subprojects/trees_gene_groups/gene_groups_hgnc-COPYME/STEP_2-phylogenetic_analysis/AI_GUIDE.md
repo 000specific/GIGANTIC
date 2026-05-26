@@ -1,6 +1,23 @@
 # AI Guide: STEP_2 — Phylogenetic Analysis (trees_gene_groups)
 
-**For AI Assistants**: Read `../../../AI_GUIDE-project.md` first for GIGANTIC overview. Then `../../AI_GUIDE-trees_gene_groups.md` for subproject concepts. This guide covers STEP_2.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP README: [`README.md`](README.md)
+- Parent (template): [`../README.md`](../README.md)
+- Parent (subproject AI guide): [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Reads FROM: `../../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/`
+- Outputs TO: `../../../../output_to_input/<gene_group>/STEP_2-phylogenetic_analysis/`
+- Conda env: `aiG-trees_gene_groups-phylogenetic_analysis`
+
+---
+
+**For AI Assistants**: Read `../../../AI_GUIDE.md` first for GIGANTIC overview. Then `../../AI_GUIDE.md` for subproject concepts. This guide covers STEP_2.
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/gene_groups_COPYME/STEP_2-phylogenetic_analysis/`
 

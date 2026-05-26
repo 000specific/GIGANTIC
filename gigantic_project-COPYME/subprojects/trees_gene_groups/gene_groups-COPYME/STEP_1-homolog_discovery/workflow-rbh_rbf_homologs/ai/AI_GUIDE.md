@@ -1,6 +1,24 @@
 # AI Guide: RBH/RBF Homolog Discovery Workflow (trees_gene_groups STEP_1)
 
-**For AI Assistants**: Read `../../AI_GUIDE-homolog_discovery.md` first for STEP_1 concepts. This guide covers workflow execution and orchestrator internals.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (template): [`../../../README.md`](../../../README.md)
+- Parent (subproject AI guide): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- Parent (project): [`../../../../../../AI_GUIDE.md`](../../../../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Conda env: `aiG-trees_gene_groups-rbh_rbf_homologs`
+- 15 scripts (gaps at 003, 006, 015); 017 = `write_run_log` (§45); 018 conditional on subsequence mode
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for STEP_1 concepts. This guide covers workflow execution and orchestrator internals.
 
 **Location**: `gene_groups_COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/`
 

@@ -1,5 +1,25 @@
 # STEP_2 — Phylogenetic Analysis
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (template): [`../README.md`](../README.md)
+- Parent (subproject): [`../../README.md`](../../README.md)
+- STEP-level AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow template: [`workflow-COPYME-phylogenetic_analysis/`](workflow-COPYME-phylogenetic_analysis/)
+- Reads FROM: `../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/` (final AGS)
+- Outputs TO: `../../../output_to_input/<gene_group>/STEP_2-phylogenetic_analysis/`
+- Downstream STEP: `../STEP_3-tree_visualization/`
+- 9 scripts (001-006 with 005 a/b/c/d for FastTree/IQ-TREE/VeryFastTree/PhyloBayes); 006 = `write_run_log`
+- Conda env: `aiG-trees_gene_groups-phylogenetic_analysis`
+
+---
+
 Per-source STEP_2: build phylogenetic trees from the AGS produced by STEP_1.
 
 ## Single user-runnable script
@@ -60,5 +80,5 @@ These are STEP_3's input.
 
 ## See also
 
-- `AI_GUIDE-phylogenetic_analysis.md` — detailed AI guide
-- `workflow-COPYME-phylogenetic_analysis/ai/AI_GUIDE-phylogenetic_analysis_workflow.md` — workflow execution guide
+- `AI_GUIDE.md` — detailed AI guide
+- `workflow-COPYME-phylogenetic_analysis/ai/AI_GUIDE.md` — workflow execution guide

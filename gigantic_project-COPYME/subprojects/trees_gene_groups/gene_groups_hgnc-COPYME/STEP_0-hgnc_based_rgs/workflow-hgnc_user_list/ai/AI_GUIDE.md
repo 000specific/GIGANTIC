@@ -1,9 +1,27 @@
 # AI Guide: workflow-hgnc_user_list (STEP_0 / HGNC-Based RGS)
 
-**For AI Assistants**: Read `../../../../../AI_GUIDE-project.md`,
-`../../../../AI_GUIDE-trees_gene_groups.md`,
-`../../../AI_GUIDE-gene_groups_hgnc.md`, and
-`../../AI_GUIDE-hgnc_based_rgs.md` first. This file is the workflow-level
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (template AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sister workflow: [`../../workflow-hgnc_database/`](../../workflow-hgnc_database/) — full HGNC variant
+- Reads from: `../../../INPUT_user/user_gene_set_*.tsv` (user-curated subset) + HGNC public database
+- Outputs to: per-gene-group RGS FASTAs in `OUTPUT_pipeline/` for downstream `../../../STEP_1-homolog_discovery/`
+- Conda env: `aiG-trees_gene_groups-hgnc_based_rgs`
+- Workflow naming pre-§3 (no COPYME prefix); deferred rename
+
+---
+
+**For AI Assistants**: Read `../../../../../AI_GUIDE.md`,
+`../../../../AI_GUIDE.md`,
+`../../../AI_GUIDE.md`, and
+`../../AI_GUIDE.md` first. This file is the workflow-level
 execution guide for `workflow-hgnc_user_list`.
 
 **Location**: `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/`
@@ -220,7 +238,7 @@ Then `cd ../../STEP_1-homolog_discovery/workflow-rbh_rbf_homologs/ && bash RUN-w
 ## Differences From `workflow-hgnc_database`
 
 See the comparison table in
-`../workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md`.
+`../workflow-hgnc_database/ai/AI_GUIDE.md`.
 
 The key axis: this workflow defines its gene groups from a **user TSV**
 and fetches sequences from **UniProt REST**, whereas the database
@@ -231,8 +249,8 @@ from a **local human proteome**.
 
 ## See Also
 
-- `../AI_GUIDE-hgnc_based_rgs.md` — STEP_0 concepts
-- `../../AI_GUIDE-gene_groups_hgnc.md` — template-level guide
-- `../workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md` — sibling workflow
+- `../AI_GUIDE.md` — STEP_0 concepts
+- `../../AI_GUIDE.md` — template-level guide
+- `../workflow-hgnc_database/ai/AI_GUIDE.md` — sibling workflow
 - `../../INPUT_user/README.md` — user_gene_set.tsv format and location
 - `../../../output_to_input/hugo_hgnc_database/README.md` — canonical reference data

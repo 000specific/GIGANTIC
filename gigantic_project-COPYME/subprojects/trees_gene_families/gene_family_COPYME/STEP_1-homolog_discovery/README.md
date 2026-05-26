@@ -1,5 +1,23 @@
 # STEP_1: Homolog Discovery
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../../README.md`](../../README.md) — trees_gene_families overview
+- STEP-level AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow template: [`workflow-COPYME-rbh_rbf_homologs/`](workflow-COPYME-rbh_rbf_homologs/) — what user copies per gene family
+- Reads FROM: `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/` + RGS FASTAs in `INPUT_user/`
+- Outputs TO: `../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (symlinks to `OUTPUT_pipeline/`)
+- Downstream STEP: `../STEP_2-phylogenetic_analysis/` consumes the final AGS
+- 15 numbered scripts (gaps at 003, 006, 015 — see workflow AI_GUIDE); script 017 = `write_run_log` (canonical final per §45); script 018 conditional on subsequence mode
+
+---
+
 Find homologous sequences across project species using Reciprocal Best Hit/Family (RBH/RBF) BLAST.
 
 ## Purpose
@@ -50,4 +68,4 @@ Final AGS files are symlinked to:
 
 ## For AI Assistants
 
-See `AI_GUIDE-homolog_discovery.md` for detailed AI guidance.
+See `AI_GUIDE.md` for detailed AI guidance.

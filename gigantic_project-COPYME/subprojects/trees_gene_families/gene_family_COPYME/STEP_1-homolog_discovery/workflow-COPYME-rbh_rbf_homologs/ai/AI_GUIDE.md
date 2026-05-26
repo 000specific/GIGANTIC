@@ -1,8 +1,23 @@
 # AI Guide: RBH/RBF Homolog Discovery Workflow
 
-**For AI Assistants**: This guide covers workflow execution. For STEP_1 concepts, see `../../AI_GUIDE-homolog_discovery.md`. For trees_gene_families overview, see `../../../AI_GUIDE-trees_gene_families.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE-project.md`.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**Location**: `trees_gene_families/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/`
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — STEP_1 concepts (RBH/RBF, full-length vs subsequence)
+- Parent subproject: [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md) — trees_gene_families overview
+- Parent project: [`../../../../../../AI_GUIDE.md`](../../../../../../AI_GUIDE.md) — GIGANTIC overview
+- Workflow README: [`../README.md`](../README.md) — usage + config examples
+- Reads from: `INPUT_user/` (RGS FASTAs + species keeper list) + `../../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/`
+- Outputs to: `OUTPUT_pipeline/` → symlinked into `../../../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/`
+- 15 scripts in `scripts/` (gaps at 003, 006, 015 — see Architecture section); script 017 = `write_run_log` (canonical final per §45); 018 conditional on subsequence mode
+- Conda env: `aiG-trees_gene_families-rbh_rbf_homologs` (BLAST + numpy + scipy)
+
+**Location**: `trees_gene_families/gene_family_COPYME/STEP_1-homolog_discovery/workflow-COPYME-rbh_rbf_homologs/`
 
 ---
 
@@ -17,9 +32,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| trees_gene_families concepts | `../../../AI_GUIDE-trees_gene_families.md` |
-| STEP_1 homolog concepts | `../../AI_GUIDE-homolog_discovery.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` |
+| trees_gene_families concepts | `../../../AI_GUIDE.md` |
+| STEP_1 homolog concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ---
@@ -44,7 +59,7 @@ workflow-COPYME-rbh_rbf_homologs/
 │   ├── 1-output/   through 16-output/   # All 16 step outputs
 │
 └── ai/
-    ├── AI_GUIDE-rbh_rbf_homologs_workflow.md  # THIS FILE
+    ├── AI_GUIDE.md  # THIS FILE
     ├── main.nf
     ├── nextflow.config
     └── scripts/

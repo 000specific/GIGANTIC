@@ -1,5 +1,23 @@
 # STEP_2: Phylogenetic Analysis
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../../README.md`](../../README.md) — trees_gene_families overview
+- STEP-level AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Workflow template: [`workflow-COPYME-phylogenetic_analysis/`](workflow-COPYME-phylogenetic_analysis/)
+- Reads FROM: `../../../output_to_input/<gene_family>/STEP_1-homolog_discovery/` (final AGS from STEP_1)
+- Outputs TO: `../../../output_to_input/<gene_family>/STEP_2-phylogenetic_analysis/` — newick trees + alignments
+- Downstream STEP: `../STEP_3-tree_visualization/` for PDF/SVG rendering
+- 9 scripts (001-006, with 005 a/b/c/d for FastTree/IQ-TREE/VeryFastTree/PhyloBayes); 006 = `write_run_log` (canonical final per §45)
+
+---
+
 Build phylogenetic trees from homolog sequences identified in STEP_1.
 
 ## Purpose
@@ -41,4 +59,4 @@ These are then picked up by `STEP_3-tree_visualization` for PDF/SVG rendering.
 
 ## For AI Assistants
 
-See `AI_GUIDE-phylogenetic_analysis.md` for detailed AI guidance.
+See `AI_GUIDE.md` for detailed AI guidance.

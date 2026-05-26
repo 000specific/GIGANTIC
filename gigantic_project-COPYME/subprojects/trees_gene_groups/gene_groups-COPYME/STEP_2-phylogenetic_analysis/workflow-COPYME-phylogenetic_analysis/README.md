@@ -1,5 +1,23 @@
 # workflow-COPYME-phylogenetic_analysis
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md)
+- Parent (template): [`../../../README.md`](../../../README.md)
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/`
+- Outputs to: `../../../../../output_to_input/<gene_group>/STEP_2-phylogenetic_analysis/`
+- Downstream STEP: `../../STEP_3-tree_visualization/workflow-COPYME-tree_visualization/`
+- 9 scripts; 006 = `write_run_log`
+
+---
+
 STEP_2 workflow template (orchestrator) for trees_gene_groups. Builds phylogenetic
 trees per gene group from STEP_1's AGS output.
 
@@ -47,7 +65,7 @@ bash RUN-workflow.sh
 NextFlow pipeline:
 - Stage AGS → clean dashes → MAFFT align → ClipKit trim → tree (1-4 methods) → log
 
-See `ai/AI_GUIDE-phylogenetic_analysis_workflow.md` for details.
+See `ai/AI_GUIDE.md` for details.
 
 ## Outputs
 

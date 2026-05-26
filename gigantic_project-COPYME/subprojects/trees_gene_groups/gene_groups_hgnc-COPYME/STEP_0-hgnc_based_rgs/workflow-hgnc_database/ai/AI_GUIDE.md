@@ -1,9 +1,27 @@
 # AI Guide: workflow-hgnc_database (STEP_0 / HGNC-Based RGS)
 
-**For AI Assistants**: Read `../../../../../AI_GUIDE-project.md`,
-`../../../../AI_GUIDE-trees_gene_groups.md`,
-`../../../AI_GUIDE-gene_groups_hgnc.md`, and
-`../../AI_GUIDE-hgnc_based_rgs.md` first. This file is the workflow-level
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (template AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sister workflow: [`../../workflow-hgnc_user_list/`](../../workflow-hgnc_user_list/) — curated subset variant
+- Reads from: HGNC public database (network download)
+- Outputs to: per-gene-group RGS FASTAs in `OUTPUT_pipeline/` for downstream `../../../STEP_1-homolog_discovery/`
+- Conda env: `aiG-trees_gene_groups-hgnc_based_rgs` (urllib stdlib only — no `requests`)
+- Workflow naming pre-§3 (no COPYME prefix); deferred rename
+
+---
+
+**For AI Assistants**: Read `../../../../../AI_GUIDE.md`,
+`../../../../AI_GUIDE.md`,
+`../../../AI_GUIDE.md`, and
+`../../AI_GUIDE.md` first. This file is the workflow-level
 execution guide for `workflow-hgnc_database`.
 
 **Location**: `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_database/`
@@ -185,7 +203,7 @@ Common fail-fast conditions:
 
 ## See Also
 
-- `../AI_GUIDE-hgnc_based_rgs.md` — STEP_0 concepts
-- `../../AI_GUIDE-gene_groups_hgnc.md` — template-level guide
-- `../workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md` — sibling workflow
+- `../AI_GUIDE.md` — STEP_0 concepts
+- `../../AI_GUIDE.md` — template-level guide
+- `../workflow-hgnc_user_list/ai/AI_GUIDE.md` — sibling workflow
 - `../../../output_to_input/hugo_hgnc_database/README.md` — canonical reference data

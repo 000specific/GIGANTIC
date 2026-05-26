@@ -1,5 +1,22 @@
 # gene_groups_hgnc-COPYME — HGNC-Anchored Gene-Group Template
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../README.md`](../README.md)
+- Parent (subproject AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Template AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Sibling template (generic): [`../gene_groups-COPYME/`](../gene_groups-COPYME/) — for non-HGNC sources
+- STEP_0 has TWO workflows: [`STEP_0-hgnc_based_rgs/workflow-hgnc_database/`](STEP_0-hgnc_based_rgs/workflow-hgnc_database/) (all HGNC groups) + [`STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/`](STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/) (curated subset)
+- Instances of THIS template named `gene_groups_hgnc-<source>/` (UNDERSCORE+HYPHEN, per memory `feedback_instance_naming_follows_template_prefix`)
+
+---
+
 Sibling template to [gene_groups-COPYME](../gene_groups-COPYME/) within the
 `trees_gene_groups` subproject. This template is specialized for analyses
 anchored on **HUGO HGNC** human-gene nomenclature: it bundles a STEP_0 that
@@ -134,9 +151,9 @@ Both STEP_0 workflows produce the same per-group RGS FASTA + per-group
 summary TSV, so the downstream pipeline runs identically regardless of
 mode. See the STEP-level AI_GUIDEs for details:
 
-- `STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` — RBH/RBF homolog discovery
-- `STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` — alignment + tree
-- `STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` — rendering
+- `STEP_1-homolog_discovery/AI_GUIDE.md` — RBH/RBF homolog discovery
+- `STEP_2-phylogenetic_analysis/AI_GUIDE.md` — alignment + tree
+- `STEP_3-tree_visualization/AI_GUIDE.md` — rendering
 
 Each instance run uses the per-STEP `RUN-workflow.sh` orchestrator
 (single user-runnable script): it creates its conda env once on the
@@ -165,9 +182,9 @@ gene group, and dispatches per `execution_mode` (`local`,
 
 ## See also
 
-- [../AI_GUIDE-trees_gene_groups.md](../AI_GUIDE-trees_gene_groups.md) — subproject-level AI guide
+- [../AI_GUIDE.md](../AI_GUIDE.md) — subproject-level AI guide
 - [../README.md](../README.md) — subproject overview
-- [AI_GUIDE-gene_groups_hgnc.md](AI_GUIDE-gene_groups_hgnc.md) — this template's AI guide
-- [STEP_0-hgnc_based_rgs/AI_GUIDE-hgnc_based_rgs.md](STEP_0-hgnc_based_rgs/AI_GUIDE-hgnc_based_rgs.md) — STEP_0 concepts
-- [STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md](STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md) — batch HGNC mode
-- [STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md](STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md) — user-list mode
+- [AI_GUIDE.md](AI_GUIDE.md) — this template's AI guide
+- [STEP_0-hgnc_based_rgs/AI_GUIDE.md](STEP_0-hgnc_based_rgs/AI_GUIDE.md) — STEP_0 concepts
+- [STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md) — batch HGNC mode
+- [STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md) — user-list mode

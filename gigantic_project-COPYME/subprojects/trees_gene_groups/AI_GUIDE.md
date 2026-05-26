@@ -1,6 +1,28 @@
 # AI Guide: trees_gene_groups Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for the GIGANTIC project overview. This guide covers the trees_gene_groups subproject.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- Two templates (per §47 + memory `feedback_instance_naming_follows_template_prefix`):
+  - [`gene_groups-COPYME/`](gene_groups-COPYME/) — generic source-agnostic; instances named `gene_groups-<source>/`
+  - [`gene_groups_hgnc-COPYME/`](gene_groups_hgnc-COPYME/) — HGNC-specialized with concrete STEP_0; instances named `gene_groups_hgnc-<source>/`
+- Frozen instances (per memory `feedback_research_instances_are_frozen_artifacts`):
+  - `gene_groups-hugo_hgnc/` (older HGNC analysis with pre-rework STEP_0)
+  - `gene_groups-snap_family/` (SNAP family experiment)
+- Reads FROM:
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_{proteomes,blast_databases}/`
+  - `../phylonames/` — species naming
+  - External sources downloaded by per-source STEP_0 (HGNC, Pfam, etc.)
+- Outputs TO (`output_to_input/<gene_group>/`): STEP_1 AGS, STEP_2 newicks+alignments, STEP_3 PDFs+SVGs
+- Downstream consumers: `orthogroups_X_trees/` (when present); `upload_to_server/` for the GIGANTIC server
+- Sibling: [`../trees_gene_families/AI_GUIDE.md`](../trees_gene_families/AI_GUIDE.md) — gene families via hand-curated RGS (same three-STEP architecture from STEP_1 onward)
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_gene_groups/`
 
@@ -18,17 +40,17 @@
 
 | User needs… | Go to… |
 |-------------|--------|
-| GIGANTIC project overview | `../../AI_GUIDE-project.md` |
+| GIGANTIC project overview | `../../AI_GUIDE.md` |
 | trees_gene_groups concepts (this file) | this file |
 | Generic (source-agnostic) template | `gene_groups-COPYME/README.md` |
-| HGNC-anchored template (newer, two STEP_0 modes) | `gene_groups_hgnc-COPYME/AI_GUIDE-gene_groups_hgnc.md` |
+| HGNC-anchored template (newer, two STEP_0 modes) | `gene_groups_hgnc-COPYME/AI_GUIDE.md` |
 | HGNC source specifics (legacy instance) | `gene_groups-hugo_hgnc/AI_GUIDE-hugo_hgnc.md` |
 | Canonical HGNC reference data | `output_to_input/hugo_hgnc_database/README.md` |
-| STEP_1 concepts (RBH/RBF) | `gene_groups-COPYME/STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` |
-| STEP_2 concepts | `gene_groups-COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` |
-| STEP_3 concepts | `gene_groups-COPYME/STEP_3-tree_visualization/AI_GUIDE-phylogenetic_visualization.md` |
-| HGNC STEP_0 (batch all HGNC groups) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE-hgnc_database_workflow.md` |
-| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE-hgnc_user_list_workflow.md` |
+| STEP_1 concepts (RBH/RBF) | `gene_groups-COPYME/STEP_1-homolog_discovery/AI_GUIDE.md` |
+| STEP_2 concepts | `gene_groups-COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE.md` |
+| STEP_3 concepts | `gene_groups-COPYME/STEP_3-tree_visualization/AI_GUIDE.md` |
+| HGNC STEP_0 (batch all HGNC groups) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_database/ai/AI_GUIDE.md` |
+| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-hgnc_user_list/ai/AI_GUIDE.md` |
 | Workflow execution details (STEP_1/2/3) | each `workflow-*/ai/AI_GUIDE-*.md` |
 | Shared RBH/RBF methodology with sister subproject | `../trees_gene_families/AI_GUIDE-trees_gene_families.md` |
 

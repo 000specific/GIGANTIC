@@ -1,5 +1,23 @@
 # workflow-COPYME-rbh_rbf_homologs
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP: [`../README.md`](../README.md) — STEP_1-homolog_discovery
+- Parent (template): [`../../README.md`](../../README.md) — gene_groups-COPYME
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: per-gene-group RGS FASTAs from STEP_0 + `../../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/`
+- Outputs to: `../../../../../output_to_input/<gene_group>/STEP_1-homolog_discovery/` (symlinks)
+- Downstream STEP: `../../STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/`
+- Orchestrator: dispatches per `execution_mode` YAML (local / slurm-standard / slurm-burst)
+
+---
+
 STEP_1 workflow template (orchestrator) for trees_gene_groups. Processes all
 gene groups for a source via RBH/RBF homolog discovery.
 
@@ -47,7 +65,7 @@ All settings live in `START_HERE-user_config.yaml`. Key options:
 
 ## Per-gene-group pipeline (inside each sub-RUN_01)
 
-NextFlow pipeline running 16 steps (validate RGS → forward BLAST → BGS extract → RGS-genome BLAST → map RGS to genomes → modified genomes → reciprocal BLAST → CGS extract → species filter → AGS). See `ai/AI_GUIDE-rbh_rbf_homologs_workflow.md` for details.
+NextFlow pipeline running 16 steps (validate RGS → forward BLAST → BGS extract → RGS-genome BLAST → map RGS to genomes → modified genomes → reciprocal BLAST → CGS extract → species filter → AGS). See `ai/AI_GUIDE.md` for details.
 
 ## Outputs
 

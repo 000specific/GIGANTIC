@@ -1,6 +1,22 @@
 # AI Guide: Phylogenetic Analysis Workflow (trees_gene_groups STEP_2)
 
-**For AI Assistants**: Read `../../AI_GUIDE-phylogenetic_analysis.md` first for STEP_2 concepts. This guide covers workflow execution.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (template): [`../../../../README.md`](../../../../README.md)
+- Parent (subproject AI guide): [`../../../../../AI_GUIDE.md`](../../../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Conda env: `aiG-trees_gene_groups-phylogenetic_analysis`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for STEP_2 concepts. This guide covers workflow execution.
 
 **Location**: `gene_groups_COPYME/STEP_2-phylogenetic_analysis/workflow-COPYME-phylogenetic_analysis/`
 
