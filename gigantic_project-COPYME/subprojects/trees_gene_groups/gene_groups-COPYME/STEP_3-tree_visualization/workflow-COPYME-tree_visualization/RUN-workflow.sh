@@ -233,9 +233,27 @@ while IFS=$'\t' read -r gene_group_id gene_group_name sanitized_name rgs_filenam
         fi
     fi
 
-    # STEP_2 must have produced at least one newick for this gene group
+    # STEP_2 must have produced at least one newick for this gene group.
+    # Uses shopt -s nullglob + array union so that an ABSENT extension produces
+    # no glob entry (rather than the literal pattern string), and `((${#arr[@]}))`
+    # tests the union for "did anything match". Prior `ls ... &>/dev/null` form
+    # returned exit-2 whenever ANY of the 4 patterns missed — false-skipping
+    # gene groups that legitimately produced just one tree type (e.g.,
+    # fasttree-only runs from STEP_2's profile=standard).
     NEWICK_DIR="${STEP2_RUN_DIR}/gene_group-${sanitized_name}"
-    if [ ! -d "${NEWICK_DIR}" ] || ! ls "${NEWICK_DIR}"/*.fasttree "${NEWICK_DIR}"/*.treefile "${NEWICK_DIR}"/*.veryfasttree "${NEWICK_DIR}"/*.phylobayes.nwk &>/dev/null; then
+    if [ ! -d "${NEWICK_DIR}" ]; then
+        no_trees_count=$((no_trees_count + 1))
+        continue
+    fi
+    shopt -s nullglob
+    NEWICK_FILES=(
+        "${NEWICK_DIR}"/*.fasttree
+        "${NEWICK_DIR}"/*.treefile
+        "${NEWICK_DIR}"/*.veryfasttree
+        "${NEWICK_DIR}"/*.phylobayes.nwk
+    )
+    shopt -u nullglob
+    if (( ${#NEWICK_FILES[@]} == 0 )); then
         no_trees_count=$((no_trees_count + 1))
         continue
     fi
