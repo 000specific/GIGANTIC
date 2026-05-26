@@ -29,7 +29,7 @@ root, parent directory):
 
 | Task | Go to | Notes |
 |---|---|---|
-| User typed **"Save Chat!"** | `ai_scripts/` | Invoke the on-demand capture script (`003_*.py` when implemented; currently fall back to `001_*.py` for summary extraction and confirm with user) |
+| User typed **"Save Chat!"** | `ai_scripts/003_ai-python-copy_session_jsonls.py` | Run it (`python3 ai/ai_scripts/003_*.py`) — gzip-copies every Claude Code session JSONL for this project into `research_notebook/research_ai/sessions/`. Idempotent (skips already-captured); safe to re-run. Print the script's summary back to the user. |
 | A new project-wide convention surfaced in conversation | `ai_FYIs/gigantic_conventions.md` | Append a new `## §N — ...` section following the established style; quote the source if it came from a specific design discussion |
 | A new AI-facing note / FYI needs storing | `ai_FYIs/<subproject>-<descriptor>.md` (or `<scope>-<descriptor>.md` for project-wide) | Use subproject-first naming so related FYIs sort together |
 | A new capture/utility script is needed | `ai_scripts/NNN_ai-python-<descriptor>.py` | Use the next `NNN` number; include the AI-attribution header; document in `ai/README.md` |

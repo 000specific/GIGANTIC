@@ -54,28 +54,25 @@ Each script has a `NNN_ai-` prefix indicating it was AI-authored.
 
 Current contents:
 
-- **`001_ai-python-extract_claude_sessions.py`** — utility for extracting
-  context-compaction *summaries* (markdown) from Claude Code's internal
-  JSONL storage at `~/.claude/projects/<encoded-path>/*.jsonl`. Useful for
-  human-readable session digests, but summary-based — less central than
-  the lossless hook (002) and the planned raw-copy script (003).
-
 - **`002_ai-python-hook_precompact_capture_transcript.py`** — the
   PreCompact hook for Claude Code. Registered via `.claude/settings.json`
   at this project's root (the deliberate `.claude/` shipping exception per
-  `ai/ai_FYIs/gigantic_conventions.md` §7). Fires automatically before each
-  context compaction; gzips the full lossless JSONL session transcript
+  `ai/ai_FYIs/gigantic_conventions.md` §7). Fires **automatically** before
+  each context compaction; gzips the full lossless JSONL session transcript
   into `research_notebook/research_ai/sessions/`. Appends to
   `TRANSCRIPT_CAPTURE_LOG.md` in the same directory.
 
-- **`003_ai-python-copy_session_jsonls.py`** *(planned, not yet implemented)*
-  — raw-gzip-copies all of Claude Code's session JSONLs for this project
-  from `~/.claude/projects/<encoded-path>/` into
-  `research_notebook/research_ai/sessions/`. Closes the TTL gap (Claude
-  Code default-deletes its source JSONLs after 30 days) and captures
-  short sessions that never compact (and so never trigger the hook).
-  This is the script invoked when the user types **"Save Chat!"** — see
-  project-level `AI_GUIDE.md` for the full on-demand capture behavior.
+- **`003_ai-python-copy_session_jsonls.py`** — the **"Save Chat!"** script.
+  Walks every Claude Code session JSONL for this project at
+  `~/.claude/projects/<encoded-path>/*.jsonl` and gzip-copies each into
+  `research_notebook/research_ai/sessions/` with the same filename
+  convention as the hook. Dedups by exact filename (so re-runs on unchanged
+  sources skip; growing sessions produce fresh snapshots). Closes the TTL
+  gap (Claude Code default-deletes its source JSONLs after 30 days) and
+  captures short sessions that never compact (and so never trigger the
+  hook). Invoked **on-demand** when the user types "Save Chat!" or when
+  the AI proactively offers capture — see project-level `AI_GUIDE.md` for
+  the full on-demand capture behavior.
 
 ---
 

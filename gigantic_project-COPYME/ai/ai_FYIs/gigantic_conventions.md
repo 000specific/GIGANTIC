@@ -118,9 +118,9 @@ gigantic_project-COPYME/
 │   ├── README.md                # What's in ai/
 │   ├── ai_FYIs/                 # Markdown notes, conventions, archives, FYIs
 │   │   └── gigantic_conventions.md
-│   └── ai_scripts/              # Python tooling (capture hook, extractors, etc.)
-│       ├── 001_ai-python-extract_claude_sessions.py
-│       └── 002_ai-python-hook_precompact_capture_transcript.py
+│   └── ai_scripts/              # Python tooling (capture hook, "Save Chat!" script, etc.)
+│       ├── 002_ai-python-hook_precompact_capture_transcript.py
+│       └── 003_ai-python-copy_session_jsonls.py
 └── …
 ```
 
@@ -210,9 +210,10 @@ To close the gap for short sessions that never compact:
 
 1. Users should set `cleanupPeriodDays` to a large number in their global
    `~/.claude/settings.json` (one-line manual change), AND
-2. The on-demand capture script (`ai/ai_scripts/003_*.py`, planned) raw-copies
-   all `~/.claude/projects/...` JSONLs into
-   `research_notebook/research_ai/sessions/` so they survive TTL.
+2. The on-demand capture script (`ai/ai_scripts/003_ai-python-copy_session_jsonls.py`)
+   raw-copies all `~/.claude/projects/...` JSONLs for this project into
+   `research_notebook/research_ai/sessions/` so they survive TTL. AI runs
+   it when the user types "Save Chat!" or proactively offers capture.
 
 **Publication scrub**: captured transcripts may contain frank language, draft
 hypotheses, collaborator names in unflattering context, credentials/tokens
