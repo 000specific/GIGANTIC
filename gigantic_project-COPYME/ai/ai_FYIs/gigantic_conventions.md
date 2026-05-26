@@ -174,7 +174,7 @@ constraints documented right there.
 
 ---
 
-## 9. Chat-as-research-notebook: lossless permanent captures, never edited; DCS! for on-demand capture
+## 9. Chat-as-research-notebook: lossless permanent captures, never edited; "Save Chat!" for on-demand capture
 
 Every AI chat session is treated as a research-notebook entry. The default
 mechanism for Claude Code is fully automatic:
@@ -187,11 +187,11 @@ mechanism for Claude Code is fully automatic:
   **never edited** (treat as original lab-notebook entries).
 - A `TRANSCRIPT_CAPTURE_LOG.md` in the sessions directory tracks each capture.
 
-**On-demand capture via DCS!**: users can type **"DCS!"** ("Document Chat for
-Science!") to their AI at any point to trigger an on-demand capture (the AI
-runs the appropriate `ai/ai_scripts/` script). Recommended moments: at
-milestones, before signoff, periodically during long sessions. AIs should
-also proactively suggest capture when they sense the user is winding down
+**On-demand capture via "Save Chat!"**: users can type **"Save Chat!"** to
+their AI at any point to trigger an on-demand capture (the AI runs the
+appropriate `ai/ai_scripts/` script). Recommended moments: at milestones,
+before signoff, periodically during long sessions. AIs should also
+proactively suggest capture when they sense the user is winding down
 ("done for the day", "let me stop here", closing-the-laptop signals) or
 when a significant milestone has just completed.
 
@@ -213,7 +213,7 @@ materials, etc.), make **copies** and scrub the copies. **Never modify the
 originals** — they are the canonical research record.
 
 **For non-Claude AIs** (Cursor, ChatGPT, Gemini, etc.): the principle is the
-same — lossless, permanent, never-edited captures with on-demand DCS!
+same — lossless, permanent, never-edited captures with on-demand "Save Chat!"
 triggers. The mechanism differs by AI: see `AI_BEHAVIOR.md` and `AI_GUIDE.md`
 in the project for AI-specific setup guidance. The non-Claude AI works with
 the user to identify where their AI stores session data and to wire up an

@@ -89,7 +89,7 @@ on you to know when you're certain and when you're not.
 
 ---
 
-## Chat-as-research-notebook (DCS!)
+## Chat-as-research-notebook ("Save Chat!")
 
 Every AI chat session in this project is captured as a research artifact.
 For Claude Code, capture is automatic via the PreCompact hook registered in
@@ -101,12 +101,12 @@ full architecture).
 - **Proactively suggest capture** at meaningful moments — milestones, just
   before the user signs off, after a significant decision or breakthrough,
   or periodically during long sessions.
-- **Respond to "DCS!"** ("Document Chat for Science!") — when the user
-  types this phrase, immediately run the on-demand capture script in
-  `ai/ai_scripts/` and confirm what was captured.
+- **Respond to "Save Chat!"** — when the user types this phrase,
+  immediately run the on-demand capture script in `ai/ai_scripts/` and
+  confirm what was captured.
 - **Detect signoff signals** — "done for the day", "let me stop here",
   "I'll come back to this tomorrow", or extended user silence after a
-  complete work block — and suggest a DCS! capture.
+  complete work block — and suggest a "Save Chat!" capture.
 - **Never edit existing captures.** They are originals.
 
 For non-Claude AIs: read `AI_GUIDE.md` (and `ai/ai_FYIs/gigantic_conventions.md`

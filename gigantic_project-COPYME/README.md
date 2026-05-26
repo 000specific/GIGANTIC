@@ -51,21 +51,21 @@ segment — every message, tool call, file read, and command result. Nothing
 is summarized; nothing is dropped. Disk footprint grows over the life of
 the project, and that is by design.
 
-### "DCS!" — Document Chat for Science!
+### "Save Chat!" — on-demand capture
 
-At any meaningful moment, type **"DCS!"** in your chat. Your AI will
-trigger an on-demand capture of the current session and any other recent
-Claude Code sessions for this project.
+At any meaningful moment, type **"Save Chat!"** in your chat. Your AI
+will trigger an on-demand capture of the current session and any other
+recent Claude Code sessions for this project.
 
-Good times to say DCS!:
+Good times to say "Save Chat!":
 
 - Just finished a significant milestone or made an important decision
 - Wrapping up for the day or about to close your laptop
 - Periodically during a long, productive session
 - Anytime it feels like "I should make sure this is recorded"
 
-Your AI should also proactively suggest DCS! when it senses one of these
-moments. If your AI isn't doing that, ask it to.
+Your AI should also proactively suggest "Save Chat!" when it senses one
+of these moments. If your AI isn't doing that, ask it to.
 
 ### These captures are originals — **never edit them**
 

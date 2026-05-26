@@ -66,6 +66,7 @@ process build_evidence_table {
     python3 ${scripts_dir}/002_ai-python-build_evidence_table.py \
         --input-fasta ${proteome_path} \
         --annotation-database-dir ${params.annotation_database_dir} \
+        --deeploc-csv-dir ${params.deeploc_csv_dir} \
         --output-dir . \
         --phyloname ${phyloname}
     """

@@ -23,13 +23,35 @@ Output: <phyloname>_evidence_table.tsv with:
         <db>_Annotation_Identifiers     (comma-delimited unique sorted)
         <db>_Annotation_Details         (comma-delimited unique sorted)
 
-    Specialized parsed columns (for the 4 dbs with structured details):
+    Specialized parsed columns:
         signalp_fast_Call               (Sec/SPI | Sec/SPII | Tat/SPI | None)
         signalp_fast_Probability        (float; None if no prediction)
         signalp_slow_Call
         signalp_slow_Probability
-        deeploc_Top_Localization        (e.g. Extracellular, Cytoplasm, ...)
-        deeploc_Top_Probability         (float; None if no prediction)
+        deeploc_Localizations           (DeepLoc top-call localization string,
+                                         pipe-separated for multi-compartment
+                                         calls; from DeepLoc CSV `Localizations`
+                                         column — same string the long-format
+                                         DB stores)
+        deeploc_Signals                 (DeepLoc Signals column: e.g.
+                                         'Signal peptide', 'Mitochondrial
+                                         transit peptide', 'None')
+        deeploc_Membrane_Types          (DeepLoc 'Membrane types' column:
+                                         e.g. 'Soluble', 'Transmembrane')
+        deeploc_Cytoplasm_Probability               (float; from CSV)
+        deeploc_Nucleus_Probability                 (float; from CSV)
+        deeploc_Extracellular_Probability           (float; from CSV)
+        deeploc_Cell_Membrane_Probability           (float; from CSV)
+        deeploc_Mitochondrion_Probability           (float; from CSV)
+        deeploc_Plastid_Probability                 (float; from CSV)
+        deeploc_Endoplasmic_Reticulum_Probability   (float; from CSV)
+        deeploc_Lysosome_Vacuole_Probability        (float; from CSV)
+        deeploc_Golgi_Apparatus_Probability         (float; from CSV)
+        deeploc_Peroxisome_Probability              (float; from CSV)
+        deeploc_Peripheral_Probability              (float; from CSV)
+        deeploc_Transmembrane_Probability           (float; from CSV)
+        deeploc_Lipid_Anchor_Probability            (float; from CSV)
+        deeploc_Soluble_Probability                 (float; from CSV)
         tmbed_TM_Helix_Count
         tmbed_Beta_Barrel_Count
         tmbed_Signal_Peptide_Count
@@ -61,11 +83,36 @@ reading `annotations_hmms/output_to_input/BLOCK_deeploc/*.csv` directly.
 """
 
 import argparse
+import csv
 import logging
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+
+# DeepLoc CSV columns and the safe-identifier column suffix used in output TSV
+DEEPLOC_PROBABILITY_COLUMNS = [
+    ( "Cytoplasm",             "Cytoplasm_Probability" ),
+    ( "Nucleus",               "Nucleus_Probability" ),
+    ( "Extracellular",         "Extracellular_Probability" ),
+    ( "Cell membrane",         "Cell_Membrane_Probability" ),
+    ( "Mitochondrion",         "Mitochondrion_Probability" ),
+    ( "Plastid",               "Plastid_Probability" ),
+    ( "Endoplasmic reticulum", "Endoplasmic_Reticulum_Probability" ),
+    ( "Lysosome/Vacuole",      "Lysosome_Vacuole_Probability" ),
+    ( "Golgi apparatus",       "Golgi_Apparatus_Probability" ),
+    ( "Peroxisome",            "Peroxisome_Probability" ),
+    ( "Peripheral",            "Peripheral_Probability" ),
+    ( "Transmembrane",         "Transmembrane_Probability" ),
+    ( "Lipid anchor",          "Lipid_Anchor_Probability" ),
+    ( "Soluble",               "Soluble_Probability" ),
+]
+DEEPLOC_STRING_COLUMNS = [
+    ( "Localizations",   "Localizations" ),
+    ( "Signals",         "Signals" ),
+    ( "Membrane types",  "Membrane_Types" ),
+]
 
 
 def parse_args():
@@ -91,6 +138,11 @@ def parse_args():
         "--phyloname",
         required = True,
         help = "GIGANTIC phyloname for the species (used in input/output naming).",
+    )
+    parser.add_argument(
+        "--deeploc-csv-dir",
+        required = True,
+        help = "Path to the directory of DeepLoc CSV files (annotations_hmms/output_to_input/BLOCK_deeploc/). Used to augment the evidence table with per-compartment probabilities that are NOT preserved in the long-format annotation database.",
     )
     return parser.parse_args()
 
@@ -209,6 +261,43 @@ def read_database_rows_per_protein( database_tsv_path, logger ):
 
 
 # =============================================================================
+# DEEPLOC CSV — read raw per-compartment probabilities
+# =============================================================================
+
+def read_deeploc_csv( deeploc_csv_path, logger ):
+    """
+    Read DeepLoc 2.0 native CSV output (one row per protein) and return
+        protein_identifier -> dict( <safe_column_name> -> str_value )
+
+    Columns kept:
+        DEEPLOC_STRING_COLUMNS:       Localizations, Signals, Membrane types
+        DEEPLOC_PROBABILITY_COLUMNS:  Cytoplasm, Nucleus, Extracellular,
+                                      Cell membrane, Mitochondrion, Plastid,
+                                      Endoplasmic reticulum, Lysosome/Vacuole,
+                                      Golgi apparatus, Peroxisome,
+                                      Peripheral, Transmembrane, Lipid anchor,
+                                      Soluble
+    """
+    if not deeploc_csv_path.exists():
+        logger.error( f"CRITICAL ERROR: DeepLoc CSV not found: {deeploc_csv_path}" )
+        sys.exit( 1 )
+    protein_ids___deeploc_fields = {}
+    with open( deeploc_csv_path, newline = '' ) as f:
+        reader = csv.DictReader( f )
+        for row in reader:
+            protein_identifier = row[ "Protein_ID" ]
+            fields = {}
+            for csv_col, safe_name in DEEPLOC_STRING_COLUMNS:
+                fields[ safe_name ] = row.get( csv_col, "None" ) or "None"
+            for csv_col, safe_name in DEEPLOC_PROBABILITY_COLUMNS:
+                value = row.get( csv_col, "" )
+                fields[ safe_name ] = value if value else "None"
+            protein_ids___deeploc_fields[ protein_identifier ] = fields
+    logger.info( f"DeepLoc CSV: read {len( protein_ids___deeploc_fields )} proteins from {deeploc_csv_path.name}" )
+    return protein_ids___deeploc_fields
+
+
+# =============================================================================
 # SPECIALIZED PARSERS — for 4 dbs with structured details
 # =============================================================================
 
@@ -234,25 +323,11 @@ def signalp_call_and_probability_from_record( annotation_records ):
     return ( call, probability )
 
 
-# Matches a trailing `,probability=0.83...` after the localization name in
-# DeepLoc Annotation_Details ( e.g. 'Extracellular,probability=0.8346...' ).
-DEEPLOC_PROBABILITY_PATTERN = re.compile( r"probability=([0-9.eE+-]+)" )
-
-def deeploc_top_localization_and_probability( annotation_records ):
-    """
-    DeepLoc long-format DB has ONE row per protein, where
-        Annotation_Identifier = predicted top localization ( e.g. Extracellular )
-        Annotation_Details    = '<localization>,probability=<float>'
-    Returns ( top_localization, probability_string ).
-    """
-    if len( annotation_records ) == 0:
-        return ( "None", "None" )
-    record = annotation_records[ 0 ]
-    top_localization = record[ "accession" ]
-    details = record[ "details" ]
-    match = DEEPLOC_PROBABILITY_PATTERN.search( details )
-    probability = match.group( 1 ) if match else "None"
-    return ( top_localization, probability )
+# DeepLoc specialized columns now come from the raw CSV (see read_deeploc_csv)
+# rather than from the long-format DB, because the long-format DB only
+# preserved the top-localization probability and dropped all other compartment
+# probabilities. Reading the CSV directly recovers the full 14-probability
+# vector per protein.
 
 
 def tmbed_region_counts( annotation_records ):
@@ -330,8 +405,12 @@ def build_output_header( database_names_sorted ):
             header_cells.append( f"{database_name}_Call (parsed from Annotation_Identifier; one of Sec/SPI Sec/SPII Tat/SPI None)" )
             header_cells.append( f"{database_name}_Probability (parsed from Annotation_Details probability=X; float as string or None)" )
         elif database_name == "deeploc":
-            header_cells.append( "deeploc_Top_Localization (parsed from Annotation_Identifier; top predicted subcellular localization)" )
-            header_cells.append( "deeploc_Top_Probability (parsed from Annotation_Details probability=X; float as string or None)" )
+            # Specialized DeepLoc cols come from the raw DeepLoc CSV (full 14-probability
+            # vector) rather than the long-format DB which only kept the top call's probability.
+            for _csv_col, safe_name in DEEPLOC_STRING_COLUMNS:
+                header_cells.append( f"deeploc_{safe_name} (DeepLoc CSV column '{_csv_col}'; raw string)" )
+            for _csv_col, safe_name in DEEPLOC_PROBABILITY_COLUMNS:
+                header_cells.append( f"deeploc_{safe_name} (DeepLoc CSV column '{_csv_col}'; float probability as string or None)" )
         elif database_name == "tmbed":
             header_cells.append( "tmbed_TM_Helix_Count (count of tm_helix_N Annotation_Identifier rows for this protein)" )
             header_cells.append( "tmbed_Beta_Barrel_Count (count of beta_barrel_N Annotation_Identifier rows for this protein)" )
@@ -339,9 +418,10 @@ def build_output_header( database_names_sorted ):
     return "\t".join( header_cells ) + "\n"
 
 
-def build_output_row( phyloname, protein_identifier, sequence_length, database_names_sorted, db_to_records ):
+def build_output_row( phyloname, protein_identifier, sequence_length, database_names_sorted, db_to_records, deeploc_csv_records ):
     """
     Construct one wide TSV row for one protein. Mirrors build_output_header order.
+    deeploc_csv_records: dict protein_id -> dict of DeepLoc CSV fields (safe names).
     """
     cells = [
         phyloname,
@@ -363,9 +443,11 @@ def build_output_row( phyloname, protein_identifier, sequence_length, database_n
             cells.append( call )
             cells.append( probability )
         elif database_name == "deeploc":
-            top_localization, probability = deeploc_top_localization_and_probability( annotation_records )
-            cells.append( top_localization )
-            cells.append( probability )
+            deeploc_record = deeploc_csv_records.get( protein_identifier, {} )
+            for _csv_col, safe_name in DEEPLOC_STRING_COLUMNS:
+                cells.append( deeploc_record.get( safe_name, "None" ) )
+            for _csv_col, safe_name in DEEPLOC_PROBABILITY_COLUMNS:
+                cells.append( deeploc_record.get( safe_name, "None" ) )
         elif database_name == "tmbed":
             tm_helix_count, beta_barrel_count, signal_peptide_count = tmbed_region_counts( annotation_records )
             cells.append( str( tm_helix_count ) )
@@ -404,6 +486,7 @@ def main():
     logger.info( f"Phyloname:                  {args.phyloname}" )
     logger.info( f"Input FASTA:                {args.input_fasta}" )
     logger.info( f"Annotation database dir:    {args.annotation_database_dir}" )
+    logger.info( f"DeepLoc CSV dir:            {args.deeploc_csv_dir}" )
     logger.info( f"Output dir:                 {output_directory}" )
 
     # --- Proteome FASTA: drives row set --------------------------------------
@@ -444,6 +527,15 @@ def main():
         db_to_orphan_count[ database_name ] = orphan_count
         logger.info( f"  database_{database_name}: {sum( len( v ) for v in protein_ids___records.values() )} rows across {len( protein_ids___records )} proteins (after skipping {orphan_count} orphan IDs)" )
 
+    # --- Read DeepLoc CSV for per-compartment probabilities ------------------
+    deeploc_csv_path = Path( args.deeploc_csv_dir ) / f"{args.phyloname}_deeploc_predictions.csv"
+    deeploc_csv_records = read_deeploc_csv( deeploc_csv_path, logger )
+    deeploc_foreign_ids = [ pid for pid in deeploc_csv_records.keys() if pid not in protein_id_set ]
+    if len( deeploc_foreign_ids ) > 0:
+        logger.warning( f"  DeepLoc CSV: {len( deeploc_foreign_ids )} protein IDs not in proteome FASTA — skipping (likely upstream-filtered EvidentialGene multi-locus IDs)" )
+        for orphan_id in deeploc_foreign_ids:
+            del deeploc_csv_records[ orphan_id ]
+
     # --- Write wide TSV ------------------------------------------------------
     database_names_sorted = sorted( db_to_records.keys() )
     output_evidence_table = open( evidence_table_path, "w" )
@@ -457,6 +549,7 @@ def main():
             sequence_length,
             database_names_sorted,
             db_to_records,
+            deeploc_csv_records,
         )
         output_evidence_table.write( row )
         # row's 4th tab-delimited cell is Total_Database_Hits ( int )

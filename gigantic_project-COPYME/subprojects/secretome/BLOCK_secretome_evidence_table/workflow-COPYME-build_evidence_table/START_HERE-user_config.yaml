@@ -33,6 +33,15 @@ project_name: "species70_secretome_evidence_table_2026may23"
 #   database_cdd/  database_funfam/  ... ( IPR sub-databases that were run )
 annotation_database_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/BLOCK_build_annotation_database/workflow-RUN_1-build_annotation_database/OUTPUT_pipeline/annotation_databases"
 
+# Path to the DeepLoc 2.0 CSV outputs (one CSV per species). Used to augment
+# the evidence table with all 14 per-compartment / membrane-type probabilities
+# that DeepLoc emits natively — the long-format annotation database only
+# preserves the TOP localization probability, so we read the CSV directly to
+# recover Cytoplasm/Nucleus/Extracellular/Cell membrane/Mitochondrion/
+# Plastid/Endoplasmic reticulum/Lysosome+Vacuole/Golgi apparatus/Peroxisome
+# probabilities + Peripheral/Transmembrane/Lipid anchor/Soluble probabilities.
+deeploc_csv_dir: "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/subprojects/annotations_hmms/output_to_input/BLOCK_deeploc"
+
 # =============================================================================
 # Computational Resources
 # =============================================================================

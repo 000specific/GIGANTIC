@@ -53,10 +53,10 @@ to the "no shipped `.claude/`" rule — see
 Each capture is appended to `TRANSCRIPT_CAPTURE_LOG.md` in the same
 sessions directory for human glance-through.
 
-### On-demand capture: "DCS!" ("Document Chat for Science!")
+### On-demand capture: "Save Chat!"
 
-The user can type **"DCS!"** at any point to trigger an on-demand raw copy
-of every Claude Code JSONL transcript for this project from
+The user can type **"Save Chat!"** at any point to trigger an on-demand
+raw copy of every Claude Code JSONL transcript for this project from
 `~/.claude/projects/<encoded-path>/*.jsonl` into
 `research_notebook/research_ai/sessions/`. This closes the TTL gap for
 short sessions that never compact (Claude Code default-deletes those
@@ -64,9 +64,9 @@ after 30 days).
 
 **Your active role**:
 
-1. **Recognize "DCS!"** as a trigger. Run the on-demand capture script in
-   `ai/ai_scripts/` and confirm what was captured.
-2. **Proactively suggest DCS!** at meaningful moments:
+1. **Recognize "Save Chat!"** as a trigger. Run the on-demand capture
+   script in `ai/ai_scripts/` and confirm what was captured.
+2. **Proactively suggest "Save Chat!"** at meaningful moments:
    - Right after a significant milestone (decision, breakthrough, big
      code change committed)
    - When the user signals winding down ("done for the day", "let me
@@ -74,7 +74,7 @@ after 30 days).
    - Periodically during long sessions
 3. **Recommend the user set `cleanupPeriodDays` high** in their global
    `~/.claude/settings.json` (one-line manual change) so the source JSONLs
-   survive long enough for DCS! to copy them.
+   survive long enough for "Save Chat!" to copy them.
 
 ### Captures are originals — never edit, never delete
 
@@ -120,7 +120,7 @@ Work with the user to:
 2. Set up a periodic or on-demand raw copy into
    `research_notebook/research_ai/sessions/` using a similar
    `.jsonl.gz`-style naming convention.
-3. Wire "DCS!" as a phrase the user can type to trigger your on-demand
+3. Wire "Save Chat!" as a phrase the user can type to trigger your on-demand
    capture.
 4. Document your specific setup in `ai/ai_FYIs/` so the project's
    provenance system is fully described regardless of which AI was used.
