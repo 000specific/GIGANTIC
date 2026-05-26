@@ -94,6 +94,15 @@ Thumbs.db
 
 # Claude Code per-project state (settings, scheduled-task locks)
 .claude/
+# Exception: gigantic_project-COPYME/.claude/ is the deliberate shipped
+# capture-system directory (see ai/ai_FYIs/gigantic_conventions.md §7).
+# Ship only settings.json + README.md + AI_GUIDE.md; everything else under
+# that .claude/ stays gitignored.
+!/gigantic_project-COPYME/.claude/
+/gigantic_project-COPYME/.claude/*
+!/gigantic_project-COPYME/.claude/settings.json
+!/gigantic_project-COPYME/.claude/README.md
+!/gigantic_project-COPYME/.claude/AI_GUIDE.md
 
 # Crash core dumps
 core.*

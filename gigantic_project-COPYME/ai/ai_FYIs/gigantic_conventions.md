@@ -130,16 +130,24 @@ its appropriate user-facing location.
 
 ---
 
-## 7. `.claude/` exception: `gigantic_project-COPYME/.claude/` ships the capture hook
+## 7. `.claude/` exception: `gigantic_project-COPYME/.claude/` ships the capture hook + its docs
 
 **General rule**: no `.claude/` directories anywhere in GitHub. Claude Code
 session settings are developer-personal and gitignored everywhere by default.
 
-**Deliberate exception**: `gigantic_project-COPYME/.claude/settings.json` IS
-tracked and ships with the template. It registers the PreCompact hook that
-calls `ai/ai_scripts/002_ai-python-hook_precompact_capture_transcript.py` to
-capture full lossless session transcripts to
-`research_notebook/research_ai/sessions/` before each context compaction.
+**Deliberate exception**: `gigantic_project-COPYME/.claude/` ships **exactly
+three files**, all tracked:
+
+- `settings.json` — registers the PreCompact hook that calls
+  `ai/ai_scripts/002_ai-python-hook_precompact_capture_transcript.py` to
+  capture full lossless session transcripts to
+  `research_notebook/research_ai/sessions/` before each context compaction.
+- `README.md` — explains what this `.claude/` is and why it ships.
+- `AI_GUIDE.md` — guard rails for AIs working inside `.claude/`.
+
+Nothing else inside `gigantic_project-COPYME/.claude/` ships. The
+`.gitignore` enforces this with: blanket `.claude/` ignore, then explicit
+un-ignore of just these three files at this one path.
 
 This exception exists because **Claude is the recommended AI for GIGANTIC** and
 **lossless session capture is a primary GIGANTIC feature** (see §9). Without
@@ -148,8 +156,8 @@ their renamed project copy — defeating the "fresh AI session in renamed
 project" model.
 
 The exception is scoped tightly: only `gigantic_project-COPYME/.claude/`
-ships. `.claude/` at GIGANTIC root and `.claude/` anywhere else stay
-gitignored.
+ships, and only these three files inside it. `.claude/` at GIGANTIC root
+and `.claude/` anywhere else stay fully gitignored.
 
 ---
 
