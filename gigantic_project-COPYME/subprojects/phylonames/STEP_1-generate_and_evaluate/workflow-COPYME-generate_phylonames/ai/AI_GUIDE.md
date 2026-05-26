@@ -1,6 +1,6 @@
 # AI Guide: Phylonames Workflow (STEP_1)
 
-**For AI Assistants**: This guide covers STEP_1 workflow execution. For concepts (numbered clades, user phylonames, 2-STEP architecture), see `../../../AI_GUIDE-phylonames.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers STEP_1 workflow execution. For concepts (numbered clades, user phylonames, 2-STEP architecture), see `../../../AI_GUIDE.md`. For GIGANTIC overview, see `../../../../../AI_GUIDE.md` (project root).
 
 **Location**: `gigantic_project-*/subprojects/phylonames/STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/`
 
@@ -47,8 +47,8 @@ cd workflow-RUN_01-generate_phylonames
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| Phylonames concepts | `../../../AI_GUIDE-phylonames.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` (project root) |
+| Phylonames concepts | `../../../AI_GUIDE.md` |
 | Running the STEP_1 workflow | This file |
 
 ---
@@ -73,7 +73,7 @@ workflow-COPYME-generate_phylonames/
 │   └── 4-output/                # Taxonomy summary (MD and HTML)
 │
 └── ai/                          # Internal - users don't touch
-    ├── AI_GUIDE-phylonames_workflow.md  # THIS FILE
+    ├── AI_GUIDE.md  # THIS FILE
     ├── main.nf
     ├── nextflow.config
     └── scripts/

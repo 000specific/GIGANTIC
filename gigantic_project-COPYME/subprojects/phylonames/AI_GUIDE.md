@@ -1,6 +1,6 @@
 # AI Guide: phylonames Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers phylonames-specific concepts and troubleshooting.
+**For AI Assistants**: Read `../../../AI_GUIDE.md` (project root) first for GIGANTIC overview, directory structure, and general patterns. This guide covers phylonames-specific concepts and troubleshooting.
 
 **Location**: `gigantic_project-*/subprojects/phylonames/`
 
@@ -21,11 +21,11 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` (project root) |
 | Phylonames concepts, troubleshooting | This file |
-| STEP_1 overview (generate and evaluate) | `STEP_1-generate_and_evaluate/AI_GUIDE-generate_and_evaluate.md` |
-| STEP_1 workflow execution | `STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/ai/AI_GUIDE-phylonames_workflow.md` |
-| STEP_2 overview (apply user phylonames) | `STEP_2-apply_user_phylonames/AI_GUIDE-apply_user_phylonames.md` |
+| STEP_1 overview (generate and evaluate) | `STEP_1-generate_and_evaluate/AI_GUIDE.md` |
+| STEP_1 workflow execution | `STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/ai/AI_GUIDE.md` |
+| STEP_2 overview (apply user phylonames) | `STEP_2-apply_user_phylonames/AI_GUIDE.md` |
 | STEP_2 workflow execution | `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/ai/` |
 
 ---
@@ -53,39 +53,44 @@
 
 ```
 phylonames/
-├── README.md                        # Human documentation
-├── AI_GUIDE-phylonames.md           # THIS FILE
+├── README.md                                   # User-facing documentation
+├── AI_GUIDE.md                                 # THIS FILE
 │
-├── user_research/                   # Personal workspace for this subproject
-├── upload_to_server/                # Server sharing
+├── RUN-clean_and_record_subproject.sh          # Subproject-level cleanup + session recording
+├── RUN-update_upload_to_server.sh              # Subproject-level publisher (thin wrapper around shared helper, §38)
 │
-├── output_to_input/                                # Outputs for downstream subprojects
+├── upload_to_server/                           # Single publish destination per §38
+│                                               # (auto-populated by RUN-update_upload_to_server.sh; no per-STEP upload_to_server)
+│
+├── output_to_input/                            # Outputs for downstream subprojects (§2)
 │   ├── STEP_1-generate_and_evaluate/
 │   │   └── maps/
-│   │       └── [project]_map-genus_species_X_phylonames.tsv
+│   │       └── [project]_map-genus_species_X_phylonames.tsv  (symlink)
 │   ├── STEP_2-apply_user_phylonames/
 │   │   └── maps/
-│   │       └── [project]_map-genus_species_X_phylonames.tsv
-│   └── maps/                                       # Convenience symlink to whichever STEP ran last
-│       └── [project]_map-genus_species_X_phylonames.tsv  # SYMLINK
+│   │       └── [project]_map-genus_species_X_phylonames.tsv  (symlink)
+│   └── maps/                                   # Convenience symlink to most recent STEP
+│       └── [project]_map-genus_species_X_phylonames.tsv      (symlink)
+│
+├── research_notebook/                          # Personal workspace + AI session captures (§1, §25)
+│   ├── research_user/                          # User sandbox (ships empty)
+│   └── research_ai/sessions/                   # Captured chat transcripts (§9)
 │
 ├── STEP_1-generate_and_evaluate/
-│   ├── AI_GUIDE-generate_and_evaluate.md     # STEP-level guide
-│   ├── RUN-clean_and_record_subproject.sh    # Cleanup + AI session recording
-│   ├── RUN-update_upload_to_server.sh        # Update server symlinks
-│   ├── upload_to_server/                     # Taxonomy summaries for server
-│   │   └── taxonomy_summaries/
+│   ├── AI_GUIDE.md                             # STEP-level guide
 │   │
 │   └── workflow-COPYME-generate_phylonames/
-│       ├── RUN-workflow.sh                   # bash RUN-workflow.sh
-│       ├── RUN-workflow.sbatch               # sbatch RUN-workflow.sbatch
-│       ├── START_HERE-user_config.yaml            # User edits project name here
-│       ├── INPUT_user/                       # Species list (copied from project INPUT_user at runtime)
-│       ├── OUTPUT_pipeline/                  # Results
-│       └── ai/                               # Nextflow pipeline and scripts
-│           ├── AI_GUIDE-phylonames_workflow.md
+│       ├── README.md                           # User-facing workflow quickstart
+│       ├── RUN-workflow.sh                     # Unified driver (§29: local or slurm via execution_mode)
+│       ├── START_HERE-user_config.yaml         # Config: project name, execution_mode, slurm.*
+│       ├── upload_manifest.tsv                 # Server publish manifest (§38, §39)
+│       ├── INPUT_user/                         # Species list (auto-copied from project default if absent)
+│       ├── OUTPUT_pipeline/                    # Results (1-output through 5-output)
+│       └── ai/
+│           ├── AI_GUIDE.md
 │           ├── main.nf
 │           ├── nextflow.config
+│           ├── conda_environment.yml
 │           └── scripts/
 │               ├── 001_ai-bash-download_ncbi_taxonomy.sh
 │               ├── 002_ai-python-generate_phylonames.py
@@ -94,22 +99,29 @@ phylonames/
 │               └── 005_ai-python-write_run_log.py
 │
 └── STEP_2-apply_user_phylonames/
-    ├── AI_GUIDE-apply_user_phylonames.md     # STEP-level guide
+    ├── AI_GUIDE.md                             # STEP-level guide
     │
     └── workflow-COPYME-apply_user_phylonames/
-        ├── RUN-workflow.sh                   # bash RUN-workflow.sh
-        ├── RUN-workflow.sbatch               # sbatch RUN-workflow.sbatch
-        ├── START_HERE-user_config.yaml            # User edits project name and user phylonames path
-        ├── INPUT_user/                       # User phylonames TSV goes here
-        ├── OUTPUT_pipeline/                  # Results
-        └── ai/                               # Nextflow pipeline and scripts
+        ├── README.md                           # User-facing workflow quickstart
+        ├── RUN-workflow.sh                     # Unified driver (§29)
+        ├── START_HERE-user_config.yaml         # Config: project name, user_phylonames path, etc.
+        ├── upload_manifest.tsv                 # Server publish manifest
+        ├── INPUT_user/                         # User phylonames TSV
+        ├── OUTPUT_pipeline/                    # Results (1-output through 3-output)
+        └── ai/
+            ├── AI_GUIDE.md
             ├── main.nf
             ├── nextflow.config
+            ├── conda_environment.yml
             └── scripts/
                 ├── 001_ai-python-apply_user_phylonames.py
                 ├── 002_ai-python-generate_taxonomy_summary.py
                 └── 003_ai-python-write_run_log.py
 ```
+
+Per §38 and §41, phylonames is a STEP-organized subproject and has ONE
+subproject-level `upload_to_server/` (no per-STEP `upload_to_server/` —
+those were deleted in the 2026-05-26 cleanup).
 
 ---
 
@@ -273,10 +285,9 @@ workflow-*/ai/logs/
 |------|---------|-------------|
 | `../../INPUT_user/species_set/species_list.txt` | Project-wide default species list | **YES** |
 | `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 project name and options | **YES** |
-| `STEP_1-*/workflow-*/RUN-workflow.sbatch` | STEP_1 SLURM account/qos | **YES** (SLURM) |
+| `STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 project name, execution_mode, slurm.account/qos | **YES** |
 | `STEP_1-*/workflow-*/INPUT_user/species_list.txt` | STEP_1 species list override (optional, auto-copied from project default) | **YES** (to override) |
-| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | STEP_2 project name, user phylonames path, unofficial marking | **YES** |
-| `STEP_2-*/workflow-*/RUN-workflow.sbatch` | STEP_2 SLURM account/qos | **YES** (SLURM) |
+| `STEP_2-*/workflow-*/START_HERE-user_config.yaml` | STEP_2 project name, user phylonames path, unofficial marking, execution_mode, slurm.account/qos | **YES** |
 | `STEP_2-*/workflow-*/INPUT_user/user_phylonames.tsv` | User-provided phyloname overrides | **YES** |
 | `output_to_input/maps/*.tsv` | Output for downstream subprojects (symlink to latest STEP) | No |
 | `output_to_input/STEP_1-*/maps/*.tsv` | STEP_1 mapping output | No |
@@ -284,13 +295,41 @@ workflow-*/ai/logs/
 
 ---
 
+## Downstream consumers (per §40)
+
+The `output_to_input/maps/[project]_map-genus_species_X_phylonames.tsv`
+exposed here is consumed by virtually every downstream GIGANTIC
+subproject, because phylonames are the canonical species identifiers
+used throughout the framework:
+
+- **genomesDB** — uses phylonames to name standardized proteome files
+  and to label species across the database
+- **orthogroups** — labels orthogroup memberships by phyloname
+- **annotations_hmms** — keys per-species annotation files by phyloname
+- **trees_species** — labels species in candidate species trees by
+  phyloname
+- **trees_gene_families**, **trees_gene_groups** — label gene-family /
+  gene-group tree tips by phyloname
+- **orthogroups_X_ocl**, **annotations_X_ocl** — propagate phyloname
+  labels through OCL analyses
+- **gene_sizes**, **homolog_counts**, **hotspots**, **secretome**,
+  **one_direction_homologs**, and so on — all use phylonames
+
+In practice every subproject that operates per-species reads from
+`phylonames/output_to_input/maps/` at some point. **phylonames must run
+first** in any GIGANTIC project (see top of this file).
+
 ## Next Steps After phylonames
 
 Guide users to:
-1. **Review STEP_1 output** - Check the taxonomy summary for numbered clades or misclassifications
-2. **Run STEP_2 if needed** - If any species need corrected phylonames, create `user_phylonames.tsv` and run STEP_2
-3. **genomesDB** - Set up proteome database using phylonames for file naming
-4. **Keep the mapping** - All downstream subprojects reference `output_to_input/maps/`
+1. **Review STEP_1 output** — check the taxonomy summary for numbered
+   clades or misclassifications
+2. **Run STEP_2 if needed** — if any species need corrected phylonames,
+   create `user_phylonames.tsv` and run STEP_2
+3. **genomesDB next** — set up proteome database using phylonames for
+   file naming (the canonical second subproject to run)
+4. **Keep the mapping intact** — all downstream subprojects reference
+   `output_to_input/maps/`
 
 ---
 

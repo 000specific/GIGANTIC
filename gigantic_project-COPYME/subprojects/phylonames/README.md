@@ -169,39 +169,43 @@ genus_species = genus + '_' + species  # Result: 'Aplysia_californica'
 
 ```
 phylonames/
-├── README.md                           # This file
-├── AI_GUIDE-phylonames.md              # AI assistant guidance (subproject level)
-├── user_research/                      # Personal workspace
-├── upload_to_server/                   # Files to share via GIGANTIC server
+├── README.md                                # This file
+├── AI_GUIDE.md                              # AI assistant guidance (subproject level)
 │
-├── output_to_input/                    # Outputs for downstream subprojects
+├── RUN-clean_and_record_subproject.sh       # Subproject-level cleanup + session recording
+├── RUN-update_upload_to_server.sh           # Subproject-level publisher (§38)
+│
+├── upload_to_server/                        # Single publish destination (§38)
+│
+├── output_to_input/                         # Outputs for downstream subprojects (§2)
 │   ├── STEP_1-generate_and_evaluate/
-│   │   └── maps/                      # STEP_1 mapping (NCBI-only phylonames)
+│   │   └── maps/                            # STEP_1 mapping (NCBI-only phylonames)
 │   │       └── [project]_map-genus_species_X_phylonames.tsv
 │   ├── STEP_2-apply_user_phylonames/
-│   │   └── maps/                      # STEP_2 mapping (with user overrides)
+│   │   └── maps/                            # STEP_2 mapping (with user overrides)
 │   │       └── [project]_map-genus_species_X_phylonames.tsv
-│   └── maps/                          # Convenience symlink to latest STEP output
+│   └── maps/                                # Convenience symlink to latest STEP output
 │       └── [project]_map-genus_species_X_phylonames.tsv
 │
+├── research_notebook/                       # Personal workspace + AI session captures (§1, §25)
+│
 ├── STEP_1-generate_and_evaluate/
-│   ├── AI_GUIDE-generate_and_evaluate.md   # STEP-level AI guide
-│   ├── RUN-clean_and_record_subproject.sh  # Cleanup + AI session recording
-│   ├── RUN-update_upload_to_server.sh      # Update server sharing symlinks
+│   ├── AI_GUIDE.md                          # STEP-level AI guide
 │   │
 │   └── workflow-COPYME-generate_phylonames/
-│       ├── README.md                       # Quick start guide
-│       ├── RUN-workflow.sh                 # bash RUN-workflow.sh (local)
-│       ├── RUN-workflow.sbatch             # sbatch RUN-workflow.sbatch (SLURM)
-│       ├── START_HERE-user_config.yaml          # Edit this for your project
-│       ├── INPUT_user/                     # Workflow-specific inputs (archived copy)
-│       │   └── species_list_example.txt    # Example species list (template)
-│       ├── OUTPUT_pipeline/                # Generated phylonames and mappings
-│       └── ai/                             # Internal (don't touch)
-│           ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
-│           ├── main.nf                     # NextFlow pipeline
-│           ├── nextflow.config             # NextFlow settings
-│           └── scripts/                    # Python/Bash scripts
+│       ├── README.md                        # Quick start
+│       ├── RUN-workflow.sh                  # Unified driver — local or SLURM via execution_mode (§29)
+│       ├── START_HERE-user_config.yaml      # Project name, execution_mode, slurm.*
+│       ├── upload_manifest.tsv              # Server publish manifest (§38, §39)
+│       ├── INPUT_user/                      # Workflow-specific inputs (archived copy)
+│       │   └── species_list_example.txt     # Example species list (template)
+│       ├── OUTPUT_pipeline/                 # Generated phylonames and mappings
+│       └── ai/                              # Internal (don't touch)
+│           ├── AI_GUIDE.md
+│           ├── main.nf
+│           ├── nextflow.config
+│           ├── conda_environment.yml
+│           └── scripts/
 │               ├── 001_ai-bash-download_ncbi_taxonomy.sh
 │               ├── 002_ai-python-generate_phylonames.py
 │               ├── 003_ai-python-create_species_mapping.py
@@ -209,21 +213,22 @@ phylonames/
 │               └── 005_ai-python-write_run_log.py
 │
 └── STEP_2-apply_user_phylonames/
-    ├── AI_GUIDE-apply_user_phylonames.md   # STEP-level AI guide
+    ├── AI_GUIDE.md                          # STEP-level AI guide
     │
     └── workflow-COPYME-apply_user_phylonames/
-        ├── README.md                       # Quick start guide
-        ├── RUN-workflow.sh                 # bash RUN-workflow.sh (local)
-        ├── RUN-workflow.sbatch             # sbatch RUN-workflow.sbatch (SLURM)
-        ├── START_HERE-user_config.yaml          # Edit this for your project
-        ├── INPUT_user/                     # User-provided phylonames input
-        │   └── user_phylonames.tsv         # Your custom phylonames (template)
-        ├── OUTPUT_pipeline/                # Final mapping with user overrides
-        └── ai/                             # Internal (don't touch)
-            ├── AI_GUIDE-phylonames_workflow.md  # For AI assistants
-            ├── main.nf                     # NextFlow pipeline
-            ├── nextflow.config             # NextFlow settings
-            └── scripts/                    # Python scripts
+        ├── README.md                        # Quick start
+        ├── RUN-workflow.sh                  # Unified driver (§29)
+        ├── START_HERE-user_config.yaml      # Project name, user_phylonames path, etc.
+        ├── upload_manifest.tsv              # Server publish manifest
+        ├── INPUT_user/                      # User-provided phylonames input
+        │   └── user_phylonames_example.tsv  # Example (copy to user_phylonames.tsv)
+        ├── OUTPUT_pipeline/                 # Final mapping with user overrides
+        └── ai/                              # Internal (don't touch)
+            ├── AI_GUIDE.md
+            ├── main.nf
+            ├── nextflow.config
+            ├── conda_environment.yml
+            └── scripts/
                 ├── 001_ai-python-apply_user_phylonames.py
                 ├── 002_ai-python-generate_taxonomy_summary.py
                 └── 003_ai-python-write_run_log.py
@@ -285,13 +290,12 @@ project:
 
 ```bash
 cd STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames
-
-# Local machine:
 bash RUN-workflow.sh
-
-# SLURM cluster (edit account/qos first):
-sbatch RUN-workflow.sbatch
 ```
+
+The unified driver runs locally or self-submits to SLURM based on
+`execution_mode` in `START_HERE-user_config.yaml` (per §29). For SLURM,
+also set `slurm.account` and `slurm.qos` in that YAML.
 
 STEP_1 will:
 1. Download NCBI taxonomy database (~2GB, skipped if already exists)
@@ -327,13 +331,10 @@ If you have custom phylonames to apply:
 3. Run STEP_2:
    ```bash
    cd STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames
-
-   # Local machine:
    bash RUN-workflow.sh
-
-   # SLURM cluster (edit account/qos first):
-   sbatch RUN-workflow.sbatch
    ```
+   The unified driver runs locally or self-submits to SLURM via
+   `execution_mode` in the YAML config (§29).
 
 STEP_2 will:
 1. Apply your user-provided phylonames with UNOFFICIAL marking (if enabled)
@@ -493,19 +494,28 @@ A symlink `database-ncbi_taxonomy_latest` always points to the most recent downl
 
 ## Sharing Data via GIGANTIC Server
 
-To share outputs with collaborators:
+To share outputs with collaborators (per §38):
 
-1. **Edit the manifest**: `upload_to_server/upload_manifest.tsv`
-2. **Run the update script**: `bash STEP_1-generate_and_evaluate/RUN-update_upload_to_server.sh`
-
-The script creates symlinks in `upload_to_server/` based on your manifest. The GIGANTIC server periodically scans this directory.
+1. **Edit the per-workflow manifests** if you want to change what publishes:
+   - `STEP_1-generate_and_evaluate/workflow-COPYME-generate_phylonames/upload_manifest.tsv`
+   - `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/upload_manifest.tsv`
+2. **Run the subproject-level publisher** (single command):
+   ```bash
+   bash RUN-update_upload_to_server.sh
+   ```
+   This is a thin wrapper around the shared helper at
+   `gigantic_project-COPYME/server/ai/update_upload_to_server.py`. It
+   walks both STEPs' canonical `workflow-RUN_*/` dirs, reads their
+   `upload_manifest.tsv`, and assembles
+   `phylonames/upload_to_server/STEP_<N>-<name>/workflow-RUN_<K>-<name>/<N>-output/<file>`
+   as symlinks. The data server then reads this directory.
 
 ```bash
-# Preview what would be done
-bash STEP_1-generate_and_evaluate/RUN-update_upload_to_server.sh --dry-run
+# Preview what would be published
+bash RUN-update_upload_to_server.sh --dry-run
 
-# Create/update symlinks
-bash STEP_1-generate_and_evaluate/RUN-update_upload_to_server.sh
+# Actually publish
+bash RUN-update_upload_to_server.sh
 ```
 
 ---

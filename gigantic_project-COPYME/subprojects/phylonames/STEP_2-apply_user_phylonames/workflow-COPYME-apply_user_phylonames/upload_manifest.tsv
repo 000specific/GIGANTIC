@@ -1,0 +1,32 @@
+# GIGANTIC upload_manifest.tsv — phylonames STEP_2 apply_user_phylonames template
+# ============================================================================
+# When workflow-COPYME-apply_user_phylonames is copied to workflow-RUN_N-apply_user_phylonames,
+# this manifest travels with it and describes which terminal files from
+# OUTPUT_pipeline/N-output/ get published to the project's data server.
+#
+# The surrounding hierarchy (subproject / step / workflow) is INFERRED from
+# the manifest's location by the shared helper at
+# gigantic_project-COPYME/server/ai/update_upload_to_server.py.
+# You only describe files in this manifest.
+#
+# ============================================================================
+# COLUMNS (TAB-separated — mind the tab count; header row REQUIRED):
+#   source_path     Path to file(s). Relative to this manifest's directory.
+#                   Globs allowed.
+#   include         yes | no  — toggle publication.
+#   dest_name       (optional) Override the filename in upload_to_server/.
+#                   Blank = use source basename.
+#   display_label   (optional) Human-readable title shown in the web UI.
+#                   Blank = use filename.
+#   file_category   (optional) Grouping label.
+#                   Suggested for phylonames: summary, mapping, log.
+#   description     (optional) One-line tooltip / subtitle.
+#   order           (optional) Integer sort key within category (default 100).
+#                   Lower = earlier.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/2-output/*_taxonomy_summary.html	yes		Taxonomy summary after user overrides (HTML)	summary	Final per-species taxonomy summary after user_phylonames.tsv overrides applied.	10
+OUTPUT_pipeline/2-output/*_taxonomy_summary.md	yes		Taxonomy summary after user overrides (markdown)	summary	Markdown version of the final per-species taxonomy summary.	20
+OUTPUT_pipeline/1-output/*_map-genus_species_X_phylonames.tsv	no		Final genus_species → phyloname mapping (with user overrides)	mapping	The authoritative phylonames mapping for the project. Downstream subprojects consume it via output_to_input/; flip to yes here only if collaborators should browse it directly.	30
+OUTPUT_pipeline/3-output/3_ai-run_log.txt	no		STEP_2 run log	log	Per-run audit log.	90

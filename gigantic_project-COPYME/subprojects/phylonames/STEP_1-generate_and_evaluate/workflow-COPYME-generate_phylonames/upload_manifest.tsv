@@ -1,0 +1,33 @@
+# GIGANTIC upload_manifest.tsv — phylonames STEP_1 generate_and_evaluate template
+# ============================================================================
+# When workflow-COPYME-generate_phylonames is copied to workflow-RUN_N-generate_phylonames,
+# this manifest travels with it and describes which terminal files from
+# OUTPUT_pipeline/N-output/ get published to the project's data server.
+#
+# The surrounding hierarchy (subproject / step / workflow) is INFERRED from
+# the manifest's location by the shared helper at
+# gigantic_project-COPYME/server/ai/update_upload_to_server.py.
+# You only describe files in this manifest.
+#
+# ============================================================================
+# COLUMNS (TAB-separated — mind the tab count; header row REQUIRED):
+#   source_path     Path to file(s). Relative to this manifest's directory.
+#                   Globs allowed (e.g., OUTPUT_pipeline/4-output/*.html).
+#   include         yes | no  — toggle publication.
+#   dest_name       (optional) Override the filename in upload_to_server/.
+#                   Blank = use source basename.
+#   display_label   (optional) Human-readable title shown in the web UI.
+#                   Blank = use filename.
+#   file_category   (optional) Grouping label. Files in the same category
+#                   are grouped under the same subsection.
+#                   Suggested for phylonames: summary, mapping, log.
+#   description     (optional) One-line tooltip / subtitle.
+#   order           (optional) Integer sort key within category (default 100).
+#                   Lower = earlier.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order
+OUTPUT_pipeline/4-output/*_taxonomy_summary.html	yes		Taxonomy summary (HTML)	summary	Human-readable per-species taxonomy summary generated from NCBI taxonomy.	10
+OUTPUT_pipeline/4-output/*_taxonomy_summary.md	yes		Taxonomy summary (markdown)	summary	Markdown version of the per-species taxonomy summary.	20
+OUTPUT_pipeline/3-output/*_map-genus_species_X_phylonames.tsv	no		Genus_species → phyloname mapping	mapping	Canonical mapping file. Flip to yes to publish; usually downstream subprojects consume it via output_to_input/ rather than fetching from the server.	30
+OUTPUT_pipeline/5-output/5_ai-run_log.txt	no		STEP_1 run log	log	Per-run audit log. Flip to yes if you want collaborators to see the run record.	90

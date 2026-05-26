@@ -39,9 +39,11 @@ specific outputs with downstream subprojects:
   (lowercase `o`)
 - Entries inside `output_to_input/` are **symlinks** pointing into the canonical
   `OUTPUT_pipeline/` of the appropriate `workflow-RUN_N-*` directory
-- The directory structure inside `output_to_input/` (typically organized by BLOCK
-  or STEP name) keeps sequential runs from overwriting each other and preserves
-  clear provenance
+- The directory structure inside `output_to_input/` is organized by
+  `STEP_<N>-<name>/` or `BLOCK_<name>/` subdirectories matching the
+  producer's structure. This keeps sequential runs from overwriting each
+  other and preserves clear provenance (consumer sees which step generated
+  what)
 
 Downstream subprojects always read from `<upstream_subproject>/output_to_input/`,
 never from inside an `OUTPUT_pipeline/` directly.
@@ -829,17 +831,43 @@ Full documentation lives in `server/README.md` (user-facing) and
 Each subproject exposes selected outputs to the project's data server
 through a fixed interface:
 
-- **`<subproject>/upload_to_server/`** holds the published view of that
-  subproject's data
-- Entries inside are **symlinks** pointing into the canonical
-  `OUTPUT_pipeline/` of the appropriate `workflow-RUN_N-*` directory
-  (per §35; the run-instance dirs hold the actual data)
-- A **`upload_manifest.tsv`** at `<workflow-RUN_*>/upload_manifest.tsv`
-  controls which outputs publish (one manifest per canonical RUN dir;
-  see §39)
-- Each subproject has its own **`RUN-update_upload_to_server.sh`** that
-  invokes the shared helper `gigantic_project-COPYME/server/ai/update_upload_to_server.py`
-  to create/refresh the symlinks in `upload_to_server/`
+- **`<subproject>/upload_to_server/`** is the single publish destination
+  per subproject (subproject-level; **never per-STEP, per-BLOCK, or
+  per-workflow-RUN** — consumers and the server look in exactly one
+  place per subproject). The current state of any subproject with
+  `<STEP>/upload_to_server/` dirs is a legacy deviation to be refactored.
+- Internal structure inside `upload_to_server/` is **user-facing** —
+  organized for collaborators to browse the project, not for GIGANTIC's
+  internal bookkeeping. The shared helper's default is to mirror
+  producer paths:
+  ```
+  <subproject>/upload_to_server/
+    └── STEP_<N>-<name>/         (or BLOCK_<name>/, or unit-name/)
+        └── workflow-RUN_<K>-<name>/   (canonical RUN per §39)
+            └── N-output/
+                └── <file>       (symlink to the actual output)
+  ```
+  This default works well when the natural collaborator-facing framework
+  IS the producer's structure. Per-manifest `dest_name` overrides can
+  reshape paths into a user-defined framework when the natural framework
+  for collaborators differs from the internal pipeline layout (e.g.,
+  grouping by species set, by hypothesis, by deliverable type rather
+  than by STEP).
+
+  Note distinction from `output_to_input/` (§2): `output_to_input/`
+  structure **mirrors producer paths** mandatorily (preserves provenance
+  for downstream subprojects); `upload_to_server/` structure is for
+  human collaborators and **can deviate** from producer paths when a
+  different organization serves the user better.
+- Each canonical `workflow-RUN_*/` carries its own
+  **`upload_manifest.tsv`** controlling which of its outputs publish
+  (one manifest per canonical RUN dir; see §39)
+- Each subproject has a **`RUN-update_upload_to_server.sh`** at
+  subproject level that invokes the shared helper at
+  `gigantic_project-COPYME/server/ai/update_upload_to_server.py`. The
+  shared helper walks the subproject, finds every `upload_manifest.tsv`
+  inside any `workflow-RUN_*/`, and assembles the nested
+  `upload_to_server/` tree above.
 - The server reads `upload_to_server/` symlinks transparently — **there
   is no copy or sync step**. Follow-the-symlink at HTTP request time.
 
@@ -893,6 +921,74 @@ counts before going live.
 
 Full publishing workflow lives in `server/AI_GUIDE.md` ("Publishing
 workflow" section).
+
+---
+
+## 40. Bidirectional discoverability: producer AI_GUIDEs list their consumers
+
+When a subproject, STEP, BLOCK, or workflow **consumes** data from
+another subproject's `output_to_input/`, update the **producer's**
+relevant AI_GUIDE to note the consumer. This bidirectional cross-
+reference makes the data-flow graph navigable from either end.
+
+**Example**: trees_species' STEP that produces species-tree structures
+gets a note in its AI_GUIDE saying "downstream consumers: orthogroups_X_ocl
+reads these structures; annotations_X_ocl reads them via orthogroups_X_ocl's
+output_to_input/."
+
+**Why**: an AI walking into a subproject and finding it produces data
+should be able to answer "who uses this?" without grep'ing the whole
+tree. The producer-side reference solves this directly. Without it, you
+need a separate dependency map (drifts) or a cross-tree search (slow,
+incomplete).
+
+**How**: add a "Downstream consumers" section to the producer's relevant
+AI_GUIDE (the one closest to the output_to_input/ source) when a
+consumer relationship is established. Keep it short:
+
+```markdown
+## Downstream consumers
+
+The `output_to_input/<subdir>/` exposed here is read by:
+
+- **<consumer subproject>** — `<consumer subproject>/...` consumes
+  `<which file(s) and what for>`. See `<consumer subproject>/AI_GUIDE.md`
+  for the consumer side.
+```
+
+Apply when surfacing a new producer-consumer pair during cleanup or
+during new development.
+
+---
+
+## 41. Subproject internal organization: three natural types (STEP, BLOCK, UNIT)
+
+GIGANTIC subprojects come in three structural shapes, chosen to fit the
+scientific use case. Internal structure is **subproject-natural** — do
+not force a single shape on all subprojects. (Compare with the
+**interface layer** — `upload_to_server/`, `output_to_input/`,
+`RUN-update_upload_to_server.sh` at subproject root — which IS
+standardized per §2, §38, etc., regardless of internal type.)
+
+| Type | When to use | Internal layout | Examples |
+|------|-------------|-----------------|----------|
+| **STEP** | Sequential pipeline; STEP_<N+1> depends on STEP_<N> | `<subproject>/STEP_<N>-<descriptor>/workflow-COPYME-<name>/` | `phylonames` (STEP_1-generate_and_evaluate → STEP_2-apply_user_phylonames); `genomesDB` (STEP_1-sources → ... → STEP_4-create_final_species_set) |
+| **BLOCK** | Parallel/alternative tools, methods, or analyses producing comparable outputs | `<subproject>/BLOCK_<descriptor>/workflow-COPYME-<name>/` | `orthogroups` (BLOCK_orthohmm, BLOCK_orthofinder, BLOCK_broccoli — pick your tool); `annotations_hmms` (BLOCK_interproscan, BLOCK_deeploc, BLOCK_signalp — different annotations); `hotspots` (BLOCK_self_blast, BLOCK_identify_hotspots) |
+| **UNIT** | Per-unit instances of a templated workflow chain (each unit goes through the same STEP_1 → STEP_2 → ... pipeline) | `<subproject>/<unit_prefix>_COPYME/STEP_<N>/workflow-COPYME-<name>/` (template) and `<subproject>/<unit_prefix>-<name>/STEP_<N>/workflow-COPYME-<name>/` (per-unit instances) | `trees_gene_families` (gene_family_COPYME template + gene_family-<name> instances); `trees_gene_groups` (similar) |
+
+**Mixed or hybrid types**: a subproject occasionally needs more than one
+type (e.g., a STEP-organized subproject where one STEP has BLOCK
+alternatives inside it). That's fine — apply the type that fits at each
+level. Don't invent custom types.
+
+**Naming**:
+- `STEP_<N>-<descriptor>` — zero-padded number with descriptive suffix
+- `BLOCK_<descriptor>` — no number; BLOCKs are alternatives, not ordered
+- `<unit_prefix>_COPYME` for the unit template (e.g., `gene_family_COPYME`)
+- `<unit_prefix>-<unit_name>` for unit instances (e.g.,
+  `gene_family-innexin_pannexin_channels`)
+- `workflow-COPYME-<descriptor>` for the workflow template inside any
+  STEP/BLOCK/unit (§35)
 
 ---
 

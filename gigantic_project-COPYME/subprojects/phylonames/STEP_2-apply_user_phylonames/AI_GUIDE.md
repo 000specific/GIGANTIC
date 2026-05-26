@@ -1,13 +1,13 @@
-# AI_GUIDE-apply_user_phylonames.md (Level 2: STEP Guide)
+# AI_GUIDE.md (Level 2: STEP Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-phylonames.md` first for subproject overview and phylonames concepts. This guide covers the STEP 2 workflow.
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and phylonames concepts. This guide covers the STEP 2 workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Phylonames concepts, numbered clades, user phylonames | `../AI_GUIDE-phylonames.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` (project root) |
+| Phylonames concepts, numbered clades, user phylonames | `../AI_GUIDE.md` |
 | STEP 2 overview | This file |
-| Running the workflow | `workflow-COPYME-apply_user_phylonames/ai/AI_GUIDE-apply_user_phylonames_workflow.md` |
+| Running the workflow | `workflow-COPYME-apply_user_phylonames/ai/AI_GUIDE.md` |
 
 ## STEP 2: Apply User Phylonames
 
