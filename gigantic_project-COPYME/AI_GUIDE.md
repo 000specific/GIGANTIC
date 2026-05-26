@@ -65,7 +65,10 @@ after 30 days).
 **Your active role**:
 
 1. **Recognize "Save Chat!"** as a trigger. Run the on-demand capture
-   script in `ai/ai_scripts/` and confirm what was captured.
+   script: `python3 ai/ai_scripts/003_ai-python-copy_session_jsonls.py`
+   (pass `--dry-run` first if you want to preview without writing). Print
+   the script's summary back to the user so they can see what was
+   captured.
 2. **Proactively suggest "Save Chat!"** at meaningful moments:
    - Right after a significant milestone (decision, breakthrough, big
      code change committed)

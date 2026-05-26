@@ -41,6 +41,14 @@ slurm_logs/
 !**/research_notebook/.gitkeep
 !**/research_notebook/README.md
 
+# research_user/ is a true wild-west sandbox — only the directory itself
+# ships (via .gitkeep) so users have somewhere to put their personal stuff;
+# nothing inside regardless of depth, including no README at this level.
+# The shipped research_notebook/README.md covers what research_user/ is for.
+# Per gigantic_conventions.md §1.
+**/research_notebook/research_user/**
+!**/research_notebook/research_user/.gitkeep
+
 # Species data directories (large proteome collections, e.g. species43/, species67/, species71/)
 species[0-9]*/
 

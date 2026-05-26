@@ -627,6 +627,188 @@ it `~~§N~~ DEPRECATED — see §M`.
 
 ---
 
+## 31. Pipeline output file naming: `N_ai-<descriptor>.<ext>`
+
+Outputs written by pipeline scripts follow the convention:
+
+```
+N_ai-<descriptor>.<ext>
+```
+
+where `N` is the **invoking script's number with leading zeros removed**
+(e.g., script `005_ai-python-generate_blast_commands.py` writes outputs
+named `5_ai-blast_commands.sh` into `OUTPUT_pipeline/5-output/`).
+
+Why drop leading zeros in outputs (vs script names which keep them)?
+Output file lists are typically short enough that alphabetical sorting
+doesn't need the leading zeros, and `5_ai-...` reads more naturally than
+`005_ai-...`. Scripts retain `NNN` because directories accumulating many
+scripts benefit from the zero-padding for ordering.
+
+The pairing — `NNN_ai-script.py` → `OUTPUT_pipeline/N-output/N_ai-result.tsv` —
+makes the script-to-output mapping immediately readable.
+
+---
+
+## 32. Python variable naming conventions
+
+GIGANTIC Python code uses these naming patterns consistently:
+
+| Pattern | Use for | Example |
+|---------|---------|---------|
+| `input_X` / `input_X_Y_Z` | All inputs (files, paths, data) | `input_fasta_all_species`, `input_genome_data` |
+| `output_X` / `output_X_Y_Z` | All outputs (files, paths, data) | `output_arm_counts`, `output_summary_table` |
+| `Xs___Ys` (three underscores) | Dictionaries; plural keys-set + plural values-set | `identifiers___sequences`, `species_names___genome_sizes` |
+| `Xs` (plural) | Lists | `sequences`, `identifiers`, `genome_sizes` |
+| `X` (singular) | Iteration variable inside a loop over `Xs` | `for sequence in sequences:` |
+| `parts_X` | Result of splitting variable `X` | `parts_annotation_string = annotation_string.split('|')` |
+| `line` + `parts` | TSV/CSV row parsing | `line = line.strip(); parts = line.split('\t')` |
+
+Use full words, not abbreviations (`sequence_count` not `seq_cnt`).
+Established scientific abbreviations (GO, Pfam, BLAST) are kept as-is.
+
+---
+
+## 33. Python spacing: spaces inside brackets (intentional PEP 8 deviation)
+
+GIGANTIC Python uses spaces **inside** parentheses, square brackets, and
+curly braces, and around operators. This intentionally deviates from PEP 8
+in favor of human readability for the research audience.
+
+```python
+# GIGANTIC style
+species_list = [ 'Octopus', 'Aplysia', 'Homo' ]
+genome_data = { 'species': 'Octopus', 'size': 2700000000 }
+if species_count == 8:
+    open( 'species.fasta', 'r' )
+
+# NOT GIGANTIC style (standard PEP 8)
+species_list = ['Octopus', 'Aplysia', 'Homo']
+genome_data = {'species': 'Octopus', 'size': 2700000000}
+if species_count==8:
+    open('species.fasta', 'r')
+```
+
+Readability for the human researcher takes precedence over PEP 8
+conformance. Don't run black, ruff-format, or other auto-formatters
+that would strip these spaces.
+
+---
+
+## 34. TSV/CSV output conventions: self-documenting headers + tab/comma delimiters
+
+All tabular outputs follow two rules:
+
+### Self-documenting column headers
+
+```
+header_ID (header details in human-readable prose)
+```
+
+- `header_ID`: underscore-separated identifier
+- `header details`: prose explanation in parentheses, with spaces, embedding
+  calculation method and data format where relevant
+
+Examples:
+```
+Orthogroup_ID (orthogroup identifier from OCL data)
+Conservation_Rate_Percent (calculated as conservation events divided by conservation plus loss events times 100)
+Species_List (comma delimited list of species names in Genus_species format)
+```
+
+Headers can be long if needed — clarity is the priority.
+
+### Delimiter convention
+
+- **Between columns**: TAB (`\t`) — the file is a TSV
+- **Within a column** (multi-value cells): COMMA (`,`) — pipes (`|`) are
+  not used as in-column delimiters
+
+```
+# CORRECT (TSV with comma-delimited in-column lists)
+Species_List (comma delimited list of species names)
+Homo_sapiens,Mus_musculus,Drosophila_melanogaster
+
+# INCORRECT (do not use pipes in columns)
+Homo_sapiens|Mus_musculus|Drosophila_melanogaster
+```
+
+---
+
+## 35. NextFlow workflow directory naming: template vs run instance
+
+Each NextFlow workflow lives in a directory whose name encodes whether it
+is a **template** (committed to git, the canonical source) or a **run
+instance** (a user's working copy of that template).
+
+| Form | Meaning | In git? |
+|------|---------|---------|
+| `workflow-COPYME-<descriptor>/` | Canonical template; the user copies it to run | Yes (tracked) |
+| `workflow-RUN_NN-<descriptor>/` | A run instance — copy of the template that executed (or is executing) once. `NN` numbers sequential runs of that workflow. | No (gitignored — `workflow-RUN_*/`) |
+
+Older naming patterns like `nf_workflow-TEMPLATE_NN-<descriptor>/` or
+`workflow-RUN_NN_NN-<descriptor>/` are deprecated in favor of the simpler
+`workflow-COPYME-*` / `workflow-RUN_NN-*` pair.
+
+The run-instance dirs contain a workflow's full execution artifacts
+(`OUTPUT_pipeline/`, `work/`, `.nextflow*`, slurm logs) and never ship
+to git.
+
+---
+
+## 36. NextFlow fail-fast: no `optional: true` outputs; `errorStrategy = 'terminate'`; `sys.exit(1)` on missing data
+
+Research pipelines must fail loudly on missing or invalid data — not
+silently continue with placeholder values or empty files. Three rules
+enforce this:
+
+### Never use `optional: true` in NextFlow outputs
+
+```groovy
+// ❌ WRONG — allows silent missing-output to succeed
+output:
+    path "results.txt", emit: results, optional: true
+
+// ✅ CORRECT — pipeline errors if file is missing
+output:
+    path "results.txt", emit: results
+```
+
+If a process can legitimately produce no output, fix the process to
+produce an empty-with-headers file rather than no file. Marking outputs
+optional means downstream consumers see "no error" while having no data.
+
+### `errorStrategy = 'terminate'` and `maxErrors = 0` in `nextflow.config`
+
+```groovy
+process {
+    errorStrategy = { task.attempt <= 2 ? 'retry' : 'terminate' }
+    maxRetries = 2
+    maxErrors = 0   // stop immediately on first persistent failure
+    // Never use errorStrategy = 'ignore'
+}
+```
+
+Research pipelines want immediate feedback when something goes wrong, not
+to discover multiple failures hours later.
+
+### Python pipeline scripts: `sys.exit(1)` on missing data
+
+```python
+if not critical_data:
+    logger.error( "CRITICAL ERROR: What went wrong" )
+    logger.error( "Why this is a problem" )
+    logger.error( f"Relevant context: { details }" )
+    logger.error( "How to fix it" )
+    sys.exit( 1 )   # FAIL
+```
+
+Never `sys.exit(0)` when data is missing. Never log "warning" for a
+critical issue. Never write a placeholder/empty file and continue. The
+script either produced the expected output or it failed — no third state.
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
