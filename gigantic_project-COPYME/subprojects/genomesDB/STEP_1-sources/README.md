@@ -132,20 +132,24 @@ See `workflow-COPYME-ingest_source_data/README.md` for detailed instructions.
 
 ---
 
-## research_notebook/research_user/ Directory
+## Personal workspace for source data
 
-The `research_notebook/research_user/` directory is the user's personal workspace (per gigantic_conventions §1, §25):
-- Store source genomes/proteomes before ingestion
-- Keep custom scripts, analyses, notes
-- Organize however you want
+Per conventions §1 + §25, the user's wild-west sandbox is the single
+project-root location `gigantic_project-COPYME/research_notebook/research_user/`
+(no per-subproject `research_notebook/` exists). Use it for:
+- Source genomes/proteomes before ingestion
+- Custom scripts, analyses, notes
+- Anything else, organized however you want
 
-**NOT part of GIGANTIC** - only the README is version-controlled.
+The sandbox is gitignored — content is NOT version-controlled.
 
 ---
 
-## Research Notebook
+## Run logs vs AI session logs
 
-Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions are extracted project-wide to `research_notebook/research_ai/sessions/`.
+Workflow run logs are saved to each workflow's `ai/logs/` directory.
+AI chat session transcripts (per §9) are captured project-wide at
+`gigantic_project-COPYME/research_notebook/research_ai/sessions/`.
 
 ---
 
@@ -162,9 +166,9 @@ STEP_1-sources/
 ├── README.md                    # This file
 ├── AI_GUIDE.md          # Guide for AI assistants
 ├── output_to_input/             # Symlinks passed to STEP_2
-│   └── proteomes/               # Created by workflow
-├── research_notebook/research_user/               # Your personal workspace (not part of GIGANTIC)
-│   └── README.md                # Only this README is in GIGANTIC
+│   └── STEP_1-sources/T1_proteomes/               # Created by workflow
+│   (no per-STEP research_notebook/ — single project-root sandbox at
+│   gigantic_project-COPYME/research_notebook/ per §1, §25)
 └── workflow-COPYME-ingest_source_data/  # The ingestion workflow template
     ├── README.md
     ├── RUN-workflow.sh

@@ -71,7 +71,9 @@ phylonames/
 │   └── maps/                                   # Convenience symlink to most recent STEP
 │       └── [project]_map-genus_species_X_phylonames.tsv      (symlink)
 │
-├── research_notebook/                          # Personal workspace + AI session captures (§1, §25)
+│   (no per-subproject research_notebook/ — single project-root sandbox at
+│   gigantic_project-COPYME/research_notebook/ per §1, §25; chat captures
+│   land at research_notebook/research_ai/sessions/ per §9)
 │   ├── research_user/                          # User sandbox (ships empty)
 │   └── research_ai/sessions/                   # Captured chat transcripts (§9)
 │

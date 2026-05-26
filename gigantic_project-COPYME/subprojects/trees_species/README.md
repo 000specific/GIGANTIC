@@ -309,7 +309,9 @@ trees_species/
 │   └── BLOCK_user_requests/               # User-selected structure subsets (symlinks)
 │
 ├── upload_to_server/                      # Curated data for GIGANTIC server (§38)
-├── research_notebook/                     # Sandbox + AI session captures (§1, §9, §25)
+│   (no per-subproject research_notebook/ — single project-root sandbox at
+│   gigantic_project-COPYME/research_notebook/ per §1, §25; chat captures
+│   land at research_notebook/research_ai/sessions/ per §9)
 │
 ├── BLOCK_gigantic_species_tree/           # ACTIVE: standardize + label user-provided species tree
 │   ├── AI_GUIDE.md                        # BLOCK-level AI guide

@@ -8,25 +8,49 @@ At the end of cleanup, this is the source for writing the top-level `GIGANTIC/` 
 
 ---
 
-## 1. `research_notebook/` is a sandbox, outside GIGANTIC conventions
+## 1. `research_notebook/` is a sandbox, outside GIGANTIC conventions — and there is ONE, at project root only
 
-`research_notebook/` directories at any level (project, subproject, BLOCK/STEP) are
-personal sandboxes. They have:
+There is **exactly one** `research_notebook/` per project, at the
+project root: `gigantic_project-COPYME/research_notebook/`. Per-subproject
+`research_notebook/` directories are forbidden. (Earlier templates
+allowed per-subproject and per-BLOCK/STEP sandboxes; that pattern was
+consolidated — the per-subproject dirs were inconsistent in practice
+and the chat-capture system always wrote to the project-root location
+anyway.)
+
+The project-root sandbox has:
 
 - **No structure requirements** — any files, any naming, any subdirectory layout
 - **No naming conventions** — users organize however they like
 
-The only hard rule: **GIGANTIC must never pull from anything inside a
-`research_notebook/`.** Workflows, scripts, and pipelines treat these directories as
+The only hard rule: **GIGANTIC must never pull from anything inside
+`research_notebook/`.** Workflows, scripts, and pipelines treat it as
 invisible.
 
-If a user wants GIGANTIC to use a file that lives in their `research_notebook/`,
-they symlink it into `gigantic_project-COPYME/INPUT_user/` (the canonical
-project-level input directory). GIGANTIC reads from `INPUT_user/`, never from
+If a user wants GIGANTIC to use a file that lives in
+`research_notebook/`, they symlink it into
+`gigantic_project-COPYME/INPUT_user/` (the canonical project-level
+input directory). GIGANTIC reads from `INPUT_user/`, never from
 `research_notebook/`.
 
-This separation is what lets `research_notebook/` stay completely free-form while
-GIGANTIC's reproducibility guarantees remain intact.
+This separation is what lets `research_notebook/` stay completely
+free-form while GIGANTIC's reproducibility guarantees remain intact.
+
+**Per-subproject scoping** (when useful): organize inside the project-root
+sandbox with `subproject-<name>/` subdirs, e.g.:
+
+```
+research_notebook/
+├── research_user/
+│   ├── subproject-genomesDB/   # user's per-subproject scratch
+│   ├── subproject-phylonames/
+│   └── species70/              # or any user-defined organization
+└── research_ai/
+    ├── sessions/               # chat captures (per §9)
+    └── subproject-phylonames/  # AI-side per-subproject scratch (when needed)
+```
+
+But this is a convenience pattern, not a requirement — the sandbox is free-form.
 
 ---
 
@@ -510,7 +534,9 @@ All four are in `.gitignore`. When clearing a stuck run, deleting these
 
 ## 25. `research_user/` ships as empty directory; `research_ai/` ships with documentation
 
-Refines §1:
+Refines §1 (and applies only to the single project-root
+`research_notebook/` — per-subproject `research_notebook/` directories
+are forbidden):
 
 - `research_notebook/research_user/` is the user's wild-west sandbox. The
   template ships only the empty directory (`.gitkeep` only — no README,

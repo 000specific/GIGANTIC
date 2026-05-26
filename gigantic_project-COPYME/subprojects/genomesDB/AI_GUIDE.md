@@ -267,7 +267,9 @@ genomesDB/
 │   ├── STEP_3-databases/
 │   └── STEP_4-create_final_species_set/
 │
-├── research_notebook/                       # Personal workspace + AI session captures (§1, §25)
+│   (no per-subproject research_notebook/ — single project-root sandbox at
+│   gigantic_project-COPYME/research_notebook/ per §1, §25; chat captures
+│   land at research_notebook/research_ai/sessions/ per §9)
 │
 ├── STEP_1-sources/
 │   ├── README.md

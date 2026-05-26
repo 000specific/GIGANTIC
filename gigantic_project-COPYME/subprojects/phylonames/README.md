@@ -204,9 +204,9 @@ phylonames/
 │   └── maps/                                # Convenience landing dir; the .tsv inside is a symlink
 │       └── [project]_map-genus_species_X_phylonames.tsv      (symlink, updated to whichever STEP ran last)
 │
-├── research_notebook/                       # Sandbox + AI session captures (§1, §9, §25)
-│   ├── research_user/                       # User-controlled (ships empty)
-│   └── research_ai/sessions/                # Captured chat transcripts (.jsonl.gz)
+│   (no per-subproject research_notebook/ — the single project-root one
+│   at gigantic_project-COPYME/research_notebook/ serves all subprojects;
+│   see conventions §1, §9, §25)
 │
 ├── STEP_1-generate_and_evaluate/
 │   ├── AI_GUIDE.md                          # STEP-level AI guide
@@ -260,7 +260,9 @@ phylonames/
 **AI lab-notebook logs**: Each workflow run creates a timestamped log in
 its own `ai/logs/` directory. This documents what the workflow did, when,
 with what inputs, and what it produced. Captured AI chat transcripts live
-separately in `research_notebook/research_ai/sessions/` (project-wide).
+in the single project-root sandbox at
+`gigantic_project-COPYME/research_notebook/research_ai/sessions/` (see
+conventions §1, §9, §25).
 
 ---
 
@@ -344,7 +346,8 @@ If you have custom phylonames to apply:
 
 1. **Stage your overrides via the project-level INPUT_user arena**
    (canonical pattern). Put the real file in your sandbox under
-   `research_notebook/research_user/`, then symlink it into the
+   `gigantic_project-COPYME/research_notebook/research_user/` (the
+   single project-root sandbox per §1), then symlink it into the
    project-level `INPUT_user/phylonames/` slot:
    ```bash
    cd ../../INPUT_user/phylonames

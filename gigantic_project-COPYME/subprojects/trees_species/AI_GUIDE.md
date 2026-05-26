@@ -143,8 +143,9 @@ trees_species/
 │       └── Species_Clade_Species_Mappings/
 │
 ├── upload_to_server/
-├── user_research/
-├── research_notebook/
+│   (no per-subproject research_notebook/ — single project-root sandbox at
+│   gigantic_project-COPYME/research_notebook/ per §1, §25; chat captures
+│   land at research_notebook/research_ai/sessions/ per §9)
 │
 ├── BLOCK_de_novo_species_tree/            # Future
 │   └── workflow-COPYME-build_species_tree/

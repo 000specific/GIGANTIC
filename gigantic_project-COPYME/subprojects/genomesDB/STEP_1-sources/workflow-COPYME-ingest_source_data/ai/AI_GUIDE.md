@@ -136,7 +136,7 @@ Users must have data files in the project-level `INPUT_user/genomic_resources/` 
 - `../../../../INPUT_user/genomic_resources/proteomes/` - Project-level proteome files (.aa)
 - `../../../../INPUT_user/genomic_resources/annotations/` - Project-level annotation files (.gff3/.gtf)
 - `../../../../INPUT_user/genomic_resources/maps/` - Identifier mapping files (.tsv)
-- `../../research_notebook/research_user/` - Personal research data (alternative)
+- `../../../../research_notebook/research_user/` - Project-root sandbox (alternative, per §1, §25)
 - Any accessible path on the system
 
 ### Step 2: Ensure Files Follow GIGANTIC Naming Convention
@@ -367,11 +367,17 @@ bash ai/scripts/003_ai-bash-create_output_symlinks.sh \
 
 ---
 
-## What's NOT in research_notebook/research_user/
+## On the user sandbox (research_notebook/research_user/)
 
-**Important**: The `research_notebook/research_user/` directory at the STEP_1 level is:
-- NOT part of GIGANTIC (only the README is)
-- User's personal space for source data
+Per conventions §1, §25, the user sandbox lives at the **single
+project-root location**: `gigantic_project-COPYME/research_notebook/research_user/`
+(there is no per-STEP or per-subproject `research_notebook/`). Properties:
+
+- NOT part of GIGANTIC (contents are gitignored; never version-controlled)
+- User's personal space for any source data, scripts, notes
+- Wild-west organization — no naming/structure rules
 - Can contain anything the user wants
 
-The workflow reads FROM user_research (or anywhere else) but stores GIGANTIC-managed copies in OUTPUT_pipeline.
+The workflow reads from `INPUT_user/` (which contains symlinks into the
+project-root sandbox per §17, §18), not directly from the sandbox itself.
+GIGANTIC-managed copies of ingested data live in `OUTPUT_pipeline/`.

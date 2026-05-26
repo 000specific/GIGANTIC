@@ -21,7 +21,7 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
 
 ## Quick Start
 
-1. Place your source files in the project-level `INPUT_user/genomic_resources/` subdirectories (genomes/, proteomes/, annotations/) or somewhere else accessible (e.g., `../../research_notebook/research_user/`)
+1. Place your source files in the project-level `INPUT_user/genomic_resources/` subdirectories (genomes/, proteomes/, annotations/) or somewhere else accessible (e.g., the project-root sandbox at `../../../../research_notebook/research_user/` per §1, §25)
 
 2. **Ensure files follow GIGANTIC naming convention**:
    ```

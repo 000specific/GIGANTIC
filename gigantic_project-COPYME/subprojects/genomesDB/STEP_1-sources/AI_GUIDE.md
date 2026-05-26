@@ -47,12 +47,12 @@ Unlike other GIGANTIC subprojects that automatically download or generate data, 
 - Users may have custom or unpublished genomes
 - Complete control over what enters GIGANTIC
 
-**research_notebook/research_user/ directory**:
-- Located at `research_notebook/research_user/`
-- User's personal workspace for source data
-- NOT part of GIGANTIC (only README is version-controlled)
-- Can contain anything: raw downloads, scripts, notes, analyses
-- Workflow reads FROM here but doesn't manage it
+**User sandbox for source data** (per §1, §25):
+- Single project-root location: `gigantic_project-COPYME/research_notebook/research_user/`
+- (No per-subproject `research_notebook/` exists.)
+- Wild-west — any files, any organization
+- NOT part of GIGANTIC (contents are gitignored; never version-controlled)
+- Workflow reads FROM here (via INPUT_user symlinks per §17, §18) but doesn't manage it
 
 ---
 
@@ -189,7 +189,7 @@ Workflow run logs are saved to each workflow's `ai/logs/` directory. AI sessions
 | `workflow-*/INPUT_user/source_manifest.tsv` | 4-column manifest | **YES** (required) |
 | `workflow-*/START_HERE-user_config.yaml` | Project name, options | **YES** (project name) |
 | `output_to_input/STEP_1-sources/T1_proteomes/` | Symlinks for STEP_2 | No (auto-created) |
-| `research_notebook/research_user/` | User's personal source data | Personal space |
+| `../../../research_notebook/research_user/` (project-root sandbox per §1, §25) | User's personal source data | Personal space (gitignored) |
 
 ---
 
@@ -265,11 +265,11 @@ STEP_1-sources/
 ├── README.md                    # Human-readable overview
 ├── AI_GUIDE.md          # THIS FILE
 ├── output_to_input/             # Symlinks passed to STEP_2
-│   └── proteomes/               # Created by workflow
+│   └── STEP_1-sources/T1_proteomes/  # Created by workflow
 │       ├── Species1.aa -> ...
 │       └── proteome_manifest.tsv
-├── research_notebook/research_user/               # User's personal workspace
-│   └── README.md                # Only this is part of GIGANTIC
+│   (no per-STEP research_notebook/ — single project-root sandbox at
+│   gigantic_project-COPYME/research_notebook/ per §1, §25)
 └── workflow-COPYME-ingest_source_data/
     ├── README.md
     ├── RUN-workflow.sh
