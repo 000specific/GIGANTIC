@@ -6,6 +6,25 @@
 # Covers all archived runs, superseded workflows, etc.
 x_*
 
+# Early-development files and directories (prefixed with z_).
+# Same gitignore mechanism as x_, but different intent:
+#   - x_ = staged for eventual removal
+#   - z_ = staged as early-development, not for general use yet
+# Both sort to the ends of alphabetical listings.
+#
+# By default, files and dirs prefixed with z_ are gitignored. To make a z_
+# DIRECTORY visible on github (so its presence signals future framework
+# direction in higher-level docs), add a README.md inside it — README.md
+# is the only filename un-ignored within z_* dirs.
+#
+# The `**/` prefix on the content rules is necessary because z_ dirs can
+# live at any depth (e.g., gigantic_project-COPYME/subprojects/z_foo/).
+# Without `**/`, the content-ignore rule would only fire at the repo root.
+z_*
+!**/z_*/
+**/z_*/**
+!**/z_*/README.md
+
 # NextFlow execution artifacts
 work/
 .nextflow/
