@@ -1,8 +1,22 @@
 # AI Guide: BLOCK_gigantic_species_tree (trees_species)
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
 **For AI Assistants**: This guide covers `BLOCK_gigantic_species_tree` within the `trees_species` subproject. For `trees_species` overview and pipeline architecture, see `../AI_GUIDE.md`. For GIGANTIC overview, see `../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_species/BLOCK_gigantic_species_tree/`
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — trees_species overview
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCKs: [`../BLOCK_permutations_and_features/`](../BLOCK_permutations_and_features/) (next BLOCK; consumes the labeled tree this BLOCK produces) · [`../BLOCK_user_requests/`](../BLOCK_user_requests/) (query layer) · [`../BLOCK_de_novo_species_tree/`](../BLOCK_de_novo_species_tree/) (future alt input source)
+- Workflow to run: [`workflow-COPYME-gigantic_species_tree/README.md`](workflow-COPYME-gigantic_species_tree/README.md)
+- Reads from: `workflow-*/INPUT_user/species_tree.newick`
 
 ---
 

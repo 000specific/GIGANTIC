@@ -37,7 +37,7 @@ ln -sf ../../../output_to_input/BLOCK_gigantic_species_tree/{species_set}-specie
     INPUT_user/species_tree.newick
 ```
 
-See `../../../BLOCK_gigantic_species_tree/AI_GUIDE-gigantic_species_tree.md` for details.
+See `../../../BLOCK_gigantic_species_tree/AI_GUIDE.md` for details.
 
 ## Optional Input
 

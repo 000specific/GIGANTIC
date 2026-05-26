@@ -1,10 +1,21 @@
 # AI Guide: BLOCK_permutations_and_features
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
 **For AI Assistants**: Read `../AI_GUIDE.md` first for subproject concepts.
 This guide covers the permutations_and_features block specifically.
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — trees_species overview
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCKs: [`../BLOCK_gigantic_species_tree/`](../BLOCK_gigantic_species_tree/) (typical upstream — provides the labeled species tree this BLOCK enumerates from) · [`../BLOCK_user_requests/`](../BLOCK_user_requests/) (downstream filter that selects from the structures this BLOCK enumerates)
+- Workflow to run: [`workflow-COPYME-permutations_and_features/`](workflow-COPYME-permutations_and_features/) (no top-level workflow README — see `ai/AI_GUIDE.md` inside the workflow for the detailed runbook)
+- Reads from: `workflow-*/INPUT_user/species_tree.newick` (+ optional `clade_names.tsv`)
 
 ---
 
@@ -44,27 +55,27 @@ Key capabilities:
 
 ```
 BLOCK_permutations_and_features/
-├── AI_GUIDE.md    # THIS FILE
+├── AI_GUIDE.md                              # THIS FILE
 └── workflow-COPYME-permutations_and_features/
-    ├── README.md
-    ├── RUN-workflow.sh
-    ├── RUN-workflow.sh
+    ├── RUN-workflow.sh                      # Unified driver (§29)
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/                          # species_tree.newick (+ optional clade_names.tsv)
-    ├── OUTPUT_pipeline/
+    ├── OUTPUT_pipeline/                     # 1-output through 9-output
     └── ai/
+        ├── AI_GUIDE.md                      # Workflow-level operational guide
         ├── main.nf
         ├── nextflow.config
-        ├── AI_GUIDE.md
-        └── scripts/                         # 9 sequential Python scripts
+        ├── conda_environment.yml            # env: aiG-trees_species-permutations_and_features
+        ├── logs/                            # Per-run audit logs from script 010
+        └── scripts/                         # 10 sequential Python scripts (001-010)
 ```
 
 ---
 
-## Pipeline Summary
+## Pipeline Summary (10 scripts)
 
 | Script | Purpose | Key Input | Key Output |
-|--------|---------|-----------|------------|
+|---|---|---|---|
 | 001 | Extract species tree components | species_tree.newick | Clade registry, paths, metadata |
 | 002 | Generate topology permutations | Metadata (unresolved clades) | Permutation Newick strings |
 | 003 | Assign clade identifiers | Topology permutations | Annotated skeletons with CXXX IDs |
@@ -74,6 +85,7 @@ BLOCK_permutations_and_features/
 | 007 | Integrate all clade data | Registry, trees, blocks | 24-column master clade table |
 | 008 | Visualize species trees | Complete Newick trees | SVG + PDF per structure |
 | 009 | Generate clade-species mappings | Integrated data, blocks | Clade-to-descendant-species table |
+| 010 | Per-run audit log | n/a | `ai/logs/run_*.log` |
 
 ---
 

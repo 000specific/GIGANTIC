@@ -1,7 +1,18 @@
 # workflow-COPYME-gigantic_species_tree
 
-**AI**: Claude Code | Opus 4.6 | 2026 April 10
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 April 10 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — BLOCK_gigantic_species_tree
+- Parent subproject: [`../../README.md`](../../README.md) — trees_species overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `INPUT_user/species_tree.newick` (you provide)
+- **Next workflow**: `../../BLOCK_permutations_and_features/workflow-COPYME-permutations_and_features/` (consumes the labeled tree this workflow produces)
 
 ---
 
@@ -9,7 +20,7 @@
 
 Standardize and label a user-provided species tree for the GIGANTIC framework.
 
-**Part of**: `trees_species/BLOCK_gigantic_species_tree/` (see `../AI_GUIDE-gigantic_species_tree.md`)
+**Part of**: `trees_species/BLOCK_gigantic_species_tree/` (see `../AI_GUIDE.md`)
 
 ---
 
@@ -75,8 +86,9 @@ bash RUN-workflow.sh
 
 **Run on SLURM:**
 ```bash
-# Edit RUN-workflow.sbatch to set --account and --qos
-sbatch RUN-workflow.sbatch
+# Set `execution_mode: "slurm"` + `slurm_account` + `slurm_qos` in
+# START_HERE-user_config.yaml, then:
+bash RUN-workflow.sh   # self-submits to SLURM via §29 unified driver
 ```
 
 See `INPUT_user/README.md` for the required species tree format and examples.
@@ -96,8 +108,7 @@ See `INPUT_user/README.md` for the required species tree format and examples.
 ```
 workflow-COPYME-gigantic_species_tree/
 ├── README.md                                 # THIS FILE
-├── RUN-workflow.sh                           # Local runner (calls NextFlow)
-├── RUN-workflow.sbatch                       # SLURM wrapper
+├── RUN-workflow.sh                           # Unified driver (§29; local or self-submit to SLURM via execution_mode)
 ├── START_HERE-user_config.yaml               # User-editable configuration
 ├── INPUT_user/                               # User inputs
 │   ├── README.md                             # Input format documentation
@@ -110,7 +121,7 @@ workflow-COPYME-gigantic_species_tree/
 │   ├── 5-output/                             # Visualization (SVG or placeholder)
 │   └── 6-output/                             # Cross-validation report
 └── ai/
-    ├── AI_GUIDE-gigantic_species_tree_workflow.md   # Detailed runbook
+    ├── AI_GUIDE.md   # Detailed runbook
     ├── main.nf                               # NextFlow pipeline definition
     ├── nextflow.config                       # NextFlow settings
     ├── logs/                                 # Run logs (populated on run)
@@ -165,5 +176,5 @@ trees_species/output_to_input/BLOCK_gigantic_species_tree/
 
 The most direct downstream consumer is **`BLOCK_permutations_and_features`** (sibling BLOCK within `trees_species/`), which takes the full-format labeled tree and enumerates topology permutations for user-specified unresolved clades.
 
-See `../AI_GUIDE-gigantic_species_tree.md` (BLOCK-level concepts) and
-`ai/AI_GUIDE-gigantic_species_tree_workflow.md` (workflow execution runbook) for more detail.
+See `../AI_GUIDE.md` (BLOCK-level concepts) and
+`ai/AI_GUIDE.md` (workflow execution runbook) for more detail.

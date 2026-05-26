@@ -1,9 +1,18 @@
 # AI Guide: BLOCK_de_novo_species_tree
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
 **Status**: SKELETAL PLACEHOLDER - Future development
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — trees_species overview
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCK that consumes this BLOCK's eventual output: [`../BLOCK_gigantic_species_tree/`](../BLOCK_gigantic_species_tree/) (its `INPUT_user/species_tree.newick` would be the Newick this BLOCK builds)
 
 ---
 

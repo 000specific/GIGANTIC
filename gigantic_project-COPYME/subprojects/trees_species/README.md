@@ -1,6 +1,32 @@
 # trees_species
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+Purpose: User-facing description of the trees_species subproject — what it
+         does, the four-BLOCK architecture (gigantic_species_tree /
+         permutations_and_features / user_requests / de_novo_species_tree),
+         where its outputs go, and which subprojects consume them.
+============================================================================ -->
+
 Species tree topology analysis for GIGANTIC comparative genomics.
+
+## Where this fits
+
+`trees_species` is the **third** subproject most users run (after
+`phylonames` and `genomesDB`). It takes a user-provided species
+phylogenetic tree (or builds one de novo in the future), standardizes
+and labels it, enumerates topology permutations for unresolved clades,
+extracts comprehensive phylogenetic features for every resulting
+structure, and exposes the features for downstream
+origin-conservation-loss (OCL) analyses.
+
+- Parent project landing page: [`../../README.md`](../../README.md)
+- Parent project AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- This subproject's AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Prerequisite: [`../phylonames/`](../phylonames/) (clade naming
+  conventions used at every label site)
 
 ## What This Subproject Does
 
@@ -273,43 +299,61 @@ identifier representations.
 ```
 trees_species/
 ├── README.md                              # THIS FILE
-├── AI_GUIDE.md              # AI guidance
-├── RUN-update_upload_to_server.sh
+├── AI_GUIDE.md                            # AI guidance (subproject level)
+├── RUN-update_upload_to_server.sh         # Subproject-level publisher (§38)
 │
-├── output_to_input/                       # Single canonical downstream location
+├── output_to_input/                       # Single canonical downstream location (§2, §38)
 │   ├── BLOCK_de_novo_species_tree/        # Placeholder (future)
-│   └── BLOCK_permutations_and_features/   # Populated by workflow
+│   ├── BLOCK_gigantic_species_tree/       # Labeled species tree + clade map (symlinks)
+│   ├── BLOCK_permutations_and_features/   # All structures + features (symlinks)
+│   └── BLOCK_user_requests/               # User-selected structure subsets (symlinks)
 │
-├── upload_to_server/                      # Curated data for GIGANTIC server
-├── user_research/                         # Personal workspace
-├── research_notebook/
+├── upload_to_server/                      # Curated data for GIGANTIC server (§38)
+├── research_notebook/                     # Sandbox + AI session captures (§1, §9, §25)
 │
-├── BLOCK_de_novo_species_tree/            # FUTURE: Build species tree de novo
-│   └── workflow-COPYME-build_species_tree/
-│
-├── BLOCK_gigantic_species_tree/           # ACTIVE: Standardize and label a user-provided species tree
+├── BLOCK_gigantic_species_tree/           # ACTIVE: standardize + label user-provided species tree
+│   ├── AI_GUIDE.md                        # BLOCK-level AI guide
 │   └── workflow-COPYME-gigantic_species_tree/
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sh
+│       ├── README.md                      # User-facing quick start
+│       ├── RUN-workflow.sh                # Unified driver (§29; local or SLURM via execution_mode)
 │       ├── START_HERE-user_config.yaml
 │       ├── INPUT_user/                    # User provides: species_tree.newick
-│       ├── OUTPUT_pipeline/               # Results (N-output/ per script)
+│       ├── OUTPUT_pipeline/               # Results (1-output through 6-output)
 │       └── ai/
+│           ├── AI_GUIDE.md
 │           ├── main.nf
 │           ├── nextflow.config
-│           └── scripts/                   # 7 Python scripts
+│           ├── conda_environment.yml      # env: aiG-trees_species-gigantic_species_tree
+│           └── scripts/                   # 7 Python scripts (001-007)
 │
-└── BLOCK_permutations_and_features/       # ACTIVE: Permutation + feature extraction
-    └── workflow-COPYME-permutations_and_features/
-        ├── RUN-workflow.sh
-        ├── RUN-workflow.sh
-        ├── START_HERE-user_config.yaml
-        ├── INPUT_user/                    # User provides: species tree + clade names
-        ├── OUTPUT_pipeline/               # Results (N-output/ per script)
-        └── ai/
-            ├── main.nf
-            ├── nextflow.config
-            └── scripts/                   # 9 Python scripts
+├── BLOCK_permutations_and_features/       # ACTIVE: enumerate topology permutations + extract features
+│   ├── AI_GUIDE.md                        # BLOCK-level AI guide
+│   └── workflow-COPYME-permutations_and_features/
+│       ├── RUN-workflow.sh                # Unified driver (§29)
+│       ├── START_HERE-user_config.yaml
+│       ├── INPUT_user/                    # User provides: species_tree.newick + optional clade_names.tsv
+│       ├── OUTPUT_pipeline/               # Results (1-output through 9-output)
+│       └── ai/
+│           ├── AI_GUIDE.md
+│           ├── main.nf
+│           ├── nextflow.config
+│           ├── conda_environment.yml      # env: aiG-trees_species-permutations_and_features
+│           └── scripts/                   # 10 Python scripts (001-010, including 010 write_run_log)
+│
+├── BLOCK_user_requests/                   # ACTIVE: query layer over the enumerated structures
+│   ├── AI_GUIDE.md                        # BLOCK-level AI guide
+│   └── workflow-COPYME-select_structures/
+│       ├── RUN-workflow.sh                # Unified driver (§29)
+│       ├── START_HERE-user_config.yaml
+│       ├── INPUT_user/                    # User provides: query_manifest.yaml (topological hypotheses)
+│       ├── OUTPUT_pipeline/               # Results (1-output, 2-output)
+│       └── ai/
+│           ├── conda_environment.yml      # env: aiG-trees_species-user_requests
+│           └── scripts/                   # 2 Python scripts (001 select, 002 visualize)
+│
+└── BLOCK_de_novo_species_tree/            # FUTURE (skeletal): build species tree de novo from sequences
+    ├── AI_GUIDE.md
+    └── workflow-COPYME-build_species_tree/  # Scaffold only (placeholder)
 ```
 
 ## BLOCKs
@@ -329,7 +373,18 @@ visualization. This is typically the first step for any new species set.
 Full permutation and feature extraction pipeline. Takes a labeled species tree
 (typically from `BLOCK_gigantic_species_tree`), optionally generates N permuted
 topologies for user-specified unresolved clades, and extracts comprehensive
-phylogenetic features from each permutation.
+phylogenetic features from each permutation. 10 sequential scripts (the last is
+a per-run audit log).
+
+### BLOCK_user_requests (Active)
+
+Lightweight query layer over the structures produced by
+`BLOCK_permutations_and_features`. Collaborators describe a topological
+hypothesis as a `query_manifest.yaml` using two primitives —
+`require_direct_child` and `require_sister` — and the workflow returns the
+matching structures from the enumerated candidate set (e.g., 105
+structures for 5 unresolved clades). Useful when you want to feed a
+hand-picked subset of structures into downstream OCL analyses.
 
 ### BLOCK_de_novo_species_tree (Future - Skeletal)
 
@@ -351,17 +406,48 @@ User provides initial species tree      OR      BLOCK_de_novo_species_tree (futu
                         (enumerate topology permutations,
                          extract phylogenetic features)
                                        ↓
+                        [optional] BLOCK_user_requests
+                        (filter to specific topological hypotheses)
+                                       ↓
                         trees_species/output_to_input/
                                        ↓
                         Downstream: orthogroups_X_ocl, annotations_X_ocl
 ```
 
+## Outputs Shared Downstream (`output_to_input/`)
+
+Other GIGANTIC subprojects reference trees_species outputs via the
+subproject-root `output_to_input/` tree (per §38, §2). Per-BLOCK
+subdirectories make the source visible:
+
+```
+trees_species/output_to_input/
+├── BLOCK_gigantic_species_tree/      # standardized + labeled species tree (newick variants + clade map)
+├── BLOCK_permutations_and_features/  # all structures + phylogenetic features (paths, blocks, etc.)
+├── BLOCK_user_requests/              # user-filtered structure subsets per query_manifest run
+└── BLOCK_de_novo_species_tree/       # placeholder (future)
+```
+
+**Downstream consumers (per §40)** — every OCL-flavored or phylogeny-aware
+subproject reads from `trees_species/output_to_input/`:
+
+- **orthogroups_X_ocl** — reads phylogenetic blocks, clade-species
+  mappings, and phylogenetic paths to compute orthogroup OCL inferences
+  across structures
+- **annotations_X_ocl** — same data flow at the per-annotation grain
+- **occams_tree** (planned) — cross-structure aggregation that uses
+  `clade_id_name` as the global key (per Rule 6)
+- **trees_gene_families / trees_gene_groups** — gene-tree subprojects
+  that align gene tips against species in the labeled species tree (read
+  the labeled tree from `BLOCK_gigantic_species_tree/`)
+- Any future OCL-flavored integration subproject
+
+---
+
 ## Dependencies
 
 ### trees_species reads FROM:
-- `phylonames/output_to_input/` - Clade naming conventions
-
-### trees_species provides TO:
-- `orthogroups_X_ocl` - Phylogenetic blocks, clade-species mappings, phylogenetic paths
-- `annotations_X_ocl` - Same data for annotation-level OCL analysis
-- Any future OCL integration subproject
+- `phylonames/output_to_input/maps/` — clade naming conventions used at
+  every label site
+- (Per-BLOCK) the user provides a Newick species tree in `INPUT_user/`;
+  this is the only required external input

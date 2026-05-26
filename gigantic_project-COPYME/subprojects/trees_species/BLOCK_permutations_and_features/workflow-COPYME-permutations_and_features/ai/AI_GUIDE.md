@@ -1,9 +1,12 @@
 # AI Guide: permutations_and_features Workflow
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**For AI Assistants**: Read the BLOCK guide (`../../AI_GUIDE-permutations_and_features.md`) first.
+**For AI Assistants**: Read the BLOCK guide (`../../AI_GUIDE.md`) first.
 This guide focuses on running the workflow. The canonical Terminology definitions
 (Structure vs Topology, Resolved vs Unresolved input species tree, species-tree-vs-gene-tree
 explicitness) live in `../../../README.md`.
@@ -14,9 +17,9 @@ explicitness) live in `../../../README.md`.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| trees_species concepts | `../../../AI_GUIDE-trees_species.md` |
-| BLOCK overview | `../../AI_GUIDE-permutations_and_features.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` |
+| trees_species concepts | `../../../AI_GUIDE.md` |
+| BLOCK overview | `../../AI_GUIDE.md` |
 | Running this workflow | This file |
 
 ---
@@ -35,12 +38,12 @@ explicitness) live in `../../../README.md`.
 ```bash
 cd workflow-COPYME-permutations_and_features/
 
-# Local execution
+# Unified driver (§29): local OR self-submit to SLURM via execution_mode YAML key
 bash RUN-workflow.sh
-
-# SLURM cluster
-sbatch RUN-workflow.sbatch
 ```
+
+For SLURM, set `execution_mode: "slurm"` + `slurm_account` + `slurm_qos`
+in `START_HERE-user_config.yaml` before running.
 
 ### What Happens
 
@@ -57,10 +60,10 @@ sbatch RUN-workflow.sbatch
 
 ---
 
-## Script Pipeline
+## Script Pipeline (10 scripts)
 
 | Process | Script | Key Output |
-|---------|--------|------------|
+|---|---|---|
 | 1 | 001_ai-python-extract_tree_components.py | `1_ai-tree-metadata.tsv`, `1_ai-tree-clade_registry.tsv`, `1_ai-tree-phylogenetic_paths.tsv` |
 | 2 | 002_ai-python-generate_topology_permutations.py | `2_ai-topology_permutations.tsv` |
 | 3 | 003_ai-python-assign_clade_identifiers.py | `3_ai-clade_topology_registry.tsv`, `newick_trees/3_ai-structure_XXX_topology_with_clade_ids.newick` |
@@ -70,6 +73,7 @@ sbatch RUN-workflow.sbatch
 | 7 | 007_ai-python-integrate_clade_data.py | `7_ai-integrated_clade_data-all_structures.tsv` |
 | 8 | 008_ai-python-visualize_species_trees.py | `8_ai-structure_XXX-species_tree.svg/.pdf` |
 | 9 | 009_ai-python-generate_clade_species_mappings.py | `9_ai-clade_species_mappings-all_structures.tsv` |
+| 10 | 010_ai-python-write_run_log.py | `ai/logs/run_*.log` (per-run audit log) |
 
 ---
 
@@ -129,14 +133,14 @@ Script 008 (visualization) is typically the slowest process due to ete3 renderin
 ## Key Files
 
 | File | User Edits? | Purpose |
-|------|-------------|---------|
-| `START_HERE-user_config.yaml` | Yes | Species set name, unresolved clades, paths |
+|---|---|---|
+| `START_HERE-user_config.yaml` | Yes | Species set name, unresolved clades, paths, `execution_mode` + `slurm_account` + `slurm_qos` for SLURM |
 | `INPUT_user/species_tree.newick` | Yes | Annotated species tree (CXXX_Name:branch_length format) |
 | `INPUT_user/clade_names.tsv` | Optional | Clade ID to human-readable name mapping |
-| `RUN-workflow.sh` | No | Local runner |
-| `RUN-workflow.sbatch` | Yes (account/qos) | SLURM runner |
+| `RUN-workflow.sh` | No | Unified driver (§29; local or self-submit to SLURM via YAML) |
 | `ai/main.nf` | No | Pipeline definition |
 | `ai/nextflow.config` | No | Nextflow settings |
+| `ai/conda_environment.yml` | No | Conda env spec: `aiG-trees_species-permutations_and_features` (auto-created on first run) |
 
 ---
 

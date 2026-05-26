@@ -1,10 +1,21 @@
 # AI Guide: BLOCK_user_requests
 
-**AI**: Claude Code | Opus 4.6 | 2026 April 18
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 April 18 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
 **For AI Assistants**: Read `../AI_GUIDE.md` first for
 trees_species subproject context. This guide covers the user-requests BLOCK.
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — trees_species overview
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Upstream BLOCK (prerequisite): [`../BLOCK_permutations_and_features/`](../BLOCK_permutations_and_features/) — must have run first; this BLOCK reads its `output_to_input/BLOCK_permutations_and_features/Species_Phylogenetic_Blocks/` to do the matching.
+- Workflow to run: [`workflow-COPYME-select_structures/`](workflow-COPYME-select_structures/) (no top-level workflow README — start with `INPUT_user/query_manifest.yaml` and `START_HERE-user_config.yaml`).
+- Output is consumed by: downstream OCL subprojects that want to restrict analysis to a hand-picked subset of structures (e.g., annotations_X_ocl run on the 4 structures matching specific user hypotheses).
 
 ---
 
@@ -119,9 +130,15 @@ BLOCK_user_requests/
     │       ├── 1_ai-selected_structures/  # newick copies
     │       └── 1_ai-ascii_previews/       # ASCII tree renders
     └── ai/
+        ├── conda_environment.yml          # env: aiG-trees_species-user_requests
         └── scripts/
-            └── 001_ai-python-select_structures.py
+            ├── 001_ai-python-select_structures.py   # match queries against the 105 structures
+            └── 002_ai-python-visualize_structures.py # render selected structures (SVG/ASCII)
 ```
+
+**Note**: this BLOCK does not currently use a NextFlow `main.nf`. The two
+scripts are invoked directly by `RUN-workflow.sh`, sequenced as
+select_structures → visualize_structures.
 
 ---
 

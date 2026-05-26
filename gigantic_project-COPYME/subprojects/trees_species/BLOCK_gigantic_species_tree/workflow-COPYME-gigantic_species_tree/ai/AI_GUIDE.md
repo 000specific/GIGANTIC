@@ -1,6 +1,12 @@
 # AI Guide: gigantic_species_tree Workflow (Runbook)
 
-**For AI Assistants**: This is the execution runbook for the `gigantic_species_tree` workflow. Read the BLOCK guide first (`../../AI_GUIDE-gigantic_species_tree.md`) for concepts, then this file for runbook specifics. For trees_species overview see `../../../AI_GUIDE-trees_species.md`. For GIGANTIC overview see `../../../../../AI_GUIDE-project.md`.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 April 10 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: This is the execution runbook for the `gigantic_species_tree` workflow. Read the BLOCK guide first (`../../AI_GUIDE.md`) for concepts, then this file for runbook specifics. For trees_species overview see `../../../AI_GUIDE.md`. For GIGANTIC overview see `../../../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_species/BLOCK_gigantic_species_tree/workflow-COPYME-gigantic_species_tree/ai/`
 
@@ -10,9 +16,9 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| trees_species concepts | `../../../AI_GUIDE-trees_species.md` |
-| BLOCK concepts (structure, standardization, ancestral_clade_NNN, CXXX) | `../../AI_GUIDE-gigantic_species_tree.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` |
+| trees_species concepts | `../../../AI_GUIDE.md` |
+| BLOCK concepts (structure, standardization, ancestral_clade_NNN, CXXX) | `../../AI_GUIDE.md` |
 | Running the workflow (this guide) | This file |
 
 ---
@@ -57,9 +63,9 @@ output:
 bash RUN-workflow.sh
 ```
 
-**SLURM cluster** (edit `--account` and `--qos` in the sbatch file first):
+**SLURM cluster**: set `execution_mode: "slurm"` + `slurm_account` + `slurm_qos` in `START_HERE-user_config.yaml`, then:
 ```bash
-sbatch RUN-workflow.sbatch
+bash RUN-workflow.sh   # self-submits to SLURM via §29 unified driver
 ```
 
 ### 5. Verify

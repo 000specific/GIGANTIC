@@ -1,7 +1,10 @@
 # AI Guide: trees_species Subproject
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
 **For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview,
 directory structure, and general patterns. This guide covers trees_species-specific
@@ -12,17 +15,23 @@ concepts and troubleshooting.
 ## Quick Reference
 
 | User needs... | Go to... |
-|---------------|----------|
+|---|---|
 | GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | trees_species concepts, troubleshooting | This file |
+| BLOCK_gigantic_species_tree (standardize + label) | `BLOCK_gigantic_species_tree/AI_GUIDE.md` |
+| BLOCK_permutations_and_features (enumerate + extract features) | `BLOCK_permutations_and_features/AI_GUIDE.md` |
+| BLOCK_user_requests (query layer over enumerated structures) | `BLOCK_user_requests/AI_GUIDE.md` |
+| BLOCK_de_novo_species_tree (future placeholder) | `BLOCK_de_novo_species_tree/AI_GUIDE.md` |
+| Running the gigantic_species_tree workflow | `BLOCK_gigantic_species_tree/workflow-COPYME-gigantic_species_tree/ai/AI_GUIDE.md` |
 | Running the permutations workflow | `BLOCK_permutations_and_features/workflow-COPYME-permutations_and_features/ai/AI_GUIDE.md` |
+| Running the select_structures workflow | `BLOCK_user_requests/AI_GUIDE.md` |
 
 ---
 
 ## What This Subproject Does
 
 Processes species phylogenetic trees to extract structured data for downstream
-origin-conservation-loss (OCL) analyses. Three BLOCKs:
+origin-conservation-loss (OCL) analyses. Four BLOCKs:
 
 1. **BLOCK_gigantic_species_tree** (active) - Takes a raw user-provided species tree
    (Newick with `Genus_species` leaves + optional user clade names), validates and
@@ -31,10 +40,15 @@ origin-conservation-loss (OCL) analyses. Three BLOCKs:
    variants + clade map + visualization. Typically the first step for a new species set.
 2. **BLOCK_permutations_and_features** (active) - Takes a labeled species tree
    (typically from `BLOCK_gigantic_species_tree`), generates topology permutations for
-   unresolved nodes, extracts phylogenetic features.
-3. **BLOCK_de_novo_species_tree** (future skeletal) - Build species trees from sequence data.
+   unresolved nodes, extracts phylogenetic features. 10 sequential scripts (script
+   010 is a per-run audit log).
+3. **BLOCK_user_requests** (active) - Lightweight query layer over the
+   enumerated structures. User describes topological hypotheses in
+   `query_manifest.yaml` and the workflow returns matching structures from
+   the candidate set (e.g., 105 for 5 unresolved clades).
+4. **BLOCK_de_novo_species_tree** (future skeletal) - Build species trees from sequence data.
 
-**Typical pipeline order**: `BLOCK_gigantic_species_tree` → `BLOCK_permutations_and_features` → downstream OCL subprojects.
+**Typical pipeline order**: `BLOCK_gigantic_species_tree` → `BLOCK_permutations_and_features` → (optional) `BLOCK_user_requests` → downstream OCL subprojects.
 
 ---
 
@@ -140,8 +154,7 @@ trees_species/
 │   ├── RUN-update_upload_to_server.sh
 │   └── workflow-COPYME-gigantic_species_tree/
 │       ├── README.md
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sh
+│       ├── RUN-workflow.sh                  # Unified driver (§29)
 │       ├── START_HERE-user_config.yaml
 │       ├── INPUT_user/
 │       │   ├── README.md
@@ -161,8 +174,7 @@ trees_species/
 │
 └── BLOCK_permutations_and_features/
     └── workflow-COPYME-permutations_and_features/
-        ├── RUN-workflow.sh
-        ├── RUN-workflow.sh
+        ├── RUN-workflow.sh                  # Unified driver (§29)
         ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   ├── species_tree.newick        # User provides
@@ -185,10 +197,10 @@ trees_species/
 
 ---
 
-## Pipeline Scripts (BLOCK_permutations_and_features)
+## Pipeline Scripts (BLOCK_permutations_and_features — 10 scripts)
 
 | Script | Purpose | Reads from | Writes to |
-|--------|---------|------------|-----------|
+|---|---|---|---|
 | 001 | Extract species tree components (outgroups, major clades, registry) | INPUT_user/ | 1-output/ |
 | 002 | Generate topology permutations | 1-output/ | 2-output/ |
 | 003 | Assign clade identifiers to permuted topologies | 1-output/, 2-output/ | 3-output/ |
@@ -198,8 +210,9 @@ trees_species/
 | 007 | Integrate all clade data into master table | 2-output/, 4-output/, 6-output/ | 7-output/ |
 | 008 | Visualize species trees (PDF/SVG) | 4-output/ | 8-output/ |
 | 009 | Generate clade-to-species mappings | 4-output/, 6-output/, 7-output/ | 9-output/ |
+| 010 | Per-run audit log | n/a | `ai/logs/run_*.log` |
 
-**Note**: Script 008 is independent of 005-007 and can run in parallel after 004 completes.
+**Note**: In the current main.nf the workflow runs strictly sequentially (001 → 010); script 008 could be run in parallel after 004 in principle, but the current execution graph keeps everything sequential.
 
 ---
 
