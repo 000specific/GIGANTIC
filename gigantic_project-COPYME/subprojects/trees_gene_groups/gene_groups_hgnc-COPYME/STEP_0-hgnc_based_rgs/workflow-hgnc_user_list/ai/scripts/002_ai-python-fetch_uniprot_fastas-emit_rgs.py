@@ -18,8 +18,17 @@ Writes:
                                                   that workflow-hgnc_database
                                                   emits at script 003.)
 
-Per-sequence header (GIGANTIC 5-field convention, parsed by STEP_1):
-    >rgs_<group_sanitized>-human-<symbol>-uniprot-<uniprot_accession>
+Per-sequence header (GIGANTIC 4-field convention, dispatched by STEP_1's
+script 008 via the "uniprot" source prefix in field 4):
+
+    >rgs_<group_sanitized>-human-<symbol>-uniprot<uniprot_accession>
+
+The source token + accession are CONCATENATED into a single dash-delimited
+field (no dash between `uniprot` and the accession) so the header stays a
+4-field structure: rgs_<group> / <species> / <symbol> / <source><id>.
+STEP_1's script 008 sees the 4-field shape and the `uniprot` prefix, and
+matches by gene symbol against the local proteome's `>g_<SYMBOL>-` header
+(strict: exactly one matching protein, else fail-fast).
 
 UniProt API:
     GET https://rest.uniprot.org/uniprotkb/<accession>.fasta
@@ -178,12 +187,16 @@ def fetch_uniprot_fasta( accession, logger ):
 
 
 def build_rgs_header( group_sanitized, gene_symbol, uniprot_accession ):
-    """Build the GIGANTIC 5-field RGS header.
+    """Build the GIGANTIC 4-field RGS header (uniprot-source variant).
 
-    Format: >rgs_<group>-human-<symbol>-uniprot-<accession>
+    Format: >rgs_<group>-<species>-<symbol>-uniprot<accession>
+
+    The `uniprot<accession>` source+id is concatenated (no separator) so
+    the header stays compact when embedded in longer GIGANTIC identifiers
+    downstream, and so the dash count is unambiguous for STEP_1's parser.
     """
 
-    return f">rgs_{group_sanitized}-human-{gene_symbol}-uniprot-{uniprot_accession}"
+    return f">rgs_{group_sanitized}-human-{gene_symbol}-uniprot{uniprot_accession}"
 
 
 def main():

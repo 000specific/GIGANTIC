@@ -42,8 +42,9 @@ What it does at orchestrator-level:
 | 001 | Validate RGS | RGS FASTA format check (fail-fast) |
 | 002–003 | Forward BLAST | RGS vs project species DBs |
 | 004 | Extract BGS | Full-length + hit-region sequences |
-| 005–006 | RGS-genome BLAST | RGS vs source-organism proteomes |
-| 007–010 | Reciprocal setup | Map RGS→genome IDs (script 008), build modified genome DBs |
+| 007 | List FASTAs | Per-species proteome FASTA paths for the genome indexer |
+| 008 | Map RGS→genome IDs | Strict gene-symbol search OR NCBI accession match (no BLAST fallback) |
+| 009–010 | Build modified genome DB | Modified genomes with RGS-renamed proteins; combined BLAST DB |
 | 011–012 | Reciprocal BLAST | CGS vs combined RGS+genome DB |
 | 013 | Extract CGS | RBH/RBF filter (with QUERY-side RGS-source protection) |
 | 014 | Species filter | Keep only species in the keeper list |
@@ -51,19 +52,30 @@ What it does at orchestrator-level:
 | 017 | Run log | Timestamped pipeline log |
 | 018 | (Optional) Restore full-length RGS | When `rgs_sequence_is_full_length: false` |
 
-**Note**: BLAST v5 databases preserve full GIGANTIC identifiers — no script 015 (identifier remapping).
+**Notes**:
+- BLAST v5 databases preserve full GIGANTIC identifiers — no script 015 (identifier remapping).
+- 2026-05-26: Steps 005 + 006 (RGS-vs-source-genome BLAST) were **removed** along with the BLAST fallback chain in script 008. Script 005 was deleted; the `blast_rgs_versus_rgs_genomes` NextFlow process is gone. See the workflow AI_GUIDE for the full rationale.
 
-## RGS Identification (Script 008)
+## RGS Identification (Script 008) — BLAST-free as of 2026-05-26
 
-Script 008 maps each RGS protein to its cognate in the source genome. The current implementation per [PLAN-rgs_identification_improvements.md](PLAN-rgs_identification_improvements.md) uses 5 mechanisms in order:
+Script 008 dispatches on RGS header format and uses exactly one deterministic
+mechanism per RGS:
 
-1. **NCBI accession match** — primary (deterministic, zero ambiguity for human/HGNC RGS)
-2. **BLAST identity ≥95% AND symmetric coverage ≥95%** with T1 length-invariant check
-3. **Bidirectional best hit (BBH)** to catch paralog confusion
-4. **Hungarian (optimal) bipartite assignment** via scipy when greedy is ambiguous
-5. **Strict fail-fast** — any unresolved RGS halts the pipeline with detailed diagnostics
+| RGS header format | Producer | Mechanism |
+|---|---|---|
+| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-hgnc_user_list` | **Improvement 0** — strict gene-symbol search against the proteome's `>g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
+| 5-field hgnc/ncbi-sourced (`rgs_<group>-<species>-<symbol>-<source>-<NP_id>`) | `workflow-hgnc_database` | **Improvement 1** — exact NCBI accession match against the proteome's `p_<accession>` |
 
-Output adds a `mechanism` column and a sidecar audit `8_ai-rgs_identification_report.tsv`.
+Both mechanisms are strict and **fail-fast**. There is no BLAST rescue path
+for RGS that doesn't cleanly resolve via its header's primary key. This is
+intentional: gene_groups_hgnc RGS are always either NCBI-accession-tagged
+(database mode) or HGNC-symbol-tagged (user-list mode), and Improvements
+0 + 1 cover both cases exactly. The historical Improvements 2–4 (BLAST
+fallback + Hungarian assignment) were inherited from trees_gene_families
+and were dead code here — they were removed in 2026-05-26.
+
+Output adds a `mechanism` column (`gene_symbol` or `ncbi_accession`) and
+a sidecar audit `8_ai-rgs_identification_report.tsv`.
 
 ## Two RGS Modes
 

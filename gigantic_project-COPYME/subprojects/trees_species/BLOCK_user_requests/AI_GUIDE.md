@@ -3,7 +3,7 @@
 **AI**: Claude Code | Opus 4.6 | 2026 April 18
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read `../AI_GUIDE-trees_species.md` first for
+**For AI Assistants**: Read `../AI_GUIDE.md` first for
 trees_species subproject context. This guide covers the user-requests BLOCK.
 
 ---
@@ -12,8 +12,8 @@ trees_species subproject context. This guide covers the user-requests BLOCK.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
-| trees_species concepts (structures, clade IDs, blocks) | `../AI_GUIDE-trees_species.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` |
+| trees_species concepts (structures, clade IDs, blocks) | `../AI_GUIDE.md` |
 | This BLOCK (select_structures workflow) | This file |
 
 ---
@@ -105,7 +105,7 @@ users can see all equivalent structures if they want.
 
 ```
 BLOCK_user_requests/
-├── AI_GUIDE-user_requests.md              # THIS FILE
+├── AI_GUIDE.md              # THIS FILE
 └── workflow-COPYME-select_structures/     # Template (never run directly)
     ├── START_HERE-user_config.yaml        # run_label, paths
     ├── RUN-workflow.sh                    # single entry point

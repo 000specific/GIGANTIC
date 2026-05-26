@@ -168,22 +168,32 @@ dependencies (python + pyyaml + nextflow stdlib only; UniProt fetches
 use urllib, not `requests`). The env is auto-created on first run of
 either workflow.
 
-### Per-sequence RGS FASTA header (5 dash-delimited fields)
+### Per-sequence RGS FASTA headers — TWO formats by source
 
-Both modes emit per-sequence headers in the GIGANTIC 5-field convention
-that STEP_1's parser expects:
+The two STEP_0 workflows emit different header shapes; STEP_1's script
+008 dispatches on shape:
 
 ```
->rgs_<group_sanitized>-human-<symbol>-<source>-<accession>
+# workflow-hgnc_database (5-field):
+>rgs_<group>-<species>-<symbol>-hgnc_gg<NNN>_<group_name>-<NP_or_XP_accession>
+# example: rgs_syntaxins-human-STX10-hgnc_gg818_Syntaxins-NP_003756_1
+
+# workflow-hgnc_user_list (4-field, source+id concatenated):
+>rgs_<group>-<species>-<symbol>-uniprot<accession>
+# example: rgs_snap_family-human-SNAP25-uniprotP60880
 ```
 
-`<source>` is:
-- `hgnc_gg<NNNN>_<group_name>` for `workflow-hgnc_database` (preserves
-  HGNC's gene-group ID + name; sequence source is the local human
-  proteome, which itself derives from NCBI RefSeq / UniProt — the
-  accession field carries that)
-- `uniprot` for `workflow-hgnc_user_list` (sequence fetched directly
-  from UniProt REST)
+The 4-field user_list shape concatenates source and accession into a
+single field (`uniprotP60880`, not `uniprot-P60880`) — this keeps the
+dash count unambiguous for parsers and avoids confusion with the 5-field
+database shape. STEP_1's script 008 detects the 4-vs-5-field shape and
+the `uniprot` prefix in field 4 to dispatch:
+
+- 4-field uniprot-sourced → Improvement 0 (strict gene-symbol search)
+- 5-field hgnc/ncbi-sourced → Improvement 1 (exact NCBI accession match)
+
+Both are strict and fail-fast; there is no BLAST rescue (removed
+2026-05-26 — see STEP_1 docs).
 
 ### Per-group summary TSV (STEP_1 reads this)
 

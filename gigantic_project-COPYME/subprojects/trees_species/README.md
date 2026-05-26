@@ -273,7 +273,7 @@ identifier representations.
 ```
 trees_species/
 ├── README.md                              # THIS FILE
-├── AI_GUIDE-trees_species.md              # AI guidance
+├── AI_GUIDE.md              # AI guidance
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/                       # Single canonical downstream location
@@ -290,7 +290,7 @@ trees_species/
 ├── BLOCK_gigantic_species_tree/           # ACTIVE: Standardize and label a user-provided species tree
 │   └── workflow-COPYME-gigantic_species_tree/
 │       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
+│       ├── RUN-workflow.sh
 │       ├── START_HERE-user_config.yaml
 │       ├── INPUT_user/                    # User provides: species_tree.newick
 │       ├── OUTPUT_pipeline/               # Results (N-output/ per script)
@@ -302,7 +302,7 @@ trees_species/
 └── BLOCK_permutations_and_features/       # ACTIVE: Permutation + feature extraction
     └── workflow-COPYME-permutations_and_features/
         ├── RUN-workflow.sh
-        ├── RUN-workflow.sbatch
+        ├── RUN-workflow.sh
         ├── START_HERE-user_config.yaml
         ├── INPUT_user/                    # User provides: species tree + clade names
         ├── OUTPUT_pipeline/               # Results (N-output/ per script)

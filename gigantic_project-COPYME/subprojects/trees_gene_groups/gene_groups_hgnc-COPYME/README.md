@@ -51,7 +51,7 @@ gene_groups_hgnc-COPYME/
 │               ├── 000_ai-python-download_hgnc_complete_set.py    (same as database mode)
 │               ├── 001_ai-python-resolve_user_symbols_to_uniprot.py
 │               └── 002_ai-python-fetch_uniprot_fastas-emit_rgs.py
-├── STEP_1-homolog_discovery/                              # shared with gene_groups-COPYME
+├── STEP_1-homolog_discovery/                              # BLAST-free (2026-05-26); diverged from gene_groups-COPYME
 ├── STEP_2-phylogenetic_analysis/                          # shared
 └── STEP_3-tree_visualization/                             # shared
 ```
@@ -119,12 +119,20 @@ rather than fetching from UniProt).
 
 ---
 
-## STEP_1 / STEP_2 / STEP_3 (inherited)
+## STEP_1 / STEP_2 / STEP_3 (mostly inherited, with one HGNC-specific divergence)
 
-These are unchanged from the sibling `gene_groups-COPYME/` template —
-both STEP_0 workflows produce the same per-group RGS FASTA + per-group
-summary TSV, so the downstream pipeline runs identically. See the
-sibling template's STEP-level AI_GUIDEs for details:
+STEP_2 and STEP_3 are unchanged from the sibling `gene_groups-COPYME/`
+template. STEP_1 was simplified for HGNC-anchored use cases (2026-05-26):
+the RGS-to-source-genome BLAST chain (script 005, the
+`blast_rgs_versus_rgs_genomes` process, and Improvements 2–4 in script
+008) was removed as dead code, because HGNC-anchored RGS always resolves
+via either gene-symbol search (uniprot-sourced) or NCBI accession match
+(hgnc/ncbi-sourced) — no BLAST fallback is needed. Forward and reciprocal
+BLAST for the actual homolog discovery is unchanged.
+
+Both STEP_0 workflows produce the same per-group RGS FASTA + per-group
+summary TSV, so the downstream pipeline runs identically regardless of
+mode. See the STEP-level AI_GUIDEs for details:
 
 - `STEP_1-homolog_discovery/AI_GUIDE-homolog_discovery.md` — RBH/RBF homolog discovery
 - `STEP_2-phylogenetic_analysis/AI_GUIDE-phylogenetic_analysis.md` — alignment + tree

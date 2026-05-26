@@ -52,3 +52,7 @@ SignalP is CPU-based:
 SignalP 6 requires a license from DTU:
 - Download from: https://services.healthtech.dtu.dk/services/SignalP-6.0/
 - Install into the `ai_gigantic_signalp` conda environment
+
+## Cluster-Side Failure: Drain-Node Race
+
+SignalP burst submissions can hit the same HiPerGator post-upgrade drain-node race documented at the subproject level — chunks die in 0-1 sec with `ExitCode 0:53` on `c0706a-s7/9/10/12`. If you adopt high-volume burst mode for SignalP and start seeing these, see [`../AI_GUIDE-annotations_hmms.md`](../AI_GUIDE-annotations_hmms.md) ("HiPerGator Drain-Node Race") for the diagnosis and the canonical `errorStrategy='ignore'` + `detect_failed_chunks` pattern (reference implementation in [`../BLOCK_interproscan/`](../BLOCK_interproscan/)).

@@ -290,7 +290,7 @@ fi
 # Per-gene-group render command (no nextflow; pure python via toytree)
 render_cmd() {
     local dest="$1"
-    echo "cd '${dest}' && python3 ai/scripts/001_ai-python-render_trees.py && python3 ai/scripts/002_ai-python-write_run_log.py"
+    echo "cd '${dest}' && python3 ai/scripts/001_ai-python-render_trees.py --config START_HERE-user_config.yaml && python3 ai/scripts/002_ai-python-write_run_log.py --workflow-name tree_visualization --subproject-name trees_gene_groups --project-name gigantic_project-COPYME --status success"
 }
 
 case "${EXECUTION_MODE}" in
@@ -301,7 +301,7 @@ case "${EXECUTION_MODE}" in
             DEST="${STEP3_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
             echo ""
             echo "[$(date)] Rendering locally: ${gg}"
-            ( cd "${DEST}" && python3 ai/scripts/001_ai-python-render_trees.py && python3 ai/scripts/002_ai-python-write_run_log.py ) \
+            ( cd "${DEST}" && python3 ai/scripts/001_ai-python-render_trees.py --config START_HERE-user_config.yaml && python3 ai/scripts/002_ai-python-write_run_log.py --workflow-name tree_visualization --subproject-name trees_gene_groups --project-name gigantic_project-COPYME --status success ) \
                 || echo "  FAILED: ${gg}"
         done
         ;;

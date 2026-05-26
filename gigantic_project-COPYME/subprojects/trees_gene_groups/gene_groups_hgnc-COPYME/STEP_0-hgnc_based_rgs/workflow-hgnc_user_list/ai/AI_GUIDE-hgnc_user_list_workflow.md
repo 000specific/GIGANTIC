@@ -129,9 +129,19 @@ For each (group, symbol, accession) row in the resolved manifest:
 2. Retries: 3 attempts with exponential backoff (1 s, 2 s, 4 s) on
    transient failure. **Does not retry 404** (wrong accession).
 3. Parse: strip the UniProt header, concatenate sequence lines.
-4. Build the GIGANTIC 5-field header:
-   `>rgs_<group>-human-<symbol>-uniprot-<accession>`
+4. Build the GIGANTIC 4-field uniprot-sourced header:
+   `>rgs_<group>-<species>-<symbol>-uniprot<accession>`
+   - Source token (`uniprot`) + accession (`P60880`) are **concatenated** with
+     no separator: `uniprotP60880` (not `uniprot-P60880`, which would imply a
+     5-field header). This keeps the dash count unambiguous for STEP_1's parser.
+   - Example: `>rgs_snap_family-human-SNAP25-uniprotP60880`
 5. Append to the per-group RGS file.
+
+STEP_1's script 008 dispatches on the 4-field shape + the `uniprot` prefix in
+field 4: it runs **Improvement 0** (strict gene-symbol search against the
+local proteome's `>g_<SYMBOL>-` headers, exactly one match required) and
+fails fast on any unresolved RGS. There is no BLAST fallback for these
+headers — Improvement 0 is the entire path.
 
 If any fetch fails after retries, the workflow fails fast — STEP_1 needs
 a complete RGS, and the per-group RGS file is only written once all

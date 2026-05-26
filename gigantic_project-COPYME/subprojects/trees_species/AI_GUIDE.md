@@ -3,7 +3,7 @@
 **AI**: Claude Code | Opus 4.6 | 2026 March 04
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview,
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview,
 directory structure, and general patterns. This guide covers trees_species-specific
 concepts and troubleshooting.
 
@@ -13,9 +13,9 @@ concepts and troubleshooting.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | trees_species concepts, troubleshooting | This file |
-| Running the permutations workflow | `BLOCK_permutations_and_features/workflow-COPYME-permutations_and_features/ai/AI_GUIDE-permutations_and_features_workflow.md` |
+| Running the permutations workflow | `BLOCK_permutations_and_features/workflow-COPYME-permutations_and_features/ai/AI_GUIDE.md` |
 
 ---
 
@@ -85,7 +85,7 @@ and only if both match. Numerical ranges (illustrative):
   receive new IDs starting after the max existing
 
 The assignment is **biologically content-driven** via canonical topological
-signatures (see `BLOCK_permutations_and_features/AI_GUIDE-permutations_and_features.md`
+signatures (see `BLOCK_permutations_and_features/AI_GUIDE.md`
 "Clade Identifiers — Topologically-Structured Species Sets" for mechanism).
 If the same ambiguous-zone grouping appears in multiple candidate topologies,
 it receives the SAME ID. Named clades outside the unresolved zone (Metazoa,
@@ -96,7 +96,7 @@ Downstream consumers (`orthogroups_X_ocl`, the planned `occams_tree`) use
 `clade_id` and `clade_name` for lookups.
 
 See `README.md` Terminology section (rule "Clade IDs as Topologically-
-Structured Species Sets") and Rule 6 of `../../AI_GUIDE-project.md` for the
+Structured Species Sets") and Rule 6 of `../../AI_GUIDE.md` for the
 canonical definition.
 
 ### Structure Numbering
@@ -114,7 +114,7 @@ definitions and the Resolved vs Unresolved input species tree distinction.)
 ```
 trees_species/
 ├── README.md
-├── AI_GUIDE-trees_species.md              # THIS FILE
+├── AI_GUIDE.md              # THIS FILE
 ├── RUN-update_upload_to_server.sh
 │
 ├── output_to_input/                       # Single canonical downstream location
@@ -136,12 +136,12 @@ trees_species/
 │   └── workflow-COPYME-build_species_tree/
 │
 ├── BLOCK_gigantic_species_tree/           # ACTIVE: standardize + label user-provided species tree
-│   ├── AI_GUIDE-gigantic_species_tree.md
+│   ├── AI_GUIDE.md
 │   ├── RUN-update_upload_to_server.sh
 │   └── workflow-COPYME-gigantic_species_tree/
 │       ├── README.md
 │       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
+│       ├── RUN-workflow.sh
 │       ├── START_HERE-user_config.yaml
 │       ├── INPUT_user/
 │       │   ├── README.md
@@ -154,7 +154,7 @@ trees_species/
 │       │   ├── 5-output/   # Visualization (SVG or soft-fail placeholder)
 │       │   └── 6-output/   # Cross-validation report
 │       └── ai/
-│           ├── AI_GUIDE-gigantic_species_tree_workflow.md
+│           ├── AI_GUIDE.md
 │           ├── main.nf
 │           ├── nextflow.config
 │           └── scripts/    # 7 Python scripts (001-007)
@@ -162,7 +162,7 @@ trees_species/
 └── BLOCK_permutations_and_features/
     └── workflow-COPYME-permutations_and_features/
         ├── RUN-workflow.sh
-        ├── RUN-workflow.sbatch
+        ├── RUN-workflow.sh
         ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   ├── species_tree.newick        # User provides

@@ -1,39 +1,40 @@
 #!/usr/bin/env python3
-# GIGANTIC BLOCK 2 - Script 007: List RGS BLAST Files
-# AI: Claude Code | Sonnet 4.5 | 2025 November 08 17:30 | Purpose: List RGS genome BLAST reports and model organism fastas
+# GIGANTIC trees_gene_groups STEP_1 - Script 007: List model-organism FASTAs
+# AI: Claude Code | Opus 4.7 | 2026 May 26 | Purpose: List RBH species proteome FASTA paths for downstream script 008
 # Human: Eric Edsinger
 
 """
-List RGS Genome BLAST Reports and Model Organism Database Fastas
+List Model-Organism Proteome FASTAs for the RBH species set.
 
-This script identifies RGS genome BLAST reports from script 006 and creates lists
-of files needed for reciprocal BLAST analysis. It focuses on key model organisms
-(human, fly, worm) that will be used for reciprocal best hit analysis.
+Simplified 2026-05-26: the prior version also catalogued RGS-vs-genome
+BLAST reports (`6_ai*genome*.blastp`) for consumption by Improvement 2
+in script 008. That BLAST fallback and its upstream BLAST work were
+removed as dead code for gene_groups_hgnc (Improvement 0 gene-symbol
+search + Improvement 1 NCBI accession match cover all valid RGS shapes).
+This script now does ONE thing: emit the list of per-species proteome
+FASTA paths that script 008's genome indexer will consume.
 
-Input Files (from script 006):
-    - 6-output/6*genome*.blastp - RGS genome BLAST reports
-
-Output Files:
-    - 7-output/7_ai-list-rgs-blast-reports.txt - List of RGS BLAST report paths
-    - 7-output/7_ai-list-model-organism-fastas.txt - Model organism database FASTA paths
+Output:
+    7-output/7_ai-list-model-organism-fastas.txt
+        One absolute path per line, one per RBH species.
 
 Usage:
     python3 007_ai-python-list_rgs_blast_files.py \\
-        --output-dir output \\
-        --blast-databases-dir ../../pipelines/database/speciesN-T1-blastp \\
-        --model-species human fly worm
+        --output-dir 7-output \\
+        --blast-databases-dir <path-to-species70_gigantic_T1_blastp> \\
+        --rbh-species "human" \\
+        --output-model-fastas 7-output/7_ai-list-model-organism-fastas.txt
 """
 
 import argparse
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import List
-from datetime import datetime
 
 
 def setup_logging() -> logging.Logger:
-    """Configure logging with timestamps and levels."""
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -42,245 +43,132 @@ def setup_logging() -> logging.Logger:
     return logging.getLogger( __name__ )
 
 
-def find_rgs_blast_reports( output_directory: Path, input_blast_report_list: Path, logger: logging.Logger ) -> List[Path]:
-    """
-    Find all RGS genome BLAST reports from script 006.
-
-    First tries to read from the input blast report list (absolute paths from previous step).
-    Falls back to scanning the 6-output subdirectory if no list provided.
-
-    Args:
-        output_directory: Directory containing BLAST reports (fallback scan location)
-        input_blast_report_list: Path to list file with absolute paths to blast reports
-        logger: Logger instance
-
-    Returns:
-        List of paths to RGS BLAST report files
-    """
-    logger.info( "Searching for RGS genome BLAST reports..." )
-
-    blast_reports = []
-
-    # Read from input list file (contains absolute paths from previous pipeline step)
-    if input_blast_report_list and input_blast_report_list.exists():
-        logger.info( f"Reading blast report list from: {input_blast_report_list}" )
-        with open( input_blast_report_list, 'r' ) as input_list:
-            for line in input_list:
-                line = line.strip()
-                if line:
-                    report_path = Path( line )
-                    if report_path.exists():
-                        blast_reports.append( report_path )
-                    else:
-                        logger.warning( f"  Blast report not found: {report_path}" )
-        blast_reports = sorted( blast_reports )
-    else:
-        # Fallback: scan 6-output subdirectory
-        script_6_output_dir = output_directory / "6-output"
-        blast_reports = sorted( script_6_output_dir.glob( '6_ai*genome*.blastp' ) ) if script_6_output_dir.exists() else []
-
-    logger.info( f"Found {len( blast_reports )} RGS genome BLAST reports" )
-
-    for report in blast_reports:
-        logger.info( f"  - {report.name}" )
-
-    return blast_reports
-
-
 def find_model_organism_fastas(
     blast_databases_directory: Path,
-    model_species: List[str],
-    logger: logging.Logger
-) -> List[Path]:
+    model_species: List[ str ],
+    logger: logging.Logger,
+) -> List[ Path ]:
+    """Find per-species proteome FASTAs in the blast-databases dir.
+
+    Each `model_species` short name is mapped to a Genus_species via the
+    hardcoded short→Genus_species dict below; the FASTA is found by glob
+    against the proteome filename convention.
+
+    STRUCTURAL TODO (flagged 2026-05-24):
+    This hardcoded short→Genus_species mapping should be replaced with
+    loading INPUT_user/rgs_species_map.tsv at runtime. The same dict
+    lives in script 008 — fix both together with a shared --rgs-species-map
+    CLI arg.
     """
-    Find database FASTA files for specified model organisms.
-    
-    Args:
-        blast_databases_directory: Directory containing BLAST database files
-        model_species: List of model organism names to search for
-        logger: Logger instance
-        
-    Returns:
-        List of paths to model organism FASTA files
-    """
-    logger.info( "Searching for RBH species database fastas..." )
+    logger.info( "Searching for RBH species proteome FASTAs..." )
     logger.info( f"RBH species: {', '.join( model_species )}" )
-    
-    model_fastas = []
-    
-    # Map common names to scientific names
-    #
-    # STRUCTURAL TODO (flagged 2026-05-24):
-    # This hardcoded short→Genus_species mapping should be replaced with loading
-    # INPUT_user/rgs_species_map.tsv at runtime. The TSV is the canonical source
-    # of truth. As-is, any custom species added to rgs_species_map.tsv (e.g.,
-    # octopus, squid, ctenophore) will be silently ignored by both 007 and 008
-    # because they aren't in the dict below. Proper fix: add --rgs-species-map
-    # CLI arg to both scripts, load the TSV, and replace this dict with the
-    # loaded mapping. The same dict lives in script 008 — fix both together.
+
     species_mappings = {
-        'human': 'Homo_sapiens',
-        'fly': 'Drosophila_melanogaster',
-        'worm': 'Caenorhabditis_elegans',
-        'mouse': 'Mus_musculus',
-        'zebrafish': 'Danio_rerio'
+        'human':     'Homo_sapiens',
+        'fly':       'Drosophila_melanogaster',
+        'worm':      'Caenorhabditis_elegans',
+        'mouse':     'Mus_musculus',
+        'zebrafish': 'Danio_rerio',
     }
-    
+
+    model_fastas: List[ Path ] = []
     for species in model_species:
-        # Get scientific name
         scientific_name = species_mappings.get( species.lower(), species )
-        
-        # Find matching FASTA files
         pattern = f"*{scientific_name}*.aa"
         matching_files = list( blast_databases_directory.glob( pattern ) )
-        
+
         if matching_files:
-            # Take first match (there should only be one)
             fasta_file = matching_files[ 0 ]
             model_fastas.append( fasta_file )
             logger.info( f"  - {species}: {fasta_file.name}" )
         else:
             logger.warning( f"  - {species}: No matching FASTA found for pattern {pattern}" )
-    
+
     return model_fastas
 
 
-def write_file_list( output_file: Path, file_paths: List[Path], logger: logging.Logger ) -> None:
-    """
-    Write list of file paths to output file.
-    
-    Args:
-        output_file: Output file path
-        file_paths: List of file paths to write
-        logger: Logger instance
-    """
+def write_file_list( output_file: Path, file_paths: List[ Path ], logger: logging.Logger ) -> None:
     with open( output_file, 'w' ) as output_list:
         for file_path in file_paths:
             output_list.write( f"{file_path}\n" )
-    
     logger.info( f"Wrote {len( file_paths )} paths to {output_file}" )
 
 
 def main():
-    """Main execution function."""
     parser = argparse.ArgumentParser(
-        description='List RGS genome BLAST reports and model organism database fastas'
+        description='List per-species proteome FASTA paths for script 008 (BLAST-free).'
     )
-    
     parser.add_argument(
         '--output-dir',
         type=str,
         required=True,
-        help='Output directory containing BLAST reports'
+        help='Working/output directory (created if missing).',
     )
-    
     parser.add_argument(
         '--blast-databases-dir',
         type=str,
         required=True,
-        help='Directory containing BLAST database FASTA files'
+        help='Directory containing per-species proteome FASTA files (e.g., species70 blastp dir).',
     )
-    
     parser.add_argument(
         '--rbh-species',
         type=str,
         required=True,
-        help='Space-separated list of RBH species names (e.g., "human fly worm")'
+        help='Space-separated list of RBH species short names (e.g., "human" or "human fly worm").',
     )
-    
-    parser.add_argument(
-        '--input-blast-report-list',
-        type=str,
-        default=None,
-        help='Input list file with absolute paths to RGS blast reports (from previous pipeline step)'
-    )
-
-    parser.add_argument(
-        '--output-blast-reports',
-        type=str,
-        default='7-output/7_ai-list-rgs-blast-reports.txt',
-        help='Output file for BLAST report paths'
-    )
-    
     parser.add_argument(
         '--output-model-fastas',
         type=str,
         default='7-output/7_ai-list-model-organism-fastas.txt',
-        help='Output file for model organism FASTA paths'
+        help='Output file for the list of model-organism proteome FASTA paths.',
     )
-    
     arguments = parser.parse_args()
     logger = setup_logging()
-    
-    # Log script start
+
     logger.info( "=" * 80 )
-    logger.info( "List RGS Genome BLAST Reports and Model Organism Fastas" )
+    logger.info( "List Model-Organism Proteome FASTAs (BLAST-free)" )
     logger.info( "=" * 80 )
     logger.info( f"Script started at: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
-    
-    # Convert paths
+
     output_directory = Path( arguments.output_dir )
     blast_databases_directory = Path( arguments.blast_databases_dir )
-    output_blast_reports_file = Path( arguments.output_blast_reports )
     output_model_fastas_file = Path( arguments.output_model_fastas )
-    
-    # Create script output directory
-    script_output_dir = output_blast_reports_file.parent
+
+    script_output_dir = output_model_fastas_file.parent
     script_output_dir.mkdir( parents=True, exist_ok=True )
-    
-    # Validate directories
+
     if not output_directory.exists():
         logger.error( f"Output directory not found: {output_directory}" )
         sys.exit( 1 )
-    
     if not blast_databases_directory.exists():
         logger.error( f"BLAST databases directory not found: {blast_databases_directory}" )
         sys.exit( 1 )
-    
-    # Parse RBH species (split space-separated string)
-    rbh_species_list = arguments.rbh_species.split()
-    
-    # Resolve input blast report list path
-    input_blast_report_list = Path( arguments.input_blast_report_list ) if arguments.input_blast_report_list else None
 
-    # Find RGS BLAST reports
-    blast_reports = find_rgs_blast_reports( output_directory, input_blast_report_list, logger )
-    
-    if not blast_reports:
-        logger.error( "CRITICAL ERROR: No RGS genome BLAST reports found!" )
-        logger.error( "RGS genome BLAST (script 006) must complete before this step." )
-        logger.error( f"Expected BLAST reports in: {output_directory}" )
-        logger.error( "Check that script 006 generated BLAST reports successfully." )
-        sys.exit( 1 )  # FAIL - cannot proceed without BLAST reports
-    
-    # Find RBH species fastas
+    rbh_species_list = arguments.rbh_species.split()
+
     model_fastas = find_model_organism_fastas(
         blast_databases_directory,
         rbh_species_list,
-        logger
+        logger,
     )
-    
+
     if not model_fastas:
-        logger.error( "No model organism fastas found!" )
+        logger.error( "CRITICAL ERROR: No model organism FASTAs found!" )
+        logger.error( f"Searched: {blast_databases_directory}" )
+        logger.error( f"For species: {', '.join( rbh_species_list )}" )
         sys.exit( 1 )
-    
-    # Write output files
-    logger.info( "\nWriting output files..." )
-    write_file_list( output_blast_reports_file, blast_reports, logger )
+
+    logger.info( "" )
     write_file_list( output_model_fastas_file, model_fastas, logger )
-    
-    # Summary
-    logger.info( "\n" + "=" * 80 )
+
+    logger.info( "" )
+    logger.info( "=" * 80 )
     logger.info( "SCRIPT COMPLETE" )
     logger.info( "=" * 80 )
-    logger.info( f"RGS BLAST reports listed: {len( blast_reports )}" )
-    logger.info( f"Model organism fastas listed: {len( model_fastas )}" )
-    logger.info( f"Output files:" )
-    logger.info( f"  - {output_blast_reports_file}" )
-    logger.info( f"  - {output_model_fastas_file}" )
-    logger.info( f"\nScript completed at: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
+    logger.info( f"Model organism FASTAs listed: {len( model_fastas )}" )
+    logger.info( f"Output file: {output_model_fastas_file}" )
+    logger.info( f"Script completed at: {datetime.now().strftime( '%Y-%m-%d %H:%M:%S' )}" )
 
 
 if __name__ == '__main__':
     main()
-

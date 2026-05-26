@@ -115,19 +115,29 @@ which mode produced the RGS at a glance. STEP_1 doesn't care about the
 filename prefix — it reads the per-group summary TSV to find the
 filename.
 
-### Per-sequence FASTA headers (5 dash-delimited fields)
+### Per-sequence FASTA headers (two formats by source)
 
-Both modes use the GIGANTIC 5-field convention STEP_1's parser
-expects:
+The two workflows emit different per-sequence header formats; STEP_1's
+script 008 dispatches on the format and uses a different identification
+mechanism for each:
 
 ```
->rgs_<group_sanitized>-human-<symbol>-<source>-<accession>
+# workflow-hgnc_database (5-field, hgnc/ncbi-sourced):
+>rgs_<group>-<species>-<symbol>-hgnc_gg<NNN>_<group_name>-<NP_or_XP_accession>
+
+# workflow-hgnc_user_list (4-field, uniprot-sourced; concatenated source+id):
+>rgs_<group>-<species>-<symbol>-uniprot<accession>
 ```
 
-| Mode | source field | accession field |
-|---|---|---|
-| `workflow-hgnc_database` | `hgnc_gg<NNNN>_<group_name>` | NCBI RefSeq protein accession (e.g., `NP_003756_1`) |
-| `workflow-hgnc_user_list` | `uniprot` | UniProt accession (e.g., `O00161`) |
+| Mode | Field count | Field 4 | Field 5 | STEP_1 mechanism |
+|---|---|---|---|---|
+| `workflow-hgnc_database` | 5 | `hgnc_gg<NNNN>_<group_name>` | NCBI RefSeq accession (`NP_003756_1`) | Improvement 1 (exact NCBI accession match) |
+| `workflow-hgnc_user_list` | 4 | `uniprot<accession>` (concatenated, e.g. `uniprotO00161`) | — | Improvement 0 (strict gene-symbol search) |
+
+The concatenation of source + accession in the 4-field format
+(`uniprotP60880` rather than `uniprot-P60880`) is deliberate — it keeps
+the dash count unambiguous when STEP_1's parser splits the header on
+dashes, while remaining compact for embedding in downstream identifiers.
 
 ---
 

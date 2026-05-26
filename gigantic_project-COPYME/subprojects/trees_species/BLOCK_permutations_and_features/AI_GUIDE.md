@@ -3,7 +3,7 @@
 **AI**: Claude Code | Opus 4.6 | 2026 March 04
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read `../AI_GUIDE-trees_species.md` first for subproject concepts.
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject concepts.
 This guide covers the permutations_and_features block specifically.
 
 ---
@@ -12,10 +12,10 @@ This guide covers the permutations_and_features block specifically.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
-| trees_species concepts | `../AI_GUIDE-trees_species.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` |
+| trees_species concepts | `../AI_GUIDE.md` |
 | BLOCK overview | This file |
-| Running the workflow | `workflow-COPYME-permutations_and_features/ai/AI_GUIDE-permutations_and_features_workflow.md` |
+| Running the workflow | `workflow-COPYME-permutations_and_features/ai/AI_GUIDE.md` |
 
 ---
 
@@ -44,18 +44,18 @@ Key capabilities:
 
 ```
 BLOCK_permutations_and_features/
-├── AI_GUIDE-permutations_and_features.md    # THIS FILE
+├── AI_GUIDE.md    # THIS FILE
 └── workflow-COPYME-permutations_and_features/
     ├── README.md
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
+    ├── RUN-workflow.sh
     ├── START_HERE-user_config.yaml
     ├── INPUT_user/                          # species_tree.newick (+ optional clade_names.tsv)
     ├── OUTPUT_pipeline/
     └── ai/
         ├── main.nf
         ├── nextflow.config
-        ├── AI_GUIDE-permutations_and_features_workflow.md
+        ├── AI_GUIDE.md
         └── scripts/                         # 9 sequential Python scripts
 ```
 
@@ -149,7 +149,7 @@ already made on canonical equality, so downstream pipelines should use
 order.
 
 For the full canonical definition, see Rule 6 in the project's
-`AI_GUIDE-project.md` or the Terminology section of
+`AI_GUIDE.md` or the Terminology section of
 `../README.md`.
 
 ### Phylogenetic Blocks

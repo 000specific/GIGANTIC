@@ -43,3 +43,7 @@ MetaPredict is lightweight and CPU-only:
 - **Memory**: 8 GB
 - **Time**: 24 hours for large species sets
 - **No GPU needed**
+
+## Cluster-Side Failure: Drain-Node Race
+
+MetaPredict burst submissions can hit the HiPerGator post-upgrade drain-node race documented at the subproject level — jobs die in 0-1 sec with `ExitCode 0:53` on `c0706a-s7/9/10/12`. If you adopt high-volume burst mode for MetaPredict and start seeing these, see [`../AI_GUIDE-annotations_hmms.md`](../AI_GUIDE-annotations_hmms.md) ("HiPerGator Drain-Node Race") for the diagnosis and the canonical `errorStrategy='ignore'` + `detect_failed_chunks` pattern (reference implementation in [`../BLOCK_interproscan/`](../BLOCK_interproscan/)).

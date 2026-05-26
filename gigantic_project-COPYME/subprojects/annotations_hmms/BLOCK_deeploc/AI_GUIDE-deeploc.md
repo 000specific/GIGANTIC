@@ -85,3 +85,7 @@ DeepLoc 2.1 requires:
 | `invalid partition specified: gpu` | No "gpu" partition on HiPerGator | Use `hpg-turin` (L4) or `hpg-b200` (B200) |
 | CUDA out of memory | Accurate model needs ~32GB VRAM | Switch to Fast model, or use B200 GPUs |
 | Very slow runtime | Running on CPU instead of GPU | Set `device: "cuda"` and use GPU partition |
+
+## Cluster-Side Failure: Drain-Node Race
+
+DeepLoc burst submissions can hit the HiPerGator post-upgrade drain-node race documented at the subproject level — jobs die in 0-1 sec with `ExitCode 0:53` on `c0706a-s7/9/10/12`. If you adopt high-volume burst mode for DeepLoc and start seeing these, see [`../AI_GUIDE-annotations_hmms.md`](../AI_GUIDE-annotations_hmms.md) ("HiPerGator Drain-Node Race") for the diagnosis and the canonical `errorStrategy='ignore'` + `detect_failed_chunks` pattern (reference implementation in [`../BLOCK_interproscan/`](../BLOCK_interproscan/)).

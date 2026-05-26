@@ -1,6 +1,6 @@
 # AI Guide: BLOCK_gigantic_species_tree (trees_species)
 
-**For AI Assistants**: This guide covers `BLOCK_gigantic_species_tree` within the `trees_species` subproject. For `trees_species` overview and pipeline architecture, see `../AI_GUIDE-trees_species.md`. For GIGANTIC overview, see `../../../AI_GUIDE-project.md`.
+**For AI Assistants**: This guide covers `BLOCK_gigantic_species_tree` within the `trees_species` subproject. For `trees_species` overview and pipeline architecture, see `../AI_GUIDE.md`. For GIGANTIC overview, see `../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-COPYME/subprojects/trees_species/BLOCK_gigantic_species_tree/`
 
@@ -21,10 +21,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../../AI_GUIDE-project.md` |
-| trees_species concepts, pipeline architecture | `../AI_GUIDE-trees_species.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| trees_species concepts, pipeline architecture | `../AI_GUIDE.md` |
 | BLOCK_gigantic_species_tree concepts and troubleshooting (this BLOCK) | This file |
-| Running the workflow (step-by-step runbook) | `workflow-COPYME-gigantic_species_tree/ai/AI_GUIDE-gigantic_species_tree_workflow.md` |
+| Running the workflow (step-by-step runbook) | `workflow-COPYME-gigantic_species_tree/ai/AI_GUIDE.md` |
 | Canonical Terminology (structure vs topology, resolved vs unresolved, etc.) | `../README.md` (Terminology section) |
 
 ---
@@ -197,7 +197,7 @@ visualization scripts which encountered the same ete3/Qt headless issues.
 | `workflow-COPYME-*/INPUT_user/species_tree.newick` | Your species tree | **YES** (required) |
 | `workflow-COPYME-*/INPUT_user/README.md` | Input format documentation | No |
 | `workflow-COPYME-*/RUN-workflow.sh` | Local execution script | No |
-| `workflow-COPYME-*/RUN-workflow.sbatch` | SLURM execution script | **YES** (account/qos) |
+| `workflow-COPYME-*/RUN-workflow.sh` | SLURM execution script | **YES** (account/qos) |
 | `workflow-COPYME-*/ai/main.nf` | NextFlow pipeline definition | No (AI-generated) |
 | `workflow-COPYME-*/ai/nextflow.config` | NextFlow settings | No (unless resource tuning needed) |
 | `workflow-COPYME-*/ai/scripts/*.py` | 7 pipeline scripts | No (AI-generated) |

@@ -116,6 +116,26 @@ STEPs are sequentially dependent: **STEP_0 → STEP_1 → STEP_2 → STEP_3**.
 
 Each STEP has a single user-runnable script: `workflow-COPYME-*/RUN-workflow.sh`. The user copies COPYME → `workflow-RUN_NN-*` at the same level, edits the YAML, and runs from the RUN_NN copy.
 
+### 2026-05-26: BLAST-fallback removal in `gene_groups_hgnc-COPYME` STEP_1
+
+The HGNC-anchored template's STEP_1 was simplified — the RGS-to-source-genome
+BLAST chain (script 005, the `blast_rgs_versus_rgs_genomes` NextFlow process,
+and Improvements 2–4 in script 008) was removed as dead code. RGS produced by
+either STEP_0 workflow always resolves cleanly via one of:
+
+- **Improvement 0** — strict gene-symbol search (4-field uniprot-sourced
+  RGS from `workflow-hgnc_user_list`)
+- **Improvement 1** — exact NCBI accession match (5-field hgnc/ncbi-sourced
+  RGS from `workflow-hgnc_database`)
+
+Both are strict and fail-fast. Forward + reciprocal BLAST against species70
+(the homolog discovery itself) is unchanged.
+
+This applies **only** to `gene_groups_hgnc-COPYME`. The sibling
+`gene_groups-COPYME` and the frozen `gene_groups-hugo_hgnc` instance still
+have the BLAST fallback chain (kept for cases where source-genome accession
+matching may not be sufficient).
+
 ### Each STEP's RUN-workflow.sh is an orchestrator
 
 The orchestrator handles all gene groups in one invocation:

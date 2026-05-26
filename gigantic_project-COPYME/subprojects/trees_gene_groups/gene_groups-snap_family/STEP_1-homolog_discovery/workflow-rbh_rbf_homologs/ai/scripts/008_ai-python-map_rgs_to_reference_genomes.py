@@ -4,40 +4,45 @@
 # Human: Eric Edsinger
 
 """
-Map RGS Sequences to Reference Genome Identifiers (5-improvement implementation).
+Map RGS Sequences to Reference Genome Identifiers (strict, BLAST-free).
 
-This script identifies the unique genome protein cognate of each RGS sequence
-via a layered pipeline. See `PLAN-rgs_identification_improvements.md` (two
-directories up) for full design rationale.
+This script identifies the unique genome protein cognate of each RGS
+sequence by dispatching on the RGS header format. The pipeline was
+simplified for gene_groups_hgnc (Improvements 2-4, the BLAST fallback
+chain inherited from trees_gene_families, were removed as dead code —
+gene_groups_hgnc RGS are always either NCBI-accession-tagged or
+HGNC-symbol-tagged, which Improvements 0 and 1 resolve exactly).
 
-Pipeline:
-    Improvement 1: Exact NCBI accession match (primary)
-                   - Extract NP_/XP_ accession from RGS header
+Pipeline (dispatch by RGS header format):
+
+  4-field uniprot-sourced RGS  (workflow-hgnc_user_list):
+    >rgs_snap_family-human-SNAP25-uniprotP60880
+    → Improvement 0 (strict gene-symbol search)
+    → Failure is FINAL (no fallback).
+
+  5+-field hgnc/ncbi-sourced RGS (workflow-hgnc_database):
+    >rgs_syntaxins-human-STX10-hgnc_gg818_Syntaxins-NP_003756_1
+    → Improvement 1 (exact NCBI accession match)
+    → Failure is FINAL (no fallback).
+
+    Improvement 0: Strict gene-symbol search (uniprot-sourced RGS only)
+                   - Parse gene_symbol from RGS header field 3 (0-indexed 2)
+                   - Find protein in proteome with `>g_<SYMBOL>-` header
+                   - Exactly ONE match required; 0 or >1 = fail-fast
+                   - Rationale: user-supplied gene sets must be HGNC-canonical;
+                     ambiguous lookups indicate malformed input
+
+    Improvement 1: Exact NCBI accession match (ncbi-sourced RGS only)
+                   - Extract NP_/XP_ accession from RGS header (last field)
                    - Lookup in pre-built genome accession index
                    - Confident, zero-ambiguity mapping for NCBI-sourced RGS
-
-    Improvement 2: BLAST fallback with strict thresholds
-                   - For RGS without NCBI accessions (UniProt, JGI, curated)
-                   - Identity >= 95% AND query_coverage >= 95% AND subject_coverage >= 95%
-                   - T1 length invariant: RGS must NOT be longer than genome T1
-                     (T1 proteomes contain the longest isoform per gene)
-
-    Improvement 3: Conflict / paralog detection
-                   - If multiple RGS claim the same genome protein top hit:
-                     resolve via Improvement 4 or fail-fast
-                   - Approximates BBH via "is the top hit uniquely claimed?"
-
-    Improvement 4: Hungarian optimal assignment
-                   - When conflicts exist, run scipy.optimize.linear_sum_assignment
-                     to find the globally-optimal RGS<->genome bipartite matching
-                   - Falls back to a greedy-with-uniqueness method if scipy is
-                     unavailable; the conda environment SHOULD include scipy+numpy
-                     so this code path is taken (see ai/conda_environment.yml).
+                   - T1 length invariant check (RGS must NOT be longer than
+                     the matched genome T1 isoform)
 
     Improvement 5: Strict orphan detection (fail-fast)
-                   - Any RGS not cleanly resolved by 1-4 terminates the pipeline
+                   - Any RGS not cleanly resolved by 0 or 1 terminates the pipeline
                    - No --include-orphan-rgs escape, no silent skipping
-                   - Each unresolved RGS reported with the specific reason
+                   - Each unresolved RGS reported with a specific reason
 
 Output files:
     - <output-mapping>          (4-column TSV: genome_id, truncated_rgs, full_rgs, mechanism)
@@ -61,26 +66,9 @@ from typing import Dict, List, Optional, Set, Tuple
 # Constants
 # ============================================================================
 
-MIN_IDENTITY_PERCENT = 95.0
-MIN_COVERAGE_PERCENT = 95.0
-
 # NCBI protein accessions: 2 letters, underscore, digits, optional version suffix.
 # Examples: NP_006133, NP_006133.1, NP_006133_1, XP_011509253.1
 NCBI_ACCESSION_REGEX = re.compile( r'^([A-Z]{2}_[0-9]+)(?:[._][0-9]+)?$' )
-
-# BLAST tabular outfmt 6 columns (12-column default)
-BLAST_COLS = (
-    'qseqid', 'sseqid', 'pident', 'length', 'mismatch', 'gapopen',
-    'qstart', 'qend', 'sstart', 'send', 'evalue', 'bitscore',
-)
-
-# scipy is optional; if missing, Hungarian falls back to greedy + fail-fast on conflicts
-try:
-    from scipy.optimize import linear_sum_assignment   # type: ignore
-    import numpy as np                                  # type: ignore
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
 
 
 # ============================================================================
@@ -125,8 +113,12 @@ def normalize_ncbi_accession( accession_string: str ) -> Optional[str]:
 
 
 def extract_ncbi_accession_from_rgs_header( rgs_header: str ) -> Optional[str]:
-    """RGS header format: rgs_<group>-<organism>-<gene>-<source>-<protein_id>
+    """RGS header format (5-field, hgnc/ncbi-sourced): rgs_<group>-<organism>-<gene>-<source>-<protein_id>
     Returns the normalized NCBI accession if the protein_id field is NCBI-formatted, else None.
+
+    For 4-field uniprot-sourced headers (e.g., rgs_snap_family-human-SNAP25-uniprotP60880)
+    the last field doesn't normalize to an NCBI accession, so this returns None and
+    Improvement 0 (gene-symbol search) handles those instead.
     """
     parts_rgs_header = rgs_header.split( '-' )
     if not parts_rgs_header:
@@ -147,12 +139,52 @@ def extract_ncbi_accession_from_genome_header( genome_header: str ) -> Optional[
     return normalize_ncbi_accession( protein_id )
 
 
-def parse_rgs_species_short_name( rgs_header: str ) -> Optional[str]:
-    """Extract the organism short name (parts[1]) from the RGS header.
-    Format expectation: rgs_<group>-<species>-<gene>-<source>-<id> (>= 5 fields, first starts with 'rgs_').
+def extract_gene_symbol_from_genome_header( genome_header: str ) -> Optional[str]:
+    """Genome header format: g_<gene_symbol>-t_<transcript>-p_<protein>-n_<phyloname>
+    Returns the gene symbol from the g_ field, or None if the header doesn't conform.
+    """
+    if not genome_header.startswith( 'g_' ):
+        return None
+    if '-t_' not in genome_header:
+        return None
+    return genome_header.split( '-t_', 1 )[ 0 ][ 2: ]   # strip leading 'g_', take up to '-t_'
+
+
+def extract_gene_symbol_from_rgs_header( rgs_header: str ) -> Optional[str]:
+    """Extract gene symbol from an RGS header (parts[2]).
+    Works for BOTH 4-field uniprot-sourced and 5-field ncbi/hgnc-sourced headers,
+    since gene symbol always sits at index 2 in the GIGANTIC RGS header convention:
+
+        rgs_<group>-<species>-<GENE_SYMBOL>-<source(+id)>[-<id>]
     """
     parts_rgs_header = rgs_header.split( '-' )
-    if len( parts_rgs_header ) < 5:
+    if len( parts_rgs_header ) < 4:
+        return None
+    if not parts_rgs_header[ 0 ].startswith( 'rgs_' ):
+        return None
+    return parts_rgs_header[ 2 ]
+
+
+def is_uniprot_sourced_rgs( rgs_header: str ) -> bool:
+    """True if the RGS header uses the 4-field uniprot-source convention:
+        rgs_<group>-<species>-<symbol>-uniprot<accession>
+    Dispatch hook for Improvement 0 (strict gene-symbol search against the proteome).
+    """
+    parts_rgs_header = rgs_header.split( '-' )
+    if len( parts_rgs_header ) != 4:
+        return False
+    if not parts_rgs_header[ 0 ].startswith( 'rgs_' ):
+        return False
+    return parts_rgs_header[ 3 ].lower().startswith( 'uniprot' )
+
+
+def parse_rgs_species_short_name( rgs_header: str ) -> Optional[str]:
+    """Extract the organism short name (parts[1]) from the RGS header.
+    Accepts BOTH 4-field uniprot-sourced and 5+-field ncbi/hgnc-sourced headers.
+    Returns parts[1] when header starts with 'rgs_' and has at least 4 dash-delimited fields.
+    """
+    parts_rgs_header = rgs_header.split( '-' )
+    if len( parts_rgs_header ) < 4:
         return None
     if not parts_rgs_header[ 0 ].startswith( 'rgs_' ):
         return None
@@ -192,17 +224,23 @@ def read_rgs_sequences( rgs_fasta: Path, logger: logging.Logger ) -> Dict[ str, 
 
 class GenomeIndex:
     """Per-species index of the source genome:
-    - accession_to_header: normalized NCBI accession -> full genome header
-    - header_to_length:    full genome header        -> protein length (aa)
+    - accession_to_header:        normalized NCBI accession -> full genome header
+    - header_to_length:           full genome header        -> protein length (aa)
+    - gene_symbol_to_headers:     gene symbol               -> list of headers
+                                  (multi-valued because a proteome COULD contain
+                                  multiple proteins per gene_symbol; Improvement 0
+                                  enforces exactly-one for strictness)
     """
     def __init__( self ):
         self.accession_to_header: Dict[ str, str ] = {}
         self.header_to_length: Dict[ str, int ] = {}
+        self.gene_symbol_to_headers: Dict[ str, List[ str ] ] = {}
 
 
 def build_genome_index( genome_fasta: Path, logger: logging.Logger ) -> GenomeIndex:
     """Build a GenomeIndex from a source-species proteome FASTA.
-    Builds BOTH the NCBI-accession lookup and a full header-to-length map.
+    Builds the NCBI-accession lookup, the full header-to-length map, AND the
+    gene_symbol_to_headers lookup used by Improvement 0.
     Fails fast on duplicate NCBI accessions in the genome.
     """
     # >g_SFN-t_NM_006142.5-p_NP_006133.1-n_Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens
@@ -225,6 +263,9 @@ def build_genome_index( genome_fasta: Path, logger: logging.Logger ) -> GenomeIn
                     f'  Source FASTA:  {genome_fasta}'
                 )
             index.accession_to_header[ accession ] = header
+        gene_symbol = extract_gene_symbol_from_genome_header( header )
+        if gene_symbol is not None:
+            index.gene_symbol_to_headers.setdefault( gene_symbol, [] ).append( header )
 
     with open( genome_fasta, 'r' ) as input_genome_fasta:
         for line in input_genome_fasta:
@@ -240,22 +281,10 @@ def build_genome_index( genome_fasta: Path, logger: logging.Logger ) -> GenomeIn
     logger.info(
         f'Indexed {genome_fasta.name}: '
         f'{len( index.header_to_length )} proteins total, '
-        f'{len( index.accession_to_header )} with NCBI accessions'
+        f'{len( index.accession_to_header )} with NCBI accessions, '
+        f'{len( index.gene_symbol_to_headers )} distinct gene symbols'
     )
     return index
-
-
-def parse_blast_report_rows( blast_report: Path ):
-    """Yield dict per row of an outfmt 6 BLAST report (12 standard columns)."""
-    with open( blast_report, 'r' ) as input_blast_report:
-        for line in input_blast_report:
-            line = line.strip()
-            if not line or line.startswith( '#' ):
-                continue
-            parts = line.split( '\t' )
-            if len( parts ) < 12:
-                continue
-            yield dict( zip( BLAST_COLS, parts ) )
 
 
 def read_file_list( list_file: Path, logger: logging.Logger ) -> List[ Path ]:
@@ -360,6 +389,94 @@ def new_decision_record( rgs_header: str, rgs_species: Optional[str], rgs_length
 
 
 # ============================================================================
+# Improvement 0: Strict gene-symbol search (for 4-field uniprot-sourced RGS)
+# ============================================================================
+# RGS headers from workflow-hgnc_user_list use the 4-field shape
+#   rgs_<group>-<species>-<symbol>-uniprot<accession>
+# where the source+id is concatenated (e.g., uniprotP60880) — there is no
+# NCBI accession in the header, so Improvement 1 cannot match.
+#
+# For these RGS, the gene symbol IS the primary key into the proteome. We
+# look for exactly one `g_<SYMBOL>-...` protein in the per-species genome
+# index. If we find 0 or >1 matches, we fail fast (NO orphan fallback for
+# user-defined gene sets — the user must fix the input).
+
+def map_via_gene_symbol(
+    decisions: Dict[ str, Dict ],
+    rgs_sequences: Dict[ str, Tuple[ str, int ] ],
+    species_to_genome_index: Dict[ str, GenomeIndex ],
+    logger: logging.Logger,
+) -> int:
+    """For each 4-field uniprot-sourced RGS, look up the gene_symbol in the
+    matching species' proteome. Strict: exactly one match → mapped; else the
+    decision is finalized with a fail-fast reason and NO subsequent improvement
+    is attempted (the failure is final).
+
+    Returns the count successfully mapped.
+    """
+    mapped_count = 0
+    failed_uniprot_count = 0
+
+    for rgs_header, ( _, rgs_length ) in rgs_sequences.items():
+        if not is_uniprot_sourced_rgs( rgs_header ):
+            continue   # not our concern; existing Improvement 1 will handle it
+
+        decision = decisions[ rgs_header ]
+        rgs_species = decision[ 'rgs_species' ]
+        if rgs_species is None:
+            decision[ 'reason' ] = 'rgs_header_unparseable_for_species'
+            failed_uniprot_count += 1
+            continue
+
+        gene_symbol = extract_gene_symbol_from_rgs_header( rgs_header )
+        if gene_symbol is None:
+            decision[ 'reason' ] = 'rgs_header_unparseable_for_gene_symbol'
+            failed_uniprot_count += 1
+            continue
+
+        genome_index = species_to_genome_index.get( rgs_species )
+        if genome_index is None:
+            decision[ 'reason' ] = f'no_genome_index_for_species_{rgs_species}'
+            failed_uniprot_count += 1
+            continue
+
+        matching_headers = genome_index.gene_symbol_to_headers.get( gene_symbol, [] )
+        if len( matching_headers ) == 0:
+            decision[ 'reason' ] = 'no_proteome_protein_for_gene_symbol'
+            failed_uniprot_count += 1
+            continue
+        if len( matching_headers ) > 1:
+            decision[ 'reason' ] = 'multiple_proteome_proteins_for_gene_symbol'
+            decision[ 'genome_id' ] = matching_headers[ 0 ]   # surface ONE for debugging
+            decision[ 'candidate_count' ] = len( matching_headers )
+            failed_uniprot_count += 1
+            continue
+
+        # Exactly one match — record the mapping.
+        genome_header = matching_headers[ 0 ]
+        genome_length = genome_index.header_to_length[ genome_header ]
+        decision[ 'status' ]         = 'mapped'
+        decision[ 'mechanism' ]      = 'gene_symbol'
+        decision[ 'genome_id' ]      = genome_header
+        decision[ 'genome_length' ]  = genome_length
+        # Identity/coverage aren't from a BLAST hit; record the rgs/genome length ratio
+        # for the audit report (no alignment performed at this step).
+        decision[ 'identity' ]         = None
+        decision[ 'query_coverage' ]   = None
+        decision[ 'subject_coverage' ] = None
+        if rgs_length > genome_length:
+            decision[ 'rgs_longer_than_t1' ] = True
+        mapped_count += 1
+
+    if mapped_count or failed_uniprot_count:
+        logger.info(
+            f'Improvement 0 (gene-symbol search): mapped {mapped_count}; '
+            f'unresolved-uniprot {failed_uniprot_count}'
+        )
+    return mapped_count
+
+
+# ============================================================================
 # Improvement 1: NCBI accession match
 # ============================================================================
 
@@ -408,268 +525,34 @@ def map_via_ncbi_accession(
     return mapped_count
 
 
-# ============================================================================
-# Improvement 2: BLAST fallback with strict thresholds
-# ============================================================================
-
-def gather_blast_candidates(
-    decisions: Dict[ str, Dict ],
-    rgs_sequences: Dict[ str, Tuple[ str, int ] ],
-    blast_reports: List[ Path ],
-    species_to_genome_index: Dict[ str, GenomeIndex ],
-    model_species: List[ str ],
-    logger: logging.Logger,
-) -> Dict[ str, List[ Dict ] ]:
-    """For RGS not yet mapped via NCBI accession, gather all BLAST hits that pass the
-    identity/coverage thresholds. Returns dict[rgs_header] -> list of candidate dicts."""
-    blast_candidates_by_rgs: Dict[ str, List[ Dict ] ] = defaultdict( list )
-    t1_violations: List[ Tuple[ str, str, int, int ] ] = []
-    hits_rejected_for_thresholds = 0
-
-    for blast_report in blast_reports:
-        if not blast_report.exists():
-            logger.warning( f'BLAST report missing (skipping): {blast_report}' )
-            continue
-        report_species = identify_species_short_name_from_filename( blast_report, model_species )
-        if report_species is None:
-            logger.warning( f'Cannot identify species for report {blast_report.name} (skipping)' )
-            continue
-        genome_index = species_to_genome_index.get( report_species )
-        if genome_index is None:
-            logger.warning( f'No genome index for report species {report_species} (skipping)' )
-            continue
-
-        for row in parse_blast_report_rows( blast_report ):
-            rgs_query  = row[ 'qseqid' ]
-            genome_hit = row[ 'sseqid' ]
-
-            decision = decisions.get( rgs_query )
-            if decision is None:
-                continue   # RGS in report but not in our input FASTA (orphan blast row)
-            if decision[ 'status' ] == 'mapped':
-                continue   # already mapped via NCBI accession
-            if decision[ 'rgs_species' ] != report_species:
-                continue   # cross-species blast row, not applicable here
-
-            genome_length = genome_index.header_to_length.get( genome_hit )
-            if genome_length is None:
-                continue   # genome protein not in the FASTA index (shouldn't happen)
-
-            _, rgs_length = rgs_sequences[ rgs_query ]
-            pident = float( row[ 'pident' ] )
-            try:
-                qstart = int( row[ 'qstart' ] ); qend = int( row[ 'qend' ] )
-                sstart = int( row[ 'sstart' ] ); send = int( row[ 'send' ] )
-                bitscore = float( row[ 'bitscore' ] )
-            except ValueError:
-                continue
-
-            query_coverage   = ( abs( qend - qstart ) + 1 ) / rgs_length * 100.0
-            subject_coverage = ( abs( send - sstart ) + 1 ) / genome_length * 100.0
-
-            if pident < MIN_IDENTITY_PERCENT \
-               or query_coverage < MIN_COVERAGE_PERCENT \
-               or subject_coverage < MIN_COVERAGE_PERCENT:
-                hits_rejected_for_thresholds += 1
-                continue
-
-            if rgs_length > genome_length:
-                t1_violations.append( ( rgs_query, genome_hit, rgs_length, genome_length ) )
-                continue
-
-            blast_candidates_by_rgs[ rgs_query ].append( {
-                'genome_id':        genome_hit,
-                'genome_length':    genome_length,
-                'rgs_length':       rgs_length,
-                'identity':         pident,
-                'query_coverage':   query_coverage,
-                'subject_coverage': subject_coverage,
-                'bitscore':         bitscore,
-            } )
-
-    logger.info(
-        f'Improvement 2 (BLAST fallback): '
-        f'{len( blast_candidates_by_rgs )} RGS have >=1 candidate at >={MIN_IDENTITY_PERCENT}% identity / >={MIN_COVERAGE_PERCENT}% coverage, '
-        f'{hits_rejected_for_thresholds} BLAST rows rejected by thresholds, '
-        f'{len( t1_violations )} T1-length-invariant violations'
-    )
-
-    # T1 violations are recorded onto the per-RGS decision so they appear in fail-fast output
-    for rgs_query, genome_hit, rgs_length, genome_length in t1_violations:
-        decision = decisions[ rgs_query ]
-        if decision[ 'status' ] != 'mapped' and decision[ 'reason' ] is None:
-            decision[ 'reason' ]             = 'rgs_longer_than_t1'
-            decision[ 'genome_id' ]          = genome_hit
-            decision[ 'genome_length' ]      = genome_length
-            decision[ 'rgs_longer_than_t1' ] = True
-
-    return dict( blast_candidates_by_rgs )
-
-
-def apply_unique_blast_candidates(
-    decisions: Dict[ str, Dict ],
-    blast_candidates_by_rgs: Dict[ str, List[ Dict ] ],
-    logger: logging.Logger,
-) -> Dict[ str, List[ Dict ] ]:
-    """Map RGS that have exactly 1 candidate AND that candidate isn't claimed by any other RGS.
-    Mutates decisions in place. Returns the still-contested candidates dict for Hungarian."""
-    genome_id_claimants: Dict[ str, Set[ str ] ] = defaultdict( set )
-    for rgs_header, candidates in blast_candidates_by_rgs.items():
-        for candidate in candidates:
-            genome_id_claimants[ candidate[ 'genome_id' ] ].add( rgs_header )
-
-    unique_mapped_count = 0
-    still_contested: Dict[ str, List[ Dict ] ] = {}
-    for rgs_header, candidates in blast_candidates_by_rgs.items():
-        decision = decisions[ rgs_header ]
-        if decision[ 'status' ] == 'mapped':
-            continue
-        for candidate in candidates:
-            decision[ 'candidate_count' ] += 1
-
-        if len( candidates ) == 1 and len( genome_id_claimants[ candidates[ 0 ][ 'genome_id' ] ] ) == 1:
-            cand = candidates[ 0 ]
-            decision[ 'status' ]           = 'mapped'
-            decision[ 'mechanism' ]        = 'blast_high_confidence'
-            decision[ 'genome_id' ]        = cand[ 'genome_id' ]
-            decision[ 'genome_length' ]    = cand[ 'genome_length' ]
-            decision[ 'identity' ]         = cand[ 'identity' ]
-            decision[ 'query_coverage' ]   = cand[ 'query_coverage' ]
-            decision[ 'subject_coverage' ] = cand[ 'subject_coverage' ]
-            unique_mapped_count += 1
-        else:
-            still_contested[ rgs_header ] = candidates
-
-    logger.info(
-        f'Improvement 2 unique-resolution: mapped {unique_mapped_count} RGS '
-        f'(exactly 1 candidate AND that candidate not contested by another RGS)'
-    )
-    logger.info(
-        f'Improvements 3/4 will resolve {len( still_contested )} RGS with multiple candidates or contested ones'
-    )
-    return still_contested
-
-
-# ============================================================================
-# Improvements 3+4: Hungarian (or fallback) assignment for contested candidates
-# ============================================================================
-
-def apply_hungarian_assignment(
-    decisions: Dict[ str, Dict ],
-    contested_candidates: Dict[ str, List[ Dict ] ],
-    logger: logging.Logger,
-) -> None:
-    """Resolve remaining RGS<->genome conflicts via globally-optimal bipartite matching.
-    Uses scipy.optimize.linear_sum_assignment if available, else greedy + fail-on-conflict.
-    Mutates decisions in place."""
-    if not contested_candidates:
-        return
-
-    rgs_list = sorted( contested_candidates.keys() )
-    genome_ids = sorted( { c[ 'genome_id' ] for r in rgs_list for c in contested_candidates[ r ] } )
-
-    if HAS_SCIPY:
-        rgs_index = { r: i for i, r in enumerate( rgs_list ) }
-        genome_index = { g: i for i, g in enumerate( genome_ids ) }
-        infinity_cost = 1e9
-        # cost matrix: shape (n_rgs, n_genome); minimize cost = maximize negative bitscore
-        cost = np.full( ( len( rgs_list ), len( genome_ids ) ), infinity_cost )
-        candidate_lookup: Dict[ Tuple[ int, int ], Dict ] = {}
-        for r in rgs_list:
-            for c in contested_candidates[ r ]:
-                cost[ rgs_index[ r ], genome_index[ c[ 'genome_id' ] ] ] = -c[ 'bitscore' ]
-                candidate_lookup[ ( rgs_index[ r ], genome_index[ c[ 'genome_id' ] ] ) ] = c
-
-        # Hungarian on the rectangular cost matrix.
-        # If n_rgs > n_genome, pad genome side with infinity costs (unassignable).
-        n_rgs = len( rgs_list )
-        n_genome = len( genome_ids )
-        if n_rgs > n_genome:
-            padding = np.full( ( n_rgs, n_rgs - n_genome ), infinity_cost )
-            cost_padded = np.concatenate( ( cost, padding ), axis = 1 )
-        else:
-            cost_padded = cost
-
-        row_ind, col_ind = linear_sum_assignment( cost_padded )
-
-        hungarian_mapped_count = 0
-        for r_idx, g_idx in zip( row_ind, col_ind ):
-            if g_idx >= len( genome_ids ):
-                continue   # assigned to padding (no real genome)
-            if cost_padded[ r_idx, g_idx ] >= infinity_cost:
-                continue   # not a real candidate edge
-            cand = candidate_lookup[ ( r_idx, g_idx ) ]
-            decision = decisions[ rgs_list[ r_idx ] ]
-            decision[ 'status' ]           = 'mapped'
-            decision[ 'mechanism' ]        = 'hungarian_optimal'
-            decision[ 'genome_id' ]        = cand[ 'genome_id' ]
-            decision[ 'genome_length' ]    = cand[ 'genome_length' ]
-            decision[ 'identity' ]         = cand[ 'identity' ]
-            decision[ 'query_coverage' ]   = cand[ 'query_coverage' ]
-            decision[ 'subject_coverage' ] = cand[ 'subject_coverage' ]
-            hungarian_mapped_count += 1
-        logger.info( f'Improvement 4 (Hungarian via scipy): mapped {hungarian_mapped_count} contested RGS' )
-        return
-
-    # scipy not available: greedy fallback, fail-fast on any residual conflict.
-    logger.warning(
-        'scipy.optimize.linear_sum_assignment unavailable; '
-        'using greedy fallback that fails on any residual conflict. '
-        'Add scipy + numpy to the conda environment (ai/conda_environment.yml) for clean Hungarian assignment.'
-    )
-    sorted_candidates: List[ Tuple[ float, str, Dict ] ] = []
-    for r in rgs_list:
-        for c in contested_candidates[ r ]:
-            sorted_candidates.append( ( c[ 'bitscore' ], r, c ) )
-    sorted_candidates.sort( key = lambda t: ( -t[ 0 ], t[ 1 ] ) )   # descending bitscore, then RGS header for determinism
-
-    rgs_claimed: Set[ str ] = set()
-    genome_claimed: Set[ str ] = set()
-    greedy_mapped_count = 0
-    for bitscore, rgs_header, cand in sorted_candidates:
-        if rgs_header in rgs_claimed:
-            continue
-        if cand[ 'genome_id' ] in genome_claimed:
-            continue
-        decision = decisions[ rgs_header ]
-        decision[ 'status' ]           = 'mapped'
-        decision[ 'mechanism' ]        = 'greedy_fallback'
-        decision[ 'genome_id' ]        = cand[ 'genome_id' ]
-        decision[ 'genome_length' ]    = cand[ 'genome_length' ]
-        decision[ 'identity' ]         = cand[ 'identity' ]
-        decision[ 'query_coverage' ]   = cand[ 'query_coverage' ]
-        decision[ 'subject_coverage' ] = cand[ 'subject_coverage' ]
-        rgs_claimed.add( rgs_header )
-        genome_claimed.add( cand[ 'genome_id' ] )
-        greedy_mapped_count += 1
-    logger.info( f'Improvement 4 (greedy fallback): mapped {greedy_mapped_count} contested RGS' )
-
 
 # ============================================================================
 # Improvement 5: Fail-fast on any unresolved RGS
 # ============================================================================
 
 REASON_HUMAN_HINTS = {
-    'rgs_header_unparseable_for_species':       'RGS header does not match expected 5-field format (rgs_<group>-<species>-<gene>-<source>-<id>); cannot identify source species.',
+    'rgs_header_unparseable_for_species':       'RGS header does not match expected GIGANTIC formats (4-field uniprot-sourced or 5-field hgnc/ncbi-sourced); cannot identify source species.',
+    'rgs_header_unparseable_for_gene_symbol':   'RGS header (4-field uniprot-sourced) parses but gene_symbol (field 3, 0-indexed 2) cannot be extracted; the header is malformed.',
     'no_genome_index_for_species_*':            'RGS species marker was not found among the model_fastas-list FASTAs; check rgs_species_map.tsv and --rbh-species.',
+    'no_proteome_protein_for_gene_symbol':      'Improvement 0 strict gene-symbol search found ZERO proteins with `g_<SYMBOL>-` in the source proteome. Verify the symbol is HGNC-canonical (try aliases / previous symbols) and that the proteome is the right species build.',
+    'multiple_proteome_proteins_for_gene_symbol': 'Improvement 0 strict gene-symbol search found MORE THAN ONE protein with `g_<SYMBOL>-` in the source proteome. T1 proteomes should have exactly one protein per gene_symbol; investigate the proteome build.',
     'rgs_longer_than_t1':                       'RGS protein is LONGER than the genome T1 isoform. T1 proteomes contain the longest isoform per gene. Either the RGS is a longer-isoform sequence from outside T1 or the T1 build is wrong.',
-    'no_blast_hit_passes_thresholds':           f'No BLAST hit reaches >={MIN_IDENTITY_PERCENT}% identity AND >={MIN_COVERAGE_PERCENT}% query coverage AND >={MIN_COVERAGE_PERCENT}% subject coverage.',
-    'no_blast_hit_passes_thresholds_after_hungarian': 'After optimal bipartite assignment, no candidate edge remained for this RGS.',
-    'accession_not_in_genome_and_no_blast_hit': 'RGS NCBI accession is not in the source genome AND BLAST fallback found no hit meeting thresholds.',
+    'accession_not_in_genome':                  'RGS NCBI accession is not present in the source genome. Either the proteome build does not include this accession (rebuild from a newer NCBI release) or the RGS was generated from a different proteome version.',
 }
 
 
 def finalize_unresolved_reasons( decisions: Dict[ str, Dict ] ) -> None:
-    """Fill in 'reason' for any decision that is still unresolved without one set."""
+    """Fill in 'reason' for any decision that is still unresolved without one set.
+
+    With the BLAST fallback removed, unresolved RGS at this point are NCBI-sourced
+    headers whose accession wasn't found in the genome index (Improvement 1 missed).
+    """
     for decision in decisions.values():
         if decision[ 'status' ] == 'mapped':
             continue
         if decision[ 'reason' ] is not None:
             continue
-        if decision[ 'candidate_count' ] == 0:
-            decision[ 'reason' ] = 'no_blast_hit_passes_thresholds'
-        else:
-            decision[ 'reason' ] = 'no_blast_hit_passes_thresholds_after_hungarian'
+        decision[ 'reason' ] = 'accession_not_in_genome'
 
 
 def assert_all_resolved_or_fail_fast( decisions: Dict[ str, Dict ], logger: logging.Logger ) -> None:
@@ -821,10 +704,8 @@ def write_rgs_identification_report(
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description = 'Map RGS sequences to reference genome identifiers via 5-improvement pipeline'
+        description = 'Map RGS sequences to reference genome identifiers (strict, BLAST-free; Improvement 0 + Improvement 1)'
     )
-    parser.add_argument( '--blast-reports-list', type = Path, required = True,
-                         help = 'File listing RGS-vs-genome BLAST report paths' )
     parser.add_argument( '--model-fastas-list', type = Path, required = True,
                          help = 'File listing model organism (source-genome) FASTA paths' )
     parser.add_argument( '--rgs-fasta', type = Path, required = True,
@@ -850,18 +731,15 @@ def main() -> None:
     logger = setup_logging( args.log_file )
 
     logger.info( '=' * 80 )
-    logger.info( 'Script 008 (rewritten 2026-05-23): Map RGS to Reference Genome Identifiers' )
-    logger.info( '  Improvements: NCBI-accession-match, BLAST-thresholds, T1-length-invariant,' )
-    logger.info( '                Hungarian-assignment, strict-fail-fast' )
+    logger.info( 'Script 008: Map RGS to Reference Genome Identifiers (BLAST-free)' )
+    logger.info( '  Pipeline: Improvement 0 (gene-symbol search for uniprot RGS)' )
+    logger.info( '            Improvement 1 (exact NCBI accession match for ncbi RGS)' )
+    logger.info( '            Improvement 5 (strict fail-fast on any unresolved)' )
     logger.info( '=' * 80 )
     logger.info( f'Started:           {datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )}' )
     logger.info( f'RGS FASTA:         {args.rgs_fasta}' )
-    logger.info( f'BLAST reports:     {args.blast_reports_list}' )
     logger.info( f'Model FASTAs list: {args.model_fastas_list}' )
     logger.info( f'RBH species:       {", ".join( model_species_list )}' )
-    logger.info( f'Identity threshold: >= {MIN_IDENTITY_PERCENT}%' )
-    logger.info( f'Coverage threshold: >= {MIN_COVERAGE_PERCENT}% (both query and subject)' )
-    logger.info( f'scipy available:   {HAS_SCIPY}' )
     logger.info( '' )
 
     try:
@@ -869,7 +747,6 @@ def main() -> None:
         rgs_sequences  = read_rgs_sequences( args.rgs_fasta, logger )
         if not rgs_sequences:
             raise PipelineFailure( f'No RGS sequences in {args.rgs_fasta}.' )
-        blast_reports  = read_file_list( args.blast_reports_list, logger )
         model_fastas   = read_file_list( args.model_fastas_list, logger )
 
         # Build per-species genome indexes
@@ -895,12 +772,13 @@ def main() -> None:
             )
 
         # Pipeline
+        # Improvement 0 — strict gene-symbol search for 4-field uniprot-sourced RGS.
+        # If it fails for a uniprot RGS, the failure is FINAL.
+        map_via_gene_symbol( decisions, rgs_sequences, species_to_genome_index, logger )
+        # Improvement 1 — NCBI accession match for 5-field hgnc/ncbi-sourced RGS.
+        # Naturally skips uniprot RGS (their last-field doesn't normalize to NCBI).
         map_via_ncbi_accession( decisions, rgs_sequences, species_to_genome_index, logger )
-        blast_candidates_by_rgs = gather_blast_candidates(
-            decisions, rgs_sequences, blast_reports, species_to_genome_index, model_species_list, logger,
-        )
-        still_contested = apply_unique_blast_candidates( decisions, blast_candidates_by_rgs, logger )
-        apply_hungarian_assignment( decisions, still_contested, logger )
+        # Improvement 5 — strict fail-fast on anything still unresolved.
         finalize_unresolved_reasons( decisions )
         assert_all_resolved_or_fail_fast( decisions, logger )
 

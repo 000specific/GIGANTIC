@@ -1,9 +1,12 @@
 # GIGANTIC trees_gene_groups - STEP_1 (RBH/RBF homolog discovery) conda env
-# Per-workflow conda env, auto-created from this file on first RUN_1 run by
+# Per-workflow conda env, auto-created from this file on first run by
 # RUN-workflow.sh (mamba preferred; conda fallback).
-# numpy + scipy are required for the Hungarian optimal-assignment path in
-# script 008 (map_rgs_to_reference_genomes.py); without them, 008 falls back
-# to a greedy assignment that fails-fast on any residual ambiguity.
+#
+# As of 2026-05-26: the BLAST fallback chain in script 008 (Improvement 2
+# BLAST-thresholds + Improvement 3 conflict detection + Improvement 4
+# Hungarian optimal assignment) was removed as dead code for gene_groups_hgnc.
+# That removed the only consumers of numpy + scipy. The forward + reciprocal
+# BLAST work (project_database BLAST + reciprocal BLAST) still uses NCBI BLAST+.
 name: aiG-trees_gene_groups-rbh_rbf_homologs
 channels:
   - conda-forge
@@ -14,5 +17,3 @@ dependencies:
   - pyyaml
   - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows; see HANDOFF doc
   - blast
-  - numpy
-  - scipy

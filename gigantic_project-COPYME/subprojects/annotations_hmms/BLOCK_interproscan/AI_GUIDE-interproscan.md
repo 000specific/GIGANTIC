@@ -32,9 +32,11 @@ BLOCK_interproscan/
 
 | Run | Species Set | Applications | Notes |
 |-----|-------------|-------------|-------|
-| RUN_1 | genomesDB (active build, 70 proteomes) | Pfam + GO terms | 25 CPUs, 187 GB RAM, SLURM account=moroz |
+| RUN_1 | genomesDB (early build) | Pfam + GO terms | 25 CPUs, 187 GB RAM, SLURM account=moroz. Reference only; current canonical layout follows RUN_3. |
+| RUN_2 | species70 | CDD,NCBIfam,PANTHER,SMART,SUPERFAMILY | Superseded by RUN_3 (config errors + drain-node death; valuable as diagnostic record). |
+| RUN_3 | species70 | CDD,NCBIfam,PANTHER,SMART,SUPERFAMILY | **Canonical reference run.** moroz-b burst, 10 CPU / 75 GB / 96h per chunk, `errorStrategy='ignore'`, gap-detection enabled. 1413 chunks, ~12-15 hr wall, ~2.3% drain-node failure rate. |
 
-## Pipeline Scripts (4 steps)
+## Pipeline Scripts (6 steps)
 
 | # | Script | Purpose |
 |---|--------|---------|
@@ -42,8 +44,12 @@ BLOCK_interproscan/
 | 002 | `002_ai-python-chunk_proteomes.py` | Split large proteomes into chunks for parallel processing |
 | 003 | `003_ai-bash-run_interproscan.sh` | Run InterProScan on each chunk |
 | 004 | `004_ai-python-combine_interproscan_results.py` | Combine chunk results back into per-species files |
+| 005 | `005_ai-python-write_run_log.py` | Write run log (called LAST in workflow order, not pipeline order) |
+| 006 | `006_ai-python-detect_failed_chunks.py` | **Gap detection** — diff expected vs successful chunks, write `6_ai-failed_chunks.tsv` listing chunks that did not produce output |
 
 **Chunking strategy**: Large proteomes are split into configurable-size chunks (default 1000 sequences) before running InterProScan. This enables per-chunk parallelism and prevents memory issues. Results are combined back per species after all chunks complete.
+
+**Failure semantics**: `run_interproscan` uses `errorStrategy = 'ignore'` (an **explicit, documented override** of the CLAUDE.md "NEVER use 'ignore'" rule). Rationale: the cluster-side HiPerGator drain-node race (see subproject-level AI_GUIDE) kills ~1-3% of burst submissions transiently, and fail-fast loses the whole multi-day run. With `'ignore'`, failed chunks are silently dropped; step 006 enumerates the gaps to a TSV the user can drive a follow-up RUN_N from.
 
 ## InterProScan Command
 
@@ -92,8 +98,14 @@ The `-goterms` flag is always enabled in script 003, so GO annotations are inclu
 
 ## Resource Requirements
 
-InterProScan is CPU-heavy and memory-intensive:
-- **CPU**: 8+ cores recommended (25 used in RUN_1)
-- **Memory**: 128+ GB recommended (187 GB used in RUN_1)
-- **Time**: 96 hours for large species sets (less with Pfam-only)
-- **Disk**: InterProScan databases require ~100 GB (full install ~15 GB download)
+InterProScan is CPU-heavy and memory-intensive. **Per-chunk** (in burst mode) is the sizing that matters once you're chunking; the older "per-job" sizing applied only to non-chunked invocations.
+
+| Mode | CPU / chunk | Memory / chunk | Time / chunk | Notes |
+|------|-------------|----------------|--------------|-------|
+| Burst (canonical for chunked work) | 10 | 75 GB | 96h | moroz convention: 7.5 GB/CPU. Concurrency capped by `burst_qos` (moroz-b = 450 CPU = ~45 concurrent at 10 CPU/chunk) |
+| Single-allocation slurm mode | full alloc (e.g. 50) | full alloc (e.g. 375 GB) | 96h+ | Per-chunk sizing inside the allocation comes from `burst_cpus_per_chunk` / `burst_memory_gb_per_chunk` — enables N-way in-allocation parallelism |
+| Local | system | system | system | Testing only |
+
+**Disk**: InterProScan databases require ~100 GB (full install ~15 GB download). The install is shared across all RUNs via `software/interproscan/`.
+
+**Empirical (RUN_3, 2026-05-25):** 70 species, 1,375,926 sequences, chunk_size 1000 → 1413 chunks. 5 tools per chunk (CDD,NCBIfam,PANTHER,SMART,SUPERFAMILY). 10 CPU / 75 GB / 96h per chunk on moroz-b. Wall time ~12-15 hours. ~2.3% of chunks died from drain-node race (handled silently via `errorStrategy='ignore'`, listed in `6_ai-failed_chunks.tsv`).

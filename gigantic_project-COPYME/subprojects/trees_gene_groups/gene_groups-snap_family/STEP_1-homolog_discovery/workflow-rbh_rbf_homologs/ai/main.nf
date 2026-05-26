@@ -94,7 +94,10 @@ def extract_rgs_species( rgs_file_path ) {
         if ( line.startsWith( '>' ) ) {
             def header = line.substring( 1 ).trim()
             def parts = header.split( '-' )
-            if ( parts.size() >= 5 && parts[0].startsWith( 'rgs_' ) ) {
+            // Accepts both 4-field uniprot-sourced (workflow-hgnc_user_list) and
+            // 5+-field hgnc/ncbi-sourced (workflow-hgnc_database) RGS headers.
+            // Species short name lives at parts[1] in either format.
+            if ( parts.size() >= 4 && parts[0].startsWith( 'rgs_' ) ) {
                 def species_short_name = parts[1]
                 if ( species_short_name && Character.isLetter( species_short_name.charAt( 0 ) ) ) {
                     species_set.add( species_short_name )
@@ -309,55 +312,19 @@ process extract_blast_gene_sequences {
 // Scripts: 005 (generate commands) + execute generated script
 // ============================================================================
 
-process blast_rgs_versus_rgs_genomes {
-    tag "${gene_family}"
-    label 'blast'
-
-    publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
-
-    input:
-        tuple val(gene_family), path(rgs_fasta)
-
-    output:
-        tuple val(gene_family),
-              path("5-output/5_ai-list-rgs-blast-reports"),
-              emit: rgs_blast_done
-        path "5-output"
-        path "6-output"
-
-    script:
-    def species_map_path = file("${projectDir}/../${params.rgs_species_map}")
-    def species_map_arg = species_map_path.exists() ? "--rgs-species-map ${projectDir}/../${params.rgs_species_map}" : ""
-    """
-    mkdir -p 5-output 6-output
-
-    echo "Generating RGS genome BLASTP commands for ${gene_family}..."
-    python3 ${projectDir}/scripts/005_ai-python-generate_blastp_commands-rgs_genomes.py \\
-        --rgs-fasta ${rgs_fasta} \\
-        --rgs-genomes-dir ${params.rgs_genomes_dir} \\
-        ${species_map_arg} \\
-        --output-dir . \\
-        --output-script 006-blastp-rgs_genomes.sh \\
-        --evalue ${params.blast_evalue} \\
-        --threads ${params.blast_threads} \\
-        --conda-env ${params.blast_conda_env}
-
-    echo "Executing RGS genome BLASTP searches..."
-    chmod +x 006-blastp-rgs_genomes.sh
-    bash 006-blastp-rgs_genomes.sh
-
-    echo "Cataloging RGS BLAST reports..."
-    for f in 6-output/*.blastp; do
-        [ -e "\$f" ] && readlink -f "\$f"
-    done | sort > 5-output/5_ai-list-rgs-blast-reports
-
-    echo "RGS genome BLASTP complete for ${gene_family}"
-    """
-}
-
 // ============================================================================
 // PROCESS 6: Prepare Reciprocal BLAST
-// Scripts: 007 (list files), 008 (map RGS), 009 (modified genomes) + combine + makeblastdb
+// Scripts: 007 (list model FASTAs), 008 (map RGS via gene-symbol/NCBI accession),
+//          009 (modified genomes) + combine + makeblastdb
+//
+// Note (2026-05-26): the prior "PROCESS 5: BLAST RGS vs source genomes"
+// (script 005 + execution + 5-output/6-output dirs) was removed as dead
+// code. It existed to feed Improvement 2 (BLAST fallback with strict
+// thresholds) in script 008, which was also removed because Improvement 0
+// (gene-symbol search) + Improvement 1 (NCBI accession match) cover every
+// RGS produced by either gene_groups_hgnc STEP_0 workflow. The N-output
+// numbering deliberately skips 5- and 6- to preserve script-number
+// continuity with the rest of the pipeline.
 // ============================================================================
 
 process prepare_reciprocal_blast {
@@ -367,7 +334,7 @@ process prepare_reciprocal_blast {
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
-        tuple val(gene_family), path(rgs_fasta), path(rgs_blast_report_list)
+        tuple val(gene_family), path(rgs_fasta)
         val rbh_species_list
 
     output:
@@ -385,18 +352,15 @@ process prepare_reciprocal_blast {
     """
     mkdir -p 7-output 8-output 9-output 10-output
 
-    echo "=== Step 007: List RGS BLAST files and model organism FASTAs ==="
+    echo "=== Step 007: List model organism FASTAs (per-species proteomes) ==="
     python3 ${projectDir}/scripts/007_ai-python-list_rgs_blast_files.py \\
         --output-dir . \\
         --blast-databases-dir ${params.blast_databases_dir} \\
         --rbh-species "${rbh_species}" \\
-        --input-blast-report-list ${rgs_blast_report_list} \\
-        --output-blast-reports 7-output/7_ai-list-rgs-blast-reports.txt \\
         --output-model-fastas 7-output/7_ai-list-model-organism-fastas.txt
 
-    echo "=== Step 008: Map RGS sequences to reference genome identifiers ==="
+    echo "=== Step 008: Map RGS sequences to reference genome identifiers (strict, BLAST-free) ==="
     python3 ${projectDir}/scripts/008_ai-python-map_rgs_to_reference_genomes.py \\
-        --blast-reports-list 7-output/7_ai-list-rgs-blast-reports.txt \\
         --model-fastas-list 7-output/7_ai-list-model-organism-fastas.txt \\
         --rgs-fasta ${rgs_fasta} \\
         --output-mapping 8-output/8_ai-map-rgs-to-genome-identifiers.txt \\
@@ -757,18 +721,12 @@ workflow {
     // ---- Process 4: Extract blast gene sequences ----
     extract_blast_gene_sequences( blast_rgs_versus_project_database.out.blast_done )
 
-    // ---- Process 5: BLAST RGS vs RGS source genomes (runs in parallel with 3-4) ----
-    def rgs_for_genome_blast = validate_rgs.out.validated_rgs
-    blast_rgs_versus_rgs_genomes( rgs_for_genome_blast )
-
     // ---- Process 6: Prepare reciprocal BLAST ----
+    // (Note: prior Process 5 — BLAST RGS vs RGS source genomes — removed as
+    // dead code along with the BLAST fallback in script 008.)
     def prep_input = extract_blast_gene_sequences.out.bgs_done
         .map { gene_family, rgs_fasta, bgs_fullseqs, bgs_hitregions ->
             [ gene_family, rgs_fasta ]
-        }
-        .join( blast_rgs_versus_rgs_genomes.out.rgs_blast_done )
-        .map { gene_family, rgs_fasta, rgs_blast_list ->
-            [ gene_family, rgs_fasta, rgs_blast_list ]
         }
 
     def rbh_species_channel = Channel.of( rbh_species )

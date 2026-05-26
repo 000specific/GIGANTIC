@@ -91,3 +91,16 @@ Edit `workflow-COPYME-build_annotation_database/START_HERE-user_config.yaml`:
 
 Edit `workflow-COPYME-build_annotation_database/ai/nextflow.config`:
 - `proteomes_dir`: Path to proteome FASTA directory (relative to workflow directory). Set to empty string to skip unannotated protein identification.
+
+## Upstream-Tool-BLOCK Data Completeness
+
+This BLOCK consumes per-species TSV outputs from sibling tool BLOCKs (interproscan, deeploc, signalp, metapredict, tmbed). Those tool BLOCKs may use the failure-isolation pattern (`errorStrategy='ignore'` + `detect_failed_chunks`) to survive the HiPerGator post-upgrade drain-node race — meaning a small fraction of chunks per species may have been silently dropped at the tool-BLOCK level.
+
+**Before running this BLOCK, check that upstream tool BLOCKs have no significant gaps:**
+
+```bash
+# Example for interproscan; the failed_chunks manifest lives in 6-output
+wc -l ../BLOCK_interproscan/workflow-RUN_N-run_interproscan/OUTPUT_pipeline/6-output/6_ai-failed_chunks.tsv
+```
+
+If there are non-trivial gaps (more than a handful), drive a follow-up tool-BLOCK run from the failed_chunks manifest before integrating, so per-species coverage is complete. See [`../AI_GUIDE-annotations_hmms.md`](../AI_GUIDE-annotations_hmms.md) ("HiPerGator Drain-Node Race") for the pattern, and [`../BLOCK_interproscan/`](../BLOCK_interproscan/) for the reference implementation.
