@@ -33,10 +33,8 @@ Edit `START_HERE-user_config.yaml` if needed:
 
 ```yaml
 inputs:
-  # Species selection manifest from STEP_2 (via subproject output_to_input/)
-  species_manifest: "../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv"
-
   # Cleaned proteomes from STEP_2 (via subproject output_to_input/)
+  # STEP_3 builds a BLAST DB for every .aa file in this directory; no filtering.
   proteomes_dir: "../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned"
 
 blast:
@@ -47,13 +45,13 @@ blast:
   parallel_jobs: 4
 ```
 
-Default paths work if STEP_2 has been run and its `RUN-workflow.sh` created the `output_to_input/` symlinks.
+Default paths work if STEP_2 has been run and its `RUN-workflow.sh` created the `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` symlink.
 
 ### 3. Ensure prerequisites are met
 
-- STEP_2 must be complete (proteomes cleaned and symlinked to `output_to_input/`)
-- Species selection manifest must have `Include=YES` for species to include
+- STEP_2 must be complete (proteomes cleaned and published to `output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`)
 - `aiG-genomesDB` conda environment must be available (or BLAST+, NextFlow, Python3 in PATH)
+- **No species selection happens here** — STEP_3 builds BLAST DBs for every proteome from STEP_2. Filtering happens in STEP_4.
 
 ### 4. Run the workflow
 
@@ -74,14 +72,18 @@ See verification commands below.
 
 ---
 
-## Script Pipeline
+## Script Pipeline (2 scripts)
 
 | Order | Script | Purpose | Input | Output |
-|-------|--------|---------|-------|--------|
-| 1 | `001_ai-python-filter_species_manifest.py` | Filter species to Include=YES only | Species selection manifest from STEP_2 | `1-output/1_ai-filtered_species_manifest.tsv` |
-| 2 | `002_ai-python-build_per_genome_blastdbs.py` | Build per-genome BLAST protein databases | Filtered manifest + cleaned proteomes | `2-output/gigantic-T1-blastp/` (per-genome BLAST databases) |
+|---|---|---|---|---|
+| 1 | `001_ai-python-build_per_genome_blastdbs.py` | Build per-genome BLAST protein databases for every .aa proteome from STEP_2 (no filtering) | `proteomes_dir` (`output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`) | `1-output/gigantic-T1-blastp/` (per-genome BLAST databases) + `1-output/1_ai-makeblastdb_commands.sh` |
+| 2 | `002_ai-python-write_run_log.py` | Write per-run audit log | n/a | `ai/logs/run_*.log` |
 
-**Pipeline flow**: Script 001 filters the manifest to Include=YES species only --> Script 002 reads the filtered manifest and builds one BLAST database per species.
+**Pipeline flow**: Script 001 reads every `.aa` in the cleaned-proteomes
+directory and builds one BLAST database per species; script 002 writes
+an audit log. There is no separate "filter species manifest" step — earlier
+docs claimed one, but STEP_3 does not filter. Species selection is the
+user's call in STEP_4.
 
 ---
 
@@ -89,27 +91,17 @@ See verification commands below.
 
 After the workflow completes, verify outputs:
 
-### Check filtered species
-
-```bash
-# How many species were included?
-tail -n +2 OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv | wc -l
-
-# View the filtered manifest
-head OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv
-```
-
 ### Check BLAST databases
 
 ```bash
-# Count BLAST database sets (each species has multiple files)
-ls OUTPUT_pipeline/2-output/gigantic-T1-blastp/*.aa | wc -l
+# Count BLAST database sets (each species has multiple files alongside the .aa)
+ls OUTPUT_pipeline/1-output/gigantic-T1-blastp/*.aa | wc -l
 
-# Verify BLAST database files exist for a species
-ls OUTPUT_pipeline/2-output/gigantic-T1-blastp/ | head -20
+# Verify BLAST database files exist
+ls OUTPUT_pipeline/1-output/gigantic-T1-blastp/ | head -20
 
 # View makeblastdb commands log
-cat OUTPUT_pipeline/2-output/2_ai-makeblastdb_commands.sh
+cat OUTPUT_pipeline/1-output/1_ai-makeblastdb_commands.sh
 ```
 
 ### Check output_to_input (for downstream subprojects)
@@ -125,11 +117,11 @@ readlink ../../output_to_input/STEP_3-databases/gigantic-T1-blastp
 ### Check logs
 
 ```bash
-# Filter manifest log
-cat OUTPUT_pipeline/1-output/1_ai-log-filter_species_manifest.log
-
 # Build BLAST databases log
-cat OUTPUT_pipeline/2-output/2_ai-log-build_per_genome_blastdbs.log
+cat OUTPUT_pipeline/1-output/1_ai-log-build_per_genome_blastdbs.log
+
+# Per-run audit log (script 002)
+ls -ltr ai/logs/ | tail -3
 ```
 
 ---
@@ -137,12 +129,10 @@ cat OUTPUT_pipeline/2-output/2_ai-log-build_per_genome_blastdbs.log
 ## Common Errors
 
 | Error | Cause | Solution |
-|-------|-------|----------|
-| "Species selection manifest not found" | STEP_2 not run or symlinks missing | Run STEP_2 first; verify `../../output_to_input/STEP_2-standardize_and_evaluate/species_selection_manifest.tsv` exists |
-| "Proteomes directory not found" | STEP_2 symlinks missing | Verify `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` exists |
-| "No species have Include=YES" | Manifest not edited or all species excluded | Edit `species_selection_manifest.tsv` and set `Include=YES` for species to include |
+|---|---|---|
+| "Proteomes directory not found" | STEP_2 outputs not published | Run STEP_2 first; verify `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` exists |
+| "Empty proteomes directory" | STEP_2 ran but produced no cleaned proteomes | Check STEP_2 logs; re-run STEP_2 if needed |
 | "makeblastdb not found" | BLAST+ not installed or not in PATH | Activate conda environment: `module load conda && conda activate aiG-genomesDB` |
-| "Proteome file not found: ..." | Species in manifest but proteome missing | Check STEP_2 output; ensure proteome exists for this species |
 | Pipeline cached stale results | Old `work/` directory from previous run | Remove NextFlow cache: `rm -rf work .nextflow .nextflow.log*` and re-run |
 
 ---

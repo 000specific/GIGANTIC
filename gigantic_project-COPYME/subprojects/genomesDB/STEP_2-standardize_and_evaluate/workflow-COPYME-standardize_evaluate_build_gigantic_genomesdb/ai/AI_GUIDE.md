@@ -33,16 +33,23 @@ This workflow applies GIGANTIC phyloname conventions to data from STEP_1 and cal
 
 ---
 
-## Workflow Scripts
+## Workflow Scripts (7)
 
 | Script | Purpose | Required Inputs |
-|--------|---------|-----------------|
+|---|---|---|
 | 001 | Standardize proteome filenames and FASTA headers | Phylonames mapping, T1 proteomes from STEP_1 |
 | 002 | Clean proteome invalid residues ('.' to 'X') | Standardized proteomes from script 001 |
 | 003 | Create phyloname symlinks for genomes/annotations | Phylonames mapping, genomes, genome annotations from STEP_1 |
 | 004 | Calculate genome assembly statistics (gfastats) | Phyloname-named genomes from script 003 |
-| 005 | Run BUSCO proteome evaluation | Cleaned proteomes from script 002, lineage assignments |
-| 006 | Summarize quality and generate species manifest | All quality data from scripts 001-005 |
+| 005 | Run BUSCO proteome evaluation (skipped if `busco.enabled: false` in YAML) | Cleaned proteomes from script 002, lineage assignments |
+| 006 | Comprehensive quality summary (BUSCO + gfastats + proteome counts merged) | Outputs from 001, 004, 005 |
+| 007 | Per-run audit log | n/a |
+
+**Note**: Earlier docs claimed script 006 also generated a
+"species selection manifest" — it does not. STEP_2 produces only the
+comprehensive quality summary. Species selection is the user's call in
+STEP_4 (`INPUT_user/selected_species.txt`). STEP_3 builds BLAST DBs
+for every species; filtering happens only in STEP_4.
 
 ---
 
@@ -94,16 +101,21 @@ This workflow does NOT require direct user inputs in `INPUT_user/`. All inputs c
 ## Outputs
 
 | Location | Contents |
-|----------|----------|
+|---|---|
 | `OUTPUT_pipeline/1-output/gigantic_proteomes/` | Phyloname-standardized proteome files |
 | `OUTPUT_pipeline/1-output/1_ai-standardization_manifest.tsv` | Proteome transformation log |
 | `OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned/` | Cleaned proteomes (ready for BLAST/BUSCO) |
+| `OUTPUT_pipeline/2-output/2_ai-proteome_cleaning_summary.tsv` + `2_ai-proteome_residue_corrections.tsv` | Audit of '.' → 'X' substitutions |
 | `OUTPUT_pipeline/3-output/gigantic_genomes/` | Phyloname symlinks to genomes |
 | `OUTPUT_pipeline/3-output/gigantic_genome_annotations/` | Phyloname symlinks to annotations |
 | `OUTPUT_pipeline/4-output/4_ai-genome_assembly_statistics.tsv` | Assembly quality metrics |
-| `OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv` | Proteome completeness scores |
-| `OUTPUT_pipeline/6-output/6_ai-quality_summary.tsv` | Combined quality metrics |
-| `OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv` | Species selection for STEP_3/STEP_4 |
+| `OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv` (+ `5-output/busco_results/`) | Proteome completeness scores; skip-stub if `busco.enabled: false` |
+| `OUTPUT_pipeline/6-output/6_ai-comprehensive_quality_summary.tsv` | Comprehensive quality summary (BUSCO + gfastats merged) |
+| `ai/logs/run_*.log` | Per-run audit log from script 007 |
+
+**Removed**: no `6_ai-species_selection_manifest.tsv` — earlier docs
+claimed STEP_2 generated one; it doesn't. Species selection happens in
+STEP_4 via `INPUT_user/selected_species.txt`.
 
 ---
 
@@ -154,7 +166,8 @@ output_to_input/STEP_1-sources/
 phylonames/output_to_input/maps/
 └── {project_name}_map*.tsv  ──► Scripts 001, 003 (need phylonames)
 
-All quality data ──► Script 006 ──► 6-output/quality_summary + species_manifest
+All quality data ──► Script 006 ──► 6-output/6_ai-comprehensive_quality_summary.tsv
+Script 007 ──► ai/logs/run_*.log (per-run audit)
 ```
 
 ---
@@ -162,5 +175,5 @@ All quality data ──► Script 006 ──► 6-output/quality_summary + speci
 ## Passing Data to STEP_3 and STEP_4
 
 After this workflow completes:
-- **STEP_3** will use cleaned proteomes from `OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned/` for building BLAST databases
-- **STEP_4** will use the species selection manifest from `OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv` and cleaned proteomes
+- **STEP_3** uses cleaned proteomes from `OUTPUT_pipeline/2-output/gigantic_proteomes_cleaned/` (published into `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/`) to build BLAST databases for **all** species — no filtering.
+- **STEP_4** reads the user's species selection from its own `INPUT_user/selected_species.txt` (defaults to all species if absent), validates against STEP_2 + STEP_3 outputs, and copies only the selected species into the final `speciesN_*` directories. The quality summary at `6_ai-comprehensive_quality_summary.tsv` is what the user reviews to decide which species to drop — but it is NOT a manifest STEP_4 reads programmatically.

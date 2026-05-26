@@ -62,15 +62,21 @@ Ingest user-provided genome, proteome, and annotation files into GIGANTIC for do
    - **Local**: `bash RUN-workflow.sh`
    - **SLURM**: Edit account/qos in `RUN-workflow.sh` (unified driver; §29), then `bash RUN-workflow.sh` (with `execution_mode: "slurm"` in the YAML config; §29)
 
-## What This Workflow Does (3 Steps)
+## What This Workflow Does (4 scripts)
 
-| Step | Script | Output | Description |
-|------|--------|--------|-------------|
-| 1 | `001_ai-python-validate_source_manifest.py` | `OUTPUT_pipeline/1-output/` | Validate manifest and check all files exist |
-| 2 | `002_ai-python-ingest_source_data.py` | `OUTPUT_pipeline/2-output/` | Hard copy all data into GIGANTIC structure |
-| 3 | `003_ai-bash-create_output_symlinks.sh` | `OUTPUT_pipeline/3-output/` | Create symlinks in `output_to_input/` for STEP_2 |
+Three sit inside NextFlow (`ai/main.nf`), one (003) is invoked by
+`RUN-workflow.sh` after the NextFlow pipeline succeeds.
 
-**Architecture**: 3 scripts = 3 output directories. Each step produces visible, traceable output.
+| Script | Where called | Output | Description |
+|---|---|---|---|
+| 001 | `ai/main.nf` | `OUTPUT_pipeline/1-output/` | Validate manifest and check all files exist |
+| 002 | `ai/main.nf` | `OUTPUT_pipeline/2-output/` | Hard-copy all data into GIGANTIC structure |
+| 004 | `ai/main.nf` | `ai/logs/` | Write timestamped per-run log |
+| 003 | `RUN-workflow.sh` (post-pipeline, bash) | `OUTPUT_pipeline/3-output/` + symlinks under `../../output_to_input/STEP_1-sources/` | Create symlinks for STEP_2 to consume |
+
+**Why 003 lives in `RUN-workflow.sh`**: it crosses workflow boundaries
+(writes into the subproject-level `output_to_input/`). Keeping it
+outside NextFlow avoids managing paths outside the NextFlow work tree.
 
 ## Output Structure
 

@@ -77,14 +77,15 @@ See verification commands below.
 
 ---
 
-## Script Pipeline
+## Script Pipeline (3 scripts)
 
 | Order | Script | Purpose | Input | Output |
-|-------|--------|---------|-------|--------|
-| 1 | `001_ai-python-validate_species_selection.py` | Validates species exist in STEP_2 and STEP_3 | Config paths + optional species list | `1-output/1_ai-validated_species_list.txt`, `1-output/1_ai-species_count.txt` |
-| 2 | `002_ai-python-copy_selected_files.py` | Copies proteomes and BLAST DBs for selected species | Validated species list + STEP_2/STEP_3 paths | `2-output/speciesN_gigantic_T1_proteomes/`, `2-output/speciesN_gigantic_T1_blastp/` |
+|---|---|---|---|---|
+| 1 | `001_ai-python-validate_species_selection.py` | Validates species exist in STEP_2 and STEP_3 | Config paths + optional `INPUT_user/selected_species.txt` | `1-output/1_ai-validated_species_list.txt`, `1-output/1_ai-species_count.txt`, `1-output/1_ai-species_with_genome_annotations.txt` |
+| 2 | `002_ai-python-copy_selected_files.py` | Copies proteomes, BLAST DBs, and genome annotations for selected species | Validated species list + STEP_2/STEP_3 paths | `2-output/speciesN_gigantic_T1_proteomes/`, `2-output/speciesN_gigantic_T1_blastp/`, `2-output/speciesN_gigantic_genome_annotations/`, `2-output/2_ai-copy_manifest.tsv` |
+| 3 | `003_ai-python-write_run_log.py` | Per-run audit log | n/a | `ai/logs/run_*.log` |
 
-**Pipeline flow**: Script 001 produces the validated species list and count --> Script 002 reads those to copy the correct files.
+**Pipeline flow**: Script 001 produces the validated species list, count, and annotations-availability list → Script 002 reads those + STEP_2/STEP_3 paths to copy the correct files into `speciesN_*` directories → Script 003 writes the audit log.
 
 ---
 

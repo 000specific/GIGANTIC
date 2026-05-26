@@ -74,7 +74,7 @@ patterns.
 |---|---|---|
 | STEP_2 complete | Provides cleaned, standardized proteomes | `ls ../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` should be non-empty |
 | STEP_3 complete | Provides BLAST databases | `ls ../../output_to_input/STEP_3-databases/gigantic-T1-blastp/` should be non-empty |
-| User evaluation | User decides which species to keep (or accepts the default of all) | User reviews STEP_2 quality metrics (`6_ai-quality_summary.tsv`); optionally edits `INPUT_user/selected_species.txt` |
+| User evaluation | User decides which species to keep (or accepts the default of all) | User reviews STEP_2 quality metrics (`6_ai-comprehensive_quality_summary.tsv`); optionally edits `INPUT_user/selected_species.txt` |
 
 ---
 
@@ -98,11 +98,12 @@ STEP_3 (BLAST databases)   ──┘                                   ├──
 |------|---------|-------------|
 | `workflow-*/START_HERE-user_config.yaml` | Paths to STEP_2 and STEP_3 outputs | **YES** (required) |
 | `workflow-*/INPUT_user/selected_species.txt` | Species selection list | **YES** (optional - defaults to all) |
-| `workflow-*/RUN-workflow.sh` | Local execution script | No |
-| `workflow-*/ai/scripts/001_ai-python-validate_species_selection.py` | Validates species selection | No (AI-generated) |
-| `workflow-*/ai/scripts/002_ai-python-copy_selected_files.py` | Copies selected files | No (AI-generated) |
-| `output_to_input/` | Final species set for downstream | No (auto-populated) |
-| `RUN-update_upload_to_server.sh` | Manage upload_to_server/ symlinks | No |
+| `workflow-*/RUN-workflow.sh` | Local execution script (unified driver §29) | No |
+| `workflow-*/ai/scripts/001_ai-python-validate_species_selection.py` | Validates species selection against STEP_2 + STEP_3 | No (AI-generated) |
+| `workflow-*/ai/scripts/002_ai-python-copy_selected_files.py` | Copies selected proteomes + BLAST DBs + annotations | No (AI-generated) |
+| `workflow-*/ai/scripts/003_ai-python-write_run_log.py` | Per-run audit log | No (AI-generated) |
+| `output_to_input/STEP_4-create_final_species_set/` | Final species set for downstream subprojects | No (auto-populated) |
+| `../RUN-update_upload_to_server.sh` (subproject-level) | Manage upload_to_server/ symlinks | No |
 
 ---
 
@@ -183,7 +184,10 @@ STEP_4-create_final_species_set/
         ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
+        ├── conda_environment.yml          # env: aiG-genomesDB (shared across all 4 STEPs)
+        ├── logs/                          # Per-run audit logs from script 003
         └── scripts/
             ├── 001_ai-python-validate_species_selection.py
-            └── 002_ai-python-copy_selected_files.py
+            ├── 002_ai-python-copy_selected_files.py
+            └── 003_ai-python-write_run_log.py
 ```

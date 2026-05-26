@@ -78,14 +78,27 @@ Runs BUSCO (Benchmarking Universal Single-Copy Orthologs) to assess proteome com
 - **Input**: Cleaned proteomes from script 002 + BUSCO lineage assignments
 - **Output**: `OUTPUT_pipeline/5-output/5_ai-busco_summary.tsv`
 
-### 6. Quality Summary and Species Manifest
+### 6. Quality Summary
 
-**Script**: `006_ai-python-summarize_quality_and_generate_species_manifest.py`
+**Script**: `006_ai-python-summarize_quality.py`
 
-Combines all quality metrics into summary tables:
-- Generates species selection manifest for STEP_3/STEP_4
-- **Input**: All quality data from scripts 001-005
-- **Output**: `OUTPUT_pipeline/6-output/6_ai-quality_summary.tsv`, `OUTPUT_pipeline/6-output/6_ai-species_selection_manifest.tsv`
+Combines all quality metrics (BUSCO + gfastats + proteome counts) into
+a single comprehensive quality summary table.
+
+- **Input**: Assembly stats (script 004) + BUSCO summary (script 005) + standardization manifest (script 001)
+- **Output**: `OUTPUT_pipeline/6-output/6_ai-comprehensive_quality_summary.tsv`
+
+**Note**: STEP_2 does NOT produce a "species selection manifest".
+Species selection happens in STEP_4 (user-driven via
+`INPUT_user/selected_species.txt`). STEP_3 builds BLAST DBs for every
+proteome from STEP_2 — filtering happens only in STEP_4.
+
+### 7. Per-Run Audit Log
+
+**Script**: `007_ai-python-write_run_log.py`
+
+Writes a timestamped log to `ai/logs/` documenting the run (project
+name, status, etc.) for reproducibility.
 
 ---
 
@@ -111,16 +124,17 @@ Also requires:
 All outputs in `workflow-*/OUTPUT_pipeline/`:
 
 | Output | Script | Location |
-|--------|--------|----------|
+|---|---|---|
 | Standardized proteomes | 001 | `1-output/gigantic_proteomes/` |
 | Standardization manifest | 001 | `1-output/1_ai-standardization_manifest.tsv` |
 | Cleaned proteomes | 002 | `2-output/gigantic_proteomes_cleaned/` |
+| Cleaning summary + residue corrections | 002 | `2-output/2_ai-proteome_cleaning_summary.tsv`, `2-output/2_ai-proteome_residue_corrections.tsv` |
 | Genome symlinks | 003 | `3-output/gigantic_genomes/` |
 | Annotation symlinks | 003 | `3-output/gigantic_genome_annotations/` |
 | Assembly statistics | 004 | `4-output/4_ai-genome_assembly_statistics.tsv` |
-| BUSCO summary | 005 | `5-output/5_ai-busco_summary.tsv` |
-| Quality summary | 006 | `6-output/6_ai-quality_summary.tsv` |
-| Species manifest | 006 | `6-output/6_ai-species_selection_manifest.tsv` |
+| BUSCO summary (or skip-stub if `busco.enabled: false`) | 005 | `5-output/5_ai-busco_summary.tsv` + `5-output/busco_results/` |
+| Comprehensive quality summary | 006 | `6-output/6_ai-comprehensive_quality_summary.tsv` |
+| Per-run audit log | 007 | `ai/logs/run_*.log` |
 
 **Passed to STEP_3 via**: `output_to_input/`
 

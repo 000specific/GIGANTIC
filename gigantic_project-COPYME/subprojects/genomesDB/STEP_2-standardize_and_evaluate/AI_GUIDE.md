@@ -32,16 +32,24 @@
 
 **Purpose**: Standardize data formats, apply phylonames, and evaluate genome/proteome quality through six analysis areas.
 
-**Six Analysis Areas**:
+**Seven scripts** (six analysis steps + audit log):
 
-| # | Analysis | Input | Script | Status |
-|---|----------|-------|--------|--------|
-| 1 | Proteome phyloname standardization | T1 proteomes + phylonames mapping | `001_ai-python-standardize_proteome_phylonames.py` | Complete |
-| 2 | Proteome cleaning (invalid residues) | Standardized proteomes | `002_ai-python-clean_proteome_invalid_residues.py` | Complete |
-| 3 | Genome/annotation phyloname standardization | Genomes + genome annotations + phylonames | `003_ai-python-standardize_genome_and_annotation_phylonames.py` | Complete |
-| 4 | Assembly quality statistics (gfastats) | Phyloname-named genomes | `004_ai-python-calculate_genome_assembly_statistics.py` | Complete |
-| 5 | BUSCO proteome evaluation | Cleaned proteomes + lineage assignments | `005_ai-python-run_busco_proteome_evaluation.py` | Complete |
-| 6 | Quality summary and species manifest | All quality data | `006_ai-python-summarize_quality_and_generate_species_manifest.py` | Complete |
+| # | Analysis | Input | Script |
+|---|---|---|---|
+| 1 | Proteome phyloname standardization | T1 proteomes + phylonames mapping | `001_ai-python-standardize_proteome_phylonames.py` |
+| 2 | Proteome cleaning (invalid residues) | Standardized proteomes | `002_ai-python-clean_proteome_invalid_residues.py` |
+| 3 | Genome/annotation phyloname standardization | Genomes + genome annotations + phylonames | `003_ai-python-standardize_genome_and_annotation_phylonames.py` |
+| 4 | Assembly quality statistics (gfastats) | Phyloname-named genomes | `004_ai-python-calculate_genome_assembly_statistics.py` |
+| 5 | BUSCO proteome evaluation (conditional on `busco.enabled` in YAML) | Cleaned proteomes + lineage assignments | `005_ai-python-run_busco_proteome_evaluation.py` |
+| 6 | Quality summary (BUSCO + gfastats merged) | All quality data | `006_ai-python-summarize_quality.py` |
+| 7 | Per-run audit log | n/a | `007_ai-python-write_run_log.py` |
+
+**Note on species selection**: STEP_2 produces a comprehensive quality
+summary but does **NOT** produce a species selection manifest. The user
+reviews the quality summary, decides which species to keep, and then
+writes the selection in STEP_4's `INPUT_user/selected_species.txt`.
+STEP_3 builds BLAST databases for **all** species from STEP_2 — STEP_4
+is where filtering happens.
 
 ---
 
@@ -122,9 +130,20 @@ Each script:
 
 **Requires**: `aiG-genomesDB` conda environment with `busco` installed. BUSCO lineage assignments in `INPUT_user/busco_lineages.txt`.
 
-### 6. Quality Summary and Species Manifest
+### 6. Quality Summary
 
-**What it does**: Combines all quality metrics into summary tables and generates a species selection manifest for STEP_3/STEP_4.
+**What it does**: Combines all quality metrics (BUSCO + gfastats + per-proteome counts) into a single comprehensive quality summary table.
+
+**Important**: STEP_2 does NOT produce a "species selection manifest".
+Species selection is the user's call after reviewing the quality
+summary, and it's recorded in STEP_4's
+`INPUT_user/selected_species.txt`. STEP_3 builds BLAST DBs for every
+proteome from STEP_2; filtering happens only in STEP_4.
+
+### 7. Per-Run Audit Log
+
+**What it does**: Writes a timestamped log to `ai/logs/` documenting
+the run (project name, status, etc.) for reproducibility.
 
 ---
 
@@ -146,28 +165,43 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 ├── OUTPUT_pipeline/
 │   ├── 1-output/                          # Proteome standardization
 │   │   ├── gigantic_proteomes/            # Standardized .aa files
-│   │   └── 1_ai-standardization_manifest.tsv
+│   │   ├── 1_ai-standardization_manifest.tsv
+│   │   └── 1_ai-log-standardize_proteome_phylonames.log
 │   ├── 2-output/                          # Cleaned proteomes
-│   │   └── gigantic_proteomes_cleaned/
+│   │   ├── gigantic_proteomes_cleaned/
+│   │   ├── 2_ai-proteome_cleaning_summary.tsv
+│   │   ├── 2_ai-proteome_residue_corrections.tsv
+│   │   └── 2_ai-log-clean_proteome_invalid_residues.log
 │   ├── 3-output/                          # Genome/annotation symlinks
 │   │   ├── gigantic_genomes/
-│   │   └── gigantic_genome_annotations/
+│   │   ├── gigantic_genome_annotations/
+│   │   ├── 3_ai-standardization_manifest.tsv
+│   │   └── 3_ai-log-standardize_genome_and_annotation_phylonames.log
 │   ├── 4-output/                          # Assembly statistics
-│   │   └── 4_ai-genome_assembly_statistics.tsv
-│   ├── 5-output/                          # BUSCO reports
-│   │   └── 5_ai-busco_summary.tsv
-│   └── 6-output/                          # Quality summary and species manifest
-│       ├── 6_ai-quality_summary.tsv
-│       └── 6_ai-species_selection_manifest.tsv
+│   │   ├── 4_ai-genome_assembly_statistics.tsv
+│   │   └── 4_ai-log-calculate_genome_assembly_statistics.log
+│   ├── 5-output/                          # BUSCO reports (or skip-stub if busco.enabled=false)
+│   │   ├── 5_ai-busco_summary.tsv
+│   │   ├── busco_results/
+│   │   └── 5_ai-log-run_busco_proteome_evaluation.log
+│   └── 6-output/                          # Comprehensive quality summary (BUSCO + gfastats merged)
+│       ├── 6_ai-comprehensive_quality_summary.tsv
+│       └── 6_ai-log-summarize_quality.log
 └── ai/
+    ├── logs/                              # Per-run audit logs from script 007
     └── scripts/
         ├── 001_ai-python-standardize_proteome_phylonames.py
         ├── 002_ai-python-clean_proteome_invalid_residues.py
         ├── 003_ai-python-standardize_genome_and_annotation_phylonames.py
         ├── 004_ai-python-calculate_genome_assembly_statistics.py
         ├── 005_ai-python-run_busco_proteome_evaluation.py
-        └── 006_ai-python-summarize_quality_and_generate_species_manifest.py
+        ├── 006_ai-python-summarize_quality.py
+        └── 007_ai-python-write_run_log.py
 ```
+
+**Note**: there is no `6_ai-species_selection_manifest.tsv` — earlier
+docs claimed STEP_2 generated one, but it does not. Species selection
+is the user's call in STEP_4 (`INPUT_user/selected_species.txt`).
 
 ---
 

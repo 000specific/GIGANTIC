@@ -62,25 +62,10 @@ ingestion:
   # Overwrite existing files if they already exist (default: false)
   overwrite_existing: false
 
-# ============================================================================
-# SLURM SETTINGS (FOR HPC USERS)
-# ============================================================================
-
-slurm:
-  # Enable SLURM job submission
-  # Set to true if running on an HPC cluster
-  enabled: false
-
-  # SLURM account to charge
-  account: "your_account"
-
-  # SLURM Quality of Service
-  qos: "your_qos"
-
-  # Resource allocation
-  memory: "4gb"
-  time: "1:00:00"
-  cpus: 1
+# NOTE: SLURM settings live at the bottom of this file (execution_mode +
+# slurm_account + slurm_qos + cpus + memory_gb + time_hours), per the
+# §29 unified-driver convention. The previous nested `slurm:` block here
+# was stale and has been removed.
 
 # ============================================================================
 # NOTES
@@ -99,11 +84,12 @@ slurm:
 #   - Absolute: /blue/moroz/data/genomes/species.fasta
 #   - Relative: ../user_research/downloads/species.fasta
 #
-# WHAT THIS WORKFLOW DOES (3 steps, each with visible output):
+# WHAT THIS WORKFLOW DOES (4 scripts; three in NextFlow main.nf, one in RUN-workflow.sh):
 #
-#   Step 1 -> OUTPUT_pipeline/1-output/   Validate manifest (check all files exist)
-#   Step 2 -> OUTPUT_pipeline/2-output/   Ingest data (hard copy files into organized dirs)
-#   Step 3 -> OUTPUT_pipeline/3-output/   Create symlinks (for STEP_2 to consume)
+#   Script 001 -> OUTPUT_pipeline/1-output/   Validate manifest (check all files exist)        [main.nf]
+#   Script 002 -> OUTPUT_pipeline/2-output/   Ingest data (hard copy files into organized dirs) [main.nf]
+#   Script 004 -> ai/logs/                    Write timestamped per-run log                     [main.nf]
+#   Script 003 -> OUTPUT_pipeline/3-output/   Create symlinks for STEP_2 to consume             [RUN-workflow.sh post-pipeline]
 #
 # WHY HARD COPY + SYMLINK?
 #

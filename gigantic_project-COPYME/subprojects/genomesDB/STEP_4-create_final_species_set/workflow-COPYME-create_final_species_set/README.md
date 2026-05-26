@@ -28,18 +28,23 @@ STEP_4 workflow for creating the final species set for downstream subprojects.
 
 ---
 
-## What This Workflow Does
+## What This Workflow Does (3 scripts)
 
 STEP_4 is a **COPY/FILTER** step, not a processing step:
 
 1. **Validates Species Selection** (Script 001)
    - Checks that all selected species exist in STEP_2 and STEP_3 outputs
    - Defaults to all species if no selection file provided
+   - Emits validated list + species count + annotations-available list
 
 2. **Copies Selected Files** (Script 002)
    - Copies proteomes from STEP_2 for selected species
    - Copies BLAST databases from STEP_3 for selected species
-   - Creates directories with `speciesN_` naming convention
+   - Copies genome annotations from STEP_2 (subset — only species with GFFs)
+   - Creates directories with `speciesN_` naming convention; writes copy manifest
+
+3. **Per-Run Audit Log** (Script 003)
+   - Writes a timestamped log to `ai/logs/` documenting the run
 
 ---
 
@@ -95,9 +100,12 @@ workflow-COPYME-create_final_species_set/
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
+    ├── conda_environment.yml              # env: aiG-genomesDB (shared across all 4 STEPs)
+    ├── logs/                              # Per-run audit logs from script 003
     └── scripts/
         ├── 001_ai-python-validate_species_selection.py
-        └── 002_ai-python-copy_selected_files.py
+        ├── 002_ai-python-copy_selected_files.py
+        └── 003_ai-python-write_run_log.py
 ```
 
 ---

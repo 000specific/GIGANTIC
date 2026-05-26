@@ -25,7 +25,7 @@ STEP_2 workflow template for standardizing genomic data with GIGANTIC phylonames
 
 ---
 
-## What This Workflow Does
+## What This Workflow Does (7 scripts)
 
 1. **Proteome Standardization** (Script 001)
    - Renames proteome files: `Genus_species-genome_*.aa` → `phyloname-proteome.aa`
@@ -43,14 +43,21 @@ STEP_2 workflow template for standardizing genomic data with GIGANTIC phylonames
    - Uses `gfastats` to calculate N50, scaffold counts, etc.
    - Outputs summary table for all genomes
 
-5. **BUSCO Proteome Evaluation** (Script 005)
+5. **BUSCO Proteome Evaluation** (Script 005, conditional on `busco.enabled: true` in YAML)
    - Runs BUSCO to assess proteome completeness
    - Uses lineage-specific databases from INPUT_user/busco_lineages.txt
-   - Runs as a separate SLURM sub-job for parallelization
+   - If `busco.enabled: false`, a skip-stub writes an explanatory placeholder
+     so STEP_2 still completes
 
-6. **Quality Summary and Species Manifest** (Script 006)
-   - Combines all quality metrics into summary tables
-   - Generates species selection manifest for STEP_3
+6. **Quality Summary** (Script 006)
+   - Combines all quality metrics into a single comprehensive quality summary table
+   - Output: `6-output/6_ai-comprehensive_quality_summary.tsv`
+   - Does NOT produce a "species selection manifest" — species selection
+     is the user's call in STEP_4 (`INPUT_user/selected_species.txt`).
+     STEP_3 builds BLAST DBs for every species; filtering only in STEP_4.
+
+7. **Per-Run Audit Log** (Script 007)
+   - Writes a timestamped log to `ai/logs/` documenting the run
 
 ---
 
@@ -109,14 +116,17 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
+    ├── conda_environment.yml              # env: aiG-genomesDB (shared across all 4 STEPs)
     ├── AI_GUIDE.md
+    ├── logs/                              # Per-run audit logs from script 007
     └── scripts/
         ├── 001_ai-python-standardize_proteome_phylonames.py
         ├── 002_ai-python-clean_proteome_invalid_residues.py
         ├── 003_ai-python-standardize_genome_and_annotation_phylonames.py
         ├── 004_ai-python-calculate_genome_assembly_statistics.py
         ├── 005_ai-python-run_busco_proteome_evaluation.py
-        └── 006_ai-python-summarize_quality_and_generate_species_manifest.py
+        ├── 006_ai-python-summarize_quality.py
+        └── 007_ai-python-write_run_log.py
 ```
 
 ---
@@ -124,16 +134,21 @@ workflow-COPYME-standardize_evaluate_build_gigantic_genomesdb/
 ## Outputs
 
 | Output | Location | Description |
-|--------|----------|-------------|
+|---|---|---|
 | Standardized proteomes | `1-output/gigantic_proteomes/` | Phyloname-formatted proteomes |
 | Standardization manifest | `1-output/1_ai-standardization_manifest.tsv` | Maps original to standardized names |
 | Cleaned proteomes | `2-output/gigantic_proteomes_cleaned/` | Ready for BLAST/BUSCO |
+| Cleaning summary + residue corrections | `2-output/2_ai-proteome_cleaning_summary.tsv`, `2-output/2_ai-proteome_residue_corrections.tsv` | Audit of '.' → 'X' substitutions |
 | Genome symlinks | `3-output/gigantic_genomes/` | Phyloname-named links |
 | Annotation symlinks | `3-output/gigantic_genome_annotations/` | Phyloname-named links |
 | Assembly statistics | `4-output/4_ai-genome_assembly_statistics.tsv` | N50, scaffold counts, etc. |
-| BUSCO summary | `5-output/5_ai-busco_summary.tsv` | Proteome completeness scores |
-| Quality summary | `6-output/6_ai-quality_summary.tsv` | Combined quality metrics |
-| Species manifest | `6-output/6_ai-species_selection_manifest.tsv` | For STEP_3 filtering |
+| BUSCO summary | `5-output/5_ai-busco_summary.tsv` (+ `5-output/busco_results/`) | Proteome completeness scores; skip-stub if `busco.enabled: false` |
+| Comprehensive quality summary | `6-output/6_ai-comprehensive_quality_summary.tsv` | BUSCO + gfastats + proteome counts merged |
+| Per-run audit log | `ai/logs/run_*.log` | Per-run reproducibility log |
+
+**Removed**: There is no `6_ai-species_selection_manifest.tsv` —
+earlier docs claimed STEP_2 generated one; it doesn't. Species
+selection happens in STEP_4 via `INPUT_user/selected_species.txt`.
 
 ---
 

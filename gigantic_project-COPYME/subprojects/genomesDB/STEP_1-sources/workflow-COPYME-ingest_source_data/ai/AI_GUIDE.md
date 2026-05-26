@@ -101,16 +101,27 @@ workflow-COPYME-ingest_source_data/
     └── scripts/
         ├── 001_ai-python-validate_source_manifest.py
         ├── 002_ai-python-ingest_source_data.py
-        └── 003_ai-bash-create_output_symlinks.sh
+        ├── 003_ai-bash-create_output_symlinks.sh
+        └── 004_ai-python-write_run_log.py
 ```
 
 ### Script Pipeline
 
-| Script | Does | Creates |
-|--------|------|---------|
-| 001 | Reads manifest, validates all file paths exist, writes report | `1-output/1_ai-source_validation_report.tsv`, `1_ai-validation_summary.txt` |
-| 002 | Hard-copies all source data into organized subdirectories | `2-output/T1_proteomes/`, `genomes/`, `genome_annotations/`, `2_ai-ingestion_log.tsv` |
-| 003 | Creates symlinks in `output_to_input/` pointing to `2-output/` copies | `3-output/3_ai-symlink_manifest.tsv` + actual symlinks |
+The workflow runs 4 scripts; three sit inside NextFlow (`ai/main.nf`)
+and one (003, the symlink creator) is invoked by `RUN-workflow.sh`
+**after** the NextFlow pipeline succeeds.
+
+| Script | Where called | Does | Creates |
+|---|---|---|---|
+| 001 | `ai/main.nf` process `validate_source_manifest` | Reads manifest, validates all file paths exist, writes report | `1-output/1_ai-source_validation_report.tsv`, `1-output/1_ai-validation_summary.txt` |
+| 002 | `ai/main.nf` process `ingest_source_data` | Hard-copies all source data into organized subdirectories | `2-output/T1_proteomes/`, `2-output/genomes/`, `2-output/genome_annotations/`, `2-output/2_ai-ingestion_log.tsv` |
+| 004 | `ai/main.nf` process `write_run_log` | Writes timestamped per-run log to `ai/logs/` | `ai/logs/run_*.log` |
+| 003 | `RUN-workflow.sh` (post-pipeline, bash) | Creates symlinks in `../../output_to_input/STEP_1-sources/` pointing to the `2-output/` hard copies; writes a symlink manifest | `3-output/3_ai-symlink_manifest.tsv` + symlinks under `../../output_to_input/STEP_1-sources/{T1_proteomes,genomes,genome_annotations}/` |
+
+**Why script 003 is outside main.nf**: The symlink layer crosses
+workflow boundaries (writes into the subproject-level
+`output_to_input/`). Keeping it in `RUN-workflow.sh` avoids NextFlow
+having to manage paths outside its work tree.
 
 **Why this matters**: No invisible work. Every step produces visible output. A human can trace exactly what happened at each stage.
 

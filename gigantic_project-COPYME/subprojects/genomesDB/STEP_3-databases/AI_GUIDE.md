@@ -39,15 +39,18 @@
 | Source | What | Where |
 |---|---|---|
 | STEP_2 standardized + cleaned proteomes | `phyloname-proteome.aa` FASTA files | `../../output_to_input/STEP_2-standardize_and_evaluate/gigantic_proteomes_cleaned/` |
-| STEP_2 species selection manifest (optional) | Per-species `Include=YES/NO` flag from quality summary | `../../output_to_input/STEP_2-standardize_and_evaluate/6_ai-species_selection_manifest.tsv` |
+
+**No species selection happens here.** STEP_3 builds a BLAST database
+for every `.aa` proteome in the cleaned-proteomes directory. Filtering
+is the user's call in STEP_4 (`INPUT_user/selected_species.txt`).
 
 ## Outputs (what STEP_3 produces)
 
 | Output | Location | Consumed by |
 |---|---|---|
-| Per-species BLAST databases (`.phr`, `.pin`, `.psq` etc., plus the `.aa` next to them) | `workflow-*/OUTPUT_pipeline/2-output/gigantic-T1-blastp/` | Published to `../../output_to_input/STEP_3-databases/gigantic-T1-blastp/` for STEP_4 to subset and copy |
-| Filtered species manifest | `workflow-*/OUTPUT_pipeline/1-output/1_ai-filtered_species_manifest.tsv` | STEP_3 internal (script 002); audit trail |
-| `makeblastdb` commands log | `workflow-*/OUTPUT_pipeline/2-output/2_ai-makeblastdb_commands.sh` | Reproducibility audit |
+| Per-species BLAST databases (`.phr`, `.pin`, `.psq` etc., plus the `.aa` next to them) | `workflow-*/OUTPUT_pipeline/1-output/gigantic-T1-blastp/` | Published to `../../output_to_input/STEP_3-databases/gigantic-T1-blastp/` for STEP_4 to subset and copy |
+| `makeblastdb` commands log | `workflow-*/OUTPUT_pipeline/1-output/1_ai-makeblastdb_commands.sh` | Reproducibility audit |
+| Per-run audit log | `workflow-*/ai/logs/run_*.log` | Per-run reproducibility log (script 002) |
 
 ## Downstream consumers (per §40)
 
