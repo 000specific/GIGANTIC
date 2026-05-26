@@ -1,13 +1,28 @@
-# AI_GUIDE-comparison.md (Level 2: Tool Project Guide)
+# AI_GUIDE — BLOCK_comparison (orthogroups)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and standardized output format. This guide covers the cross-method comparison project.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 28 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and standardized output format. This guide covers the cross-method comparison project.
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — orthogroups overview + tool comparison
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Prerequisite BLOCKs: at least 2 of `BLOCK_orthofinder` / `BLOCK_orthofinder_array` / `BLOCK_orthohmm` / `BLOCK_orthohmm_GIGANTIC` / `BLOCK_broccoli` must have run first
+- Workflow to run: [`workflow-COPYME-compare_methods/README.md`](workflow-COPYME-compare_methods/README.md)
+- Reads from: `../output_to_input/BLOCK_*/` (standardized orthogroup tables from any tool BLOCK)
+- Outputs to: `../output_to_input/BLOCK_comparison/` (cross-method comparison tables + visualizations)
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE.md` |
 | Comparison concepts | This file |
-| Running the workflow | `workflow-COPYME-compare_methods/ai/AI_GUIDE-comparison_workflow.md` |
+| Running the workflow | `workflow-COPYME-compare_methods/ai/AI_GUIDE.md` |
 
 ## Comparison Overview
 

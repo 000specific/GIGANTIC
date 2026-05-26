@@ -1,14 +1,29 @@
-# AI_GUIDE-orthohmm.md (Level 2: Tool Project Guide)
+# AI_GUIDE — BLOCK_orthohmm (orthogroups)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and tool comparison. This guide covers OrthoHMM-specific concepts.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 28 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers OrthoHMM-specific concepts.
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — orthogroups overview + tool comparison
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCK (parallel variant): [`../BLOCK_orthohmm_GIGANTIC/`](../BLOCK_orthohmm_GIGANTIC/) — prefer for ≥30 species
+- Workflow to run: [`workflow-COPYME-run_orthohmm/README.md`](workflow-COPYME-run_orthohmm/README.md)
+- Reads from: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../output_to_input/BLOCK_orthohmm/` (standardized orthogroups table per §38, §2)
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE.md` |
 | OrthoHMM concepts (this BLOCK = standard, single-process) | This file |
-| Running the standard workflow | `workflow-COPYME-run_orthohmm/ai/AI_GUIDE-orthohmm_workflow.md` |
-| **Parallel-phmmer variant for ≥30 species** | `../BLOCK_orthohmm_GIGANTIC/AI_GUIDE-orthohmm_GIGANTIC.md` |
+| Running the standard workflow | `workflow-COPYME-run_orthohmm/ai/AI_GUIDE.md` |
+| **Parallel-phmmer variant for ≥30 species** | `../BLOCK_orthohmm_GIGANTIC/AI_GUIDE.md` |
 
 > **For ≥30 species**, prefer `BLOCK_orthohmm_GIGANTIC` — it parallelizes
 > the slow phmmer all-vs-all step across SLURM burst-mode job arrays.

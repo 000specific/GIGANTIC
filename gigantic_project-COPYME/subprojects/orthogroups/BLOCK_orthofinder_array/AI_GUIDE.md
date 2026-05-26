@@ -1,14 +1,29 @@
-# AI_GUIDE-orthofinder_array.md (Level 2: Tool Project Guide — parallel variant)
+# AI_GUIDE — BLOCK_orthofinder_array (orthogroups; parallel-DIAMOND variant)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and tool comparison. This guide covers OrthoFinder-array-specific concepts (parallel-DIAMOND SLURM array fan-out).
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers OrthoFinder-array-specific concepts (parallel-DIAMOND SLURM array fan-out).
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — orthogroups overview + tool comparison
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCK (standard variant): [`../BLOCK_orthofinder/`](../BLOCK_orthofinder/) — simpler, fine for < 20 species
+- Workflow to run: [`workflow-COPYME-run_orthofinder_array/README.md`](workflow-COPYME-run_orthofinder_array/README.md)
+- Reads from: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../output_to_input/BLOCK_orthofinder_array/` (standardized orthogroups table per §38, §2; bit-identical to BLOCK_orthofinder)
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
-| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
-| Standard (non-arrayed) OrthoFinder | `../BLOCK_orthofinder/AI_GUIDE-orthofinder.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE.md` |
+| Standard (non-arrayed) OrthoFinder | `../BLOCK_orthofinder/AI_GUIDE.md` |
 | **Parallel-DIAMOND (this BLOCK) concepts** | This file |
-| Running the parallel workflow | `workflow-COPYME-run_orthofinder_array/ai/AI_GUIDE-orthofinder_array_workflow.md` |
+| Running the parallel workflow | `workflow-COPYME-run_orthofinder_array/ai/AI_GUIDE.md` |
 
 ## Why This BLOCK Exists
 
@@ -84,13 +99,13 @@ Same as `BLOCK_orthohmm_GIGANTIC`:
 
 ```
 BLOCK_orthofinder_array/
-├── AI_GUIDE-orthofinder_array.md            # THIS FILE
+├── AI_GUIDE.md            # THIS FILE
 └── workflow-COPYME-run_orthofinder_array/
     ├── README.md                            # User-facing how-to
     ├── START_HERE-user_config.yaml          # User config
     ├── RUN-workflow.sh                      # Single entry point (self-submits to SLURM)
     └── ai/
-        ├── AI_GUIDE-orthofinder_array_workflow.md   # Level 3 workflow guide
+        ├── AI_GUIDE.md   # Level 3 workflow guide
         ├── main.nf                          # NextFlow pipeline (10 processes)
         ├── nextflow.config                  # yaml-driven, SLURM executor for fan-out
         └── scripts/
@@ -136,7 +151,7 @@ Edit `START_HERE-user_config.yaml`:
 | Error | Cause | Solution |
 |---|---|---|
 | "input file name collision -- multiple input files for: null" | Manifest TSV header uses GIGANTIC self-documenting style; NextFlow's splitCsv returns null keys | Already fixed in script 003 (simple bare headers). See feedback memory. |
-| OrthoFinder `-op` fails | Tool not in conda env or args wrong | Check conda env `ai_gigantic_orthogroups` is activated; check 3_ai-orthofinder_op_stdout.txt |
+| OrthoFinder `-op` fails | Tool not in conda env or args wrong | Check conda env `aiG-orthogroups-orthofinder` is activated; check 3_ai-orthofinder_op_stdout.txt |
 | Empty pair outputs flagged | Some species pairs have no detectable similarity | Biologically valid for distant pairs; review 5_ai-pool_verification_report.tsv |
 | Missing pair outputs | Burst tasks failed transiently | `process.array` retries (`maxRetries = 2`) handle most; if persistent, see slurm_logs |
 | Tree inference slow | Many orthogroups | Increase `resources.orthofinder_finalize.cpus` (helps `-t` parallelization in finalize) |

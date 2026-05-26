@@ -1,5 +1,22 @@
 # BLOCK_orthofinder_array — Parallel-DIAMOND OrthoFinder Workflow
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — BLOCK_orthofinder_array concepts (fan-out architecture)
+- Parent subproject: [`../../README.md`](../../README.md) — orthogroups overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../output_to_input/BLOCK_orthofinder_array/` (bit-identical to BLOCK_orthofinder output)
+- Standard variant (< 20 species, simpler): `../../BLOCK_orthofinder/workflow-COPYME-run_orthofinder/`
+
+---
+
 This workflow runs OrthoFinder orthogroup detection with the slow DIAMOND
 all-vs-all step parallelized across SLURM burst-mode job arrays. Same
 biological output as standard OrthoFinder, dramatically faster wall time.
@@ -72,7 +89,7 @@ slurm_account / slurm_qos        # driver job
 slurm_burst_account / slurm_burst_qos     # fan-out tasks (burst)
 slurm_mail_user                  # leave "" to disable email
 conda:
-  environment: "ai_gigantic_orthogroups"
+  environment: "aiG-orthogroups-orthofinder"
 resume: false
 ```
 
@@ -110,10 +127,10 @@ downstream subprojects (e.g., `BLOCK_comparison`) can consume from any.
 | Tree inference slow | Increase `resources.orthofinder_finalize.cpus` |
 | Need to start fresh | `rm -rf work .nextflow .nextflow.log* OUTPUT_pipeline` then re-run |
 
-For deeper debugging see `ai/AI_GUIDE-orthofinder_array_workflow.md`.
+For deeper debugging see `ai/AI_GUIDE.md`.
 
 ## See Also
 
-- BLOCK-level guide: `../AI_GUIDE-orthofinder_array.md`
-- Workflow execution guide (AI-oriented): `ai/AI_GUIDE-orthofinder_array_workflow.md`
+- BLOCK-level guide: `../AI_GUIDE.md`
+- Workflow execution guide (AI-oriented): `ai/AI_GUIDE.md`
 - Standard (non-arrayed) variant: `../../BLOCK_orthofinder/workflow-COPYME-run_orthofinder/README.md`

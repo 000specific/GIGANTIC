@@ -1,5 +1,22 @@
 # BLOCK_orthohmm_GIGANTIC — Parallel-Phmmer OrthoHMM Workflow
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — BLOCK_orthohmm_GIGANTIC concepts (fan-out architecture)
+- Parent subproject: [`../../README.md`](../../README.md) — orthogroups overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../output_to_input/BLOCK_orthohmm_GIGANTIC/` (bit-identical to BLOCK_orthohmm output)
+- Standard variant (< 20 species, simpler): `../../BLOCK_orthohmm/workflow-COPYME-run_orthohmm/`
+
+---
+
 This workflow runs OrthoHMM orthogroup detection with the slow phmmer
 all-vs-all step parallelized across SLURM burst-mode job arrays. Same
 biological output as standard OrthoHMM, dramatically faster wall time.
@@ -74,7 +91,7 @@ slurm_account / slurm_qos        # driver job (long-running)
 slurm_burst_account / slurm_burst_qos     # fan-out tasks (burst)
 slurm_mail_user                  # leave "" to disable email
 conda:
-  environment: "ai_gigantic_orthogroups_orthohmm"
+  environment: "aiG-orthogroups-orthohmm"
 resume: false                    # NextFlow -resume cache reuse
 ```
 
@@ -109,10 +126,10 @@ Filenames match `BLOCK_orthohmm` so downstream subprojects can consume from eith
 | Pool verification report shows MISSING/MALFORMED | `OUTPUT_pipeline/4-output/4_ai-pool_verification_report.tsv` |
 | Need to start fresh | `rm -rf work .nextflow .nextflow.log* OUTPUT_pipeline` then re-run |
 
-For deeper debugging guidance see `ai/AI_GUIDE-orthohmm_GIGANTIC_workflow.md`.
+For deeper debugging guidance see `ai/AI_GUIDE.md`.
 
 ## See Also
 
-- BLOCK-level guide: `../AI_GUIDE-orthohmm_GIGANTIC.md`
-- Workflow execution guide (AI-oriented): `ai/AI_GUIDE-orthohmm_GIGANTIC_workflow.md`
+- BLOCK-level guide: `../AI_GUIDE.md`
+- Workflow execution guide (AI-oriented): `ai/AI_GUIDE.md`
 - Standard (non-arrayed) variant: `../../BLOCK_orthohmm/workflow-COPYME-run_orthohmm/README.md`

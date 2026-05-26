@@ -1,14 +1,29 @@
-# AI_GUIDE-orthohmm_GIGANTIC.md (Level 2: Tool Project Guide — parallel variant)
+# AI_GUIDE — BLOCK_orthohmm_GIGANTIC (orthogroups; parallel-phmmer variant)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and tool comparison. This guide covers OrthoHMM-GIGANTIC-specific concepts (parallel-phmmer SLURM array fan-out).
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers OrthoHMM-GIGANTIC-specific concepts (parallel-phmmer SLURM array fan-out).
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — orthogroups overview + tool comparison
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCK (standard variant): [`../BLOCK_orthohmm/`](../BLOCK_orthohmm/) — simpler, fine for < 20 species
+- Workflow to run: [`workflow-COPYME-run_orthohmm_GIGANTIC/README.md`](workflow-COPYME-run_orthohmm_GIGANTIC/README.md)
+- Reads from: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../output_to_input/BLOCK_orthohmm_GIGANTIC/` (standardized orthogroups table per §38, §2; bit-identical to BLOCK_orthohmm)
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
-| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
-| Standard (non-arrayed) OrthoHMM | `../BLOCK_orthohmm/AI_GUIDE-orthohmm.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE.md` |
+| Standard (non-arrayed) OrthoHMM | `../BLOCK_orthohmm/AI_GUIDE.md` |
 | **Parallel-phmmer (this BLOCK) concepts** | This file |
-| Running the parallel workflow | `workflow-COPYME-run_orthohmm_GIGANTIC/ai/AI_GUIDE-orthohmm_GIGANTIC_workflow.md` |
+| Running the parallel workflow | `workflow-COPYME-run_orthohmm_GIGANTIC/ai/AI_GUIDE.md` |
 
 ## Why This BLOCK Exists
 
@@ -67,13 +82,13 @@ Two new OrthoHMM flags make this clean:
 
 ```
 BLOCK_orthohmm_GIGANTIC/
-├── AI_GUIDE-orthohmm_GIGANTIC.md            # THIS FILE
+├── AI_GUIDE.md            # THIS FILE
 └── workflow-COPYME-run_orthohmm_GIGANTIC/
     ├── README.md                            # User-facing how-to
     ├── START_HERE-user_config.yaml          # User config (resources, paths, mail)
     ├── RUN-workflow.sh                      # Single entry point (self-submits to SLURM)
     └── ai/
-        ├── AI_GUIDE-orthohmm_GIGANTIC_workflow.md   # Level 3 workflow guide
+        ├── AI_GUIDE.md   # Level 3 workflow guide
         ├── main.nf                          # NextFlow pipeline (10 processes)
         ├── nextflow.config                  # yaml-driven, SLURM executor for fan-out
         └── scripts/

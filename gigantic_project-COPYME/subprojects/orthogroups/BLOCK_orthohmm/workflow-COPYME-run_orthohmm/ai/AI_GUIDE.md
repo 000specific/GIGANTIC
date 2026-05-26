@@ -1,12 +1,28 @@
-# AI_GUIDE-orthohmm_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE — orthogroups workflow runbook (BLOCK_orthohmm)
 
-**For AI Assistants**: Read `../../AI_GUIDE-orthohmm.md` first for OrthoHMM concepts. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 to 4.7 | 2026 Feb-May (multiple passes)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent subproject AI guide: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- User-facing workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../../output_to_input/BLOCK_orthohmm/`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for OrthoHMM concepts. This guide focuses on running the workflow.
 
 ## Quick Start
 
 ```bash
 module load conda
-conda activate ai_gigantic_orthogroups
+conda activate aiG-orthogroups-orthohmm
 module load nextflow
 
 vi ../START_HERE-user_config.yaml
@@ -36,7 +52,7 @@ ls ../../output_to_input/BLOCK_orthohmm/
 
 | Error | Solution |
 |-------|----------|
-| orthohmm not found | `conda activate ai_gigantic_orthogroups` |
+| orthohmm not found | `conda activate aiG-orthogroups-orthohmm` |
 | Header mapping empty | Rerun script 002 |
 | orthohmm_orthogroups.txt missing | Check 3-output log for OrthoHMM errors |
 | Stale cache | `rm -rf work .nextflow .nextflow.log*` |

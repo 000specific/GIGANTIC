@@ -1,6 +1,22 @@
-# AI_GUIDE-comparison_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE — orthogroups workflow runbook (BLOCK_comparison)
 
-**For AI Assistants**: Read `../../AI_GUIDE-comparison.md` first for comparison concepts. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 to 4.7 | 2026 Feb-May (multiple passes)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent subproject AI guide: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- User-facing workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../output_to_input/BLOCK_*/` (any tool BLOCK that's run)
+- Outputs to: `../../../output_to_input/BLOCK_comparison/`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for comparison concepts. This guide focuses on running the workflow.
 
 ## Quick Start
 

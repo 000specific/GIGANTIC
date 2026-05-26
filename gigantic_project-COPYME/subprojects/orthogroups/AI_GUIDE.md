@@ -1,18 +1,35 @@
-# AI_GUIDE-orthogroups.md (Level 2: Subproject Guide)
+# AI_GUIDE — orthogroups Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers orthogroups-specific concepts and structure.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 28 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers orthogroups-specific concepts and structure.
+
+## Where this fits
+
+- Parent project: [`../../AI_GUIDE.md`](../../AI_GUIDE.md), [`../../README.md`](../../README.md)
+- This subproject: [`README.md`](README.md), this file
+- Prerequisite: [`../genomesDB/STEP_4-create_final_species_set/`](../genomesDB/STEP_4-create_final_species_set/) — provides standardized proteomes
+- Prerequisite (naming): [`../phylonames/`](../phylonames/) — clade naming conventions
+- Downstream consumers: `orthogroups_X_ocl`, plus orthogroup-aware analyses (`gene_sizes`, `dark_proteomes`, `hotspots`, `secretome`, `one_direction_homologs`)
+
+## Quick Reference
 
 | User needs... | Go to... |
-|---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| Orthogroups subproject concepts | This file |
-| OrthoFinder details (standard) | `BLOCK_orthofinder/AI_GUIDE-orthofinder.md` |
-| **OrthoFinder details (parallel-DIAMOND fan-out, ≥30 species)** | `BLOCK_orthofinder_array/AI_GUIDE-orthofinder_array.md` |
-| OrthoHMM details (standard) | `BLOCK_orthohmm/AI_GUIDE-orthohmm.md` |
-| **OrthoHMM details (parallel-phmmer fan-out, ≥30 species)** | `BLOCK_orthohmm_GIGANTIC/AI_GUIDE-orthohmm_GIGANTIC.md` |
-| Broccoli details | `BLOCK_broccoli/AI_GUIDE-broccoli.md` |
-| Comparison details | `BLOCK_comparison/AI_GUIDE-comparison.md` |
-| Running a specific workflow | `BLOCK_{tool}/workflow-COPYME-run_{tool}/ai/AI_GUIDE-{tool}_workflow.md` |
+|---|---|
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
+| Conventions (§1–§48) | `../../ai/ai_FYIs/gigantic_conventions.md` |
+| Orthogroups subproject concepts (this file) | This file |
+| OrthoFinder details (standard) | `BLOCK_orthofinder/AI_GUIDE.md` |
+| OrthoFinder details (DIAMOND fan-out, ≥30 species) | `BLOCK_orthofinder_array/AI_GUIDE.md` |
+| OrthoHMM details (standard) | `BLOCK_orthohmm/AI_GUIDE.md` |
+| OrthoHMM details (phmmer fan-out, ≥30 species) | `BLOCK_orthohmm_GIGANTIC/AI_GUIDE.md` |
+| Broccoli details | `BLOCK_broccoli/AI_GUIDE.md` |
+| Cross-method comparison details | `BLOCK_comparison/AI_GUIDE.md` |
+| Running a specific BLOCK's workflow | `BLOCK_<tool>/workflow-COPYME-run_<tool>/ai/AI_GUIDE.md` |
 
 ---
 
@@ -78,55 +95,10 @@ to what the standard tools would have run.
 
 ## Directory Structure
 
-```
-orthogroups/
-├── AI_GUIDE-orthogroups.md              # THIS FILE (Level 2)
-├── README.md
-├── TODO.md
-├── output_to_input/                     # Single canonical location for downstream outputs
-│   ├── BLOCK_orthofinder/               # OrthoFinder standardized outputs
-│   ├── BLOCK_orthohmm/                  # OrthoHMM standardized outputs
-│   ├── BLOCK_broccoli/                  # Broccoli standardized outputs
-│   └── BLOCK_comparison/               # Comparison standardized outputs
-├── upload_to_server/
-├── RUN-update_upload_to_server.sh
-│
-├── BLOCK_orthofinder/                         # OrthoFinder tool project (6 scripts)
-│   ├── AI_GUIDE-orthofinder.md          # Level 2 per-project guide
-│   └── workflow-COPYME-run_orthofinder/
-│       ├── ai/                          # Pipeline (main.nf, scripts/)
-│       ├── INPUT_user/
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
-│
-├── BLOCK_orthohmm/                            # OrthoHMM tool project (6 scripts)
-│   ├── AI_GUIDE-orthohmm.md
-│   └── workflow-COPYME-run_orthohmm/
-│       ├── ai/
-│       ├── INPUT_user/
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
-│
-├── BLOCK_broccoli/                            # Broccoli tool project (6 scripts)
-│   ├── AI_GUIDE-broccoli.md
-│   └── workflow-COPYME-run_broccoli/
-│       ├── ai/
-│       ├── INPUT_user/
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
-│
-└── BLOCK_comparison/                          # Cross-method comparison project (2 scripts)
-    ├── AI_GUIDE-comparison.md
-    └── workflow-COPYME-compare_methods/
-        ├── ai/
-        ├── INPUT_user/
-        ├── RUN-workflow.sh
-        ├── RUN-workflow.sbatch
-        └── START_HERE-user_config.yaml
-```
+See the [README.md](README.md) "Directory Structure" section for the
+canonical tree (six BLOCKs: orthofinder + orthofinder_array +
+orthohmm + orthohmm_GIGANTIC + broccoli + comparison). Don't duplicate
+the tree here — keep it in one place to avoid drift.
 
 ---
 
@@ -179,7 +151,7 @@ All outputs are consolidated under a single `orthogroups/output_to_input/` direc
 ## Prerequisites
 
 1. **genomesDB STEP_4 complete**: `genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` populated
-2. **Conda environment**: `ai_gigantic_orthogroups` (with OrthoFinder, OrthoHMM, Broccoli, Diamond)
+2. **Conda environment**: `aiG-orthogroups-<tool>` (specific name: `aiG-orthogroups-orthofinder` / `aiG-orthogroups-orthohmm` / `aiG-orthogroups-broccoli` / `aiG-orthogroups-comparison` — see each BLOCK) (with OrthoFinder, OrthoHMM, Broccoli, Diamond)
 3. **Nextflow**: `module load nextflow`
 
 ---
@@ -190,7 +162,7 @@ All outputs are consolidated under a single `orthogroups/output_to_input/` direc
 |-------|-------|----------|
 | No proteome files found | Proteomes directory empty or wrong path | Check genomesDB output_to_input is populated |
 | Header mapping mismatch | Short IDs don't match header mapping file | Rerun script 002 |
-| Tool not found | Conda environment not activated | `conda activate ai_gigantic_orthogroups` |
+| Tool not found | Conda environment not activated | `conda activate aiG-orthogroups-<tool>` |
 | No orthogroups produced | Tool failed silently | Check script 003 log for tool-specific errors |
 | Comparison needs 2+ tools | Only one tool completed | Run at least 2 tool pipelines first |
 | Nextflow cache stale | Updated scripts not taking effect | Delete `work/` and `.nextflow*`, rerun without `-resume` |
@@ -203,7 +175,7 @@ All outputs are consolidated under a single `orthogroups/output_to_input/` direc
 |------|---------|-------------|
 | `START_HERE-user_config.yaml` | Workflow configuration | **Yes** - edit before running |
 | `RUN-workflow.sh` | Run pipeline locally | No |
-| `RUN-workflow.sbatch` | Submit to SLURM | **Yes** - edit account/qos |
+| `RUN-workflow.sh` | Submit to SLURM | **Yes** - edit account/qos |
 | `ai/main.nf` | Nextflow pipeline | No |
 | `ai/nextflow.config` | Nextflow settings | Rarely - resource adjustments |
 | `ai/scripts/001-007*` | Pipeline scripts (001-007 for tool projects, 001-002 for comparison) | No |

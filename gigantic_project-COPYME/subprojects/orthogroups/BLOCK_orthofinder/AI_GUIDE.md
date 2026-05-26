@@ -1,14 +1,29 @@
-# AI_GUIDE-orthofinder.md (Level 2: Tool Project Guide)
+# AI_GUIDE — BLOCK_orthofinder (orthogroups)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and tool comparison. This guide covers OrthoFinder-specific concepts.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 28 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers OrthoFinder-specific concepts.
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — orthogroups overview + tool comparison
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Sibling BLOCK (parallel variant): [`../BLOCK_orthofinder_array/`](../BLOCK_orthofinder_array/) — prefer for ≥30 species
+- Workflow to run: [`workflow-COPYME-run_orthofinder/README.md`](workflow-COPYME-run_orthofinder/README.md)
+- Reads from: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../output_to_input/BLOCK_orthofinder/` (standardized orthogroups table per §38, §2)
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE.md` |
 | OrthoFinder concepts (this BLOCK = standard, single-process) | This file |
-| Running the standard workflow | `workflow-COPYME-run_orthofinder/ai/AI_GUIDE-orthofinder_workflow.md` |
-| **Parallel-DIAMOND variant for ≥30 species** | `../BLOCK_orthofinder_array/AI_GUIDE-orthofinder_array.md` |
+| Running the standard workflow | `workflow-COPYME-run_orthofinder/ai/AI_GUIDE.md` |
+| **Parallel-DIAMOND variant for ≥30 species** | `../BLOCK_orthofinder_array/AI_GUIDE.md` |
 
 > **For ≥30 species**, prefer `BLOCK_orthofinder_array` — it parallelizes
 > the slow DIAMOND all-vs-all step across SLURM burst-mode job arrays
@@ -22,7 +37,7 @@ OrthoFinder identifies orthogroups using Diamond all-vs-all sequence similarity 
 
 **Key advantage**: The `-X` flag preserves original sequence identifiers in output files, eliminating the need for header conversion and restoration. This simplifies the pipeline compared to OrthoHMM and Broccoli.
 
-## Pipeline Scripts (6 steps)
+## Pipeline Scripts (7 steps — includes write_run_log per §45)
 
 | # | Script | Purpose |
 |---|--------|---------|

@@ -1,12 +1,28 @@
-# AI_GUIDE-broccoli_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE — orthogroups workflow runbook (BLOCK_broccoli)
 
-**For AI Assistants**: Read `../../AI_GUIDE-broccoli.md` first for Broccoli concepts (4-step internal pipeline, output filenames, why no `_array` variant). This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 to 4.7 | 2026 Feb-May (multiple passes)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent subproject AI guide: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- User-facing workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../../output_to_input/BLOCK_broccoli/`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for Broccoli concepts (4-step internal pipeline, output filenames, why no `_array` variant). This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Orthogroups subproject overview | `../../../AI_GUIDE-orthogroups.md` |
-| Broccoli concepts, CLI, output formats | `../../AI_GUIDE-broccoli.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Orthogroups subproject overview | `../../../AI_GUIDE.md` |
+| Broccoli concepts, CLI, output formats | `../../AI_GUIDE.md` |
 | Running the workflow (this file) | This file |
 
 ## Quick Start
@@ -82,7 +98,7 @@ ls -l ../../output_to_input/BLOCK_broccoli/
 
 ## Resource Configuration
 
-Broccoli is **monolithic** — no SLURM array fan-out (see `../../AI_GUIDE-broccoli.md` for the architectural reasoning). The `run_broccoli` process gets one big SLURM allocation. COPYME defaults sized for species70:
+Broccoli is **monolithic** — no SLURM array fan-out (see `../../AI_GUIDE.md` for the architectural reasoning). The `run_broccoli` process gets one big SLURM allocation. COPYME defaults sized for species70:
 
 | resource | value | notes |
 |---|---|---|

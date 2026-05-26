@@ -1,12 +1,28 @@
-# AI_GUIDE-orthofinder_array_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE — orthogroups workflow runbook (BLOCK_orthofinder_array)
 
-**For AI Assistants**: Read `../../AI_GUIDE-orthofinder_array.md` first for the BLOCK-level architecture overview. This guide focuses on running, debugging, and modifying the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — parallel-DIAMOND architecture
+- Parent subproject AI guide: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- User-facing workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../../output_to_input/BLOCK_orthofinder_array/`
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for the BLOCK-level architecture overview. This guide focuses on running, debugging, and modifying the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Orthogroups subproject overview | `../../../AI_GUIDE-orthogroups.md` |
-| BLOCK_orthofinder_array architecture | `../../AI_GUIDE-orthofinder_array.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Orthogroups subproject overview | `../../../AI_GUIDE.md` |
+| BLOCK_orthofinder_array architecture | `../../AI_GUIDE.md` |
 | **Running this workflow** | This file |
 
 ## Pipeline (10 NextFlow Processes)
@@ -112,7 +128,7 @@ ls work/*/Blast*.txt 2>/dev/null | wc -l
 
 ## Honesty Principle
 
-Per `../../../../AI_GUIDE-project.md`: when something didn't work, say "I
+Per `../../../../AI_GUIDE.md`: when something didn't work, say "I
 was incorrect" or "I was wrong" — not "that was confusing." This workflow
 is the result of architectural lessons learned in `BLOCK_orthohmm_GIGANTIC`
 — the same fan-out pattern, the same NextFlow `splitCsv` trap (now

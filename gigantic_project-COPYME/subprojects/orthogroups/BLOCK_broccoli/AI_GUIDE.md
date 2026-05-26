@@ -1,13 +1,29 @@
-# AI_GUIDE-broccoli.md (Level 2: Tool Project Guide)
+# AI_GUIDE — BLOCK_broccoli (orthogroups)
 
-**For AI Assistants**: Read `../AI_GUIDE-orthogroups.md` first for subproject overview and tool comparison. This guide covers Broccoli-specific concepts and was deep-revised in Apr 2026 after a research pass on Broccoli's actual algorithm and CLI (vs. earlier placeholder scaffolding).
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 February 28 (initial)
+AI:      Claude Code | Opus 4.6 | 2026 April (Broccoli research-pass deep revision)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers Broccoli-specific concepts and was deep-revised in Apr 2026 after a research pass on Broccoli's actual algorithm and CLI (vs. earlier placeholder scaffolding).
+
+## Where this fits
+
+- Parent subproject: [`../AI_GUIDE.md`](../AI_GUIDE.md) — orthogroups overview + tool comparison
+- Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- No parallel variant — Broccoli's per-protein phylogeny step doesn't fan out the same way as DIAMOND/phmmer all-vs-all
+- Workflow to run: [`workflow-COPYME-run_broccoli/README.md`](workflow-COPYME-run_broccoli/README.md)
+- Reads from: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../output_to_input/BLOCK_broccoli/` (standardized orthogroups table per §38, §2)
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
-| Orthogroups overview, tool comparison | `../AI_GUIDE-orthogroups.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` |
+| Orthogroups overview, tool comparison | `../AI_GUIDE.md` |
 | Broccoli concepts (this file) | This file |
-| Running the workflow | `workflow-COPYME-run_broccoli/ai/AI_GUIDE-broccoli_workflow.md` |
+| Running the workflow | `workflow-COPYME-run_broccoli/ai/AI_GUIDE.md` |
 
 ## Broccoli Overview
 
@@ -96,7 +112,7 @@ We considered several approaches for an `_array` variant. Key findings from read
 
 **Per-protein FastTree fan-out: not feasible without source patches.** Broccoli's `alis_*.phy` is built in memory and deleted immediately after FastTree (step2.py line 423). Externalization would require persisting alignments and refactoring the inner loop of `process_file` into discrete passes.
 
-These notes are recorded here so a future developer doesn't re-walk the same ground. See `workflow-COPYME-run_broccoli/ai/AI_GUIDE-broccoli_workflow.md` for current execution guidance.
+These notes are recorded here so a future developer doesn't re-walk the same ground. See `workflow-COPYME-run_broccoli/ai/AI_GUIDE.md` for current execution guidance.
 
 ## Pipeline Scripts
 
