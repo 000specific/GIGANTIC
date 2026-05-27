@@ -1192,7 +1192,7 @@ AI-attribution block and the "Where this fits" block (§42), listing
 | User needs... | Go to... |
 |---|---|
 | GIGANTIC overview | `../../AI_GUIDE.md` (project root) |
-| Conventions (§1–§48) | `../../ai/ai_FYIs/gigantic_conventions.md` |
+| Conventions (§1–§57) | `../../ai/ai_FYIs/gigantic_conventions.md` |
 | <subproject> concepts | This file |
 | <BLOCK or STEP> overview | `<BLOCK_or_STEP>/AI_GUIDE.md` |
 | Running the workflow | `<...>/workflow-COPYME-*/ai/AI_GUIDE.md` |
@@ -1207,6 +1207,240 @@ appear** in every AI_GUIDE.
 Adopted from the phylonames + genomesDB + trees_species deep eval
 passes (2026-05-26). The pattern was already in some AI_GUIDEs before
 the pass but not uniformly applied.
+
+---
+
+## 49. `z_*` gitignore pattern — early-development dirs visible, contents ignored
+
+Parallels the existing `x_*` pattern but with different intent:
+
+| Prefix | Intent | Lifecycle |
+|--------|--------|-----------|
+| `x_*`  | Staged for eventual removal | Was canonical, now superseded |
+| `z_*`  | Staged as early-development, not for general use yet | Future-canonical |
+
+Both sort to the ends of alphabetical listings.
+
+By default, files and dirs prefixed with `z_` are gitignored. To make a `z_`
+**directory** visible on github (so its presence signals future framework
+direction in higher-level docs), add a `README.md` inside it — `README.md`
+is the only filename un-ignored within `z_*` dirs.
+
+Pattern in root `.gitignore` (the `**/` prefixes are necessary because `z_`
+dirs can live at any depth):
+
+```gitignore
+z_*
+!**/z_*/
+**/z_*/**
+!**/z_*/README.md
+```
+
+Without `**/`, the content-ignore rule fires only at the repo root and
+misses the actual targets (e.g.,
+`gigantic_project-COPYME/subprojects/z_foo/`).
+
+Adopted 2026-05-26 (commit `dbe8d89`) after renames of
+`ocl_perspectives → z_ocl_perspectives`,
+`ocl_using_simple_taxonomy → z_ocl_using_simple_taxonomy`,
+`parsimony_tree_structures → z_parsimony_tree_structures`,
+`synteny → z_synteny`.
+
+---
+
+## 50. Per-subproject `research_notebook/` migration procedure
+
+Per §1, per-subproject `research_notebook/` directories are forbidden;
+content belongs in the single project-root sandbox under
+`research_notebook/research_user/subproject-<name>/`. When deep-eval
+encounters a surviving per-subproject `research_notebook/`, migrate in this
+order:
+
+1. **`mkdir -p`** the destination
+   `gigantic_project-COPYME/research_notebook/research_user/subproject-<name>/`
+2. **`git rm --cached`** any tracked files in the old `research_notebook/`
+   (papers, summaries, manifests) — keeps them on disk, removes from index.
+   Tracked content there is anomalous per §25; untrack rather than carry
+   forward.
+3. **`mv`** the remaining (already-untracked) directories and files to the
+   destination via plain `mv` — gitignored at both old and new path.
+4. **`git rm`** the per-subproject `.gitkeep`.
+5. **`rmdir`** the now-empty per-subproject `research_notebook/`.
+
+Document the move in the commit message including which files were
+untracked (they remain on disk; user may later choose to re-track elsewhere
+if a paper summary is intentionally part of the scientific record).
+
+Migration order matters: `git rm --cached` must precede `mv` so the
+destination doesn't end up holding a tracked-but-would-be-ignored file (a
+confusing state).
+
+Established across phylonames + genomesDB + trees_species (commit
+`6186551`), trees_gene_families (commit `61ef05a`), annotations_hmms +
+gene_sizes (commits `f763ba0`, `ab6ad1b`).
+
+---
+
+## 51. Missing-doc-create-on-deep-eval policy
+
+When a deep-eval pass encounters a subproject, BLOCK, or workflow with no
+`README.md` and/or no `AI_GUIDE.md` at the expected level, **create** the
+missing docs from scratch — do not skip with "no docs to update."
+
+Derive content from:
+- `main.nf` top-of-file comments (design overview, process list)
+- Top-of-file comments and docstrings in `ai/scripts/*`
+- `START_HERE-user_config.yaml` (parameter shape, references)
+- Directory structure (BLOCKs, STEPs, workflow templates)
+- Sibling subprojects' docs for cross-reference targets
+
+Use the current detailed-eval date in the AI-attribution HTML block
+(per §12) so the creation pass is dated and attributable.
+
+Recent examples: dark_proteomes was created from 0 docs → 5 docs in commit
+`e128e0b`; homolog_counts gained a missing subproject README + workflow
+README in commit `4898c21`.
+
+This is the doc-side counterpart to §44 (cross-check docs against code) —
+when docs *don't exist*, the deep-eval pass owes a baseline doc set.
+
+---
+
+## 52. Sed-induced `RUN-workflow.sh` duplicate cleanup after §29 conversion
+
+After bulk `sed -i 's|RUN-workflow\.sbatch|RUN-workflow.sh|g'` (per §29
+unification), old dir trees and Key Files tables that previously listed
+both files as adjacent rows now show two identical `RUN-workflow.sh`
+lines. Detection pattern:
+
+```bash
+for f in $(find <subproject> -name '*.md' -not -path '*/x_*' -not -path '*/workflow-RUN_*'); do
+  awk 'prev~/RUN-workflow\.sh/ && $0~/RUN-workflow\.sh/ {print FILENAME ":" NR ": " $0} {prev=$0}' "$f"
+done
+```
+
+**Cleanup**: merge each duplicate pair into a **single** entry annotated
+with `(local or SLURM via execution_mode YAML per §29)`. Do not delete
+both — preserve the row so the file's existence is documented; just
+collapse the duplicate.
+
+Common dup contexts:
+- Workflow `Key Files` tables: "Local runner" + "SLURM wrapper" rows
+- Directory trees in BLOCK / subproject docs: adjacent `RUN-workflow.sh`
+  + (formerly) `RUN-workflow.sbatch` lines
+
+Established in gene_sizes (commit `ab6ad1b`).
+
+---
+
+## 53. Single-BLOCK subproject conda env naming — tolerated short form
+
+§28 mandates `aiG-<subproject>-<block_or_step>` for per-BLOCK conda envs.
+For **single-BLOCK subprojects**, the short form `aiG-<subproject>` is
+tolerated (and currently in use), e.g.:
+
+- `aiG-dark_proteomes` (one BLOCK: `BLOCK_classify_dark_proteome`)
+
+Functional impact is zero (no naming collision possible when there's only
+one BLOCK), and the short form is more legible in conda activation
+commands. Doc this deviation in the subproject's README + BLOCK AI_GUIDE
+so future readers know it's deliberate.
+
+Stricter §28 form remains preferred for **multi-BLOCK** subprojects (e.g.,
+`aiG-annotations_hmms-tmbed` — six tool BLOCKs, each with its own env).
+
+If a single-BLOCK subproject grows a second BLOCK later, the short form
+should be expanded to the strict §28 form at that time.
+
+---
+
+## 54. Bundled-payload accidental-commit followup-note protocol
+
+When two parallel sessions (e.g., one in trees_gene_groups, one in
+annotations_hmms) cause one session to inadvertently stage and commit the
+other's in-progress work, **do not rewrite history**. Add a followup
+commit:
+
+- **Title**: `note: <hash> bundled an unintended payload`
+- **Body**: explain what was bundled, confirm it's not destructive, link
+  the two payloads from the commit title so future readers can untangle
+
+Example: commit `7b05f62` (followup to `ad2c9cc`) — the STEP_2 SLURM
+JobName change inadvertently swept in 14 file renames + 1 deletion from
+the annotations_hmms in-progress session. The followup note documented
+both payloads.
+
+This avoids destructive history rewrites and produces a discoverable audit
+trail. If the bundle WAS destructive (rather than just incomplete in the
+title), the response would instead be a revert + redo — different protocol.
+
+---
+
+## 55. Untracking previously-tracked files in `research_user/`
+
+§25 mandates that `research_notebook/research_user/` ships only
+`.gitignore` (and `.gitkeep`-style markers). When deep-eval discovers
+historic tracked content there (e.g., paper summaries committed before §25
+was formalized, or migrated in from a per-subproject `research_notebook/`
+where they were tracked):
+
+- **`git rm --cached <file>`** — removes from index, keeps on disk
+- File continues to live at the new (sandbox) path, gitignored
+- Document the untracking in the commit message
+
+Rationale: the §25 separation is the load-bearing rule that lets
+`research_user/` stay completely free-form while GIGANTIC's
+reproducibility guarantees remain intact. Tracked paper summaries violate
+that separation. They can be re-tracked elsewhere later (a curated
+literature index in `paper_preparation/` for example) if the user wants
+them in the scientific record.
+
+Example: gene_sizes commit `ab6ad1b` untracked two paper summaries
+(mccoy_fire 2020, mccoy_fire 2024) from the migrated sandbox; the files
+remain on disk under `research_user/subproject-gene_sizes/ai_research/`.
+
+---
+
+## 56. Workflow-level `README.md` is mandatory at every `workflow-COPYME-*/` root
+
+Refines §35: every `workflow-COPYME-*/` directory ships BOTH:
+
+- `README.md` at the workflow root — user-facing quick start + I/O
+- `ai/AI_GUIDE.md` — AI-facing execution guide
+
+When deep-eval encounters a workflow with only `ai/AI_GUIDE.md` and no
+top-level `README.md`, create the README. Pattern: each workflow README
+contains AI-attribution block + §42 Where-this-fits + Purpose + Usage
++ Inputs + Outputs + See-Also (pointer to `ai/AI_GUIDE.md`).
+
+Example added: homolog_counts workflow README in commit `4898c21`.
+
+---
+
+## 57. Deep-eval per-subproject single-commit-per-subproject rhythm
+
+The deep-eval sweep proceeds **one subproject at a time** with **one
+commit + push per subproject** when working through multiple subprojects.
+This gives a clean per-subproject changelog where each commit's diff
+exactly covers one subproject's surface area.
+
+Format of each commit message:
+- **Title**: `<subproject>: <action> — bring to phylonames/genomesDB depth`
+- **Body** sections:
+  - Migration / structural changes (research_notebook, renames)
+  - Bulk sed details
+  - Doc enrichment (per-file changes)
+  - Out-of-scope items explicitly listed
+  - Stats line at end
+
+Established 2026-05-26 across the 8-subproject sweep (annotations_hmms
+`f763ba0` / dark_proteomes `e128e0b` / gene_sizes `ab6ad1b` /
+homolog_counts `4898c21` / …).
+
+Don't bundle multiple subprojects into one omnibus commit unless the user
+explicitly asks (the omnibus pattern was used for trees_gene_families +
+trees_gene_groups in commit `61ef05a`, but per-subproject is preferred
+when working a list).
 
 ---
 
