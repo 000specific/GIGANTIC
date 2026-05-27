@@ -1,14 +1,38 @@
 # AI_GUIDE: homolog_counts
 
-**For AI Assistants**: Read the project-level guide (`../../AI_GUIDE-project.md`) first for GIGANTIC overview, directory structure, and general patterns. This guide covers the `homolog_counts` subproject specifically.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May 22 (initial; in commit 8486969 sweep)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- BLOCK template: [`BLOCK_homolog_counts/workflow-COPYME-homolog_counts/`](BLOCK_homolog_counts/workflow-COPYME-homolog_counts/)
+- Workflow AI guide: [`BLOCK_homolog_counts/workflow-COPYME-homolog_counts/ai/AI_GUIDE.md`](BLOCK_homolog_counts/workflow-COPYME-homolog_counts/ai/AI_GUIDE.md)
+- Reads FROM:
+  - `../orthogroups/output_to_input/BLOCK_orthohmm/` — orthogroup IDs
+  - `../trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/` — gene group names
+  - `../trees_gene_families/output_to_input/` — gene family names
+  - species70 phyloname map (from genomesDB / phylonames)
+- Outputs TO: `output_to_input/BLOCK_homolog_counts/` — wide TSV per source (Feature_ID × 70 species columns)
+- Downstream consumers: GIGANTIC server (`upload_to_server/`), comparative analysis pipelines
+- `one_direction_homologs` intentionally excluded (axis mismatch — per-query NCBI top hits don't map to "homolog group × species" cleanly)
+
+---
+
+**For AI Assistants**: Read the project-level guide (`../../AI_GUIDE.md`) first for GIGANTIC overview, directory structure, and general patterns. This guide covers the `homolog_counts` subproject specifically.
 
 ## Quick Reference
 
 | User needs… | Go to… |
 |---|---|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
+| Subproject overview | `README.md` |
 | Subproject concepts, output schema | This file |
-| Running the workflow | `BLOCK_homolog_counts/workflow-RUN_1-homolog_counts/ai/AI_GUIDE-homolog_counts_workflow.md` |
+| Running the workflow | `BLOCK_homolog_counts/workflow-COPYME-homolog_counts/ai/AI_GUIDE.md` |
 
 ## Purpose
 
@@ -20,13 +44,13 @@ These tables are produced for local analysis AND for hosting on the GIGANTIC ser
 
 ```
 homolog_counts/
-├── AI_GUIDE-homolog_counts.md
+├── AI_GUIDE.md
 ├── README.md
 ├── output_to_input/                              # symlink hub for downstream subprojects
 │   └── BLOCK_homolog_counts/                     # populated by RUN-workflow.sh
 ├── upload_to_server/                             # curated counts for the GIGANTIC server
 └── BLOCK_homolog_counts/
-    └── workflow-RUN_1-homolog_counts/
+    └── workflow-COPYME-homolog_counts/
         ├── START_HERE-user_config.yaml           # USER edits this before running
         ├── RUN-workflow.sh                       # unified entrypoint: local or SLURM via execution_mode in YAML
         ├── INPUT_user/
@@ -34,13 +58,14 @@ homolog_counts/
             ├── main.nf
             ├── nextflow.config
             ├── conda_environment.yml             # auto-created on first run
-            ├── AI_GUIDE-homolog_counts_workflow.md
+            ├── AI_GUIDE.md
             └── scripts/
                 ├── 001_ai-python-validate_species70_manifest.py
                 ├── 002_ai-python-count-orthogroups_orthohmm.py
                 ├── 003_ai-python-count-trees_gene_groups.py
                 ├── 004_ai-python-count-trees_gene_families.py
-                └── 005_ai-python-write_run_log.py
+                ├── 005_ai-python-write_run_log.py    (canonical final per §45)
+                └── 006_ai-python-rewrite_species_column_headers.py    (post-pipeline header normalization)
 ```
 
 Single BLOCK because the work is independently runnable — no internal sequential phases. Each counting script is independent of the others; only script 001 (manifest validation) must run first to produce the canonical species70 column order shared across all count TSVs.
@@ -85,5 +110,5 @@ Both will be added in a follow-up round once the wide TSVs are first produced an
 
 ## Where to Look Next
 
-- `BLOCK_homolog_counts/workflow-RUN_1-homolog_counts/ai/AI_GUIDE-homolog_counts_workflow.md` — workflow execution
-- `BLOCK_homolog_counts/workflow-RUN_1-homolog_counts/START_HERE-user_config.yaml` — edit before running
+- `BLOCK_homolog_counts/workflow-COPYME-homolog_counts/ai/AI_GUIDE.md` — workflow execution
+- `BLOCK_homolog_counts/workflow-COPYME-homolog_counts/START_HERE-user_config.yaml` — edit before running

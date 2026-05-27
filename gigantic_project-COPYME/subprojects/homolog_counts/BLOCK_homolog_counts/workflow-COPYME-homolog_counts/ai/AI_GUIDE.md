@@ -1,13 +1,37 @@
 # AI_GUIDE: homolog_counts workflow
 
-**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-homolog_counts.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May 22 (initial; in commit 8486969 sweep)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../../`](../../) — BLOCK_homolog_counts (the only BLOCK)
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md) — Level 2 concepts + schema
+- Parent (subproject README): [`../../../README.md`](../../../README.md)
+- Parent (project): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from:
+  - `../../../../orthogroups/output_to_input/BLOCK_orthohmm/`
+  - `../../../../trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/`
+  - `../../../../trees_gene_families/output_to_input/`
+  - species70 phyloname map (`../INPUT_user/`)
+- Outputs to: `../../../output_to_input/BLOCK_homolog_counts/` (symlinks from `../OUTPUT_pipeline/`)
+- 6 scripts (001 validate / 002-004 count three sources / 005 `write_run_log` per §45 / 006 rewrite column headers)
+- Conda env: `aiG-homolog_counts-homolog_counts`
+
+---
+
+**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 ## Quick Reference
 
 | User needs… | Go to… |
 |---|---|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Subproject concepts, output schema, path portability | `../../../AI_GUIDE-homolog_counts.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Subproject concepts, output schema, path portability | `../../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start
