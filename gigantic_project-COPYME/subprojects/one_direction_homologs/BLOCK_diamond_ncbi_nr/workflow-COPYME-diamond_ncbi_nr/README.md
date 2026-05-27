@@ -1,7 +1,19 @@
 # workflow-COPYME-diamond_ncbi_nr
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 01
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — BLOCK_diamond_ncbi_nr concepts
+- Parent (subproject): [`../../README.md`](../../README.md)
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` + NCBI nr DIAMOND db (user-provided path)
+- Outputs to: `../../output_to_input/BLOCK_diamond_ncbi_nr/` (symlinks from `OUTPUT_pipeline/`)
+- 7 scripts; conda env `aiG-one_direction_homologs`
 
 ---
 
@@ -37,8 +49,8 @@ The proteome manifest is a workflow-specific input - create it directly in this 
 # Local machine:
 bash RUN-workflow.sh
 
-# SLURM cluster (edit account/qos in RUN-workflow.sbatch first):
-sbatch RUN-workflow.sbatch
+# SLURM cluster (edit account/qos in RUN-workflow.sh first):
+sbatch RUN-workflow.sh
 ```
 
 ---
@@ -73,7 +85,7 @@ Edit `START_HERE-user_config.yaml`:
 
 ## SLURM Settings
 
-Edit `RUN-workflow.sbatch` SBATCH directives:
+Edit `RUN-workflow.sh` SBATCH directives:
 - `--account=YOUR_ACCOUNT` - Your cluster account
 - `--qos=YOUR_QOS` - Your quality of service
 
@@ -91,4 +103,4 @@ Final summary: `OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv`
 
 ## For AI Assistants
 
-See `ai/AI_GUIDE-diamond_ncbi_nr_workflow.md` for detailed execution guidance.
+See `ai/AI_GUIDE.md` for detailed execution guidance.

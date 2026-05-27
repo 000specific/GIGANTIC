@@ -1,13 +1,33 @@
-# AI_GUIDE-diamond_ncbi_nr.md (Level 2: BLOCK Guide)
+# AI_GUIDE.md (Level 2: BLOCK Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-one_direction_homologs.md` first for subproject overview and one-directional homolog concepts. This guide covers the DIAMOND NCBI nr search workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Parent (subproject README): [`../README.md`](../README.md)
+- Workflow template: [`workflow-COPYME-diamond_ncbi_nr/`](workflow-COPYME-diamond_ncbi_nr/)
+- Workflow AI guide: [`workflow-COPYME-diamond_ncbi_nr/ai/AI_GUIDE.md`](workflow-COPYME-diamond_ncbi_nr/ai/AI_GUIDE.md)
+- Reads FROM: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` + NCBI nr DIAMOND db
+- Outputs TO: `../output_to_input/BLOCK_diamond_ncbi_nr/`
+- Downstream BLOCK: (none — single-BLOCK subproject); downstream consumers are external (dark_proteomes, server)
+- 7 scripts (validate / split / diamond / combine / top_hits / stats / `write_run_log` per §45)
+- Conda env: `aiG-one_direction_homologs` (§53 short form — single BLOCK)
+
+---
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and one-directional homolog concepts. This guide covers the DIAMOND NCBI nr search workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| One-direction homologs concepts, self-hit logic | `../AI_GUIDE-one_direction_homologs.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| One-direction homologs concepts, self-hit logic | `../AI_GUIDE.md` |
 | BLOCK overview | This file |
-| Running the workflow | `workflow-COPYME-diamond_ncbi_nr/ai/AI_GUIDE-diamond_ncbi_nr_workflow.md` |
+| Running the workflow | `workflow-COPYME-diamond_ncbi_nr/ai/AI_GUIDE.md` |
 
 ## Workflow Overview
 

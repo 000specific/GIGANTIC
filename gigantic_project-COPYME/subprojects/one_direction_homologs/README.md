@@ -1,7 +1,23 @@
 # one_direction_homologs - One-Way DIAMOND Homolog Search Against NCBI nr
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 01
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent: [`../../README.md`](../../README.md) — gigantic_project-COPYME overview
+- Subproject AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Reads from:
+-   - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+-   - User-provided NCBI nr DIAMOND database (path set in `START_HERE-user_config.yaml`)
+- Outputs to: `output_to_input/BLOCK_diamond_ncbi_nr/` — top NCBI nr hits per protein per species
+- Downstream consumers:
+-   - `dark_proteomes` (axis_a — reference BLAST hit signal)
+-   - `upload_to_server/` — curated subset
+- Single BLOCK; 7-script pipeline ending in `write_run_log` per §45
 
 ---
 
@@ -76,7 +92,7 @@ cd BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr
 bash RUN-workflow.sh
 
 # SLURM cluster (edit account/qos first):
-sbatch RUN-workflow.sbatch
+sbatch RUN-workflow.sh
 ```
 
 ---
@@ -99,7 +115,7 @@ sbatch RUN-workflow.sbatch
 ```
 one_direction_homologs/
 ├── README.md                                   # This file
-├── AI_GUIDE-one_direction_homologs.md          # AI assistant guidance
+├── AI_GUIDE.md          # AI assistant guidance
 ├── TODO.md                                     # Project tracking
 ├── user_research/                              # Personal workspace
 ├── upload_to_server/                           # Files for GIGANTIC server
@@ -110,19 +126,19 @@ one_direction_homologs/
 │       └── ncbi_nr_top_hits/                   # Per-species top hits + statistics
 │
 └── BLOCK_diamond_ncbi_nr/
-    ├── AI_GUIDE-diamond_ncbi_nr.md             # BLOCK-level AI guidance
+    ├── AI_GUIDE.md             # BLOCK-level AI guidance
     ├── RUN-update_upload_to_server.sh          # Update server sharing symlinks
     │
     └── workflow-COPYME-diamond_ncbi_nr/
         ├── README.md                           # Quick start guide
         ├── RUN-workflow.sh                     # bash RUN-workflow.sh (local)
-        ├── RUN-workflow.sbatch                 # sbatch RUN-workflow.sbatch (SLURM)
+        ├── RUN-workflow.sh                 # sbatch RUN-workflow.sh (SLURM)
         ├── START_HERE-user_config.yaml         # Edit this for your project
         ├── INPUT_user/                         # Workflow inputs
         │   └── proteome_manifest_example.tsv   # Example manifest
         ├── OUTPUT_pipeline/                    # Generated results
         └── ai/                                 # Internal (don't touch)
-            ├── AI_GUIDE-diamond_ncbi_nr_workflow.md
+            ├── AI_GUIDE.md
             ├── main.nf
             ├── nextflow.config
             └── scripts/                        # Pipeline scripts

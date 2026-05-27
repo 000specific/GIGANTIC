@@ -1,6 +1,25 @@
 # AI Guide: one_direction_homologs Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers one_direction_homologs-specific concepts and troubleshooting.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- BLOCK template: [`BLOCK_diamond_ncbi_nr/`](BLOCK_diamond_ncbi_nr/)
+- Workflow AI guide: [`BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/ai/AI_GUIDE.md`](BLOCK_diamond_ncbi_nr/workflow-COPYME-diamond_ncbi_nr/ai/AI_GUIDE.md)
+- Reads FROM: `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` + user-provided NCBI nr DIAMOND database
+- Outputs TO: `output_to_input/BLOCK_diamond_ncbi_nr/` — top NCBI nr hits per protein per species (self/non-self separated)
+- Downstream consumers: `dark_proteomes` (axis_a), `upload_to_server/`, proteome QA pipelines
+- Conda env: `aiG-one_direction_homologs` (single-BLOCK subproject; short form per §53)
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers one_direction_homologs-specific concepts and troubleshooting.
 
 **Location**: `gigantic_project-*/subprojects/one_direction_homologs/`
 
@@ -10,10 +29,10 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | one_direction_homologs concepts, troubleshooting | This file |
-| BLOCK concepts, DIAMOND search | `BLOCK_diamond_ncbi_nr/AI_GUIDE-diamond_ncbi_nr.md` |
-| Running the workflow | `BLOCK_diamond_ncbi_nr/workflow-COPYME-*/ai/AI_GUIDE-diamond_ncbi_nr_workflow.md` |
+| BLOCK concepts, DIAMOND search | `BLOCK_diamond_ncbi_nr/AI_GUIDE.md` |
+| Running the workflow | `BLOCK_diamond_ncbi_nr/workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ---
 
@@ -34,7 +53,7 @@
 ```
 one_direction_homologs/
 ├── README.md                           # Human documentation
-├── AI_GUIDE-one_direction_homologs.md  # THIS FILE
+├── AI_GUIDE.md  # THIS FILE
 ├── TODO.md                             # Project tracking
 │
 ├── user_research/                      # Personal workspace
@@ -47,12 +66,12 @@ one_direction_homologs/
 │       └── ncbi_nr_top_hits/           # Top hits + statistics for downstream
 │
 └── BLOCK_diamond_ncbi_nr/
-    ├── AI_GUIDE-diamond_ncbi_nr.md     # BLOCK-level AI guidance
+    ├── AI_GUIDE.md     # BLOCK-level AI guidance
     ├── RUN-update_upload_to_server.sh
     │
     └── workflow-COPYME-diamond_ncbi_nr/
         ├── RUN-workflow.sh             # bash RUN-workflow.sh
-        ├── RUN-workflow.sbatch         # sbatch RUN-workflow.sbatch
+        ├── RUN-workflow.sh         # sbatch RUN-workflow.sh
         ├── START_HERE-user_config.yaml # User edits DIAMOND settings here
         ├── INPUT_user/                 # Proteome manifest
         ├── OUTPUT_pipeline/            # Results (6 numbered directories)
@@ -168,7 +187,7 @@ output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `BLOCK_*/workflow-*/START_HERE-user_config.yaml` | Project name, database path, options | **YES** |
-| `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos | **YES** (SLURM) |
+| `BLOCK_*/workflow-*/RUN-workflow.sh` | SLURM account/qos | **YES** (SLURM) |
 | `BLOCK_*/workflow-*/INPUT_user/proteome_manifest.tsv` | Species and proteome paths | **YES** (or auto-generated) |
 | `output_to_input/BLOCK_*/ncbi_nr_top_hits/*.tsv` | Top hits + statistics for downstream | No |
 | `BLOCK_*/workflow-*/ai/scripts/*` | Pipeline scripts | No |

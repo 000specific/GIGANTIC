@@ -1,6 +1,24 @@
 # AI Guide: DIAMOND NCBI nr Workflow
 
-**For AI Assistants**: Read the subproject guide first (`../../../AI_GUIDE-one_direction_homologs.md`) for concepts and troubleshooting. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — BLOCK concepts
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` + NCBI nr DIAMOND db
+- Outputs to: `../../../output_to_input/BLOCK_diamond_ncbi_nr/`
+- 7 scripts (validate / split / diamond / combine / top_hits / stats / `write_run_log`)
+- Conda env: `aiG-one_direction_homologs`
+
+---
+
+**For AI Assistants**: Read the subproject guide first (`../../../AI_GUIDE.md`) for concepts and troubleshooting. This guide focuses on running the workflow.
 
 ---
 
@@ -8,8 +26,8 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../../AI_GUIDE-project.md` |
-| Subproject concepts | `../../../AI_GUIDE-one_direction_homologs.md` |
+| GIGANTIC overview | `../../../../../AI_GUIDE.md` |
+| Subproject concepts | `../../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ---
