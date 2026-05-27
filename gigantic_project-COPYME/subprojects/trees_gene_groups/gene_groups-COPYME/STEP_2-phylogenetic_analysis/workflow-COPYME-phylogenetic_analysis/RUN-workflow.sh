@@ -36,6 +36,13 @@ cd "${SCRIPT_DIR}"
 # This lets multiple STEP_2 trials coexist without colliding.
 PARENT_RUN_NAME="$( basename "${SCRIPT_DIR}" )"
 
+# Short tag derived from PARENT_RUN_NAME for use in SLURM job names. Embeds the
+# user-facing RUN_N (e.g. RUN_1, RUN_2) so squeue can distinguish different
+# tiered/labeled trials of this same workflow. Falls back to "RUN" if
+# PARENT_RUN_NAME doesn't match the canonical workflow-RUN_<N>-* pattern.
+RUN_TAG=$( echo "${PARENT_RUN_NAME}" | sed -n 's|^workflow-\(RUN_[0-9]\+\).*|\1|p' )
+RUN_TAG="${RUN_TAG:-RUN}"
+
 # Fail-fast if invoked from the template (workflow-COPYME-*). Force the user to
 # make a workflow-RUN_<N>-<label>/ sibling and run from there.
 if [[ "${PARENT_RUN_NAME}" == workflow-COPYME-* ]]; then
@@ -391,14 +398,15 @@ case "${EXECUTION_MODE}" in
             for gg in "${arr[@]}"; do
                 DEST="${STEP2_DIR}/gene_group-${gg}/${PARENT_RUN_NAME}"
                 wrap="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; ( $(nextflow_run_cmd "${DEST}") && $(oti_publish_step2 "${gg}" "${DEST}") ) || echo \"FAILED: ${gg}\""
+                std_name="s2_${RUN_TAG}_${tier}_${gg}"
                 sbatch \
-                    --job-name="s2_${tier}_${gg}" \
+                    --job-name="${std_name}" \
                     --account="${SLURM_ACCOUNT}" \
                     --qos="${SLURM_QOS_STANDARD}" \
                     --cpus-per-task="${cpus}" \
                     --mem="${mem}gb" \
                     --time="${time_h}:00:00" \
-                    --output="${STEP2_DIR}/slurm_logs/s2_${tier}_${gg}-%j.log" \
+                    --output="${STEP2_DIR}/slurm_logs/${std_name}-%j.log" \
                     --wrap="${wrap}"
             done
         done
@@ -422,7 +430,7 @@ case "${EXECUTION_MODE}" in
                 end=$((i + block))
                 [ "$end" -gt "$n" ] && end="$n"
                 block_n=$((block_n + 1))
-                block_name="s2_${tier}_blk_$(printf '%02d' ${block_n})"
+                block_name="s2_${RUN_TAG}_${tier}_blk_$(printf '%02d' ${block_n})"
 
                 runner="module load conda 2>/dev/null || true; conda activate ${ENV_NAME}; "
                 j=$i
