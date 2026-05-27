@@ -1,12 +1,31 @@
-# AI_GUIDE-signalp_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE.md (Level 3: Workflow Execution Guide)
 
-**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE-signalp.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — SignalP 6 concepts
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../../output_to_input/BLOCK_signalp/`
+- 5 scripts in `scripts/` (final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-signalp`
+- Note: Includes EvidentialGene multi-locus-ID filter (script 000) per memory feedback_evigene_multilocus_id_filename_limit.
+
+---
+
+**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Annotations overview | `../../../AI_GUIDE-annotations_hmms.md` |
-| SignalP concepts | `../../AI_GUIDE-signalp.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Annotations overview | `../../../AI_GUIDE.md` |
+| SignalP concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start

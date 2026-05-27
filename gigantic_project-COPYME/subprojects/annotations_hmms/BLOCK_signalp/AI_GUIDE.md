@@ -1,13 +1,35 @@
-# AI_GUIDE-signalp.md (Level 2: Tool Project Guide)
+# AI_GUIDE.md (Level 2: Tool Project Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-annotations_hmms.md` first for subproject overview and tool comparison. This guide covers SignalP-specific concepts.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Parent (subproject README): [`../README.md`](../README.md)
+- Workflow template: [`workflow-COPYME-run_signalp/`](workflow-COPYME-run_signalp/)
+- This BLOCK's workflow AI guide: [`workflow-COPYME-run_signalp/ai/AI_GUIDE.md`](workflow-COPYME-run_signalp/ai/AI_GUIDE.md)
+- Tool: SignalP 6
+- Scripts: 5 (final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-signalp`
+- Reads FROM: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs TO: `../output_to_input/BLOCK_signalp/` (symlinks)
+- Downstream: `../BLOCK_build_annotation_database/` consumes for integrated 7-column DB
+- Note: Includes EvidentialGene multi-locus-ID filter (script 000) per memory feedback_evigene_multilocus_id_filename_limit.
+
+---
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers SignalP-specific concepts.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Annotations overview, tool comparison | `../AI_GUIDE-annotations_hmms.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Annotations overview, tool comparison | `../AI_GUIDE.md` |
 | SignalP concepts | This file |
-| Running the workflow | `workflow-COPYME-run_signalp/ai/AI_GUIDE-signalp_workflow.md` |
+| Running the workflow | `workflow-COPYME-run_signalp/ai/AI_GUIDE.md` |
 
 ## SignalP Overview
 
@@ -55,4 +77,4 @@ SignalP 6 requires a license from DTU:
 
 ## Cluster-Side Failure: Drain-Node Race
 
-SignalP burst submissions can hit the same HiPerGator post-upgrade drain-node race documented at the subproject level — chunks die in 0-1 sec with `ExitCode 0:53` on `c0706a-s7/9/10/12`. If you adopt high-volume burst mode for SignalP and start seeing these, see [`../AI_GUIDE-annotations_hmms.md`](../AI_GUIDE-annotations_hmms.md) ("HiPerGator Drain-Node Race") for the diagnosis and the canonical `errorStrategy='ignore'` + `detect_failed_chunks` pattern (reference implementation in [`../BLOCK_interproscan/`](../BLOCK_interproscan/)).
+SignalP burst submissions can hit the same HiPerGator post-upgrade drain-node race documented at the subproject level — chunks die in 0-1 sec with `ExitCode 0:53` on `c0706a-s7/9/10/12`. If you adopt high-volume burst mode for SignalP and start seeing these, see [`../AI_GUIDE.md`](../AI_GUIDE.md) ("HiPerGator Drain-Node Race") for the diagnosis and the canonical `errorStrategy='ignore'` + `detect_failed_chunks` pattern (reference implementation in [`../BLOCK_interproscan/`](../BLOCK_interproscan/)).

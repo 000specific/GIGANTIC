@@ -1,13 +1,35 @@
-# AI_GUIDE-interproscan.md (Level 2: Tool Project Guide)
+# AI_GUIDE.md (Level 2: Tool Project Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-annotations_hmms.md` first for subproject overview and tool comparison. This guide covers InterProScan-specific concepts.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Parent (subproject README): [`../README.md`](../README.md)
+- Workflow template: [`workflow-COPYME-run_interproscan/`](workflow-COPYME-run_interproscan/)
+- This BLOCK's workflow AI guide: [`workflow-COPYME-run_interproscan/ai/AI_GUIDE.md`](workflow-COPYME-run_interproscan/ai/AI_GUIDE.md)
+- Tool: InterProScan 5
+- Scripts: 6 (final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-interproscan`
+- Reads FROM: `../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs TO: `../output_to_input/BLOCK_interproscan/` (symlinks)
+- Downstream: `../BLOCK_build_annotation_database/` consumes for integrated 7-column DB
+- Note: Chunked + burst-friendly; see HiPerGator drain-node race note in subproject AI_GUIDE.
+
+---
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers InterProScan-specific concepts.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Annotations overview, tool comparison | `../AI_GUIDE-annotations_hmms.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Annotations overview, tool comparison | `../AI_GUIDE.md` |
 | InterProScan concepts | This file |
-| Running the workflow | `workflow-COPYME-run_interproscan/ai/AI_GUIDE-interproscan_workflow.md` |
+| Running the workflow | `workflow-COPYME-run_interproscan/ai/AI_GUIDE.md` |
 
 ## InterProScan Overview
 
@@ -23,7 +45,7 @@ InterProScan 5 is a comprehensive protein domain and function annotation tool th
 BLOCK_interproscan/
 ├── DOWNLOAD_SOFTWARE-interproscan.sh      # Downloads InterProScan from EBI (run once)
 ├── software/interproscan/                 # Shared installation (created by download script)
-├── AI_GUIDE-interproscan.md               # This file
+├── AI_GUIDE.md               # This file
 ├── workflow-COPYME-run_interproscan/      # Template for new runs
 └── workflow-RUN_1-run_interproscan/       # Species70, Pfam + GO annotations
 ```

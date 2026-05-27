@@ -1,12 +1,30 @@
-# AI_GUIDE-build_annotation_database_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE.md (Level 3: Workflow Execution Guide)
 
-**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE-build_annotation_database.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — database builder concepts
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../output_to_input/BLOCK_{interproscan,deeploc,signalp,metapredict,tmbed}/`
+- Outputs to: `../../../output_to_input/BLOCK_build_annotation_database/`
+- 18 scripts (auto-discover tool BLOCKs, GO download, parse x5, stats, analyses; final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-build_annotation_database`
+
+---
+
+**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Annotations overview | `../../../AI_GUIDE-annotations_hmms.md` |
-| Build database concepts | `../../AI_GUIDE-build_annotation_database.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Annotations overview | `../../../AI_GUIDE.md` |
+| Build database concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start

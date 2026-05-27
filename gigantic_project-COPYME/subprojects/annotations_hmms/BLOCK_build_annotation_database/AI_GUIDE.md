@@ -1,13 +1,34 @@
-# AI_GUIDE-build_annotation_database.md (Level 2: Tool Project Guide)
+# AI_GUIDE.md (Level 2: Tool Project Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-annotations_hmms.md` first for subproject overview and tool comparison. This guide covers the annotation database builder.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject): [`../AI_GUIDE.md`](../AI_GUIDE.md)
+- Parent (subproject README): [`../README.md`](../README.md)
+- Workflow template: [`workflow-COPYME-build_annotation_database/`](workflow-COPYME-build_annotation_database/)
+- This BLOCK's workflow AI guide: [`workflow-COPYME-build_annotation_database/ai/AI_GUIDE.md`](workflow-COPYME-build_annotation_database/ai/AI_GUIDE.md)
+- Role: integrator — parses tool BLOCK outputs into the standardized 7-column DB
+- 18 scripts (auto-discover available tool BLOCKs, download GO, parse x5, statistics, analyses; final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-build_annotation_database`
+- Reads FROM: `../output_to_input/BLOCK_{interproscan,deeploc,signalp,metapredict,tmbed}/` (auto-discovers what's present)
+- Outputs TO: `../output_to_input/BLOCK_build_annotation_database/` (24+ database subdirs)
+- Downstream consumers: `../../annotations_X_ocl/`, `../../secretome/`, `../../dark_proteomes/`, `../upload_to_server/`
+
+---
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview and tool comparison. This guide covers the annotation database builder.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Annotations overview, tool comparison | `../AI_GUIDE-annotations_hmms.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Annotations overview, tool comparison | `../AI_GUIDE.md` |
 | Database builder concepts | This file |
-| Running the workflow | `workflow-COPYME-build_annotation_database/ai/AI_GUIDE-build_annotation_database_workflow.md` |
+| Running the workflow | `workflow-COPYME-build_annotation_database/ai/AI_GUIDE.md` |
 
 ## Database Builder Overview
 
@@ -103,4 +124,4 @@ This BLOCK consumes per-species TSV outputs from sibling tool BLOCKs (interprosc
 wc -l ../BLOCK_interproscan/workflow-RUN_N-run_interproscan/OUTPUT_pipeline/6-output/6_ai-failed_chunks.tsv
 ```
 
-If there are non-trivial gaps (more than a handful), drive a follow-up tool-BLOCK run from the failed_chunks manifest before integrating, so per-species coverage is complete. See [`../AI_GUIDE-annotations_hmms.md`](../AI_GUIDE-annotations_hmms.md) ("HiPerGator Drain-Node Race") for the pattern, and [`../BLOCK_interproscan/`](../BLOCK_interproscan/) for the reference implementation.
+If there are non-trivial gaps (more than a handful), drive a follow-up tool-BLOCK run from the failed_chunks manifest before integrating, so per-species coverage is complete. See [`../AI_GUIDE.md`](../AI_GUIDE.md) ("HiPerGator Drain-Node Race") for the pattern, and [`../BLOCK_interproscan/`](../BLOCK_interproscan/) for the reference implementation.

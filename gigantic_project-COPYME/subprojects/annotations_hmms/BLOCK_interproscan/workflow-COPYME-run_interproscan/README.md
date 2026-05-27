@@ -1,5 +1,23 @@
 # InterProScan Workflow
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — InterProScan 5 concepts
+- Parent (subproject): [`../../README.md`](../../README.md)
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../output_to_input/BLOCK_interproscan/` (symlinks from `OUTPUT_pipeline/`)
+- Downstream BLOCK: `../../BLOCK_build_annotation_database/workflow-COPYME-build_annotation_database/`
+- 6 scripts; conda env `aiG-annotations_hmms-interproscan`
+
+---
+
 Runs InterProScan domain and function annotation across all genomesDB proteomes. InterProScan integrates 19 component databases (Pfam, PANTHER, CDD, Gene3D, SUPERFAMILY, etc.) and assigns GO terms, providing comprehensive protein domain and function annotation.
 
 ## Prerequisites
@@ -17,7 +35,7 @@ vi START_HERE-user_config.yaml      # set applications, execution_mode, resource
 bash RUN-workflow.sh                # unified entry — self-submits to SLURM if execution_mode is slurm or slurm_burst
 ```
 
-The legacy `RUN-workflow.sbatch` is deprecated; use `RUN-workflow.sh` with `execution_mode` in YAML.
+The legacy `RUN-workflow.sh` is deprecated; use `RUN-workflow.sh` with `execution_mode` in YAML.
 
 ## Pipeline (6 steps)
 
@@ -42,7 +60,7 @@ The legacy `RUN-workflow.sbatch` is deprecated; use `RUN-workflow.sh` with `exec
 This workflow runs `errorStrategy = 'ignore'` on the `run_interproscan` process — overriding the project CLAUDE.md default of "NEVER use 'ignore'" with explicit documented intent. Rationale:
 
 - Burst mode submits hundreds-to-thousands of independent chunk jobs.
-- A documented post-HiPerGator-upgrade scheduler bug allocates a small fraction (~1-3%) of jobs to draining nodes. The job dies in 0-1 sec with `ExitCode 0:53` (SIGRTMIN+19), no `.command.log`. This is a cluster-side bug, not a workflow bug. See `../AI_GUIDE-interproscan.md` and `../../AI_GUIDE-annotations_hmms.md` (section "HiPerGator Drain-Node Race") for the full diagnosis.
+- A documented post-HiPerGator-upgrade scheduler bug allocates a small fraction (~1-3%) of jobs to draining nodes. The job dies in 0-1 sec with `ExitCode 0:53` (SIGRTMIN+19), no `.command.log`. This is a cluster-side bug, not a workflow bug. See `../AI_GUIDE.md` and `../../AI_GUIDE.md` (section "HiPerGator Drain-Node Race") for the full diagnosis.
 - With fail-fast (`'terminate'`), one drain-node hit kills a multi-day run after potentially hours of work. With `'ignore'`, only the dead chunks are lost; the other ~98% completes normally.
 - Step 5 (`detect_failed_chunks`) makes the dropped chunks visible so the user can drive a follow-up RUN_N from the manifest.
 

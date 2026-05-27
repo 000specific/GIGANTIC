@@ -1,5 +1,23 @@
 # Build Annotation Database Workflow
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — database builder concepts
+- Parent (subproject): [`../../README.md`](../../README.md)
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../output_to_input/BLOCK_{interproscan,deeploc,signalp,metapredict,tmbed}/` (whichever are present)
+- Outputs to: `../../output_to_input/BLOCK_build_annotation_database/`
+- Run AFTER tool BLOCKs (any subset); auto-discovers what's available
+- 18 scripts; conda env `aiG-annotations_hmms-build_annotation_database`
+
+---
+
 Builds a standardized, integrated annotation database from all completed tool BLOCK outputs. Parses raw outputs from InterProScan, DeepLoc, SignalP, tmbed, and MetaPredict into a unified per-protein annotation format with summary statistics and comparative analyses.
 
 ## Prerequisites
@@ -16,7 +34,7 @@ Builds a standardized, integrated annotation database from all completed tool BL
 vi START_HERE-user_config.yaml   # Set species set name, proteomes path
 vi ai/nextflow.config                # Set species_set_name, proteomes_dir
 bash RUN-workflow.sh                 # Local
-sbatch RUN-workflow.sbatch           # SLURM
+sbatch RUN-workflow.sh           # SLURM
 ```
 
 ## Pipeline

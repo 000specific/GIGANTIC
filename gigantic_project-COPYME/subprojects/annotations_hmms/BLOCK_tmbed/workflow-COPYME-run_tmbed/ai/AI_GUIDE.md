@@ -1,12 +1,31 @@
-# AI_GUIDE-tmbed_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE.md (Level 3: Workflow Execution Guide)
 
-**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE-tmbed.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — TMBed concepts
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../../output_to_input/BLOCK_tmbed/`
+- 5 scripts in `scripts/` (final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-tmbed`
+- Note: Requires transformers<5 pin (memory project_tmbed_transformers_pinning_needed); shares the EvidentialGene long-header filter pattern from BLOCK_signalp.
+
+---
+
+**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Annotations overview | `../../../AI_GUIDE-annotations_hmms.md` |
-| tmbed concepts | `../../AI_GUIDE-tmbed.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Annotations overview | `../../../AI_GUIDE.md` |
+| tmbed concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start

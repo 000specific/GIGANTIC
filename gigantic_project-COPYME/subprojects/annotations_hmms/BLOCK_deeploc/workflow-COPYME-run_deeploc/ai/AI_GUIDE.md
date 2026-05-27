@@ -1,12 +1,31 @@
-# AI_GUIDE-deeploc_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE.md (Level 3: Workflow Execution Guide)
 
-**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE-deeploc.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — DeepLoc 2.1 concepts
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: `../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
+- Outputs to: `../../../output_to_input/BLOCK_deeploc/`
+- 3 scripts in `scripts/` (final = `write_run_log` per §45)
+- Conda env: `aiG-annotations_hmms-deeploc`
+- Note: GPU workflow (hpg-turin L4 or hpg-b200).
+
+---
+
+**For AI Assistants**: Read the BLOCK guide (`../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Annotations overview | `../../../AI_GUIDE-annotations_hmms.md` |
-| DeepLoc concepts | `../../AI_GUIDE-deeploc.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Annotations overview | `../../../AI_GUIDE.md` |
+| DeepLoc concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start

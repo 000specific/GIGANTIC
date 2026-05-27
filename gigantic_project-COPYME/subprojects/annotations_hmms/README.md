@@ -1,62 +1,110 @@
 # annotations_hmms - Proteome Functional Annotation Database
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 03
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 03 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent: [`../../README.md`](../../README.md) — gigantic_project-COPYME overview
+- Subproject AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Reads from:
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` — proteomes (one FASTA per species)
+- Outputs to (`output_to_input/`):
+  - `BLOCK_interproscan/` — InterProScan results (symlinks)
+  - `BLOCK_deeploc/` — DeepLoc results (symlinks)
+  - `BLOCK_signalp/` — SignalP results (symlinks)
+  - `BLOCK_metapredict/` — MetaPredict results (symlinks)
+  - `BLOCK_tmbed/` — TMBed transmembrane topology results (symlinks)
+  - `BLOCK_build_annotation_database/` — integrated 7-column annotation database (symlinks)
+- Downstream consumers:
+  - `annotations_X_ocl/` — orthogroups × annotations evolutionary inference
+  - `secretome/` — uses SignalP + TMBed evidence
+  - `dark_proteomes/` — uses unannotated (no domain) classification
+  - `upload_to_server/` (subproject root) — curated subset for the GIGANTIC server
 
 ---
 
 ## Purpose
 
-Build a comprehensive functional annotation database for all species proteomes using four independent annotation tools. Each tool predicts different functional properties (protein domains, subcellular localization + membrane topology, signal peptides, intrinsic disorder), and their results are parsed into a standardized 7-column database format for downstream analyses.
+Build a comprehensive functional annotation database for all species proteomes
+using five independent annotation tools. Each tool predicts different
+functional properties (protein domains/families, subcellular localization,
+signal peptides, transmembrane topology, intrinsic disorder), and their
+results are parsed into a standardized 7-column database format for
+downstream analyses.
 
 ---
 
 ## Architecture
 
-Five independent, self-contained projects:
+Six BLOCKs — five run a tool, one integrates:
 
 | Project | Tool | What It Predicts |
-|---------|------|-----------------|
+|---------|------|------------------|
 | `BLOCK_interproscan/` | InterProScan 5 | Protein domains, families, GO terms (19 component databases) |
-| `BLOCK_deeploc/` | DeepLoc 2.1 | Subcellular localization + TM/lipid/peripheral/soluble probabilities (GPU) |
+| `BLOCK_deeploc/` | DeepLoc 2.1 | Subcellular localization (GPU) |
 | `BLOCK_signalp/` | SignalP 6 | Signal peptides and cleavage sites |
 | `BLOCK_metapredict/` | MetaPredict | Intrinsic disorder regions |
-| `BLOCK_build_annotation_database/` | Integration | Parses all tool outputs into standardized database, statistics, analyses |
+| `BLOCK_tmbed/` | TMBed | Transmembrane topology (per-residue inside/membrane/outside) |
+| `BLOCK_build_annotation_database/` | Integration | Parses tool outputs into standardized DB, statistics, analyses |
 
-BLOCKs 1-4 are independent (run in any order, any subset). BLOCK 5 auto-discovers which tool outputs are available and builds the database from whatever is present.
-
-> **Note on transmembrane topology**: DeepLoc 2 reports per-protein TM / lipid-anchor / peripheral / soluble probabilities, so a dedicated TM-topology BLOCK is not separately included.
+Tool BLOCKs (interproscan, deeploc, signalp, metapredict, tmbed) are
+independent — run in any order, any subset. `build_annotation_database`
+auto-discovers which tool outputs are available and builds the integrated
+database from whatever is present.
 
 ---
 
 ## Prerequisites
 
-1. **genomesDB complete**: Proteomes in `genomesDB/output_to_input/gigantic_proteomes/`
-2. **Conda environments**: One per tool (see Quick Start)
-3. **Nextflow**: `module load nextflow`
-4. **Tool installations**: InterProScan (standalone, in `BLOCK_interproscan/software/`), DeepLoc 2.1 (DTU license, in `BLOCK_deeploc/software/`), SignalP (DTU license)
+1. **genomesDB complete**: proteomes in `../genomesDB/output_to_input/STEP_4-create_final_species_set/`
+2. **Conda envs**: auto-created per-BLOCK on first run from each workflow's `ai/conda_environment.yml` (per §28)
+3. **Nextflow**: `module load nextflow` (NF version pin: see workflow `ai/nextflow.config`)
+4. **Tool installations** (manual, DTU-licensed binaries):
+   - InterProScan standalone — `BLOCK_interproscan/software/`
+   - DeepLoc 2.1 — `BLOCK_deeploc/software/`
+   - SignalP 6 — `BLOCK_signalp/software/`
+   - TMBed — installed via `aiG-annotations_hmms-tmbed` conda env (pip)
+   - MetaPredict — installed via `aiG-annotations_hmms-metapredict` conda env (pip)
+
+---
+
+## Per-BLOCK Conda Envs (§28)
+
+| BLOCK | Conda env name | Notes |
+|-------|----------------|-------|
+| BLOCK_interproscan | `aiG-annotations_hmms-interproscan` | Java + Python |
+| BLOCK_deeploc | `aiG-annotations_hmms-deeploc` | GPU; PyTorch |
+| BLOCK_signalp | `aiG-annotations_hmms-signalp` | Python |
+| BLOCK_metapredict | `aiG-annotations_hmms-metapredict` | Python + pip metapredict |
+| BLOCK_tmbed | `aiG-annotations_hmms-tmbed` | Python + pip TMBed; **transformers<5 required** (see project memory `project_tmbed_transformers_pinning_needed`) |
+| BLOCK_build_annotation_database | `aiG-annotations_hmms-build_annotation_database` | Python (parsers, integrators) |
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1. Copy a tool workflow template for your run
+# For each tool BLOCK:
+# 1. Copy template
 cp -r BLOCK_interproscan/workflow-COPYME-run_interproscan BLOCK_interproscan/workflow-RUN_01-run_interproscan
 cd BLOCK_interproscan/workflow-RUN_01-run_interproscan/
 
-# 2. Edit configuration
+# 2. Edit configuration (set execution_mode, proteome paths, SLURM resources)
 vi START_HERE-user_config.yaml
 
-# 3. Run (conda environment is activated automatically by the script)
-bash RUN-workflow.sh       # unified entry point; self-submits to SLURM
-                           # if execution_mode in the YAML is "slurm" or
-                           # "slurm_burst" (set in START_HERE-user_config.yaml).
+# 3. Run (single entry point; self-submits to SLURM per execution_mode)
+bash RUN-workflow.sh
 ```
 
-Same pattern for all 5 BLOCKs. Run tool BLOCKs first, then BLOCK_build_annotation_database.
+Same pattern for all 6 BLOCKs. Run tool BLOCKs first, then BLOCK_build_annotation_database.
 
-**Note:** Each `RUN-workflow.sh` automatically activates and deactivates its own conda environment. No manual activation required. The legacy `RUN-workflow.sbatch` is deprecated — use `RUN-workflow.sh` with `execution_mode` set in the YAML.
+`RUN-workflow.sh` activates/deactivates its own conda env. `execution_mode`
+(local / slurm / slurm_burst) is read from YAML; no `RUN-workflow.sbatch`
+needed (deprecated per §29).
 
 ---
 
@@ -70,11 +118,14 @@ All tool outputs are parsed into a common 7-column TSV format:
 | `Sequence_Identifier` | Protein sequence identifier |
 | `Domain_Start` | Start coordinate (NA for whole-protein predictions) |
 | `Domain_Stop` | Stop coordinate (NA for whole-protein predictions) |
-| `Database_Name` | Source database (e.g., pfam, deeploc, signalp) |
+| `Database_Name` | Source database (e.g., pfam, deeploc, signalp, tmbed) |
 | `Annotation_Identifier` | Annotation ID (e.g., PF00001, SP, TM) |
 | `Annotation_Details` | Human-readable description |
 
-23 database subdirectories are produced: pfam, gene3d, superfamily, smart, panther, cdd, prints, prositepatterns, prositeprofiles, hamap, sfld, funfam, ncbifam, pirsf, coils, mobidblite, antifam, interproscan, go, deeploc, signalp, metapredict.
+24+ database subdirectories produced: pfam, gene3d, superfamily, smart,
+panther, cdd, prints, prositepatterns, prositeprofiles, hamap, sfld,
+funfam, ncbifam, pirsf, coils, mobidblite, antifam, interproscan, go,
+deeploc, signalp, metapredict, tmbed (+ tool-specific subviews).
 
 ---
 
@@ -82,78 +133,78 @@ All tool outputs are parsed into a common 7-column TSV format:
 
 ```
 annotations_hmms/
-├── README.md                                # This file
-├── AI_GUIDE-annotations_hmms.md             # AI assistant guide (Level 2)
+├── README.md                                  # this file
+├── AI_GUIDE.md                                # AI assistant guide (Level 2)
+├── HANDOFF-2026may25-tmbed_long_protein_gap.md  # in-flight handoff
+├── RUN-update_upload_to_server.sh             # publisher (one per subproject per §38)
 ├── upload_to_server/
-├── RUN-update_upload_to_server.sh
+├── output_to_input/                           # consolidated outputs for downstream (per-BLOCK)
 │
-├── output_to_input/                         # Consolidated outputs for downstream
-│   ├── BLOCK_interproscan/                  #   InterProScan results (symlinked)
-│   ├── BLOCK_deeploc/                       #   DeepLoc results (symlinked)
-│   ├── BLOCK_signalp/                       #   SignalP results (symlinked)
-│   ├── BLOCK_metapredict/                   #   MetaPredict results (symlinked)
-│   └── BLOCK_build_annotation_database/     #   Integrated database (symlinked)
-│
-├── BLOCK_interproscan/                      # InterProScan (4 scripts)
-│   ├── AI_GUIDE-interproscan.md
+├── BLOCK_interproscan/                        # InterProScan 5 (6 scripts incl. write_run_log)
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-run_interproscan/
-│       ├── ai/ (main.nf, nextflow.config, scripts/)
+│       ├── ai/ (main.nf, nextflow.config, scripts/, conda_environment.yml)
 │       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
 │       └── START_HERE-user_config.yaml
 │
-├── BLOCK_deeploc/                           # DeepLoc (2 scripts)
-│   ├── AI_GUIDE-deeploc.md
+├── BLOCK_deeploc/                             # DeepLoc 2.1 (3 scripts incl. write_run_log)
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-run_deeploc/
-│       ├── ai/ (main.nf, nextflow.config, scripts/)
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
+│       └── (same layout)
 │
-├── BLOCK_signalp/                           # SignalP (2 scripts)
-│   ├── AI_GUIDE-signalp.md
+├── BLOCK_signalp/                             # SignalP 6 (5 scripts incl. write_run_log)
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-run_signalp/
-│       ├── ai/ (main.nf, nextflow.config, scripts/)
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
 │
-├── BLOCK_metapredict/                       # MetaPredict (2 scripts)
-│   ├── AI_GUIDE-metapredict.md
+├── BLOCK_metapredict/                         # MetaPredict (4 scripts incl. write_run_log)
+│   ├── AI_GUIDE.md
 │   └── workflow-COPYME-run_metapredict/
-│       ├── ai/ (main.nf, nextflow.config, scripts/)
-│       ├── RUN-workflow.sh
-│       ├── RUN-workflow.sbatch
-│       └── START_HERE-user_config.yaml
 │
-└── BLOCK_build_annotation_database/         # Database builder (15 scripts)
-    ├── AI_GUIDE-build_annotation_database.md
+├── BLOCK_tmbed/                               # TMBed (5 scripts incl. write_run_log)
+│   ├── AI_GUIDE.md
+│   └── workflow-COPYME-run_tmbed/
+│
+└── BLOCK_build_annotation_database/           # database builder (18 scripts incl. write_run_log)
+    ├── AI_GUIDE.md
     └── workflow-COPYME-build_annotation_database/
-        ├── ai/ (main.nf, nextflow.config, scripts/)
-        ├── RUN-workflow.sh
-        ├── RUN-workflow.sbatch
-        └── START_HERE-user_config.yaml
 ```
+
+(No per-subproject `research_notebook/` — per §1 consolidation, sandbox
+content lives at `../../research_notebook/research_user/subproject-annotations_hmms/`.)
 
 ---
 
 ## Cluster-Side Failure Pattern: Drain-Node Race (HiPerGator post-upgrade)
 
-Since the HiPerGator OS/SLURM upgrade (~May 2026), a small fraction of burst-submitted chunk jobs die in 0-1 sec with `ExitCode 0:53` (SIGRTMIN+19) and `Reason=ReqNodeNotAvail` — the SLURM scheduler allocates jobs to nodes that have already begun their DRAIN transition (most commonly observed on `c0706a-s7`, `c0706a-s9`, `c0706a-s10`, `c0706a-s12`). The chunk has no `.command.log` because bash never started.
+Since the HiPerGator OS/SLURM upgrade (~May 2026), a small fraction of
+burst-submitted chunk jobs die in 0-1 sec with `ExitCode 0:53`
+(SIGRTMIN+19) and `Reason=ReqNodeNotAvail` — the SLURM scheduler
+allocates jobs to nodes that have already begun their DRAIN transition
+(most commonly observed on `c0706a-s7`, `c0706a-s9`, `c0706a-s10`,
+`c0706a-s12`). The chunk has no `.command.log` because bash never started.
 
-This is **not a workflow bug** — it is a cluster-side scheduler bug. The empirical hit rate on high-volume burst runs is roughly 1-3% of submissions.
+This is **not a workflow bug** — it is a cluster-side scheduler bug. The
+empirical hit rate on high-volume burst runs is roughly 1-3% of submissions.
 
-**Canonical handling pattern (implemented in BLOCK_interproscan, reference for other chunked workflows):**
+**Canonical handling pattern** (implemented in BLOCK_interproscan, reference
+for other chunked workflows):
 
-1. `errorStrategy = 'ignore'` on the chunked process — failed chunks are silently dropped instead of killing the pipeline. This is an **explicit, documented override** of the project CLAUDE.md default ("NEVER use 'ignore'"), justified by this known cluster-side failure mode.
-2. A gap-detection step (`detect_failed_chunks`, script 006) compares expected chunks (publishDir 2-output) against successful chunks (publishDir 3-output) and writes `6_ai-failed_chunks.tsv` listing what to rerun.
+1. `errorStrategy = 'ignore'` on the chunked process — failed chunks are
+   silently dropped instead of killing the pipeline. This is an **explicit,
+   documented override** of the project CLAUDE.md default ("NEVER use 'ignore'"),
+   justified by this known cluster-side failure mode.
+2. A gap-detection step (`detect_failed_chunks`, script 006) compares
+   expected chunks (publishDir 2-output) against successful chunks
+   (publishDir 3-output) and writes `6_ai-failed_chunks.tsv` listing what
+   to rerun.
 3. User drives a follow-up RUN_N targeting just the failed chunks.
 
-See [BLOCK_interproscan/AI_GUIDE-interproscan.md](BLOCK_interproscan/AI_GUIDE-interproscan.md) for full details.
+See [BLOCK_interproscan/AI_GUIDE.md](BLOCK_interproscan/AI_GUIDE.md) for full details.
 
 ---
 
 ## See Also
 
-- `AI_GUIDE-annotations_hmms.md` - AI assistant guidance
-- `BLOCK_{tool}/AI_GUIDE-{tool}.md` - Tool-specific AI guides
+- [`AI_GUIDE.md`](AI_GUIDE.md) — AI assistant guidance for this subproject
+- `BLOCK_<tool>/AI_GUIDE.md` — per-BLOCK AI guides (one per BLOCK)
+- [`HANDOFF-2026may25-tmbed_long_protein_gap.md`](HANDOFF-2026may25-tmbed_long_protein_gap.md) — current in-flight HANDOFF about EvidentialGene multi-locus IDs filtering for TMBed (see memory `feedback_evigene_multilocus_id_filename_limit`)
