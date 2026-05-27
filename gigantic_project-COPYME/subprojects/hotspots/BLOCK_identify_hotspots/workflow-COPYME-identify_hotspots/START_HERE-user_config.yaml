@@ -67,9 +67,13 @@ inputs:
   self_blast_reports_dir: "../../output_to_input/BLOCK_self_blast/self_blast_reports"
 
   # User-provided per-species gene coordinate TSVs.
-  # Default points at the user's research notebook for hotspots; the user
-  # creates these out of GIGANTIC proper from their per-species GFF/GTF.
-  gene_coordinates_dir: "../../research_notebook/research_user/gene_coordinates"
+  # Default points at the project-root research_notebook sandbox (per §1
+  # consolidation, 2026-05-26: per-subproject `research_notebook/` is
+  # forbidden — content lives under `research_user/subproject-<name>/`).
+  # The user creates these out of GIGANTIC proper from their per-species
+  # GFF/GTF. (Future refactor per §17: route through INPUT_user symlinks
+  # rather than reading the sandbox directly.)
+  gene_coordinates_dir: "../../../../research_notebook/research_user/subproject-hotspots/gene_coordinates"
 
   # Per-species GIGANTIC proteome files.
   # Used to map full-GIGANTIC IDs in the BLAST report (g_<source_id>-t_..-p_..-n_..)

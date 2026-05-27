@@ -34,7 +34,7 @@ nextflow.enable.dsl = 2
 // ============================================================================
 
 params.self_blast_reports_dir = '../../output_to_input/BLOCK_self_blast/self_blast_reports'
-params.gene_coordinates_dir   = '../../research_notebook/research_user/gene_coordinates'
+params.gene_coordinates_dir   = '../../../../research_notebook/research_user/subproject-hotspots/gene_coordinates'
 params.proteomes_dir          = '../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes'
 params.gigantic_species_list  = 'INPUT_user/gigantic_species_list.txt'
 params.output_dir             = 'OUTPUT_pipeline'
