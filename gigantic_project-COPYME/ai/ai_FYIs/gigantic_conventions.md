@@ -1192,7 +1192,7 @@ AI-attribution block and the "Where this fits" block (§42), listing
 | User needs... | Go to... |
 |---|---|
 | GIGANTIC overview | `../../AI_GUIDE.md` (project root) |
-| Conventions (§1–§57) | `../../ai/ai_FYIs/gigantic_conventions.md` |
+| Conventions (§1–§58) | `../../ai/ai_FYIs/gigantic_conventions.md` |
 | <subproject> concepts | This file |
 | <BLOCK or STEP> overview | `<BLOCK_or_STEP>/AI_GUIDE.md` |
 | Running the workflow | `<...>/workflow-COPYME-*/ai/AI_GUIDE.md` |
@@ -1441,6 +1441,51 @@ Don't bundle multiple subprojects into one omnibus commit unless the user
 explicitly asks (the omnibus pattern was used for trees_gene_families +
 trees_gene_groups in commit `61ef05a`, but per-subproject is preferred
 when working a list).
+
+---
+
+## 58. `x_*` gitignore pattern — archive-for-later-deletion
+
+Parallels §49 `z_*` but with opposite intent:
+
+| Prefix | Intent | Lifecycle |
+|--------|--------|-----------|
+| `x_*`  | Archive — staged for later deletion (was canonical, now superseded) | Past |
+| `z_*`  | Early-development, not for general use yet                          | Future |
+
+Both sort to the ends of alphabetical listings.
+
+`x_*` is the simpler of the two: top-level gitignore pattern `x_*` ignores
+files and dirs at any depth (basename match — no `**/` prefix needed).
+No "keep README visible" exception — archived content is fully gitignored.
+
+Used to set aside superseded code/templates/RUN dirs without deleting them
+immediately, in case they're useful for reference or post-mortem. Eventually
+deletable once nothing references them.
+
+Pattern in root `.gitignore` (line 7):
+
+```gitignore
+x_*
+```
+
+Common occurrences:
+- `x_workflow-COPYME-<old_design>-pre_<date>/` — superseded workflow templates
+- `x_RUN-update_upload_to_server.sh-pre_helper_migration_<date>` — superseded scripts
+- `x_<subproject>-archive-<date>/` — fully-retired subprojects
+
+### When to use `x_` vs `z_`
+
+| Situation | Use |
+|-----------|-----|
+| Past-canonical code being kept temporarily for reference, then deleted | `x_` |
+| Brand-new code under development, not yet ready for general use | `z_` |
+| Deprecated but might come back / unclear which direction | Default to `x_` (deprecation is the active framing) and rename to `z_` only if it does come back into active development |
+
+The two prefixes are NOT interchangeable — they signal opposite trajectories
+in the lifecycle. `x_` says "going away," `z_` says "coming up."
+
+See also: §49 (`z_*` early-development counterpart).
 
 ---
 
