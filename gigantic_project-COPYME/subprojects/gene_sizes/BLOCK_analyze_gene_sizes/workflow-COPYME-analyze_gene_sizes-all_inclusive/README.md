@@ -1,7 +1,24 @@
 # workflow-COPYME-analyze_gene_sizes — `all_inclusive` (Tier 1)
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — BLOCK_analyze_gene_sizes
+- Parent (subproject): [`../../README.md`](../../README.md) — gene_sizes overview + dual-tier rationale
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Tier: **Tier 1** (15-col TSV; 7 metrics; ~40 species)
+- Reads from: per-species gene-coordinate TSVs in `INPUT_user/` + `../../../genomesDB/output_to_input/STEP_4-create_final_species_set/`
+- Outputs to: `../../output_to_input/BLOCK_analyze_gene_sizes/all_inclusive/`
+- Sibling tier: `../workflow-COPYME-analyze_gene_sizes-gene_vs_protein/` — Tier 2 (`gene_vs_protein`) is the superset — Tier 1 species are also written as Tier 2
+- 5 scripts (001-005, ending in `write_run_log` per §45)
+- Conda env: `aiG-gene_sizes-analyze_gene_sizes` (shared across both tier templates)
+
+---
 
 ---
 
@@ -15,8 +32,8 @@ within-genome percentile ranks and a cross-species summary.
 
 This is one of two parallel workflow templates in `BLOCK_analyze_gene_sizes/`.
 The other (`workflow-COPYME-analyze_gene_sizes-gene_vs_protein/`) provides the
-broader Tier 2 output. See `../AI_GUIDE-analyze_gene_sizes.md` and
-`../../AI_GUIDE-gene_sizes.md` for the full dual-tier architecture.
+broader Tier 2 output. See `../AI_GUIDE.md` and
+`../../AI_GUIDE.md` for the full dual-tier architecture.
 
 ---
 
@@ -55,7 +72,7 @@ Edit `START_HERE-user_config.yaml` to verify input paths (and optionally set
 bash RUN-workflow.sh
 
 # SLURM
-sbatch RUN-workflow.sbatch
+sbatch RUN-workflow.sh
 ```
 
 ### 4. Check Output

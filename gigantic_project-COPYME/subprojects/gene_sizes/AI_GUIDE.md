@@ -1,9 +1,27 @@
 # AI Guide: gene_sizes Subproject
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview,
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- Reads FROM:
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/` — species set definition
+  - User-provided per-species gene-coordinate TSVs in each workflow's `INPUT_user/` (extracted from species-specific GFF/GTF by the user)
+- Outputs TO (`output_to_input/BLOCK_analyze_gene_sizes/`):
+  - `all_inclusive/` — Tier 1 (~40 species; 7 metrics with UTR awareness)
+  - `gene_vs_protein/` — Tier 2 (~64 species; 4 metrics, superset of Tier 1)
+- Downstream consumers:
+  - Comparative genomics analyses (gene size vs nervous-system complexity, McCoy 2024 replication)
+  - `upload_to_server/` — curated subset
+- Dual-tier architecture: two parallel workflows in one BLOCK, sharing scripts but with tier-adapted column counts and metric sets
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview,
 directory structure, and general patterns. This guide covers gene_sizes-specific
 concepts and troubleshooting.
 
@@ -13,10 +31,10 @@ concepts and troubleshooting.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | gene_sizes concepts, troubleshooting | This file |
-| Running the all-inclusive (Tier 1) workflow | `BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes-all_inclusive/ai/AI_GUIDE-analyze_gene_sizes_workflow.md` |
-| Running the gene-vs-protein (Tier 2) workflow | `BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes-gene_vs_protein/ai/AI_GUIDE-analyze_gene_sizes_workflow.md` |
+| Running the all-inclusive (Tier 1) workflow | `BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes-all_inclusive/ai/AI_GUIDE.md` |
+| Running the gene-vs-protein (Tier 2) workflow | `BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes-gene_vs_protein/ai/AI_GUIDE.md` |
 
 ---
 
@@ -37,11 +55,8 @@ architecture) — see "Dual-Tier Architecture" below.
 ```
 gene_sizes/
 ├── README.md
-├── AI_GUIDE-gene_sizes.md                                  # THIS FILE
-├── user_research/
-├── research_notebook/
-│   ├── ai_research/                                        # Paper summaries
-│   └── user_research/                                      # User notes
+├── AI_GUIDE.md                                  # THIS FILE
+├── RUN-update_upload_to_server.sh               # publisher (one per subproject per §38)
 ├── output_to_input/                                        # Downstream-facing outputs
 │   └── BLOCK_analyze_gene_sizes/
 │       ├── all_inclusive/                                  # Tier 1 symlinks (~40 species)
@@ -52,16 +67,15 @@ gene_sizes/
 │           └── speciesN_gigantic_gene_sizes_summary/
 ├── upload_to_server/
 └── BLOCK_analyze_gene_sizes/
-    ├── AI_GUIDE-analyze_gene_sizes.md
+    ├── AI_GUIDE.md
     ├── workflow-COPYME-analyze_gene_sizes-all_inclusive/   # Tier 1 template
     │   ├── README.md
-    │   ├── RUN-workflow.sh
-    │   ├── RUN-workflow.sbatch
+    │   ├── RUN-workflow.sh                                 # single entry point per §29
     │   ├── START_HERE-user_config.yaml
     │   ├── INPUT_user/                                     # 15-col Tier 1 TSVs go here
     │   ├── OUTPUT_pipeline/
     │   └── ai/
-    │       ├── AI_GUIDE-analyze_gene_sizes_workflow.md
+    │       ├── AI_GUIDE.md
     │       ├── main.nf
     │       ├── nextflow.config
     │       └── scripts/
@@ -83,7 +97,7 @@ gene_sizes/
 The gene_sizes subproject runs as **two parallel workflow templates**, each
 producing its own self-contained output. This implements the
 **dual-tier outputs** pattern from the project-level "Highest-Quality Genomes
-Only" tenet (`../../AI_GUIDE-project.md`).
+Only" tenet (`../../AI_GUIDE.md`).
 
 | | Tier 1 — `all_inclusive` | Tier 2 — `gene_vs_protein` |
 |---|---|---|
@@ -337,8 +351,7 @@ These files exist in **each tier's workflow directory**
 | `START_HERE-user_config.yaml` | Input paths, output settings, optional project_name | Yes |
 | `INPUT_user/*.tsv` | Per-species gene structure data (tier-specific schema) | Yes (user creates these) |
 | `INPUT_user/gigantic_species_list.txt` | GIGANTIC species list | Yes (copy from genomesDB) |
-| `RUN-workflow.sh` | Local pipeline runner | No |
-| `RUN-workflow.sbatch` | SLURM wrapper | Yes (account, qos) |
+| `RUN-workflow.sh` | Unified entry point (local or SLURM via `execution_mode` YAML); per §29 | Yes (account, qos) |
 | `ai/main.nf` | Nextflow pipeline definition | No |
 | `ai/nextflow.config` | Nextflow settings + YAML param loading | No |
 | `ai/scripts/001-005` | Processing scripts (tier-adapted) | No |

@@ -1,9 +1,25 @@
 # AI Guide: analyze_gene_sizes Workflow — `all_inclusive` (Tier 1)
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-gene_sizes.md`)
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — BLOCK_analyze_gene_sizes
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md) — dual-tier architecture
+- Workflow README: [`../README.md`](../README.md)
+- Tier: **Tier 1** (15-col TSV; 7 metrics; ~40 species)
+- Reads from: per-species gene-coordinate TSVs in `../INPUT_user/`
+- Outputs to: `../../../output_to_input/BLOCK_analyze_gene_sizes/all_inclusive/`
+- 5 scripts: 001 validate / 002 extract / 003 stats / 004 cross-species / 005 `write_run_log`
+- Conda env: `aiG-gene_sizes-analyze_gene_sizes`
+
+---
+
+**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE.md`)
 first for the dual-tier architecture and concepts. This guide focuses on running
 the **Tier 1 (`all_inclusive`)** workflow.
 
@@ -13,11 +29,11 @@ the **Tier 1 (`all_inclusive`)** workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| gene_sizes concepts (incl. dual-tier) | `../../../AI_GUIDE-gene_sizes.md` |
-| BLOCK overview | `../../AI_GUIDE-analyze_gene_sizes.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| gene_sizes concepts (incl. dual-tier) | `../../../AI_GUIDE.md` |
+| BLOCK overview | `../../AI_GUIDE.md` |
 | Running this Tier 1 workflow | This file |
-| Running the Tier 2 workflow | `../../workflow-COPYME-analyze_gene_sizes-gene_vs_protein/ai/AI_GUIDE-analyze_gene_sizes_workflow.md` |
+| Running the Tier 2 workflow | `../../workflow-COPYME-analyze_gene_sizes-gene_vs_protein/ai/AI_GUIDE.md` |
 
 ---
 

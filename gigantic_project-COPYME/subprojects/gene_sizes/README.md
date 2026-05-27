@@ -1,7 +1,25 @@
 # gene_sizes - Gene Structure Size Analysis
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent: [`../../README.md`](../../README.md) — gigantic_project-COPYME overview
+- Subproject AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Reads from:
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/` — species set definition
+  - User-provided per-species gene-coordinate TSVs in each workflow's `INPUT_user/`
+- Outputs to (`output_to_input/BLOCK_analyze_gene_sizes/`):
+  - `all_inclusive/` — Tier 1 (~40 species; 7 metrics with UTR awareness)
+  - `gene_vs_protein/` — Tier 2 (~64 species; 4 metrics, superset of Tier 1)
+- Downstream consumers:
+  - Comparative genomics analyses (gene size vs nervous-system complexity, McCoy 2024 replication)
+  - `upload_to_server/` (subproject root) — curated subset
+- Architecture: **1 BLOCK with 2 parallel workflow templates** (dual-tier — see `AI_GUIDE.md` for tier comparison)
 
 ---
 
@@ -52,26 +70,34 @@ metric. Enables cross-species comparison despite enormous absolute size differen
 
 ```
 gene_sizes/
-├── README.md                          # This file
-├── AI_GUIDE-gene_sizes.md             # Subproject-level AI guidance
-├── user_research/                     # User notes and exploratory work
-├── research_notebook/                 # Literature summaries and analysis notes
-│   ├── ai_research/                   # AI-generated paper summaries
-│   └── user_research/                 # User research notes
-├── output_to_input/                   # Downstream output (contains BLOCK subdirs)
-│   └── BLOCK_analyze_gene_sizes/      # Symlinks to workflow output
-├── upload_to_server/                  # Curated data for GIGANTIC server
+├── README.md                                                # This file
+├── AI_GUIDE.md                                              # Subproject-level AI guidance
+├── RUN-update_upload_to_server.sh                           # publisher (one per subproject per §38)
+├── output_to_input/                                         # Downstream output
+│   └── BLOCK_analyze_gene_sizes/
+│       ├── all_inclusive/                                   # Tier 1 symlinks
+│       │   ├── speciesN_gigantic_gene_metrics/
+│       │   └── speciesN_gigantic_gene_sizes_summary/
+│       └── gene_vs_protein/                                 # Tier 2 symlinks
+│           ├── speciesN_gigantic_gene_metrics/
+│           └── speciesN_gigantic_gene_sizes_summary/
+├── upload_to_server/                                        # Curated data for GIGANTIC server
 └── BLOCK_analyze_gene_sizes/
-    ├── AI_GUIDE-analyze_gene_sizes.md # BLOCK-level AI guidance
-    └── workflow-COPYME-analyze_gene_sizes/
-        ├── README.md                  # Quick start guide
-        ├── RUN-workflow.sh            # Run locally
-        ├── RUN-workflow.sbatch        # Run on SLURM
-        ├── START_HERE-user_config.yaml     # User configuration
-        ├── INPUT_user/                # User-provided gene structure TSV files
-        ├── OUTPUT_pipeline/           # Workflow outputs
-        └── ai/                        # Nextflow pipeline and scripts
+    ├── AI_GUIDE.md
+    ├── workflow-COPYME-analyze_gene_sizes-all_inclusive/    # Tier 1 template (15-col TSVs)
+    │   ├── README.md
+    │   ├── RUN-workflow.sh                                  # single entry per §29 (execution_mode YAML)
+    │   ├── START_HERE-user_config.yaml
+    │   ├── INPUT_user/                                      # user-provided gene-coordinate TSVs (15 cols)
+    │   ├── OUTPUT_pipeline/
+    │   └── ai/                                              # main.nf, nextflow.config, scripts, conda_environment.yml
+    └── workflow-COPYME-analyze_gene_sizes-gene_vs_protein/  # Tier 2 template (9-col TSVs)
+        └── (same layout; INPUT_user/ holds 9-col TSVs)
 ```
+
+(No per-subproject `research_notebook/` — per §1 consolidation, sandbox content
+is at `../../research_notebook/research_user/subproject-gene_sizes/` — see
+the McCoy 2024 replication analysis there.)
 
 ---
 
@@ -92,19 +118,26 @@ The user extracts this data from species-specific GFF/GTF annotation files. The
 
 Also provide the GIGANTIC species list in `INPUT_user/gigantic_species_list.txt`.
 
-### Step 2: Review Configuration
+### Step 2: Pick a tier + Review Configuration
 ```bash
-cd BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes/
-# Edit START_HERE-user_config.yaml to verify input paths
+# Tier 1 (15-col TSV, ~40 species, 7 metrics with UTR awareness)
+cd BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes-all_inclusive/
+
+# -- or --
+
+# Tier 2 (9-col TSV, ~64 species, 4 metrics, superset of Tier 1)
+cd BLOCK_analyze_gene_sizes/workflow-COPYME-analyze_gene_sizes-gene_vs_protein/
+
+# Copy COPYME → RUN_N, then edit YAML
+cp -r workflow-COPYME-analyze_gene_sizes-all_inclusive workflow-RUN_1-analyze_gene_sizes-all_inclusive
+cd workflow-RUN_1-analyze_gene_sizes-all_inclusive
+vi START_HERE-user_config.yaml   # set execution_mode + paths
 ```
 
 ### Step 3: Run the Pipeline
 ```bash
-# Local
+# Single entry point per §29 — local OR SLURM via execution_mode in YAML
 bash RUN-workflow.sh
-
-# SLURM cluster
-sbatch RUN-workflow.sbatch
 ```
 
 ---
@@ -162,7 +195,7 @@ gene structure data is a data availability limitation, not a pipeline error.
 
 ## Dependencies
 
-- **Conda environment**: `ai_gigantic_gene_sizes`
+- **Conda environment**: `aiG-gene_sizes-analyze_gene_sizes` (auto-created per §28 from each workflow's `ai/conda_environment.yml`; shared across both tier templates)
 - **Tools**: Python 3, Nextflow
 - **Upstream subprojects**: genomesDB (species list from STEP_4)
 

@@ -1,9 +1,25 @@
 # AI Guide: analyze_gene_sizes Workflow — `gene_vs_protein` (Tier 2)
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 04
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 04 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-gene_sizes.md`)
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — BLOCK_analyze_gene_sizes
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md) — dual-tier architecture
+- Workflow README: [`../README.md`](../README.md)
+- Tier: **Tier 2** (9-col TSV; 4 metrics; ~64 species)
+- Reads from: per-species gene-coordinate TSVs in `../INPUT_user/`
+- Outputs to: `../../../output_to_input/BLOCK_analyze_gene_sizes/gene_vs_protein/`
+- 5 scripts: 001 validate / 002 extract / 003 stats / 004 cross-species / 005 `write_run_log`
+- Conda env: `aiG-gene_sizes-analyze_gene_sizes`
+
+---
+
+**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE.md`)
 first for the dual-tier architecture and concepts. This guide focuses on running
 the **Tier 2 (`gene_vs_protein`)** workflow.
 
@@ -13,11 +29,11 @@ the **Tier 2 (`gene_vs_protein`)** workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| gene_sizes concepts (incl. dual-tier) | `../../../AI_GUIDE-gene_sizes.md` |
-| BLOCK overview | `../../AI_GUIDE-analyze_gene_sizes.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| gene_sizes concepts (incl. dual-tier) | `../../../AI_GUIDE.md` |
+| BLOCK overview | `../../AI_GUIDE.md` |
 | Running this Tier 2 workflow | This file |
-| Running the Tier 1 workflow | `../../workflow-COPYME-analyze_gene_sizes-all_inclusive/ai/AI_GUIDE-analyze_gene_sizes_workflow.md` |
+| Running the Tier 1 workflow | `../../workflow-COPYME-analyze_gene_sizes-all_inclusive/ai/AI_GUIDE.md` |
 
 ---
 
@@ -134,7 +150,6 @@ cat OUTPUT_pipeline/3-output/3_ai-genome_summary-Homo_sapiens.tsv
 | `START_HERE-user_config.yaml` | Yes | Input paths (incl. optional `project_name`, `proteome_dir`) |
 | `INPUT_user/*_gene_vs_protein.tsv` | Yes | 9-col Tier 2 gene structure data per species |
 | `INPUT_user/gigantic_species_list.txt` | Yes | GIGANTIC species list |
-| `RUN-workflow.sh` | No | Local runner; derives tier name from this directory's basename |
-| `RUN-workflow.sh` | No | Unified runner (local or SLURM via execution_mode in YAML); derives tier from this directory's basename |
+| `RUN-workflow.sh` | No | Unified runner (local or SLURM via `execution_mode` YAML per §29); derives tier from this directory's basename |
 | `ai/main.nf` | No | Pipeline definition (9-col schema, 4 metrics) |
 | `ai/nextflow.config` | No | NextFlow settings + YAML param loading |
