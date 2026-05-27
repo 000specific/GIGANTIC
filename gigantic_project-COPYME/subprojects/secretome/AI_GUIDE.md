@@ -1,16 +1,65 @@
 # AI_GUIDE: secretome
 
-**For AI Assistants**: Read the project-level guide (`../../AI_GUIDE-project.md`) first for GIGANTIC overview, directory structure, and general patterns. This guide covers the `secretome` subproject specifically.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May 21 (initial; Moroz spec scoping)
+AI:      Claude Code | Opus 4.7 | 2026 May 23 (BLOCK_secretome_evidence_table scaffold)
+AI:      Claude Code | Opus 4.7 | 2026 May 25 (STEP_2-filter_secretome scripts)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
 
-> **Build location note** (May 2026): This subproject is currently being developed at `~/secretome/` because `/blue/` is out of space. Once space is restored, contents will be rsync'd into `gigantic_project-COPYME/subprojects/secretome/` (stub to be created) and absolute paths in `START_HERE-user_config.yaml` will be swapped to relative paths.
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- Three units (mixed BLOCK + STEP — see "Naming inconsistency" note below):
+  - [`BLOCK_secretome_evidence_table/`](BLOCK_secretome_evidence_table/) — pivots annotation DB to per-protein evidence tables (logically STEP_1)
+  - [`STEP_2-filter_secretome/`](STEP_2-filter_secretome/) — applies filters to evidence tables → per-species secretome
+  - [`BLOCK_secretome_per_moroz_17may2026/`](BLOCK_secretome_per_moroz_17may2026/) — Moroz lab spec implementation (scaffold only, awaiting upstream data)
+- Reads FROM:
+  - `../annotations_hmms/output_to_input/BLOCK_build_annotation_database/` — long-format standardized annotation DB
+  - `../annotations_hmms/output_to_input/BLOCK_signalp/` — SignalP6 predictions
+  - `../annotations_hmms/output_to_input/BLOCK_deeploc/` — DeepLoc 2.0 predictions
+  - `../annotations_hmms/output_to_input/BLOCK_interproscan_parsed/pfam/` — Pfam annotations
+  - `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` — proteomes
+- Outputs TO (`output_to_input/`):
+  - `BLOCK_secretome_evidence_table/` — per-species evidence tables (one wide TSV per species)
+  - `STEP_2-filter_secretome/` — per-species filtered secretome tables
+  - `BLOCK_secretome_per_moroz_17may2026/` — (future, when scripted)
+- Downstream consumers: comparative analyses, `upload_to_server/` (later)
+
+## Naming inconsistency (flagged for future cleanup)
+
+`BLOCK_secretome_evidence_table/` is logically STEP_1 (its output feeds
+`STEP_2-filter_secretome/`), but is named as a BLOCK. Per §41 +
+memory `feedback_block_vs_step_semantics`, BLOCKs are
+independently-runnable while STEPs are sequentially-dependent — so the
+correct name would be `STEP_1-build_evidence_table/`. Renaming is out
+of scope for this docs pass; the dir name is preserved as-is.
+
+`BLOCK_secretome_per_moroz_17may2026/` is a separate (orthogonal)
+experimental implementation of the Moroz spec — it's a true BLOCK
+(no STEP dependency).
+
+---
+
+**For AI Assistants**: Read the project-level guide (`../../AI_GUIDE.md`) first for GIGANTIC overview, directory structure, and general patterns. This guide covers the `secretome` subproject specifically.
+
+> **Build location note** (May 2026): This subproject was developed initially at `~/secretome/` because `/blue/` was out of space. Contents are now in this canonical location (`gigantic_project-COPYME/subprojects/secretome/`); absolute paths in `START_HERE-user_config.yaml` may still reference the old location and should be swapped to relative paths as part of next refactor.
 
 ## Quick Reference
 
 | User needs… | Go to… |
 |---|---|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| Subproject concepts, output schema | This file |
-| Running the workflow | `BLOCK_secretome_per_moroz_17may2026/workflow-COPYME-secretome_per_moroz_17may2026/ai/AI_GUIDE-secretome_per_moroz_17may2026_workflow.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
+| Subproject overview | `README.md` |
+| Subproject concepts (this file) | This file |
+| Build evidence table (logically STEP_1) | `BLOCK_secretome_evidence_table/AI_GUIDE.md` |
+| Filter to secretome (STEP_2) | `STEP_2-filter_secretome/AI_GUIDE.md` |
+| Moroz 2026-05-17 spec implementation | `BLOCK_secretome_per_moroz_17may2026/AI_GUIDE.md` |
+| Running build_evidence_table workflow | `BLOCK_secretome_evidence_table/workflow-COPYME-build_evidence_table/ai/AI_GUIDE.md` |
+| Running filter_secretome workflow | `STEP_2-filter_secretome/workflow-COPYME-filter_secretome/ai/AI_GUIDE.md` |
+| Running per_moroz workflow (scaffold only) | `BLOCK_secretome_per_moroz_17may2026/workflow-COPYME-secretome_per_moroz_17may2026/ai/AI_GUIDE.md` |
 
 ## Purpose
 
@@ -59,7 +108,7 @@ Sequential KEEPER/DROPPER filters. Each script's KEEPER output is the next scrip
 
 ```
 secretome/
-├── AI_GUIDE-secretome.md
+├── AI_GUIDE.md
 ├── README.md
 ├── output_to_input/                                          # symlink hub for downstream subprojects
 │   └── BLOCK_secretome_per_moroz_17may2026/                  # populated by RUN-workflow.sh
@@ -73,7 +122,7 @@ secretome/
             ├── main.nf
             ├── nextflow.config
             ├── conda_environment.yml                         # auto-created on first run
-            ├── AI_GUIDE-secretome_per_moroz_17may2026_workflow.md
+            ├── AI_GUIDE.md
             └── scripts/                                      # NNN_ai-python-*.py (to be defined)
 ```
 
@@ -110,5 +159,5 @@ To be added after first run review, matching the canonical pattern (`upload_to_s
 
 ## Where to Look Next
 
-- `BLOCK_secretome_per_moroz_17may2026/workflow-COPYME-secretome_per_moroz_17may2026/ai/AI_GUIDE-secretome_per_moroz_17may2026_workflow.md` — workflow execution
+- `BLOCK_secretome_per_moroz_17may2026/workflow-COPYME-secretome_per_moroz_17may2026/ai/AI_GUIDE.md` — workflow execution
 - `BLOCK_secretome_per_moroz_17may2026/workflow-COPYME-secretome_per_moroz_17may2026/START_HERE-user_config.yaml` — edit before running

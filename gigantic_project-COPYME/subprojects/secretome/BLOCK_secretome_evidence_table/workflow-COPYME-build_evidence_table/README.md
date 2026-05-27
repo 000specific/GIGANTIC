@@ -1,5 +1,24 @@
 # workflow-COPYME-build_evidence_table
 
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May 23 (workflow scaffold)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK: [`../AI_GUIDE.md`](../AI_GUIDE.md) — BLOCK_secretome_evidence_table (logically STEP_1)
+- Parent (subproject): [`../../README.md`](../../README.md) — secretome overview
+- This workflow's AI guide: [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md)
+- Reads from: `../../../annotations_hmms/output_to_input/BLOCK_build_annotation_database/` + `INPUT_user/proteome_manifest.tsv`
+- Outputs to: `../../output_to_input/BLOCK_secretome_evidence_table/`
+- Downstream STEP: `../../STEP_2-filter_secretome/workflow-COPYME-filter_secretome/`
+- 3 scripts (validate / build_evidence_table / `write_run_log` per §45)
+- Conda env: `aiG-secretome-build_evidence_table`
+
+---
+
 Builds one wide per-protein **evidence table** TSV per species, pivoting from
 the long-format standardized annotation database produced by
 `annotations_hmms/BLOCK_build_annotation_database`. Each row in the output is
@@ -39,4 +58,4 @@ When `execution_mode: "slurm"` in the config, `RUN-workflow.sh` self-submits.
 
 - `ai/AI_GUIDE-build_evidence_table_workflow.md` — workflow execution detail
 - `../AI_GUIDE-secretome_evidence_table.md` — BLOCK overview + schema
-- `../../AI_GUIDE-secretome.md` — subproject overview
+- `../../AI_GUIDE.md` — subproject overview

@@ -1,13 +1,35 @@
 # AI_GUIDE: secretome workflow (BLOCK_secretome_per_moroz_17may2026)
 
-**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-secretome.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.7 | 2026 May 21 (initial scoping)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — BLOCK_secretome_per_moroz_17may2026 (scaffold only)
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md) — secretome overview + full Moroz spec detail
+- Parent (project): [`../../../../AI_GUIDE.md`](../../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from (per Moroz spec — when scripted):
+  - `../../../../annotations_hmms/output_to_input/BLOCK_signalp/`
+  - `../../../../annotations_hmms/output_to_input/BLOCK_deeploc/`
+  - `../../../../annotations_hmms/output_to_input/BLOCK_interproscan_parsed/pfam/`
+- Outputs to: `../../../output_to_input/BLOCK_secretome_per_moroz_17may2026/` (when scripted)
+- 0 scripts currently (scaffold only)
+- Conda env: `aiG-secretome-secretome_per_moroz_17may2026`
+
+---
+
+**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 ## Quick Reference
 
 | User needs… | Go to… |
 |---|---|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Subproject concepts, output schema, path portability | `../../../AI_GUIDE-secretome.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Subproject concepts, output schema, path portability | `../../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start
