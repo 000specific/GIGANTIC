@@ -1,13 +1,34 @@
-# AI_GUIDE-ncbi_nr_blastp.md (Level 2: BLOCK Guide)
+# AI_GUIDE.md (Level 2: BLOCK Guide)
 
-**For AI Assistants**: Read `../AI_GUIDE-public_databases.md` first for subproject overview. This guide covers NCBI nr BLAST protein database specifics.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md) — two-BLOCK overview
+- Parent (subproject README): [`../README.md`](../README.md)
+- Workflow template: [`workflow-COPYME-download_build_ncbi_nr_blastp/`](workflow-COPYME-download_build_ncbi_nr_blastp/)
+- Workflow AI guide: [`workflow-COPYME-download_build_ncbi_nr_blastp/ai/AI_GUIDE.md`](workflow-COPYME-download_build_ncbi_nr_blastp/ai/AI_GUIDE.md)
+- Builds: BLAST+ blastp database
+- Reads FROM: NCBI nr FTP (network)
+- Outputs TO: `../output_to_input/BLOCK_ncbi_nr_blastp/`
+- Sibling BLOCK: `../BLOCK_ncbi_nr_diamond/` — same input, different output format
+- 4 scripts (download / build / validate / `write_run_log` per §45)
+- Conda env: `aiG-public_databases` (shared with sibling per §53)
+
+---
+
+**For AI Assistants**: Read `../AI_GUIDE.md` first for subproject overview. This guide covers NCBI nr BLAST protein database specifics.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
-| Public databases overview | `../AI_GUIDE-public_databases.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
+| Public databases overview | `../AI_GUIDE.md` |
 | NCBI nr BLAST concepts | This file |
-| Running the workflow | `workflow-COPYME-download_build_ncbi_nr_blastp/ai/AI_GUIDE-ncbi_nr_blastp_workflow.md` |
+| Running the workflow | `workflow-COPYME-download_build_ncbi_nr_blastp/ai/AI_GUIDE.md` |
 
 ## What This BLOCK Does
 
@@ -17,11 +38,11 @@ Downloads the NCBI non-redundant (nr) protein FASTA from NCBI FTP, then builds a
 
 ```
 BLOCK_ncbi_nr_blastp/
-├── AI_GUIDE-ncbi_nr_blastp.md                        # This file
+├── AI_GUIDE.md                        # This file
 └── workflow-COPYME-download_build_ncbi_nr_blastp/     # Template for new runs
     ├── START_HERE-user_config.yaml
     ├── RUN-workflow.sh
-    ├── RUN-workflow.sbatch
+    ├── RUN-workflow.sh
     └── ai/
 ```
 
@@ -40,7 +61,7 @@ BLOCK_ncbi_nr_blastp/
 |------|---------|-------------|
 | `START_HERE-user_config.yaml` | Download URL, threads, output paths | Yes |
 | `RUN-workflow.sh` | Bash workflow runner | No |
-| `RUN-workflow.sbatch` | SLURM wrapper | Yes (account, qos) |
+| `RUN-workflow.sh` | SLURM wrapper | Yes (account, qos) |
 | `ai/nextflow.config` | Nextflow resource allocation | Rarely |
 | `ai/main.nf` | Pipeline definition | No |
 

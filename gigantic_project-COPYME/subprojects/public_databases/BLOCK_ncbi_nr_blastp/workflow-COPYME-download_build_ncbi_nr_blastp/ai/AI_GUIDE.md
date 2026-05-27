@@ -1,12 +1,30 @@
-# AI_GUIDE-ncbi_nr_blastp_workflow.md (Level 3: Workflow Execution Guide)
+# AI_GUIDE.md (Level 3: Workflow Execution Guide)
 
-**For AI Assistants**: Read the BLOCK guide (`../../AI_GUIDE-ncbi_nr_blastp.md`) first. This guide focuses on running the workflow.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: NCBI nr FTP (network download)
+- Outputs to: `../../../output_to_input/BLOCK_ncbi_nr_blastp/`
+- 4 scripts; final = `write_run_log` per §45
+- Conda env: `aiG-public_databases`
+
+---
+
+**For AI Assistants**: Read the BLOCK guide (`../../AI_GUIDE.md`) first. This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Public databases overview | `../../../AI_GUIDE-public_databases.md` |
-| NCBI nr BLAST concepts | `../../AI_GUIDE-ncbi_nr_blastp.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Public databases overview | `../../../AI_GUIDE.md` |
+| NCBI nr BLAST concepts | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ## Quick Start

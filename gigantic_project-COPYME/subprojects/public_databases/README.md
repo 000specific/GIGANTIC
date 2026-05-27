@@ -1,7 +1,22 @@
 # public_databases - Public Reference Database Downloads and Construction
 
-**AI**: Claude Code | Opus 4.6 | 2026 March 09
-**Human**: Eric Edsinger
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent: [`../../README.md`](../../README.md) — gigantic_project-COPYME overview
+- Subproject AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
+- Reads from: NCBI nr FTP (network download by script 001)
+- Outputs to: `output_to_input/BLOCK_{ncbi_nr_blastp,ncbi_nr_diamond}/` — prepared databases
+- Downstream consumers:
+-   - `one_direction_homologs/` — uses the DIAMOND db (axis_a in dark_proteomes pipeline)
+-   - Any subproject doing vs-nr search
+- Two BLOCKs, both download the same NCBI nr FASTA and build a tool-specific database (blastp / diamond)
+- Single shared conda env: `aiG-public_databases` (per §53 — both BLOCKs use the same blast/diamond toolset)
 
 ---
 
@@ -60,7 +75,7 @@ NCBI nr is updated weekly. Each download creates a versioned directory with the 
 ```
 public_databases/
 ├── README.md                           # This file
-├── AI_GUIDE-public_databases.md        # AI assistant guidance (subproject level)
+├── AI_GUIDE.md        # AI assistant guidance (subproject level)
 ├── TODO.md                             # Outstanding tasks
 ├── user_research/                      # Personal workspace
 ├── upload_to_server/                   # Files to share via GIGANTIC server
@@ -70,17 +85,17 @@ public_databases/
 │   └── BLOCK_ncbi_nr_blastp/          # BLAST nr database location
 │
 ├── BLOCK_ncbi_nr_diamond/
-│   ├── AI_GUIDE-ncbi_nr_diamond.md    # BLOCK-level AI guide
+│   ├── AI_GUIDE.md    # BLOCK-level AI guide
 │   │
 │   └── workflow-COPYME-download_build_ncbi_nr_diamond/
 │       ├── README.md                   # Quick start guide
 │       ├── RUN-workflow.sh             # bash RUN-workflow.sh (local)
-│       ├── RUN-workflow.sbatch         # sbatch RUN-workflow.sbatch (SLURM)
+│       ├── RUN-workflow.sh         # sbatch RUN-workflow.sh (SLURM)
 │       ├── START_HERE-user_config.yaml # Edit this for your project
 │       ├── INPUT_user/                 # No user inputs needed
 │       ├── OUTPUT_pipeline/            # Downloaded and built database
 │       └── ai/                         # Internal (don't touch)
-│           ├── AI_GUIDE-ncbi_nr_diamond_workflow.md
+│           ├── AI_GUIDE.md
 │           ├── main.nf
 │           ├── nextflow.config
 │           └── scripts/
@@ -90,17 +105,17 @@ public_databases/
 │               └── 004_ai-python-write_run_log.py
 │
 └── BLOCK_ncbi_nr_blastp/
-    ├── AI_GUIDE-ncbi_nr_blastp.md      # BLOCK-level AI guide
+    ├── AI_GUIDE.md      # BLOCK-level AI guide
     │
     └── workflow-COPYME-download_build_ncbi_nr_blastp/
         ├── README.md                   # Quick start guide
         ├── RUN-workflow.sh             # bash RUN-workflow.sh (local)
-        ├── RUN-workflow.sbatch         # sbatch RUN-workflow.sbatch (SLURM)
+        ├── RUN-workflow.sh         # sbatch RUN-workflow.sh (SLURM)
         ├── START_HERE-user_config.yaml # Edit this for your project
         ├── INPUT_user/                 # No user inputs needed
         ├── OUTPUT_pipeline/            # Downloaded and built database
         └── ai/                         # Internal (don't touch)
-            ├── AI_GUIDE-ncbi_nr_blastp_workflow.md
+            ├── AI_GUIDE.md
             ├── main.nf
             ├── nextflow.config
             └── scripts/
@@ -130,10 +145,10 @@ cd BLOCK_ncbi_nr_diamond/workflow-COPYME-download_build_ncbi_nr_diamond
 nano START_HERE-user_config.yaml
 
 # Edit SLURM account/qos in sbatch file
-nano RUN-workflow.sbatch
+nano RUN-workflow.sh
 
 # Run (SLURM recommended — downloads are large)
-sbatch RUN-workflow.sbatch
+sbatch RUN-workflow.sh
 ```
 
 ### BLAST Database (for high-quality searches)
@@ -145,10 +160,10 @@ cd BLOCK_ncbi_nr_blastp/workflow-COPYME-download_build_ncbi_nr_blastp
 nano START_HERE-user_config.yaml
 
 # Edit SLURM account/qos in sbatch file
-nano RUN-workflow.sbatch
+nano RUN-workflow.sh
 
 # Run (SLURM recommended — downloads are large)
-sbatch RUN-workflow.sbatch
+sbatch RUN-workflow.sh
 ```
 
 ---

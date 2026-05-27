@@ -1,6 +1,26 @@
 # AI Guide: public_databases Subproject
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers public_databases-specific concepts and troubleshooting.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (project): [`../../AI_GUIDE.md`](../../AI_GUIDE.md) — GIGANTIC overview + general patterns
+- Subproject README: [`README.md`](README.md)
+- Two BLOCKs (independent, same input, different output format):
+-   - [`BLOCK_ncbi_nr_blastp/AI_GUIDE.md`](BLOCK_ncbi_nr_blastp/AI_GUIDE.md) — BLAST+ db for blastp searches
+-   - [`BLOCK_ncbi_nr_diamond/AI_GUIDE.md`](BLOCK_ncbi_nr_diamond/AI_GUIDE.md) — DIAMOND db for fast vs-nr searches
+- Reads FROM: NCBI nr FTP (network download)
+- Outputs TO (`output_to_input/`): per-tool prepared database directories (large binary files)
+- Downstream consumers: `one_direction_homologs` (axis_a — diamond db), any subproject doing vs-nr BLAST
+- Conda env: `aiG-public_databases` (shared by both BLOCKs per §53; both need blast+ and diamond)
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview, directory structure, and general patterns. This guide covers public_databases-specific concepts and troubleshooting.
 
 **Location**: `gigantic_project-*/subprojects/public_databases/`
 
@@ -21,12 +41,12 @@
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview, directory structure | `../../AI_GUIDE.md` |
 | Public databases concepts, troubleshooting | This file |
-| DIAMOND nr database setup | `BLOCK_ncbi_nr_diamond/AI_GUIDE-ncbi_nr_diamond.md` |
-| DIAMOND nr workflow execution | `BLOCK_ncbi_nr_diamond/workflow-COPYME-*/ai/AI_GUIDE-ncbi_nr_diamond_workflow.md` |
-| BLAST nr database setup | `BLOCK_ncbi_nr_blastp/AI_GUIDE-ncbi_nr_blastp.md` |
-| BLAST nr workflow execution | `BLOCK_ncbi_nr_blastp/workflow-COPYME-*/ai/AI_GUIDE-ncbi_nr_blastp_workflow.md` |
+| DIAMOND nr database setup | `BLOCK_ncbi_nr_diamond/AI_GUIDE.md` |
+| DIAMOND nr workflow execution | `BLOCK_ncbi_nr_diamond/workflow-COPYME-*/ai/AI_GUIDE.md` |
+| BLAST nr database setup | `BLOCK_ncbi_nr_blastp/AI_GUIDE.md` |
+| BLAST nr workflow execution | `BLOCK_ncbi_nr_blastp/workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ---
 
@@ -52,7 +72,7 @@
 ```
 public_databases/
 ├── README.md                        # Human documentation
-├── AI_GUIDE-public_databases.md     # THIS FILE
+├── AI_GUIDE.md     # THIS FILE
 │
 ├── user_research/                   # Personal workspace
 ├── upload_to_server/                # Server sharing
@@ -62,20 +82,20 @@ public_databases/
 │   └── BLOCK_ncbi_nr_blastp/                      # BLAST database symlink
 │
 ├── BLOCK_ncbi_nr_diamond/
-│   ├── AI_GUIDE-ncbi_nr_diamond.md          # BLOCK-level guide
+│   ├── AI_GUIDE.md          # BLOCK-level guide
 │   └── workflow-COPYME-download_build_ncbi_nr_diamond/
 │       ├── RUN-workflow.sh                  # bash RUN-workflow.sh
-│       ├── RUN-workflow.sbatch              # sbatch RUN-workflow.sbatch
+│       ├── RUN-workflow.sh              # sbatch RUN-workflow.sh
 │       ├── START_HERE-user_config.yaml      # User edits download settings
 │       ├── INPUT_user/                      # No inputs needed
 │       ├── OUTPUT_pipeline/                 # Database files
 │       └── ai/                              # Nextflow pipeline and scripts
 │
 └── BLOCK_ncbi_nr_blastp/
-    ├── AI_GUIDE-ncbi_nr_blastp.md           # BLOCK-level guide
+    ├── AI_GUIDE.md           # BLOCK-level guide
     └── workflow-COPYME-download_build_ncbi_nr_blastp/
         ├── RUN-workflow.sh
-        ├── RUN-workflow.sbatch
+        ├── RUN-workflow.sh
         ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         ├── OUTPUT_pipeline/
@@ -172,7 +192,7 @@ ls -la ai/logs/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `BLOCK_*/workflow-*/START_HERE-user_config.yaml` | Download and build settings | **YES** |
-| `BLOCK_*/workflow-*/RUN-workflow.sbatch` | SLURM account/qos/resources | **YES** (SLURM) |
+| `BLOCK_*/workflow-*/RUN-workflow.sh` | SLURM account/qos/resources | **YES** (SLURM) |
 | `output_to_input/BLOCK_ncbi_nr_diamond/` | DIAMOND database for downstream | No |
 | `output_to_input/BLOCK_ncbi_nr_blastp/` | BLAST database for downstream | No |
 

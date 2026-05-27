@@ -1,6 +1,24 @@
 # AI Guide: NCBI nr DIAMOND Database Workflow
 
-**For AI Assistants**: This guide covers workflow execution. For BLOCK overview, see `../../AI_GUIDE-ncbi_nr_diamond.md`. For GIGANTIC overview, see `../../../../AI_GUIDE-project.md`.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent BLOCK guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
+- Parent (subproject AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
+- Workflow README: [`../README.md`](../README.md)
+- Reads from: NCBI nr FTP (network download)
+- Outputs to: `../../../output_to_input/BLOCK_ncbi_nr_diamond/`
+- 4 scripts; final = `write_run_log` per §45
+- Conda env: `aiG-public_databases`
+
+---
+
+**For AI Assistants**: This guide covers workflow execution. For BLOCK overview, see `../../AI_GUIDE.md`. For GIGANTIC overview, see `../../../../AI_GUIDE.md`.
 
 **Location**: `gigantic_project-*/subprojects/public_databases/BLOCK_ncbi_nr_diamond/workflow-COPYME-download_build_ncbi_nr_diamond/`
 
@@ -38,8 +56,8 @@ cd workflow-RUN_01-download_build_ncbi_nr_diamond
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| BLOCK overview | `../../AI_GUIDE-ncbi_nr_diamond.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| BLOCK overview | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ---
@@ -63,7 +81,7 @@ workflow-COPYME-download_build_ncbi_nr_diamond/
 │   └── 4-output/                    # Run log
 |
 └── ai/                              # Internal - users don't touch
-    ├── AI_GUIDE-ncbi_nr_diamond_workflow.md  # THIS FILE
+    ├── AI_GUIDE.md  # THIS FILE
     ├── main.nf
     ├── nextflow.config
     ├── logs/                        # NextFlow logs

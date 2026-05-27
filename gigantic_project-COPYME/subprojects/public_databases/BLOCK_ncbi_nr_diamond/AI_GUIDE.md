@@ -1,12 +1,33 @@
-# AI_GUIDE-ncbi_nr_diamond.md (Level 2: BLOCK Guide)
+# AI_GUIDE.md (Level 2: BLOCK Guide)
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview and directory structure. This guide covers the NCBI nr DIAMOND database BLOCK.
+<!-- ============================================================================
+AI:      Claude Code | Opus 4.6 | 2026 March 01 (initial)
+AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+Human:   Eric Edsinger
+============================================================================ -->
+
+## Where this fits
+
+- Parent (subproject AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md) — two-BLOCK overview
+- Parent (subproject README): [`../README.md`](../README.md)
+- Workflow template: [`workflow-COPYME-download_build_ncbi_nr_diamond/`](workflow-COPYME-download_build_ncbi_nr_diamond/)
+- Workflow AI guide: [`workflow-COPYME-download_build_ncbi_nr_diamond/ai/AI_GUIDE.md`](workflow-COPYME-download_build_ncbi_nr_diamond/ai/AI_GUIDE.md)
+- Builds: DIAMOND database
+- Reads FROM: NCBI nr FTP (network)
+- Outputs TO: `../output_to_input/BLOCK_ncbi_nr_diamond/`
+- Sibling BLOCK: `../BLOCK_ncbi_nr_blastp/` — same input, different output format
+- 4 scripts (download / build / validate / `write_run_log` per §45)
+- Conda env: `aiG-public_databases` (shared with sibling per §53)
+
+---
+
+**For AI Assistants**: Read `../../AI_GUIDE.md` first for GIGANTIC overview and directory structure. This guide covers the NCBI nr DIAMOND database BLOCK.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../AI_GUIDE-project.md` |
+| GIGANTIC overview | `../../AI_GUIDE.md` |
 | BLOCK overview | This file |
-| Running the workflow | `workflow-COPYME-download_build_ncbi_nr_diamond/ai/AI_GUIDE-ncbi_nr_diamond_workflow.md` |
+| Running the workflow | `workflow-COPYME-download_build_ncbi_nr_diamond/ai/AI_GUIDE.md` |
 
 ## What This BLOCK Does
 
@@ -31,7 +52,7 @@ Downloads the NCBI nr (non-redundant) protein FASTA database and builds a DIAMON
 |------|---------|-------------|
 | `START_HERE-user_config.yaml` | Project name, threads, paths | Yes |
 | `RUN-workflow.sh` | Bash workflow runner | No |
-| `RUN-workflow.sbatch` | SLURM wrapper (account/qos) | Yes (SLURM settings only) |
+| `RUN-workflow.sh` | SLURM wrapper (account/qos) | Yes (SLURM settings only) |
 | `ai/main.nf` | NextFlow pipeline definition | No |
 | `ai/nextflow.config` | NextFlow configuration | No |
 
