@@ -268,7 +268,7 @@ workflow {
     calculate_assembly_statistics(standardize_genome_annotation_phylonames.out.genomes)
 
     // Step 5: BUSCO evaluation — conditional on config (busco.enabled)
-    if ( params.busco_enabled ) {
+    if ( params.busco.enabled ) {
         run_busco_evaluation(clean_proteome_invalid_residues.out.cleaned_proteomes)
         busco_summary_ch = run_busco_evaluation.out.summary
     } else {
