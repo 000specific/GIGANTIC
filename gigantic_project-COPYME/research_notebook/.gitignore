@@ -1,20 +1,27 @@
 # research_notebook/ — personal sandbox + GIGANTIC's own AI infrastructure sandbox.
-# Per gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md §1, §9, §25.
+# Per gigantic_project-COPYME/ai/ai_FYIs/gigantic_conventions.md §1, §9, §25, §59.
 #
 # What ships:
 #   - This .gitignore
-#   - README.md at any depth (including research_notebook/README.md
-#     and research_ai/README.md)
-#   - .gitkeep at any depth (preserves directory structure for git)
+#   - README.md at any depth in research_ai/ (project-wide doc-ships
+#     convention). Inside research_user/, README is suppressed by
+#     default so user prose stays local.
+#   - .gitkeep at any depth (preserves per-subproject directory
+#     structure for git in both research_ai/ and research_user/)
+#   - GIGANTIC toolkits (per §59) — NextFlow workflows developed in
+#     research_user/ and explicitly re-included via toolkit exceptions
+#     below. Currently: ncbi_genomes-gigantic_T1_toolkit/ under
+#     subproject-genomesDB/.
 #
 # What does NOT ship:
-#   - research_user/** — true wild-west sandbox; ships ONLY .gitkeep
-#     (no README, no scripts, no pipeline code, no anything else)
+#   - research_user/** — personal sandbox; ships ONLY the
+#     per-subproject .gitkeep placeholders unless a specific path is
+#     re-included as a §59 toolkit.
 #   - research_ai/sessions/*.jsonl.gz — captured session transcripts
 #     (gitignored by the catch-all below; never edited / deleted)
 #   - research_ai/sessions/TRANSCRIPT_CAPTURE_LOG.md — per-project local
 #     capture log (also caught by the catch-all)
-#   - Any other content (personal notes, draft analyses, downloaded data)
+#   - Any other personal content (notes, draft analyses, downloaded data)
 
 # Default: ignore everything in this tree
 *
@@ -28,18 +35,39 @@
 # Keep README.md at any depth (project-wide doc-ships convention)
 !README.md
 
-# Keep .gitkeep stubs (preserve directory structure for git)
+# Keep .gitkeep stubs at any depth (preserves per-subproject directory
+# structure for git, including subproject-<X>/.gitkeep placeholders)
 !.gitkeep
+!**/.gitkeep
 
-# research_user/ is a wild-west sandbox per §25 — ships ONLY the .gitkeep.
-# Override the !README.md and any other un-ignore specifically inside
-# research_user/ so nothing leaks regardless of what the user puts there.
+# research_user/ defaults to personal sandbox per §25 — by default
+# ships ONLY the per-subproject .gitkeep placeholders so users have
+# pre-materialized subproject-<X>/ directories. README.md is suppressed
+# inside research_user/ so user prose stays local. Specific paths may
+# be re-included as toolkits (per §59).
 research_user/**
+# Re-include subproject-* directories so git can descend into them.
+# Per git docs: "It is not possible to re-include a file if a parent
+# directory of that file is excluded." So we must un-ignore the dirs
+# (trailing slash = directory match) BEFORE re-including files inside.
+!research_user/subproject-*/
+!research_user/subproject-*/**/
+# Allow the per-subproject .gitkeep placeholders at any depth
 !research_user/.gitkeep
+!research_user/**/.gitkeep
 
-# Archive directories: anything starting with x_ is a disposable archive and
-# must stay ignored even if it contains files that would otherwise be tracked
-# (e.g., .gitkeep files moved during archival). Place AFTER exceptions so this
-# rule wins for x_-prefixed paths.
+# §59 toolkit exception: ncbi_genomes-gigantic_T1_toolkit/ is a
+# GIGANTIC "toolkit" — a NextFlow workflow developed during GIGANTIC
+# work that users can optionally run OUTSIDE gigantic subprojects.
+# This one downloads/processes NCBI reference genomes (GCFs) to produce
+# T1 proteomes required as user-provided input for the genomesDB
+# subproject. Tracked in full; x_* backups inside still ignored by the
+# x_* rule below.
+!research_user/subproject-genomesDB/ncbi_genomes-gigantic_T1_toolkit/**
+
+# Archive directories: anything starting with x_ is a disposable archive
+# and must stay ignored even if it contains files that would otherwise
+# be tracked (including x_* backups inside a toolkit). Place AFTER all
+# exceptions so this rule wins for x_-prefixed paths.
 x_*
 **/x_*

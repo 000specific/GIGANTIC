@@ -1,0 +1,10 @@
+# NCBI Genomes Pipeline Configuration
+# AI: Claude Code | Opus 4 | 2026 February 12
+# Human: Eric Edsinger
+#
+# This file controls the NCBI genomes acquisition pipeline.
+# Edit this file to change settings. Do NOT edit nextflow.config directly.
+
+# Output settings
+output:
+  base_dir: "OUTPUT_pipeline"    # Where pipeline outputs are published

@@ -1485,6 +1485,102 @@ Common occurrences:
 The two prefixes are NOT interchangeable — they signal opposite trajectories
 in the lifecycle. `x_` says "going away," `z_` says "coming up."
 
+---
+
+## 59. GIGANTIC toolkits — optional NextFlow workflows for outside-subproject work
+
+A **GIGANTIC toolkit** is a NextFlow workflow that users can **optionally**
+run for work **outside** any gigantic subproject — typically to produce
+inputs that gigantic subprojects then consume. Toolkits are developed
+during GIGANTIC work, follow GIGANTIC conventions for structure and
+naming, but are explicitly NOT first-class subprojects: their inputs are
+too variable across genome projects for the framework to take ownership.
+
+**Why toolkits exist as a separate concept**: Some prep work (e.g.,
+downloading and processing public reference genomes) is genuinely
+user-responsibility because the choices vary too much from project to
+project to be standardized (which databases, which assembly versions,
+which filters, which subsetting policy). But the same prep work recurs
+across projects, so we keep the working code in the shipped framework
+as a reusable starting point — a toolkit — rather than have every user
+reinvent it.
+
+### Where toolkits live
+
+Inside the user's research sandbox, scoped to the downstream subproject
+they feed:
+
+```
+gigantic_project-COPYME/research_notebook/research_user/subproject-<X>/<toolkit_name>/
+```
+
+For example, the canonical seed toolkit:
+
+```
+gigantic_project-COPYME/research_notebook/research_user/subproject-genomesDB/
+└── ncbi_genomes-gigantic_T1_toolkit/
+    ├── README.md
+    ├── output_to_input/         # toolkit outputs that genomesDB consumes
+    │   ├── gene_annotations/
+    │   ├── genomes/
+    │   ├── maps/
+    │   └── T1_proteomes/
+    └── toolkit-COPYME-<descriptor>/   # user-copied workflow instance
+        ├── ai/
+        │   ├── main.nf
+        │   ├── nextflow.config
+        │   └── scripts/
+        ├── INPUT_user/
+        ├── README.md
+        ├── RUN_<name>.sh
+        └── <name>_config.yaml
+```
+
+### Distinguishing features vs. gigantic subproject workflows
+
+| Aspect | Subproject workflow (`workflow-COPYME-*`) | Toolkit (`toolkit-COPYME-*`) |
+|---|---|---|
+| Location | `subprojects/<name>/<BLOCK_or_STEP>/workflow-COPYME-*/` | `research_notebook/research_user/subproject-<X>/<toolkit>/toolkit-COPYME-*/` |
+| Required to run subproject? | Yes — canonical pipeline | No — optional convenience for outside prep |
+| Inputs | INPUT_user/ (per §17, §18) | Toolkit-local INPUT_user/ + user-staged data |
+| Outputs | `output_to_input/` for downstream subprojects (per §2) | Toolkit-local `output_to_input/`, then user symlinks/copies into subproject INPUT slot |
+| Naming of run driver | Canonical `RUN-workflow.sh` (per §29) | Toolkit-defined (e.g., `RUN_<name>.sh`); not bound to §29 |
+| YAML config name | Canonical `START_HERE-user_config.yaml` | Toolkit-defined (e.g., `<name>_config.yaml`) |
+| Ships in framework? | Yes — `workflow-COPYME-*` is the template | Yes — `toolkit-COPYME-*` is the template; explicit gitignore exception per §59 |
+| Subject to §47 frozen-RUN rule? | Yes for `workflow-RUN_*/` | Same convention applies for toolkit RUN dirs |
+
+### Toolkit gitignore exception pattern
+
+Because toolkits live inside `research_notebook/research_user/` (which
+defaults to wild-west sandbox per §25), they require an **explicit
+gitignore re-include** in both the top-level `.gitignore` and the
+nested `research_notebook/.gitignore`:
+
+```gitignore
+!**/research_notebook/research_user/subproject-<X>/<toolkit_name>/
+!**/research_notebook/research_user/subproject-<X>/<toolkit_name>/**
+```
+
+These rules must appear **before** the `x_*` / `**/x_*` rules so x_*
+backups inside the toolkit still stay ignored per §58.
+
+### Current toolkits
+
+- `subproject-genomesDB/ncbi_genomes-gigantic_T1_toolkit/` — downloads
+  NCBI reference genomes (GCFs), unzips/organizes/renames per GIGANTIC
+  conventions, extracts T1 (longest-transcript) proteomes, and produces
+  the `output_to_input/T1_proteomes/`, `genomes/`, `gene_annotations/`,
+  and `maps/` content that genomesDB STEP_2 consumes as user-provided
+  input.
+
+### When to promote a toolkit to a full subproject
+
+If the prep work stops being variable across projects — i.e., a single
+canonical workflow becomes correct for every reasonable use case — the
+toolkit can graduate to a real subproject under `subprojects/`. Until
+then, "toolkit" is the right framing: shipped because reusable, but
+not framework-owned because user-customized.
+
 See also: §49 (`z_*` early-development counterpart).
 
 ---
