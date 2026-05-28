@@ -38,6 +38,14 @@
 !.gitkeep
 !**/.gitkeep
 
+# §59 toolkits: re-include the entire toolkit subtree under
+# research_ai/subproject-<X>/. Toolkits ship full content (scripts,
+# configs, main.nf, AI_GUIDEs, INPUT_user template, etc.) — same
+# rigor as a subproject workflow. x_* archives inside still get
+# ignored by the x_* rule at the bottom of this file, and
+# toolkit-RUN_*/ instances stay ignored via the top-level .gitignore.
+!research_ai/subproject-*/**
+
 # research_user/ is a personal sandbox per §25 — by default ships ONLY
 # the per-subproject .gitkeep placeholders so users have pre-materialized
 # subproject-<X>/ directories. README.md is suppressed inside

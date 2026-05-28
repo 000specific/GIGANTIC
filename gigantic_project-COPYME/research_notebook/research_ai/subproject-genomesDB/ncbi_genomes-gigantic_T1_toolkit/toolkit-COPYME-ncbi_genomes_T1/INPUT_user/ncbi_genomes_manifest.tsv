@@ -1,0 +1,12 @@
+# NCBI Genomes T1 Toolkit -- manifest template
+# Format: 2 tab-separated columns
+#   genus_species	accession
+# Lines starting with '#' are comments. The header row 'genus_species' is also skipped.
+#
+# Recommended: NCBI RefSeq (GCF_*) assemblies; GenBank (GCA_*) may lack
+# annotation/protein.faa and would fail in script 002 -- handle GCA + non-NCBI
+# sources separately.
+#
+# Example (replace with your real species set):
+genus_species	accession
+Homo_sapiens	GCF_000001405.40

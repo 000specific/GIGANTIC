@@ -1,0 +1,84 @@
+# =============================================================================
+# NCBI Genomes T1 Toolkit -- USER CONFIGURATION
+# =============================================================================
+#
+# Edit this file before running. The toolkit reads these settings via
+# ai/nextflow.config (do NOT edit ai/nextflow.config directly).
+#
+# Usage:
+#   bash RUN-workflow.sh
+#
+# Pipeline (5 processes, sequential):
+#   1. download_ncbi_bundles               (via NCBI datasets CLI)
+#   2. unzip_organize_rename               (intermediate naming)
+#   3. extract_t1_with_alt_loci_filter     (T1 + alt-loci dedup + GIGANTIC rename + maps)
+#   4. bridge_to_input_user                (auto-symlink into INPUT_user/genomic_resources)
+#   5. write_run_log                       (audit log)
+# =============================================================================
+
+
+# =============================================================================
+# TOOLKIT SETTINGS
+# =============================================================================
+
+toolkit:
+  # Name used in the audit log filename (ai/logs/run_<timestamp>-<name>_success.log).
+  # Stable across runs of the same toolkit; do not version-stamp here.
+  name: "ncbi_genomes_T1_toolkit"
+
+  # Manifest of species + NCBI accession to download.
+  # Two-column TSV (genus_species<TAB>accession), comments start with '#',
+  # header row with literal 'genus_species' is skipped.
+  manifest_path: "INPUT_user/ncbi_genomes_manifest.tsv"
+
+  # Download date stamp embedded in output filenames per GIGANTIC INPUT_user
+  # spec: Genus_species-genome_<source>_<accession>-downloaded_YYYYMMDD.{ext}.
+  #
+  # Set to "auto" to use today's date (resolved at run start).
+  # Set to "20260528" (no prefix) to pin to a specific date.
+  # Set to "downloaded_20260528" (with prefix) and we use it verbatim.
+  download_date: "auto"
+
+
+# =============================================================================
+# OUTPUT
+# =============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+
+# =============================================================================
+# COMPUTATIONAL RESOURCES
+# =============================================================================
+# Used by SLURM (job-level allocation) when execution_mode is "slurm".
+
+cpus: 4
+memory_gb: 16
+time_hours: 6
+
+
+# =============================================================================
+# EXECUTION MODE
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the Nextflow driver).
+#   "local" - Run directly on this machine (e.g., login node or workstation)
+#   "slurm" - Self-submit as a SLURM job; driver runs on a compute node
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos:     "your_qos"
+
+
+# =============================================================================
+# NEXTFLOW RESUME
+# =============================================================================
+# When true, NextFlow re-uses cached results from work/ for unchanged tasks
+# (saves time on partial-failure recovery). When false, every task re-runs.
+#
+# Default: false -- stale-cache surprises can cause confusing results in
+# research pipelines; explicit opt-in is safer for reproducibility.
+
+resume: false

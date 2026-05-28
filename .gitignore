@@ -34,8 +34,11 @@ work/
 # Pipeline outputs (generated, not tracked)
 OUTPUT_pipeline/
 
-# Test/production run directories (contain large data, not templates)
+# Test/production run directories (contain large data, not templates).
+# Per §35 the same template-vs-instance pattern extends to toolkits
+# (per §59) — toolkit-RUN_*/ instances also stay ignored.
 workflow-RUN_*/
+toolkit-RUN_*/
 
 # GIGANTIC/ai_FYIs/ — local-only historic-dev reference dump (Eric's working
 # copy of older docs to consult while walking through subprojects). Not part

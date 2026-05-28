@@ -1,0 +1,28 @@
+# NCBI Genomes T1 Toolkit -- conda environment
+# AI:    Claude Code | Opus 4.7 (1M context) | 2026 May 28
+# Human: Eric Edsinger
+#
+# Single env per gigantic_conventions.md §28 (toolkit short-form per §53 since
+# single-purpose). Auto-created by RUN-workflow.sh on first run.
+#
+# Provides: Nextflow + NCBI datasets CLI + Python 3 + unzip.
+# All five toolkit scripts run inside this one env -- no env-switching mid-pipeline.
+
+name: aiG-toolkit-ncbi_genomes
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python=3.10
+  # Nextflow pinned below 26 (2026-05-28). Nextflow 26.04's stricter config
+  # parser rejected `import org.yaml.snakeyaml.Yaml` in nextflow.config and
+  # the top-level `workflow.onComplete {}` block we use elsewhere in GIGANTIC
+  # workflows. We worked around both in this toolkit (CLI flag params,
+  # dropped onComplete) but pinning protects the toolkit from further
+  # 26.x parser regressions until the framework migrates.
+  - nextflow>=23.04,<26.0
+  - ncbi-datasets-cli
+  - unzip
+  - pyyaml

@@ -1,0 +1,44 @@
+# species42 GCF-only manifest -- 37 NCBI RefSeq species
+# Generated 2026-05-28 from research_notebook/research_user/phylonames/source-genomes.tsv
+# Dropped (handled separately, not by this toolkit):
+#   GCA_* (GenBank): Megaptera_novaeangliae, Eupentacta_fraudatrix, Holothuria_leucospilota, Mesocentrotus_franciscanus
+#   figshare:        Schizocardium_californicum
+#
+genus_species	accession
+Amphiura_filiformis	GCF_039555335.1
+Antedon_bifida	GCF_963402885.1
+Antedon_mediterranea	GCF_964355755.1
+Aplidium_turbinatum	GCF_918807975.1
+Apostichopus_japonicus	GCF_037975245.1
+Ascidia_mentula	GCF_947561715.1
+Asterias_amurensis	GCF_032118995.1
+Asterias_rubens	GCF_902459465.1
+Balaenoptera_borealis	GCF_965194805.1
+Balaenoptera_musculus	GCF_009873245.2
+Botryllus_schlosseri	GCF_051294905.1
+Branchiostoma_floridae	GCF_000003815.2
+Branchiostoma_lanceolatum	GCF_035083965.1
+Caenorhabditis_elegans	GCF_000002985.6
+Ciona_intestinalis	GCF_018327825.1
+Clavelina_lepadiformis	GCF_947623445.1
+Corella_eumyota	GCF_963082875.1
+Danio_rerio	GCF_049306965.1
+Diadema_setosum	GCF_964275005.2
+Drosophila_melanogaster	GCF_000001215.4
+Glandiceps_talaboti	GCF_964340395.1
+Hippopotamus_amphibius_kiboko	GCF_030028045.1
+Homo_sapiens	GCF_000001405.40
+Lytechinus_pictus	GCF_037042905.1
+Lytechinus_variegatus	GCF_018143015.1
+Mus_musculus	GCF_000001635.27
+Octopus_bimaculoides	GCF_001194135.2
+Oikopleura_dioica	GCF_907165135.1
+Orcinus_orca	GCF_937001465.1
+Patiria_miniata	GCF_015706575.1
+Phallusia_mammillata	GCF_965637545.1
+Phocoena_phocoena	GCF_963924675.1
+Ptychodera_flava	GCF_041260155.1
+Strongylocentrotus_purpuratus	GCF_000002235.5
+Styela_clava	GCF_964204865.1
+Thalia_democratica	GCF_965202585.1
+Tursiops_truncatus	GCF_011762595.2
