@@ -85,11 +85,10 @@ slurm_logs/
 !**/research_notebook/research_ai/sessions/
 !**/research_notebook/research_ai/sessions/.gitkeep
 
-# research_user/ defaults to a personal sandbox — by default ships ONLY
-# the per-subproject .gitkeep placeholders so users have pre-materialized
-# subproject-<X>/ directories. Project content stays local. Specific
-# paths may be re-included as GIGANTIC toolkits (per §59).
-# Per gigantic_conventions.md §25, §59.
+# research_user/ is a personal sandbox per §25 — ships ONLY the
+# per-subproject .gitkeep placeholders so users have pre-materialized
+# subproject-<X>/ directories. All other content stays local.
+# Per gigantic_conventions.md §25.
 **/research_notebook/research_user/**
 # Re-include subproject-* directories so git can descend into them
 # (without these directory un-ignores, the file-level negations below
@@ -99,14 +98,8 @@ slurm_logs/
 # Allow the per-subproject .gitkeep placeholders
 !**/research_notebook/research_user/.gitkeep
 !**/research_notebook/research_user/**/.gitkeep
-
-# §59 toolkit exception: ncbi_genomes-gigantic_T1_toolkit/ is a GIGANTIC
-# "toolkit" — a NextFlow workflow developed in research_user/ that users
-# can optionally run OUTSIDE gigantic subprojects (here: downloads and
-# processes NCBI reference genomes to produce T1 proteomes for genomesDB
-# input). Tracked in full; x_* backups inside still ignored by the global
-# x_* rule at the top of this file.
-!**/research_notebook/research_user/subproject-genomesDB/ncbi_genomes-gigantic_T1_toolkit/**
+# (Toolkits no longer live here per §59 — they live in research_ai/.
+# See git history commit 5cb8e3f for the prior toolkit location.)
 
 # Species data directories (large proteome collections, e.g. species43/, species67/, species71/)
 species[0-9]*/

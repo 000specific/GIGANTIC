@@ -1487,101 +1487,130 @@ in the lifecycle. `x_` says "going away," `z_` says "coming up."
 
 ---
 
-## 59. GIGANTIC toolkits — optional NextFlow workflows for outside-subproject work
+## 59. GIGANTIC toolkits — optional NextFlow workflows for outside-subproject prep work
 
 A **GIGANTIC toolkit** is a NextFlow workflow that users can **optionally**
 run for work **outside** any gigantic subproject — typically to produce
-inputs that gigantic subprojects then consume. Toolkits are developed
-during GIGANTIC work, follow GIGANTIC conventions for structure and
-naming, but are explicitly NOT first-class subprojects: their inputs are
-too variable across genome projects for the framework to take ownership.
+inputs that gigantic subprojects then consume. Toolkits follow GIGANTIC
+conventions the same way subprojects do, but are explicitly NOT
+subprojects: their inputs are too variable across genome projects for the
+framework to take ownership.
 
-**Why toolkits exist as a separate concept**: Some prep work (e.g.,
-downloading and processing public reference genomes) is genuinely
-user-responsibility because the choices vary too much from project to
-project to be standardized (which databases, which assembly versions,
-which filters, which subsetting policy). But the same prep work recurs
-across projects, so we keep the working code in the shipped framework
-as a reusable starting point — a toolkit — rather than have every user
-reinvent it.
+Per §60: toolkits **do not** become subprojects. They are a distinct,
+permanent category of framework-shipped optional infrastructure.
+
+### Why toolkits exist as a separate concept
+
+Some prep work (e.g., downloading and processing public reference
+genomes) is genuinely user-responsibility because the choices vary too
+much from project to project to be standardized (which databases, which
+assembly versions, which filters, which subsetting policy). But the same
+prep work recurs across projects, so we ship working code as a reusable
+starting point — a toolkit — rather than have every user reinvent it.
 
 ### Where toolkits live
 
-Inside the user's research sandbox, scoped to the downstream subproject
-they feed:
+Inside `research_notebook/research_ai/`, scoped to the downstream
+subproject they feed:
 
 ```
-gigantic_project-COPYME/research_notebook/research_user/subproject-<X>/<toolkit_name>/
+gigantic_project-COPYME/research_notebook/research_ai/subproject-<X>/<toolkit_name>/
 ```
 
 For example, the canonical seed toolkit:
 
 ```
-gigantic_project-COPYME/research_notebook/research_user/subproject-genomesDB/
+gigantic_project-COPYME/research_notebook/research_ai/subproject-genomesDB/
 └── ncbi_genomes-gigantic_T1_toolkit/
     ├── README.md
-    ├── output_to_input/         # toolkit outputs that genomesDB consumes
+    ├── AI_GUIDE.md
+    ├── output_to_input/                  # toolkit-stable view; symlinks into the current RUN's 3-output/
     │   ├── gene_annotations/
     │   ├── genomes/
     │   ├── maps/
     │   └── T1_proteomes/
-    └── toolkit-COPYME-<descriptor>/   # user-copied workflow instance
+    └── toolkit-COPYME-<descriptor>/      # the template (user copies + edits + runs)
         ├── ai/
+        │   ├── AI_GUIDE.md
         │   ├── main.nf
         │   ├── nextflow.config
+        │   ├── conda_environment.yml
         │   └── scripts/
+        │       └── NNN_ai-<lang>-<descriptor>.<ext>
         ├── INPUT_user/
+        │   ├── README.md
+        │   └── <toolkit_manifest>.tsv
         ├── README.md
-        ├── RUN_<name>.sh
-        └── <name>_config.yaml
+        ├── RUN-workflow.sh               # canonical §29 entry point
+        └── START_HERE-user_config.yaml   # canonical §29 config name
 ```
 
-### Distinguishing features vs. gigantic subproject workflows
+User-copied run instances follow `toolkit-RUN_<N>-<descriptor>/` naming
+(parallel extension of §35's `workflow-RUN_<N>-*` pattern). RUN
+instances are gitignored by default (per §47 frozen-artifact rule) —
+they exist only on the user's local machine after the run completes.
 
-| Aspect | Subproject workflow (`workflow-COPYME-*`) | Toolkit (`toolkit-COPYME-*`) |
-|---|---|---|
-| Location | `subprojects/<name>/<BLOCK_or_STEP>/workflow-COPYME-*/` | `research_notebook/research_user/subproject-<X>/<toolkit>/toolkit-COPYME-*/` |
-| Required to run subproject? | Yes — canonical pipeline | No — optional convenience for outside prep |
-| Inputs | INPUT_user/ (per §17, §18) | Toolkit-local INPUT_user/ + user-staged data |
-| Outputs | `output_to_input/` for downstream subprojects (per §2) | Toolkit-local `output_to_input/`, then user symlinks/copies into subproject INPUT slot |
-| Naming of run driver | Canonical `RUN-workflow.sh` (per §29) | Toolkit-defined (e.g., `RUN_<name>.sh`); not bound to §29 |
-| YAML config name | Canonical `START_HERE-user_config.yaml` | Toolkit-defined (e.g., `<name>_config.yaml`) |
-| Ships in framework? | Yes — `workflow-COPYME-*` is the template | Yes — `toolkit-COPYME-*` is the template; explicit gitignore exception per §59 |
-| Subject to §47 frozen-RUN rule? | Yes for `workflow-RUN_*/` | Same convention applies for toolkit RUN dirs |
+### Subproject-conformance is the rule, not the exception
 
-### Toolkit gitignore exception pattern
+Toolkits follow the same GIGANTIC conventions as subproject workflows.
+There is no "relaxed-for-toolkits" set of rules — internally a toolkit
+is built like a subproject workflow:
 
-Because toolkits live inside `research_notebook/research_user/` (which
-defaults to wild-west sandbox per §25), they require an **explicit
-gitignore re-include** in both the top-level `.gitignore` and the
-nested `research_notebook/.gitignore`:
+| Convention | How a toolkit applies it |
+|---|---|
+| §3 — `AI_GUIDE.md` naming | Plain `AI_GUIDE.md` at every level where one is needed |
+| §12 — AI attribution headers | All toolkit-authored files |
+| §17, §18 — INPUT_user staging arena | A toolkit's bridge step (commonly the next-to-last process) creates relative symlinks from `<project_root>/INPUT_user/<subdir>/` to the toolkit's outputs |
+| §21 — Script naming | `NNN_ai-<lang>-<descriptor>.<ext>` |
+| §23 — `${projectDir}` paths | Used throughout `main.nf` |
+| §28 — Per-toolkit conda env | Own `conda_environment.yml`; env name `aiG-toolkit-<descriptor>` (§53 short-form OK for single-pipeline toolkits) |
+| §29 — Unified `RUN-workflow.sh` + `START_HERE-user_config.yaml` | Canonical filenames, `execution_mode` YAML key, SLURM self-submit, COPYME guard |
+| §34 — Self-documenting TSV headers | All toolkit-produced TSVs |
+| §35 — Template vs RUN naming | `toolkit-COPYME-*` template / `toolkit-RUN_<N>-*` instance |
+| §36 — Fail-fast | No `optional: true` outputs, `errorStrategy = 'terminate'`, `maxErrors = 0`, always-write outputs (empty-with-headers for legitimate empty cases) |
+| §45 — `write_run_log` canonical final | Last script in every toolkit pipeline |
+| §47 — Frozen RUN artifact | Do not edit completed `toolkit-RUN_<N>-*/` dirs; make forward fixes in the COPYME template |
+| §56 — Workflow-level README.md | Mandatory at `toolkit-COPYME-*/` root |
 
-```gitignore
-!**/research_notebook/research_user/subproject-<X>/<toolkit_name>/
-!**/research_notebook/research_user/subproject-<X>/<toolkit_name>/**
-```
+The only places toolkit conventions diverge from subproject conventions:
 
-These rules must appear **before** the `x_*` / `**/x_*` rules so x_*
-backups inside the toolkit still stay ignored per §58.
+1. **Location**: `research_notebook/research_ai/subproject-<X>/` instead
+   of `subprojects/<X>/`. This signals that the framework does not own
+   the inputs and never will.
+2. **The bridge step**: toolkits include an explicit "bridge to
+   `INPUT_user/`" process (commonly process N-1 of the pipeline) that
+   creates relative symlinks from the project-level INPUT_user staging
+   arena into the toolkit's `output_to_input/` view. Subproject
+   workflows don't need this because downstream subprojects read their
+   inputs from `output_to_input/` directly per §2.
+
+### Gitignore behavior
+
+Toolkits live in `research_notebook/research_ai/`, which default-ships
+to GitHub. No special gitignore carve-out is required. Specifically:
+
+- A toolkit's source files (`main.nf`, scripts, configs, READMEs,
+  AI_GUIDEs, the COPYME template's `INPUT_user/` directory) all ship
+  with the framework via the default `research_ai/` behavior.
+- `x_*` archive subdirs inside a toolkit stay ignored per §58.
+- `work/`, `.nextflow/`, `.nextflow.log*`, `OUTPUT_pipeline/`, and
+  `toolkit-RUN_*/` instances stay ignored per the standard
+  NextFlow-runtime + §47 frozen-artifact rules.
 
 ### Current toolkits
 
-- `subproject-genomesDB/ncbi_genomes-gigantic_T1_toolkit/` — downloads
-  NCBI reference genomes (GCFs), unzips/organizes/renames per GIGANTIC
-  conventions, extracts T1 (longest-transcript) proteomes, and produces
-  the `output_to_input/T1_proteomes/`, `genomes/`, `gene_annotations/`,
-  and `maps/` content that genomesDB STEP_2 consumes as user-provided
-  input.
+- **`subproject-genomesDB/ncbi_genomes-gigantic_T1_toolkit/`** —
+  downloads NCBI RefSeq genome bundles (GCFs), T1-extracts proteomes
+  with alternate-loci filtering, renames per GIGANTIC convention, and
+  auto-bridges outputs into `INPUT_user/genomic_resources/{proteomes,
+  genomes,annotations}/` for the genomesDB subproject to consume.
 
-### When to promote a toolkit to a full subproject
+### See also
 
-If the prep work stops being variable across projects — i.e., a single
-canonical workflow becomes correct for every reasonable use case — the
-toolkit can graduate to a real subproject under `subprojects/`. Until
-then, "toolkit" is the right framing: shipped because reusable, but
-not framework-owned because user-customized.
-
-See also: §49 (`z_*` early-development counterpart).
+- §60 — GIGANTIC is consumed, not extended (framework posture toward
+  user-added subprojects vs. shipped toolkits)
+- §49 — `z_*` early-development counterpart
+- §58 — `x_*` archive-for-later-deletion counterpart
 
 ---
 

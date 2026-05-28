@@ -8,15 +8,13 @@
 #     default so user prose stays local.
 #   - .gitkeep at any depth (preserves per-subproject directory
 #     structure for git in both research_ai/ and research_user/)
-#   - GIGANTIC toolkits (per §59) — NextFlow workflows developed in
-#     research_user/ and explicitly re-included via toolkit exceptions
-#     below. Currently: ncbi_genomes-gigantic_T1_toolkit/ under
-#     subproject-genomesDB/.
+#   - GIGANTIC toolkits (per §59) ship from research_ai/subproject-<X>/.
+#     research_ai/ default-ships so toolkits track without any explicit
+#     carve-out — they just live there and are tracked normally.
 #
 # What does NOT ship:
 #   - research_user/** — personal sandbox; ships ONLY the
-#     per-subproject .gitkeep placeholders unless a specific path is
-#     re-included as a §59 toolkit.
+#     per-subproject .gitkeep placeholders.
 #   - research_ai/sessions/*.jsonl.gz — captured session transcripts
 #     (gitignored by the catch-all below; never edited / deleted)
 #   - research_ai/sessions/TRANSCRIPT_CAPTURE_LOG.md — per-project local
@@ -40,11 +38,10 @@
 !.gitkeep
 !**/.gitkeep
 
-# research_user/ defaults to personal sandbox per §25 — by default
-# ships ONLY the per-subproject .gitkeep placeholders so users have
-# pre-materialized subproject-<X>/ directories. README.md is suppressed
-# inside research_user/ so user prose stays local. Specific paths may
-# be re-included as toolkits (per §59).
+# research_user/ is a personal sandbox per §25 — by default ships ONLY
+# the per-subproject .gitkeep placeholders so users have pre-materialized
+# subproject-<X>/ directories. README.md is suppressed inside
+# research_user/ so user prose stays local.
 research_user/**
 # Re-include subproject-* directories so git can descend into them.
 # Per git docs: "It is not possible to re-include a file if a parent
@@ -55,15 +52,8 @@ research_user/**
 # Allow the per-subproject .gitkeep placeholders at any depth
 !research_user/.gitkeep
 !research_user/**/.gitkeep
-
-# §59 toolkit exception: ncbi_genomes-gigantic_T1_toolkit/ is a
-# GIGANTIC "toolkit" — a NextFlow workflow developed during GIGANTIC
-# work that users can optionally run OUTSIDE gigantic subprojects.
-# This one downloads/processes NCBI reference genomes (GCFs) to produce
-# T1 proteomes required as user-provided input for the genomesDB
-# subproject. Tracked in full; x_* backups inside still ignored by the
-# x_* rule below.
-!research_user/subproject-genomesDB/ncbi_genomes-gigantic_T1_toolkit/**
+# (Toolkits no longer live here per §59 — they live in research_ai/.
+# See git history commit 5cb8e3f for the prior toolkit location.)
 
 # Archive directories: anything starting with x_ is a disposable archive
 # and must stay ignored even if it contains files that would otherwise
