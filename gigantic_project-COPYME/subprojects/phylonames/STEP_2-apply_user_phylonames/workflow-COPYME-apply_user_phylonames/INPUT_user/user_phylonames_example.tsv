@@ -1,9 +1,20 @@
 # User-Provided Custom Phylonames
-# Format: genus_species<TAB>custom_phyloname
-# Lines starting with # are comments
+# Format: 3 tab-separated columns:
+#   genus_species<TAB>custom_phyloname<TAB>unofficial_action
+# Lines starting with # are comments.
 #
 # Each custom_phyloname follows GIGANTIC format:
 #   Kingdom_Phylum_Class_Order_Family_Genus_species
+#
+# The third column controls UNOFFICIAL marking PER SPECIES:
+#   ADD_UNOFFICIAL       - standard; clades that differ from NCBI get the
+#                          UNOFFICIAL suffix. Use this for almost every row.
+#   SUPPRESS_UNOFFICIAL  - use the phyloname as-is, no UNOFFICIAL marking
+#                          for this specific row (power-user override).
+#
+# Note: setting `mark_unofficial: false` globally in
+# START_HERE-user_config.yaml overrides every per-row choice and suppresses
+# UNOFFICIAL marking across the whole project.
 #
 # Use this file to override NCBI-generated phylonames for species that:
 #   - Have NOTINNCBI placeholders (not found in NCBI taxonomy)
@@ -12,5 +23,5 @@
 #
 # Copy this file to user_phylonames.tsv and edit with your overrides.
 #
-Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
-Salpingoeca_rosetta	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Salpingoeca_rosetta
+Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1	ADD_UNOFFICIAL
+Salpingoeca_rosetta	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Salpingoeca_rosetta	ADD_UNOFFICIAL

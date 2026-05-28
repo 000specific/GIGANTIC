@@ -50,12 +50,25 @@ phylonames from STEP_1.
 
 ## User Phylonames Format
 
-Tab-separated file with columns: `genus_species<TAB>custom_phyloname`
+Tab-separated file with **3 columns**:
+`genus_species<TAB>custom_phyloname<TAB>unofficial_action`
+
+The third column controls UNOFFICIAL marking per species:
+
+- `ADD_UNOFFICIAL` — standard behavior; clades that differ from NCBI
+  get the `UNOFFICIAL` suffix. Use this for almost every row.
+- `SUPPRESS_UNOFFICIAL` — power-user option; use the custom phyloname
+  as-is with no UNOFFICIAL marking for this specific species. Useful
+  when you're asserting a phyloname you're highly confident in and
+  don't want the visual noise.
 
 ```
-Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
-Chromosphaera_perkinsii	Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaeraceae_Chromosphaera_perkinsii
+Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1	ADD_UNOFFICIAL
+Chromosphaera_perkinsii	Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaeraceae_Chromosphaera_perkinsii	ADD_UNOFFICIAL
 ```
+
+(Note: `mark_unofficial: false` set globally in `START_HERE-user_config.yaml`
+overrides every per-row choice and suppresses UNOFFICIAL for all species.)
 
 ## Results
 

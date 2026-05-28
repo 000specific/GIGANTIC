@@ -188,11 +188,19 @@ ln -srf ../../research_notebook/research_user/<your-path>/user_phylonames.tsv us
 
 For quick exploratory runs the file can also be written directly into the
 workflow's local `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames.tsv`,
-but the canonical pattern is the project-level INPUT_user slot. Format:
+but the canonical pattern is the project-level INPUT_user slot.
+
+**Format**: 3-column TSV — `genus_species`, `custom_phyloname`,
+`unofficial_action`. The third column controls per-row UNOFFICIAL
+marking: `ADD_UNOFFICIAL` is the standard choice (use it for almost
+every row); `SUPPRESS_UNOFFICIAL` is a power-user override that uses
+the phyloname as-is with no UNOFFICIAL marking. Global
+`mark_unofficial: false` in `START_HERE-user_config.yaml` overrides
+every per-row choice.
 
 ```tsv
-genus_species	custom_phyloname
-Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
+genus_species	custom_phyloname	unofficial_action
+Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1	ADD_UNOFFICIAL
 ```
 
 An example template ships at `STEP_2-apply_user_phylonames/workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames_example.tsv`.

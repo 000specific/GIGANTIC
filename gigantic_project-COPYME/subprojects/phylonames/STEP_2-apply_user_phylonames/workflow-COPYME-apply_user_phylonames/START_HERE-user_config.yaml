@@ -42,11 +42,17 @@ project:
   step1_mapping: "../../output_to_input/STEP_1-generate_and_evaluate/maps"
 
   # Path to your user-provided custom phylonames
-  # Format: TSV file with columns: genus_species<TAB>custom_phyloname
+  # Format: TSV file with 3 columns:
+  #   genus_species<TAB>custom_phyloname<TAB>unofficial_action
+  #
+  # unofficial_action values:
+  #   ADD_UNOFFICIAL       - standard; mark differing clades with UNOFFICIAL
+  #   SUPPRESS_UNOFFICIAL  - use phyloname as-is, no UNOFFICIAL marking
+  #                          (power-user override for this row)
   #
   # Example lines:
-  #   Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
-  #   Chromosphaera_perkinsii<TAB>Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaera_perkinsii
+  #   Monosiga_brevicollis_MX1<TAB>Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1<TAB>ADD_UNOFFICIAL
+  #   Chromosphaera_perkinsii<TAB>Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaeraceae_Chromosphaera_perkinsii<TAB>ADD_UNOFFICIAL
   user_phylonames: "INPUT_user/user_phylonames.tsv"
 
   # Whether to mark user-provided clades with "UNOFFICIAL" suffix
@@ -97,16 +103,22 @@ slurm_qos: "your_qos"
 #
 # USER PHYLONAMES FORMAT:
 #
-# Your user_phylonames.tsv should be a tab-separated file:
-#   genus_species<TAB>custom_phyloname
+# Your user_phylonames.tsv should be a tab-separated file with 3 columns:
+#   genus_species<TAB>custom_phyloname<TAB>unofficial_action
 #
 # Each custom_phyloname follows the standard GIGANTIC format:
 #   Kingdom_Phylum_Class_Order_Family_Genus_species
 #
+# unofficial_action values:
+#   ADD_UNOFFICIAL       - standard; clades that differ from NCBI get the
+#                          UNOFFICIAL suffix. Use this for almost every row.
+#   SUPPRESS_UNOFFICIAL  - use the phyloname as-is, no UNOFFICIAL marking
+#                          for this specific row (power-user override).
+#
 # Example file contents:
-#   Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1
-#   Salpingoeca_rosetta	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Salpingoeca_rosetta
-#   Chromosphaera_perkinsii	Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaeraceae_Chromosphaera_perkinsii
+#   Monosiga_brevicollis_MX1	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Monosiga_brevicollis_MX1	ADD_UNOFFICIAL
+#   Salpingoeca_rosetta	Holozoa_Choanozoa_Choanoflagellata_Craspedida_Salpingoecidae_Salpingoeca_rosetta	ADD_UNOFFICIAL
+#   Chromosphaera_perkinsii	Holozoa_Ichthyosporea_Ichthyophonida_Chromosphaeraceae_Chromosphaera_perkinsii	ADD_UNOFFICIAL
 #
 # UNOFFICIAL MARKING:
 #
