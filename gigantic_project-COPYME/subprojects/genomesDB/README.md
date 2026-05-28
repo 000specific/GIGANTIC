@@ -396,3 +396,64 @@ reads from `genomesDB/output_to_input/` at some point:
 - Step 2 evaluation may flag low-quality genomes for review
 - Step 3 BLAST databases require substantial disk space
 - The complete pipeline may take several hours for large species sets
+
+---
+
+## Session hygiene (per §61 in `ai/ai_FYIs/gigantic_conventions.md`)
+
+GIGANTIC's chat-as-research-notebook convention (§9) works best with
+disciplined session hygiene. Two recommendations.
+
+### Always root at the named gigantic_project-COPYME
+
+Every chat session for project work should be initiated rooted at the
+user's renamed copy of `gigantic_project-COPYME/` — e.g.,
+`gigantic_project-cephalopod_evolution/`.
+
+**Not** at:
+- `GIGANTIC/` (the framework root, reserved for framework-development
+  sessions per §16)
+- `subprojects/<X>/` (a subproject directory)
+- `subprojects/<X>/<BLOCK_or_STEP>/workflow-COPYME-*/` (a workflow directory)
+- Any other directory deeper than the named project root
+
+Why: the renamed project copy is the canonical session root. All
+project conventions, INPUT_user paths, research_notebook captures,
+and AI guidance are scoped to that directory. Rooting deeper than
+that scopes the AI's view too narrowly and loses cross-subproject
+context (and the AI guides at lower levels assume the session was
+rooted above them). Rooting at `GIGANTIC/` is reserved for
+framework-development sessions per §16.
+
+### One chat session per subproject + a side channel for small questions
+
+For productive project work:
+
+- **One session per subproject** you're actively working in. A session
+  focused on `phylonames/` is different from one focused on
+  `genomesDB/` is different from one focused on `trees_species/` —
+  each maintains its own context, convention reminders, and recent
+  state.
+- **Continue the same session over many compactions** until it
+  becomes overly reactive, muddled, or slow. Compactions are
+  lossless (per §9 the full transcript is captured), so a long
+  session isn't a problem until it starts feeling like one.
+- **When a session goes muddled, start a fresh one** at the same
+  named `gigantic_project-*/` root, focused on the same subproject,
+  and bring it back up to speed (read the relevant AI_GUIDEs, recent
+  commits, etc.).
+- **Keep a separate "small questions" session** for random or
+  cross-cutting questions (e.g., "what does this convention mean?"
+  or "is this NCBI accession a GCF or GCA?"). This keeps the
+  subproject sessions focused on their actual work and prevents
+  context pollution.
+
+### What this prevents
+
+- Sessions that try to hold every subproject's state in context and
+  end up confused about which one they're operating on.
+- Sessions that get derailed by one-off questions and lose their
+  thread on the subproject work.
+- Session captures (per §9) that mix multiple unrelated subprojects
+  into a single transcript, making the lab-notebook record harder
+  to grep later.

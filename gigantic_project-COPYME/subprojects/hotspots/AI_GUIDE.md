@@ -89,3 +89,22 @@ sandbox) is queued as future work.
 | First run | "Have you prepared per-species gene-coordinate TSVs in the sandbox?" |
 | BLOCK_self_blast resource sizing | "How many species + how large are the proteomes? Default targets species70 with ~50 chunks per species; for larger sets adjust queueSize and chunk size." |
 | BLOCK_identify_hotspots parameter tuning | "E-value 1e-60 is the default from the 2024 paper; relax if you expect deep divergence within a species. Window 20 genes is also from the paper." |
+
+---
+
+## Session hygiene (per §61)
+
+For productive project work:
+- **Root every chat session at this named `gigantic_project-*/` directory**.
+  Not at `GIGANTIC/` (framework root, reserved for framework dev per §16),
+  not at `subprojects/<X>/`, not at a `workflow-COPYME-*/` dir, not at
+  any directory deeper than the named project root.
+- **One chat session per subproject** you're actively working in — keeps
+  context focused and prevents cross-subproject confusion.
+- **Continue the same session over many compactions** (lossless per §9)
+  until it becomes muddled or slow; then start fresh in a new session,
+  same root, same subproject focus.
+- **Keep a separate "small questions" session** for one-off questions
+  so subproject sessions stay focused.
+
+See `ai/ai_FYIs/gigantic_conventions.md` §61 for the full rationale.

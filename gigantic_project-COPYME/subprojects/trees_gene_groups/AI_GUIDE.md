@@ -307,3 +307,22 @@ mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-pfam_clans/
 | Before STEP_1 | "Local, slurm-standard, or slurm-burst? Which QOS / resources?" |
 | Before STEP_2 | "Which tree methods? FastTree (fast), IQ-TREE (publication), VeryFastTree (large), PhyloBayes (Bayesian)?" |
 | Before STEP_3 | "Has STEP_2 completed? Which tree methods produced output?" |
+
+---
+
+## Session hygiene (per §61)
+
+For productive project work:
+- **Root every chat session at this named `gigantic_project-*/` directory**.
+  Not at `GIGANTIC/` (framework root, reserved for framework dev per §16),
+  not at `subprojects/<X>/`, not at a `workflow-COPYME-*/` dir, not at
+  any directory deeper than the named project root.
+- **One chat session per subproject** you're actively working in — keeps
+  context focused and prevents cross-subproject confusion.
+- **Continue the same session over many compactions** (lossless per §9)
+  until it becomes muddled or slow; then start fresh in a new session,
+  same root, same subproject focus.
+- **Keep a separate "small questions" session** for one-off questions
+  so subproject sessions stay focused.
+
+See `ai/ai_FYIs/gigantic_conventions.md` §61 for the full rationale.
