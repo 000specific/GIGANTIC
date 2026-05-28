@@ -563,21 +563,26 @@ def generate_final_mapping(
             output = f"{genus_species}\t{phyloname}\t{phyloname_taxonid}\t{source}\t{original}\n"
             output_file.write( output )
 
-    # Write unofficial clades report if any were found
-    if unofficial_clades_all:
-        unofficial_report_path = output_dir / 'unofficial_clades_report.tsv'
-        print( f"  Writing: {unofficial_report_path}" )
+    # Write unofficial clades report — ALWAYS write the file (header always,
+    # body only if there are unofficial clades to report). Per
+    # gigantic_conventions §36: NextFlow declares this file as a required
+    # output (no `optional: true`) so the process MUST produce it even when
+    # the legitimate-empty case fires (mark_unofficial: false globally, or
+    # all per-species values SUPPRESS_UNOFFICIAL). Empty-with-headers is
+    # the canonical "no rows to report" form — never absent.
+    unofficial_report_path = output_dir / 'unofficial_clades_report.tsv'
+    print( f"  Writing: {unofficial_report_path}" )
 
-        with open( unofficial_report_path, 'w', encoding = 'utf-8' ) as output_file:
-            header = (
-                'genus_species (species with unofficial clade)\t'
-                'unofficial_clade (clade name marked with UNOFFICIAL suffix)\n'
-            )
-            output_file.write( header )
+    with open( unofficial_report_path, 'w', encoding = 'utf-8' ) as output_file:
+        header = (
+            'genus_species (species with unofficial clade)\t'
+            'unofficial_clade (clade name marked with UNOFFICIAL suffix)\n'
+        )
+        output_file.write( header )
 
-            for genus_species, unofficial_clade in unofficial_clades_all:
-                output = f"{genus_species}\t{unofficial_clade}\n"
-                output_file.write( output )
+        for genus_species, unofficial_clade in unofficial_clades_all:
+            output = f"{genus_species}\t{unofficial_clade}\n"
+            output_file.write( output )
 
     print( "" )
 
@@ -680,7 +685,7 @@ File formats:
     print( "" )
     print( "=" * 70 )
     print( "GIGANTIC User Phylonames Application" )
-    print( "Script 004: Apply user-provided phylonames with UNOFFICIAL marking" )
+    print( "Script 001: Apply user-provided phylonames with UNOFFICIAL marking" )
     print( "=" * 70 )
     print( f"Started: {start_time.strftime( '%Y-%m-%d %H:%M:%S' )}" )
     print( "" )
@@ -745,8 +750,7 @@ File formats:
     print( "" )
     print( "Output files:" )
     print( f"  - {output_dir / 'final_project_mapping.tsv'}" )
-    if ( output_dir / 'unofficial_clades_report.tsv' ).exists():
-        print( f"  - {output_dir / 'unofficial_clades_report.tsv'}" )
+    print( f"  - {output_dir / 'unofficial_clades_report.tsv'}" )
     print( "" )
     print( "The final mapping can be used by other GIGANTIC subprojects." )
     print( "Species with USER source have user-provided phylonames applied." )
