@@ -1585,6 +1585,34 @@ See also: §49 (`z_*` early-development counterpart).
 
 ---
 
+## 60. GIGANTIC is consumed, not extended — user mods are expected; new user subprojects are out of scope
+
+GIGANTIC is a framework users **consume**: they clone it, copy the
+project template, and run the shipped subprojects on their data. They
+do not build GIGANTIC itself.
+
+Users will modify their copy wildly — adjusting scripts, configs,
+workflow logic, even pipeline structure to fit their project. This is
+expected and supported. The framework ships canonical, opinionated
+defaults so the user has a sensible starting point; what they do from
+there is their own.
+
+If a user wants to **add a new subproject** (a new
+`subprojects/<their_thing>/` with their own workflows, scripts, and
+conventions), that is fine — but:
+
+- It is **out of scope** for GIGANTIC framework guidance.
+- It is **not** subject to GIGANTIC convention review or conformance.
+- The shipped conventions remain available as reference if the user
+  wants to mirror them, but the framework does not require this.
+
+This is distinct from §59 (toolkits): toolkits are framework-shipped,
+framework-owned, and conform to GIGANTIC conventions. User-added
+subprojects are user-shipped, user-owned, and free of framework
+expectations.
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
