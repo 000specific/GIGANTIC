@@ -13,7 +13,10 @@
 # PREREQUISITES:
 # 1. STEP 1 must have been run successfully
 # 2. Review STEP 1 taxonomy summary to identify species needing overrides
-# 3. Create INPUT_user/user_phylonames.tsv with your custom phylonames
+# 3. User phylonames are loaded from (in priority order):
+#    a. INPUT_user/user_phylonames.tsv  (workflow-level override, if present)
+#    b. ../../../../INPUT_user/phylonames/user_phylonames.tsv  (project-level
+#       default, the canonical INPUT_user staging arena per §17, §18)
 #
 # USAGE:
 #   bash RUN-workflow.sh
@@ -24,7 +27,9 @@
 #
 # INPUT:
 # - STEP 1 mapping from: ../../output_to_input/STEP_1-generate_and_evaluate/maps/
-# - User phylonames from: INPUT_user/user_phylonames.tsv
+# - User phylonames from (in priority order):
+#     1. INPUT_user/user_phylonames.tsv  (workflow-local override)
+#     2. ../../../../INPUT_user/phylonames/user_phylonames.tsv  (project-level default)
 #
 # OUTPUT:
 # Your updated mapping file will be at:
@@ -125,14 +130,53 @@ echo "STEP 1 mapping found in: ${STEP1_MAPS}"
 echo "  $(ls ${STEP1_MAPS}/*.tsv 2>/dev/null | wc -l) mapping file(s)"
 echo ""
 
+# Path to project-level INPUT_user (relative to this workflow)
+INPUT_USER_PROJECT="../../../../INPUT_user"
+
 # ============================================================================
-# Check for user phylonames file
+# Resolve user phylonames: workflow INPUT_user/ overrides project-level default
+# ============================================================================
+# Priority order:
+#   1. Workflow INPUT_user/user_phylonames.tsv  (user override for this workflow)
+#   2. Project INPUT_user/phylonames/user_phylonames.tsv  (project-wide default,
+#      canonical INPUT_user staging arena per §17, §18 — typically a symlink
+#      into research_notebook/research_user/)
+#
+# If the workflow has its own user_phylonames.tsv, it takes priority (user override).
+# Otherwise, copy the project-level default into the workflow for this run so
+# each workflow run archives its own snapshot of the overrides used.
+# ============================================================================
+if [ -f "INPUT_user/user_phylonames.tsv" ]; then
+    WORKFLOW_USER_COUNT=$(grep -v "^#" "INPUT_user/user_phylonames.tsv" | grep -v "^$" | wc -l)
+    if [ "$WORKFLOW_USER_COUNT" -gt 0 ]; then
+        echo "Using workflow-level user phylonames (user override)..."
+        echo "  ${WORKFLOW_USER_COUNT} species in INPUT_user/user_phylonames.tsv"
+        echo ""
+    fi
+elif [ -f "${INPUT_USER_PROJECT}/phylonames/user_phylonames.tsv" ]; then
+    PROJECT_USER_COUNT=$(grep -v "^#" "${INPUT_USER_PROJECT}/phylonames/user_phylonames.tsv" | grep -v "^$" | wc -l)
+    if [ "$PROJECT_USER_COUNT" -gt 0 ]; then
+        echo "Using project-level user phylonames (default)..."
+        cp "${INPUT_USER_PROJECT}/phylonames/user_phylonames.tsv" "INPUT_user/user_phylonames.tsv"
+        echo "  Copied ${PROJECT_USER_COUNT} species from project INPUT_user/phylonames/"
+        echo ""
+    fi
+fi
+
+# ============================================================================
+# Final-safety check: error if neither resolver location produced a file
 # ============================================================================
 
 if [ ! -f "INPUT_user/user_phylonames.tsv" ]; then
     echo "ERROR: User phylonames file not found!"
     echo ""
-    echo "Please create: INPUT_user/user_phylonames.tsv"
+    echo "Please add your user phylonames to one of these locations:"
+    echo ""
+    echo "  RECOMMENDED (project-wide, canonical INPUT_user arena):"
+    echo "    INPUT_user/phylonames/user_phylonames.tsv  (at project root)"
+    echo ""
+    echo "  OR workflow-specific:"
+    echo "    INPUT_user/user_phylonames.tsv  (in this workflow directory)"
     echo ""
     echo "Format: TSV with columns: genus_species<TAB>custom_phyloname"
     echo "Example:"

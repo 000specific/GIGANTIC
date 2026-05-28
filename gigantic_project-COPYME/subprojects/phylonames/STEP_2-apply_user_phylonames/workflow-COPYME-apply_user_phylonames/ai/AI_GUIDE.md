@@ -126,7 +126,7 @@ assembles the subproject-level `phylonames/upload_to_server/` tree
 | Symptom | Cause | Fix |
 |---|---|---|
 | `STEP_1 mapping not found` | STEP_1 not run yet | Run STEP_1 first; verify `../../output_to_input/STEP_1-generate_and_evaluate/maps/` is populated |
-| `user_phylonames file not found` | Missing or wrong path in config | Create `INPUT_user/user_phylonames.tsv` or fix `user_phylonames:` in YAML |
+| `user_phylonames file not found` | Neither workflow-local nor project-level user_phylonames.tsv exists | Stage `INPUT_user/phylonames/user_phylonames.tsv` at project root (canonical INPUT_user arena per §17, §18) OR create workflow-local `INPUT_user/user_phylonames.tsv`. Workflow-local takes priority over project-level. |
 | Species in user_phylonames not found in mapping | Typo in genus_species, or species not in STEP_1 species list | Cross-check spellings; ensure the species made it through STEP_1 |
 | All clades marked UNOFFICIAL | Disagree with NCBI on every taxonomic rank (rare) | Expected behavior; or set `mark_unofficial: false` if you don't want the marking |
 
