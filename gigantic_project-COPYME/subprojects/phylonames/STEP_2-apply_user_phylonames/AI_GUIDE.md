@@ -26,7 +26,7 @@ Applies user-provided custom phylonames to override the NCBI-generated phyloname
 
 | Source | What | Where |
 |---|---|---|
-| STEP_1 mapping (prerequisite) | `genus_species` → `phyloname` → `phyloname_taxonid` (NCBI-only) | `../../output_to_input/STEP_1-generate_and_evaluate/maps/[project]_map-*.tsv` (per §2: read from the subproject's output_to_input, NOT another STEP's OUTPUT_pipeline) |
+| STEP_1 mapping (prerequisite) | 5 columns: `genus_species`, `phyloname`, `phyloname_taxonid`, `source` (always `NCBI` from STEP_1), `original_ncbi_phyloname` (same as `phyloname` from STEP_1) — uniform schema with STEP_2's own output | `../../output_to_input/STEP_1-generate_and_evaluate/maps/[project]_map-*.tsv` (per §2: read from the subproject's output_to_input, NOT another STEP's OUTPUT_pipeline) |
 | User overrides | TSV of `genus_species` ↔ `custom_phyloname` | Canonical: stage at `../../../INPUT_user/phylonames/user_phylonames.tsv` (symlink into the user sandbox). Workflow-local: `workflow-COPYME-apply_user_phylonames/INPUT_user/user_phylonames.tsv`. |
 
 ## Outputs (what STEP_2 produces)

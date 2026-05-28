@@ -437,11 +437,24 @@ Lines starting with `#` are treated as comments and ignored.
 |------|-------------|
 | `[project]_map-genus_species_X_phylonames.tsv` | Your species mapped to phylonames |
 
-**Format** (tab-separated):
+**Format** (tab-separated, 5 columns; identical shape to STEP_2's
+output so downstream consumers see one schema regardless of which STEP
+last produced the mapping):
+
+1. `genus_species` — `Genus_species` or `Genus_species_subspecies`
+2. `phyloname` — `Kingdom_Phylum_Class_Order_Family_Genus_species`
+3. `phyloname_taxonid` — phyloname with NCBI taxon ID suffix
+4. `source` — always `NCBI` for STEP_1 (STEP_2 may set `USER` for user-overridden rows)
+5. `original_ncbi_phyloname` — same as `phyloname` for STEP_1 (STEP_2 preserves the original NCBI value when an override is applied)
+
+Example rows (header line uses self-documenting parenthetical column
+descriptions per gigantic_conventions §34 — abbreviated here for
+readability):
+
 ```
-genus_species	phyloname	phyloname_taxonid
-Homo_sapiens	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606
-Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica___6500
+genus_species	phyloname	phyloname_taxonid	source	original_ncbi_phyloname
+Homo_sapiens	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens___9606	NCBI	Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens
+Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica___6500	NCBI	Metazoa_Mollusca_Gastropoda_Aplysiida_Aplysiidae_Aplysia_californica
 ```
 
 #### Taxonomy Summary

@@ -25,8 +25,14 @@ A simple text file with one species per line (Genus_species format):
   Octopus_bimaculoides
 
 OUTPUT:
-A TSV mapping file with columns:
-  genus_species | phyloname | phyloname_taxonid
+A TSV mapping file with 5 columns (matches STEP_2's shape so downstream
+subprojects see a uniform schema regardless of which STEP last produced
+the mapping — see gigantic_conventions.md §34 self-documenting headers):
+  1. genus_species           — Genus_species or Genus_species_subspecies format
+  2. phyloname               — Kingdom_Phylum_Class_Order_Family_Genus_species
+  3. phyloname_taxonid       — phyloname with NCBI taxon ID suffix (___taxonid)
+  4. source                  — always 'NCBI' for STEP_1 output (STEP_2 may set 'USER' for user-overridden rows)
+  5. original_ncbi_phyloname — same as phyloname for STEP_1 (STEP_2 preserves the original NCBI value when a user override is applied)
 
 HANDLING SPECIES NOT IN NCBI TAXONOMY:
 Some species may not appear in NCBI's taxonomy database. This can happen when:
@@ -189,20 +195,30 @@ def create_project_mapping(
     print( f"Creating project mapping: {output_file_path}" )
 
     with open( output_file_path, 'w', encoding = 'utf-8' ) as output_file:
-        # Write header
-        header = 'genus_species\tphyloname\tphyloname_taxonid\n'
+        # Write self-documenting 5-column header (matches STEP_2 output shape
+        # per gigantic_conventions.md §34 and Issue 4 resolution: downstream
+        # consumers see the same schema regardless of which STEP last produced
+        # the mapping). For STEP_1 rows: source is always 'NCBI' and
+        # original_ncbi_phyloname is the same as phyloname (no overrides yet).
+        header = (
+            'genus_species (Genus_species or Genus_species_subspecies format)\t'
+            'phyloname (Kingdom_Phylum_Class_Order_Family_Genus_species format)\t'
+            'phyloname_taxonid (phyloname with NCBI taxon ID suffix)\t'
+            'source (NCBI for auto-generated or USER for user-provided)\t'
+            'original_ncbi_phyloname (original NCBI-generated phyloname before user override)\n'
+        )
         output_file.write( header )
 
         for species in species_list:
             if species in genus_species___phylonames:
                 phyloname, phyloname_taxonid = genus_species___phylonames[ species ]
-                output = f"{species}\t{phyloname}\t{phyloname_taxonid}\n"
+                output = f"{species}\t{phyloname}\t{phyloname_taxonid}\tNCBI\t{phyloname}\n"
                 output_file.write( output )
                 found_count += 1
             else:
                 # Species not in NCBI - generate NOTINNCBI placeholder phyloname
                 phyloname, phyloname_taxonid = generate_notinncbi_phyloname( species )
-                output = f"{species}\t{phyloname}\t{phyloname_taxonid}\n"
+                output = f"{species}\t{phyloname}\t{phyloname_taxonid}\tNCBI\t{phyloname}\n"
                 output_file.write( output )
                 notinncbi_species.append( species )
                 notinncbi_count += 1

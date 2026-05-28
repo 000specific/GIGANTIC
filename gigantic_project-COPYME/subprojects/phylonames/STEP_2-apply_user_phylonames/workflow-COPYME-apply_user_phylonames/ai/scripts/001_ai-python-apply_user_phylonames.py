@@ -136,9 +136,14 @@ Step 5: GENERATE FINAL MAPPING
 INPUT FILE FORMATS:
 ================================================================================
 
-PROJECT MAPPING (from Script 003):
-    genus_species<TAB>phyloname<TAB>phyloname_taxonid
-    Homo_sapiens<TAB>Metazoa_Chordata_Mammalia_...<TAB>Metazoa_Chordata_..___9606
+PROJECT MAPPING (from STEP_1 Script 003): 5-column TSV with §34
+self-documenting headers — matches STEP_2's own output shape so the
+schema is uniform across both STEPs (see Issue 4 resolution).
+    genus_species<TAB>phyloname<TAB>phyloname_taxonid<TAB>source<TAB>original_ncbi_phyloname
+    Homo_sapiens<TAB>Metazoa_Chordata_Mammalia_...<TAB>Metazoa_Chordata_...___9606<TAB>NCBI<TAB>Metazoa_Chordata_Mammalia_...
+For STEP_1 rows: source is always 'NCBI' and original_ncbi_phyloname is
+the same as phyloname. STEP_2 promotes some rows to source='USER' and
+fills in the genuinely-different original_ncbi_phyloname value.
 
 USER PHYLONAMES FILE (optional):
     genus_species<TAB>custom_phyloname<TAB>unofficial_action
@@ -207,8 +212,8 @@ def load_project_mapping( project_mapping_path: Path ) -> Dict[ str, Tuple[ str,
 
     genus_species___phylonames = {}
 
-    # genus_species	phyloname	phyloname_taxonid
-    # Homo_sapiens	Metazoa_Chordata_...	Metazoa_Chordata_...___9606
+    # genus_species (Genus_species or Genus_species_subspecies format)	phyloname (Kingdom_Phylum_Class_Order_Family_Genus_species format)	phyloname_taxonid (phyloname with NCBI taxon ID suffix)	source (NCBI for auto-generated or USER for user-provided)	original_ncbi_phyloname (original NCBI-generated phyloname before user override)
+    # Homo_sapiens	Metazoa_Chordata_Mammalia_...	Metazoa_Chordata_...___9606	NCBI	Metazoa_Chordata_Mammalia_...
     with open( project_mapping_path, 'r', encoding = 'utf-8' ) as input_file:
         # Skip header
         header = input_file.readline()

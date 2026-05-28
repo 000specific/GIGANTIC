@@ -33,7 +33,7 @@ Downloads the NCBI taxonomy database and generates phylogenetically-informative 
 | Output | Location | Consumed by |
 |---|---|---|
 | Master phylonames (all NCBI species) | `OUTPUT_pipeline/2-output/phylonames`, `phylonames_taxonid` | Generally just an intermediate; useful for inspection. |
-| Project mapping (`genus_species` → `phyloname` → `phyloname_taxonid`) | `OUTPUT_pipeline/3-output/[project]_map-genus_species_X_phylonames.tsv` | **Symlinked into** `../../output_to_input/STEP_1-generate_and_evaluate/maps/` AND the convenience handle `../../output_to_input/maps/` (until STEP_2 runs and overtakes the convenience symlink). |
+| Project mapping (5 columns: `genus_species`, `phyloname`, `phyloname_taxonid`, `source`, `original_ncbi_phyloname` — same shape as STEP_2 output for uniform downstream schema; STEP_1 always emits `source=NCBI` and `original_ncbi_phyloname=phyloname`) | `OUTPUT_pipeline/3-output/[project]_map-genus_species_X_phylonames.tsv` | **Symlinked into** `../../output_to_input/STEP_1-generate_and_evaluate/maps/` AND the convenience handle `../../output_to_input/maps/` (until STEP_2 runs and overtakes the convenience symlink). |
 | Taxonomy summary (Markdown + HTML) | `OUTPUT_pipeline/4-output/[project]_taxonomy_summary.{md,html}` | Read by the user to decide whether to run STEP_2 (look for NOTINNCBI species and numbered clades). |
 | Per-run audit log | `workflow-COPYME-generate_phylonames/ai/logs/run_*.log` | AI lab notebook (per-run); not consumed by downstream subprojects. |
 

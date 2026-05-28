@@ -43,7 +43,12 @@
 
 **Input**: Species list (e.g., `Homo_sapiens`, `Octopus_bimaculoides`)
 
-**Output**: Mapping of `genus_species` to `phyloname` to `phyloname_taxonid`
+**Output**: 5-column mapping (`genus_species`, `phyloname`,
+`phyloname_taxonid`, `source`, `original_ncbi_phyloname`) — same shape
+for both STEP_1 and STEP_2 so downstream subprojects see a uniform
+schema regardless of which STEP last ran. STEP_1 sets `source=NCBI` and
+`original_ncbi_phyloname = phyloname`; STEP_2 may set `source=USER` and
+preserve the original NCBI value where user overrides are applied.
 
 **Critical**: This subproject MUST run first. All other subprojects depend on phylonames.
 
