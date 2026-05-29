@@ -90,7 +90,7 @@ by `execution_mode` in `START_HERE-user_config.yaml`:
 - `execution_mode: "local"` -> runs on the current machine
 - `execution_mode: "slurm"` -> self-submits to SLURM with cpus/memory/time/account/qos from the same yaml
 
-The conda environment (`aiG-annotations_X_ocl-ocl_analysis`) is created on-demand
+The conda environment (`aiG-ocl_phylogenetic_structures-annotations_X_ocl`) is created on-demand
 from `ai/conda_environment.yml` on first run -- no separate install step needed.
 
 ## Fail-Fast Validation

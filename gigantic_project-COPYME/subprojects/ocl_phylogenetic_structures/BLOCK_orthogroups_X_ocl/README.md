@@ -91,7 +91,7 @@ that is `cpus: 106, memory_gb: 795`. See the "CPU and Memory Configuration"
 section of `../../../AI_GUIDE.md` for the full rationale and non-HiPerGator
 adjustments.
 
-The conda environment (`aiG-orthogroups_X_ocl-ocl_analysis`) is created on-demand
+The conda environment (`aiG-ocl_phylogenetic_structures-orthogroups_X_ocl`) is created on-demand
 from `ai/conda_environment.yml` on first run — no separate install step needed.
 
 ## Fail-Fast Validation

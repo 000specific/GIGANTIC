@@ -234,7 +234,7 @@ subtypes. Per-subtype summaries are also available for focused analysis.
 | `START_HERE-user_config.yaml` | Yes | All configuration: run_label, annotation_database, annogroup_subtypes, paths, `execution_mode` (local or slurm), SLURM account/qos, `resume` flag, `cpus` + `memory_gb` for SLURM sizing |
 | `INPUT_user/structure_manifest.tsv` | Yes | Which tree structures to analyze (one structure_id per line) |
 | `RUN-workflow.sh` | No | Single entry point: `bash RUN-workflow.sh`. If `execution_mode: "slurm"`, self-submits as a SLURM job via `sbatch` |
-| `ai/conda_environment.yml` | No | Per-BLOCK conda env spec (name: `aiG-annotations_X_ocl-ocl_analysis`) |
+| `ai/conda_environment.yml` | No | Per-BLOCK conda env spec (name: `aiG-ocl_phylogenetic_structures-annotations_X_ocl`) |
 | `ai/main.nf` | No | NextFlow pipeline definition |
 | `ai/nextflow.config` | No | NextFlow executor settings |
 
@@ -293,7 +293,7 @@ bash RUN-workflow.sh
 ```
 
 The conda environment (`aiG-ocl_phylogenetic_structures-annotations_X_ocl`,
-per §28 — renamed from the legacy `aiG-annotations_X_ocl-ocl_analysis`
+per §28 — renamed from the legacy `aiG-ocl_phylogenetic_structures-annotations_X_ocl`
 during the OCL reorg) is created on-demand from
 `ai/conda_environment.yml` on first run.
 

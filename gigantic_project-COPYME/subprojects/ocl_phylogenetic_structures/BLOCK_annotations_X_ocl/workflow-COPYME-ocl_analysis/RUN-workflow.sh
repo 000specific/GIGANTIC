@@ -181,7 +181,7 @@ echo ""
 # Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
 # This workflow requires:
-#   - conda environment: aiG-annotations_X_ocl-ocl_analysis (Python, PyYAML, NextFlow)
+#   - conda environment: aiG-ocl_phylogenetic_structures-annotations_X_ocl (Python, PyYAML, NextFlow)
 #   - NextFlow: from conda env OR system module
 #
 # The environment is created automatically on first run from the yml spec
@@ -189,7 +189,7 @@ echo ""
 # conda is the fallback if mamba is not available.
 # ============================================================================
 
-ENV_NAME="aiG-annotations_X_ocl-ocl_analysis"
+ENV_NAME="aiG-ocl_phylogenetic_structures-annotations_X_ocl"
 ENV_YML="ai/conda_environment.yml"
 
 # Specific to GIGANTIC development for GitHub

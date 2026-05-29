@@ -16,9 +16,9 @@
 #
 # ACTIVATION:
 #   module load conda  # (HiPerGator/HPC only)
-#   conda activate aiG-orthogroups_X_ocl-ocl_analysis
+#   conda activate aiG-ocl_phylogenetic_structures-orthogroups_X_ocl
 
-name: aiG-orthogroups_X_ocl-ocl_analysis
+name: aiG-ocl_phylogenetic_structures-orthogroups_X_ocl
 
 channels:
   - conda-forge
