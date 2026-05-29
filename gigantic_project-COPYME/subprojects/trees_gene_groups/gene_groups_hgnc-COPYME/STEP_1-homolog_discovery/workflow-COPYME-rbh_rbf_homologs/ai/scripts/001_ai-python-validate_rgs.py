@@ -149,7 +149,7 @@ def validate_headers( input_file: Path, logger: logging.Logger = None ) -> Tuple
                 #   5-field hgnc/ncbi-sourced (workflow-COPYME-hgnc_database):
                 #     >rgs_{group}-{species}-{symbol}-{source}-{accession}
                 #     e.g. rgs_fascin_family-human-FSCN1-hgnc_gg3_Fascin_family-NP_003079_1
-                #   4-field uniprot-sourced (workflow-COPYME-hgnc_user_list):
+                #   4-field uniprot-sourced (workflow-COPYME-hgnc_user_gene_symbols):
                 #     >rgs_{group}-{species}-{symbol}-uniprot{accession}
                 #     e.g. rgs_snap_family-human-SNAP25-uniprotP60880
                 # parts[0] (rgs_<group>) and parts[1] (species) are at the SAME index

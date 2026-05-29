@@ -15,7 +15,7 @@ HGNC-symbol-tagged, which Improvements 0 and 1 resolve exactly).
 
 Pipeline (dispatch by RGS header format):
 
-  4-field uniprot-sourced RGS  (workflow-COPYME-hgnc_user_list):
+  4-field uniprot-sourced RGS  (workflow-COPYME-hgnc_user_gene_symbols):
     >rgs_snap_family-human-SNAP25-uniprotP60880
     → Improvement 0 (strict gene-symbol search)
     → Failure is FINAL (no fallback).
@@ -391,7 +391,7 @@ def new_decision_record( rgs_header: str, rgs_species: Optional[str], rgs_length
 # ============================================================================
 # Improvement 0: Strict gene-symbol search (for 4-field uniprot-sourced RGS)
 # ============================================================================
-# RGS headers from workflow-COPYME-hgnc_user_list use the 4-field shape
+# RGS headers from workflow-COPYME-hgnc_user_gene_symbols use the 4-field shape
 #   rgs_<group>-<species>-<symbol>-uniprot<accession>
 # where the source+id is concatenated (e.g., uniprotP60880) — there is no
 # NCBI accession in the header, so Improvement 1 cannot match.

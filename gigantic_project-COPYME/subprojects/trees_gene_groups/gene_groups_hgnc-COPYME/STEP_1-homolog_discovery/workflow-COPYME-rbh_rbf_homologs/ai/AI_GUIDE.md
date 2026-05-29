@@ -33,7 +33,7 @@ its source-genome cognate via a single deterministic mechanism:
 
 | RGS header format | Producer | Resolution mechanism |
 |---|---|---|
-| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-COPYME-hgnc_user_list` | **Improvement 0**: strict gene-symbol lookup against the proteome's `g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
+| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-COPYME-hgnc_user_gene_symbols` | **Improvement 0**: strict gene-symbol lookup against the proteome's `g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
 | 5-field hgnc/ncbi-sourced (`rgs_<group>-<species>-<symbol>-<source>-<NP_id>`) | `workflow-COPYME-hgnc_database` | **Improvement 1**: exact NCBI accession match against the proteome's `p_<accession>` |
 
 Both mechanisms are strict and **fail-fast** — there is no BLAST rescue
@@ -181,7 +181,7 @@ blast:       { evalue, threads, conda_env }
 |---------|-------|-----|
 | "STEP_0 summary TSV not found" | STEP_0 hasn't run | Run STEP_0 first |
 | "BLAST database not found" | genomesDB path wrong / not run | Verify `inputs.blast_databases_dir` |
-| "no_proteome_protein_for_gene_symbol" (uniprot RGS) | Symbol isn't HGNC-canonical | Check spelling; consult genenames.org. The script 001 in `workflow-COPYME-hgnc_user_list` STEP_0 should have caught this — if it reached here, the proteome build may be missing the gene |
+| "no_proteome_protein_for_gene_symbol" (uniprot RGS) | Symbol isn't HGNC-canonical | Check spelling; consult genenames.org. The script 001 in `workflow-COPYME-hgnc_user_gene_symbols` STEP_0 should have caught this — if it reached here, the proteome build may be missing the gene |
 | "multiple_proteome_proteins_for_gene_symbol" (uniprot RGS) | T1 proteome has duplicates for the gene | Investigate the proteome build — T1 should have exactly one protein per gene_symbol |
 | "accession_not_in_genome" (ncbi RGS) | RGS NCBI accession isn't in the proteome | Either rebuild proteome from a newer release or regenerate RGS from the same proteome version |
 | "CRITICAL ERROR: RGS identification failed" | Script 008 fail-fast | Inspect `8_ai-rgs_identification_report.tsv` for the per-RGS reason |

@@ -1,4 +1,6 @@
+#!/usr/bin/env python3
 # AI: Claude Code | Opus 4.6 | 2026 March 30 | Purpose: Build aggregated gene symbol sets for each HGNC gene group
+# AI: Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass)
 # Human: Eric Edsinger
 
 """

@@ -1,0 +1,67 @@
+# Example user gene-group-names file for workflow-COPYME-hgnc_user_gene_group_names
+# (STEP_0-hgnc_based_rgs, MODE 3).
+#
+# Replace this file with your own user_gene_group_names.tsv at the same path
+# (gene_groups-<your_instance>/INPUT_user/user_gene_group_names.tsv) when you
+# instantiate this template.
+#
+# FORMAT
+# ------
+#   - Tab-separated (TSV).
+#   - Lines starting with '#' are comments (ignored).
+#   - First non-comment line is the header (required).
+#   - Each row names ONE HGNC gene group, by NAME or by gg<N> HGNC ID.
+#
+# COLUMNS
+# -------
+#   group_input_identifier   What you type. Either an HGNC group NAME (e.g.
+#                            "Collagens") or a gg-prefixed HGNC family ID
+#                            (e.g. "gg483"). Resolution is described under
+#                            'identifier_type' below.
+#
+#   identifier_type          One of:
+#                              name - treat group_input_identifier as an HGNC
+#                                     group name; match case-insensitively
+#                                     against family.csv (whitespace
+#                                     collapsed).
+#                              id   - treat group_input_identifier as a
+#                                     gg<N> HGNC family id; look up by int(N).
+#                              auto - let the script decide: if the value
+#                                     matches /^gg\d+$/ it is treated as 'id';
+#                                     otherwise as 'name'.
+#
+#   group_display_name       Optional human-readable label used in logs and
+#                            the side-car annotation map. If empty, the
+#                            resolved HGNC name is used.
+#
+#   notes                    Free text; ignored by the pipeline but preserved
+#                            in 2_ai-resolved_user_groups.tsv for your lab
+#                            notebook trail.
+#
+# ALIASING / TYPO HANDLING
+# ------------------------
+# There is no HGNC group-name alias table (unlike gene-symbol aliases). The
+# match against family.csv:name must be EXACT (case-insensitive, whitespace
+# collapsed). If a row fails to resolve, the workflow writes
+# 2_ai-unresolved_groups.tsv with up to 5 "did you mean..." candidates
+# (substring + difflib search) and fails fast. Use the run's
+# 2_ai-hgnc_group_catalog.tsv to grep for the canonical name and try again.
+#
+# PSEUDOGENE / LOCUS-TYPE POLICY
+# ------------------------------
+# By default, only locus types 'gene with protein product' and
+# 'complex locus constituent' are aggregated (matches MODE 1 database
+# workflow exactly). Pseudogenes, RNA genes, V/D/J segments, Ig pseudogenes,
+# T cell receptors, endogenous retroviruses, and readthrough loci are
+# DROPPED. Two YAML flags in START_HERE-user_config.yaml can expand this
+# allowlist when really needed:
+#   filters:
+#     include_pseudogenes: false        # set true to ADD 'pseudogene'
+#     include_non_protein_coding: false # set true to ADD RNA/Ig/TR/...
+#
+# EXAMPLE (Collagens + Cannabinoid receptors + Gap junction proteins)
+# -------------------------------------------------------------------
+group_input_identifier	identifier_type	group_display_name	notes
+Collagens	name	Collagens	all collagen genes (parent group; subfamilies aggregated via hierarchy_closure)
+Cannabinoid receptors	name	Cannabinoid receptors
+gg672	id	Gap junction proteins	GJA / GJB / GJC / GJD / GJE subfamilies

@@ -94,7 +94,7 @@ def extract_rgs_species( rgs_file_path ) {
         if ( line.startsWith( '>' ) ) {
             def header = line.substring( 1 ).trim()
             def parts = header.split( '-' )
-            // Accepts both 4-field uniprot-sourced (workflow-COPYME-hgnc_user_list) and
+            // Accepts both 4-field uniprot-sourced (workflow-COPYME-hgnc_user_gene_symbols) and
             // 5+-field hgnc/ncbi-sourced (workflow-COPYME-hgnc_database) RGS headers.
             // Species short name lives at parts[1] in either format.
             if ( parts.size() >= 4 && parts[0].startsWith( 'rgs_' ) ) {

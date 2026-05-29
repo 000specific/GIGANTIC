@@ -2,7 +2,7 @@
 # WORKFLOW CONFIGURATION - Edit this file before running
 # ============================================================================
 #
-# GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_list
+# GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_gene_symbols
 # AI: Claude Code | Opus 4.7 | 2026 May 25
 # Human: Eric Edsinger
 #
@@ -28,7 +28,7 @@
 #        cd ../../../gene_groups-<your_name>
 #   2. Edit INPUT_user/user_gene_set.tsv (see user_gene_set_EXAMPLE.tsv).
 #   3. Run:
-#        cd STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/
+#        cd STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/
 #        bash RUN-workflow.sh
 # ============================================================================
 

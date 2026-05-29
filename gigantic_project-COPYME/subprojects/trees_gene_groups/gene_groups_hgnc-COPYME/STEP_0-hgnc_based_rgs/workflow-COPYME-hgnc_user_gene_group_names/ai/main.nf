@@ -1,41 +1,46 @@
 #!/usr/bin/env nextflow
 /*
- * GIGANTIC trees_gene_groups STEP_0 - HGNC Gene Group RGS Generation Pipeline
- * AI: Claude Code | Opus 4.6 | 2026 March 30
- * AI: Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass)
+ * GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs
+ * workflow-COPYME-hgnc_user_gene_group_names
+ *
+ * AI: Claude Code | Opus 4.7 | 2026 May 29
  * Human: Eric Edsinger
  *
- * Purpose: Download HGNC gene group data and generate RGS (Reference Gene Set)
- *          FASTA files for ALL gene groups by extracting protein sequences from
- *          the GIGANTIC human T1 proteome.
- *
- * Usage: Copy the workflow template, configure START_HERE-user_config.yaml
- *        with the human proteome path, then run.
+ * Purpose:
+ *   Like workflow-COPYME-hgnc_database, but emits RGS FASTAs for ONLY the
+ *   HGNC gene groups the user names (by HGNC group name OR by HGNC group ID
+ *   like gg483). Also emits a side-car gene_symbol -> hgnc_group annotation
+ *   map for downstream tree-tip-coloring by HGNC subgroup membership.
  *
  * Process Overview:
- *    0: Download HGNC complete_set TSV (script 000) — idempotent against
- *       subproject-level output_to_input/hugo_hgnc_database/. Also consumed
- *       by sibling workflow-COPYME-hgnc_user_gene_symbols.
- *    1: Download HGNC gene group database tables (script 001)
- *    2: Build aggregated gene symbol sets per group (script 002)
- *    3: Generate RGS FASTA files from human proteome (script 003)
+ *    0: Download HGNC complete_set TSV (script 000) - idempotent
+ *    1: Download HGNC gene-group database tables (script 001)
+ *    2: Filter aggregated gene sets to the user's groups (script 002, NEW)
+ *    3: Generate RGS FASTA files from human proteome + emit side-car
+ *       annotation map (script 003)
  *    4: Write workflow run log to ai/logs/ (script 004; GIGANTIC §45)
- *    (Symlinks for output_to_input created by RUN-workflow.sh after pipeline completes)
  *
  * Data Flow:
- *   Download HGNC tables → aggregate gene symbols → extract sequences from proteome
- *   RGS FASTAs → OUTPUT_pipeline/3-output/rgs_fastas/rgs_hugo_hgnc-human-{name}.aa
- *   Manifests → OUTPUT_pipeline/3-output/
- *   complete_set → OUTPUT_pipeline/0-output/hgnc_complete_set.txt
+ *   HGNC download -> user-supplied names/IDs resolve -> aggregate gene symbols
+ *   (filtered to user groups) -> extract sequences from human proteome
+ *   RGS FASTAs                 -> OUTPUT_pipeline/3-output/rgs_fastas/
+ *   Side-car annotation map    -> OUTPUT_pipeline/3-output/3_ai-gene_symbol_to_hgnc_group_map.tsv
+ *   complete_set               -> OUTPUT_pipeline/0-output/hgnc_complete_set.txt
  */
 
 nextflow.enable.dsl = 2
 
 // ============================================================================
-// PARAMETERS (from config.yaml via nextflow.config)
+// PARAMETERS (defaults; -params-file overrides)
 // ============================================================================
+// Flat names match the .params.json structure produced by RUN-workflow.sh,
+// which flattens the nested START_HERE-user_config.yaml. See nextflow.config
+// for rationale.
 
+params.user_gene_group_names_file = null
 params.human_proteome_path = null
+params.include_pseudogenes = false
+params.include_non_protein_coding = false
 params.output_dir = "OUTPUT_pipeline"
 params.project_name = "gigantic_project"
 
@@ -44,8 +49,6 @@ params.project_name = "gigantic_project"
 // Script: 000 - Idempotent download of hgnc_complete_set.txt (with uniprot_ids
 //               column). Skips network fetch if a valid canonical copy exists
 //               at subproject-level output_to_input/hugo_hgnc_database/.
-// Independent of processes 1-3 in this workflow; produces input for the
-// sibling workflow-COPYME-hgnc_user_gene_symbols.
 // ============================================================================
 
 process download_hgnc_complete_set {
@@ -74,7 +77,7 @@ process download_hgnc_complete_set {
 // ============================================================================
 // PROCESS 1: Download HGNC Gene Group Data
 // Script: 001 - Downloads family.csv, hierarchy*.csv, gene_has_family.csv,
-//               hgnc_gene_groups_all.tsv from genenames.org
+//               hgnc_gene_groups_all.tsv from genenames.org.
 // ============================================================================
 
 process download_hgnc_data {
@@ -100,41 +103,49 @@ process download_hgnc_data {
 }
 
 // ============================================================================
-// PROCESS 2: Build Aggregated Gene Sets
-// Script: 002 - Builds aggregated gene symbol sets per group using hierarchy
-//               closure to include descendant genes
+// PROCESS 2: Filter Aggregated Gene Sets by User-Supplied Names/IDs
+// Script: 002 - Resolves user TSV entries -> HGNC family ids, applies the
+//               locus-type allowlist, and emits the filtered aggregated TSV
+//               + resolution trail + catalog + filter-policy record.
 // ============================================================================
 
-process build_aggregated_gene_sets {
-    tag "build_gene_sets"
+process filter_aggregated_gene_sets_by_user_names {
+    tag "filter_user_groups"
     label 'local'
 
     publishDir "${projectDir}/../${params.output_dir}", mode: 'copy', overwrite: true
 
     input:
         path download_dir
+        path user_gene_group_names_file
 
     output:
         path "2-output", emit: gene_sets_dir
 
     script:
+    def include_pseudogenes_flag = params.include_pseudogenes ? '--include-pseudogenes' : ''
+    def include_non_pc_flag = params.include_non_protein_coding ? '--include-non-protein-coding' : ''
     """
     mkdir -p 2-output
 
-    echo "Building aggregated gene sets..."
-    python3 ${projectDir}/scripts/002_ai-python-build_aggregated_gene_sets.py \\
+    echo "Filtering aggregated gene sets by user-supplied group names/IDs..."
+    python3 ${projectDir}/scripts/002_ai-python-filter_aggregated_gene_sets_by_user_names.py \\
         --input-directory ${download_dir} \\
+        --input-user-gene-groups ${user_gene_group_names_file} \\
+        ${include_pseudogenes_flag} \\
+        ${include_non_pc_flag} \\
         --output-directory 2-output \\
-        --log-file 2-output/2_ai-log-build_aggregated_gene_sets.log
+        --log-file 2-output/2_ai-log-filter_aggregated_gene_sets_by_user_names.log
 
-    echo "Aggregated gene sets complete"
+    echo "Filtered aggregated gene sets complete"
     """
 }
 
 // ============================================================================
-// PROCESS 3: Generate RGS FASTA Files
-// Script: 003 - Extracts protein sequences from GIGANTIC human T1 proteome
-//               for each gene group and writes RGS FASTA files
+// PROCESS 3: Generate RGS FASTA Files + Side-Car Annotation Map
+// Script: 003 - Extracts protein sequences from the GIGANTIC human T1 proteome
+//               for each (now filtered) gene group, writes RGS FASTAs, and
+//               writes the side-car gene_symbol -> hgnc_group annotation map.
 // ============================================================================
 
 process generate_rgs_fasta_files {
@@ -184,7 +195,7 @@ process write_run_log {
     script:
     """
     python3 ${projectDir}/scripts/004_ai-python-write_run_log.py \\
-        --workflow-name "hgnc_database" \\
+        --workflow-name "hgnc_user_gene_group_names" \\
         --subproject-name "trees_gene_groups" \\
         --project-name "${params.project_name}" \\
         --status success
@@ -195,40 +206,53 @@ process write_run_log {
 // WORKFLOW
 // ============================================================================
 // NOTE: Symlinks for output_to_input/ are created by RUN-workflow.sh after
-// pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
+// the pipeline completes. Real files only live in OUTPUT_pipeline/N-output/.
 
 workflow {
     log.info """
     ========================================================================
-    GIGANTIC trees_gene_groups STEP_0 - HGNC Gene Group RGS Generation
+    GIGANTIC trees_gene_groups STEP_0 - HGNC User Gene Group NAMES RGS
     ========================================================================
-    Human proteome  : ${params.human_proteome_path}
-    Output directory: ${params.output_dir}
+    User gene-groups TSV    : ${params.user_gene_group_names_file}
+    Human proteome          : ${params.human_proteome_path}
+    Include pseudogenes     : ${params.include_pseudogenes}
+    Include non-protein-coding: ${params.include_non_protein_coding}
+    Output directory        : ${params.output_dir}
     ========================================================================
     """.stripIndent()
 
     // ---- Validate critical parameters ----
-    if ( !params.human_proteome_path ) {
-        error "human_proteome_path not configured! Edit START_HERE-user_config.yaml."
+    if ( !params.user_gene_group_names_file ) {
+        error "user_gene_group_names_file not configured! Edit START_HERE-user_config.yaml (inputs.user_gene_group_names_file)."
+    }
+    def user_gene_group_names_file_obj = file( params.user_gene_group_names_file )
+    if ( !user_gene_group_names_file_obj.exists() ) {
+        error "User gene-group names TSV not found: ${params.user_gene_group_names_file}\nProvide it at ../../INPUT_user/user_gene_group_names.tsv (see INPUT_user/user_gene_group_names_EXAMPLE.tsv for format)."
     }
 
+    if ( !params.human_proteome_path ) {
+        error "human_proteome_path not configured! Edit START_HERE-user_config.yaml (inputs.human_proteome_path)."
+    }
     def human_proteome_file = file( params.human_proteome_path )
     if ( !human_proteome_file.exists() ) {
         error "Human proteome file not found: ${params.human_proteome_path}\nEnsure the genomesDB subproject has been run and the path in START_HERE-user_config.yaml is correct."
     }
 
-    // ---- Process 0: Download HGNC complete_set (independent; consumed by workflow-COPYME-hgnc_user_gene_symbols) ----
+    // ---- Process 0: Download HGNC complete_set (independent) ----
     download_hgnc_complete_set()
 
     // ---- Process 1: Download HGNC gene-group data ----
     download_hgnc_data()
 
-    // ---- Process 2: Build aggregated gene sets ----
-    build_aggregated_gene_sets( download_hgnc_data.out.download_dir )
+    // ---- Process 2: Filter aggregated gene sets by user-supplied names/IDs ----
+    filter_aggregated_gene_sets_by_user_names(
+        download_hgnc_data.out.download_dir,
+        user_gene_group_names_file_obj
+    )
 
-    // ---- Process 3: Generate RGS FASTA files ----
+    // ---- Process 3: Generate RGS FASTA files + side-car annotation map ----
     generate_rgs_fasta_files(
-        build_aggregated_gene_sets.out.gene_sets_dir,
+        filter_aggregated_gene_sets_by_user_names.out.gene_sets_dir,
         human_proteome_file
     )
 

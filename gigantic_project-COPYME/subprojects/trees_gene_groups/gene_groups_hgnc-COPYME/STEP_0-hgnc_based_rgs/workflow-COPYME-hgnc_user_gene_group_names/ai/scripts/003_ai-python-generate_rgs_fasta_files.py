@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.6 | 2026 March 31 15:30 | Purpose: Generate RGS FASTA files from HGNC gene groups using human proteome
+# AI: Claude Code | Opus 4.7 | 2026 May 29 | Purpose: Generate RGS FASTA files from HGNC gene groups using human proteome; also emit side-car gene_symbol -> HGNC group annotation map for downstream tree-annotation coloring
 # AI: Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass)
 # Human: Eric Edsinger
+#
+# This script is a near-verbatim copy of the database workflow's 003 with a
+# single additive change: after writing the RGS summary, it emits an extra
+# side-car annotation TSV (3_ai-gene_symbol_to_hgnc_group_map.tsv) for the
+# downstream tree-annotation step. Everything else (filenames, headers,
+# matching strategy, summary format) is unchanged so STEP_1 sees no difference
+# between MODE 1 (database) and MODE 3 (this workflow) inputs.
 
 """
 Generate RGS (Reference Gene Set) FASTA files from HGNC gene group data.
@@ -576,6 +583,51 @@ def main():
             count = sum( 1 for c in matched_counts if lower_bound <= c <= upper_bound )
             if count > 0:
                 logger.info( f"    {label} sequences: {count} groups" )
+
+    # ---- Side-car annotation map (MODE 3 addition) ----
+    # Emits gene_symbol -> hgnc_group_id -> hgnc_group_name as a single TSV.
+    # This is the input the downstream tree-annotation step uses to color tree
+    # tips by HGNC subgroup membership. One row per (gene_symbol, gene_group)
+    # pair; gene_symbols that landed in multiple user-requested groups appear
+    # in multiple rows.
+    annotation_map_path = output_directory / '3_ai-gene_symbol_to_hgnc_group_map.tsv'
+    with open( annotation_map_path, 'w' ) as output_annotation:
+        output = 'Gene_Symbol (HGNC approved symbol; matches RGS FASTA header field 3)' + '\t'
+        output += 'HGNC_Group_ID (gg<N>)' + '\t'
+        output += 'HGNC_Group_Name (canonical HGNC group name)' + '\t'
+        output += 'Sanitized_Group_Name (filesystem safe lowercase name)' + '\t'
+        output += 'RGS_Filename (which RGS FASTA this row contributes to)' + '\n'
+        output_annotation.write( output )
+
+        # Walk the SUCCESS results; emit one row per (gene_symbol, gene_group) pair.
+        # gene_group['gene_symbols'] is the full aggregated list (post-script-002
+        # filtering); 'missing_symbols' is the subset NOT in the proteome. We
+        # emit BOTH groups: the matched set are the rows the tree-annotation
+        # step uses, and the missing set is preserved as a known limitation
+        # (commented column would be redundant given the existing
+        # 3_ai-rgs_generation_manifest.tsv records misses, so the annotation
+        # map sticks to matched-only).
+        for gene_group in gene_groups:
+            gene_group_id = gene_group[ 'gene_group_id' ]
+            gene_group_name = gene_group[ 'gene_group_name' ]
+            sanitized_name = gene_group[ 'sanitized_name' ]
+            rgs_filename = f"rgs_hugo_hgnc-human-{sanitized_name}.aa"
+
+            # Match the same logic write_rgs_fasta used: a symbol is included
+            # if find_proteome_match returns a hit.
+            for gene_symbol in sorted( gene_group[ 'gene_symbols' ] ):
+                proteome_symbol = find_proteome_match( gene_symbol, gene_symbols___sequences )
+                if proteome_symbol is None:
+                    continue
+
+                output = gene_symbol + '\t'
+                output += gene_group_id + '\t'
+                output += gene_group_name + '\t'
+                output += sanitized_name + '\t'
+                output += rgs_filename + '\n'
+                output_annotation.write( output )
+
+    logger.info( f"Wrote side-car annotation map: {annotation_map_path}" )
 
     # Final summary
     logger.info( "" )

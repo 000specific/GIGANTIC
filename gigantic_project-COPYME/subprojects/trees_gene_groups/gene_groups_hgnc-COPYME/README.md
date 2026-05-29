@@ -3,6 +3,7 @@
 <!-- ============================================================================
 AI:      Claude Code | Opus 4.6 | 2026 March (initial)
 AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+AI:      Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass — MODE 3 added)
 Human:   Eric Edsinger
 ============================================================================ -->
 
@@ -12,7 +13,7 @@ Human:   Eric Edsinger
 - Parent (subproject AI guide): [`../AI_GUIDE.md`](../AI_GUIDE.md)
 - Template AI guide: [`AI_GUIDE.md`](AI_GUIDE.md)
 - Sibling template (generic): [`../gene_groups-COPYME/`](../gene_groups-COPYME/) — for non-HGNC sources
-- STEP_0 has TWO workflows: [`STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/`](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/) (all HGNC groups) + [`STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/`](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/) (curated subset)
+- STEP_0 has THREE workflows: [`STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/`](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/) (all HGNC groups) + [`STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/`](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/) (curated subset by user gene SYMBOLS) + [`STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/`](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/) (curated subset by user-supplied HGNC group names/IDs)
 - Instances of THIS template named `gene_groups_hgnc-<source>/` (UNDERSCORE+HYPHEN, per memory `feedback_instance_naming_follows_template_prefix`)
 
 ---
@@ -35,21 +36,23 @@ reuses the generic STEP_1 / STEP_2 / STEP_3 below.
 | Want to … | Use … |
 |---|---|
 | Process **all ~2060 HGNC-curated gene groups** as a batch | This template → `STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/` |
-| Build an **ad-hoc gene set** anchored on specific human gene symbols (incl. groups HGNC doesn't curate, e.g. SNAP family with SNAP47) | This template → `STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/` |
+| Build an **ad-hoc gene set** anchored on specific human gene symbols (incl. groups HGNC doesn't curate, e.g. SNAP family with SNAP47) | This template → `STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/` |
+| Process a **USER-SPECIFIED SUBSET of HGNC gene groups by name or `gg<N>` ID** (sequences from the same human T1 proteome MODE 1 uses; plus a side-car gene_symbol -> hgnc_group annotation map) | This template → `STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/` |
 | Build gene groups from a **non-HGNC source** (Pfam, InterPro, custom TSV) | `gene_groups-COPYME/` (sibling) |
 
 ---
 
-## Two STEP_0 workflows under this template
+## Three STEP_0 workflows under this template
 
 ```
 gene_groups_hgnc-COPYME/
 ├── README.md                                              (this file)
 ├── INPUT_user/
 │   ├── README.md
-│   └── user_gene_set_EXAMPLE.tsv                          # used by hgnc_user_list mode
+│   ├── user_gene_set_EXAMPLE.tsv                          # used by hgnc_user_gene_symbols mode (MODE 2)
+│   └── user_gene_group_names_EXAMPLE.tsv                  # used by hgnc_user_gene_group_names mode (MODE 3)
 ├── STEP_0-hgnc_based_rgs/                                 # NEW (HGNC-specific)
-│   ├── workflow-COPYME-hgnc_database/                            # MODE 1: all HGNC groups
+│   ├── workflow-COPYME-hgnc_database/                                # MODE 1: all HGNC groups
 │   │   ├── RUN-workflow.sh
 │   │   ├── START_HERE-user_config.yaml
 │   │   └── ai/
@@ -59,30 +62,42 @@ gene_groups_hgnc-COPYME/
 │   │           ├── 001_ai-python-download_hgnc_gene_group_data.py
 │   │           ├── 002_ai-python-build_aggregated_gene_sets.py
 │   │           └── 003_ai-python-generate_rgs_fasta_files.py
-│   └── workflow-COPYME-hgnc_user_list/                           # MODE 2: ad-hoc user set
+│   ├── workflow-COPYME-hgnc_user_gene_symbols/                       # MODE 2: ad-hoc user set by gene SYMBOLS
+│   │   ├── RUN-workflow.sh
+│   │   ├── START_HERE-user_config.yaml
+│   │   └── ai/
+│   │       ├── main.nf, nextflow.config, conda_environment.yml
+│   │       └── scripts/
+│   │           ├── 000_ai-python-download_hgnc_complete_set.py    (same as database mode)
+│   │           ├── 001_ai-python-resolve_user_symbols_to_uniprot.py
+│   │           └── 002_ai-python-fetch_uniprot_fastas-emit_rgs.py
+│   └── workflow-COPYME-hgnc_user_gene_group_names/                   # MODE 3: user-specified HGNC group names/IDs
+│       ├── README.md
 │       ├── RUN-workflow.sh
 │       ├── START_HERE-user_config.yaml
 │       └── ai/
+│           ├── AI_GUIDE.md
 │           ├── main.nf, nextflow.config, conda_environment.yml
 │           └── scripts/
 │               ├── 000_ai-python-download_hgnc_complete_set.py    (same as database mode)
-│               ├── 001_ai-python-resolve_user_symbols_to_uniprot.py
-│               └── 002_ai-python-fetch_uniprot_fastas-emit_rgs.py
+│               ├── 001_ai-python-download_hgnc_gene_group_data.py (same as database mode)
+│               ├── 002_ai-python-filter_aggregated_gene_sets_by_user_names.py
+│               └── 003_ai-python-generate_rgs_fasta_files.py     (also emits side-car gene_symbol -> hgnc_group map)
 ├── STEP_1-homolog_discovery/                              # BLAST-free (2026-05-26); diverged from gene_groups-COPYME
 ├── STEP_2-phylogenetic_analysis/                          # shared
 └── STEP_3-tree_visualization/                             # shared
 ```
 
-Both STEP_0 workflows produce the **same output shape** — per-group RGS
-FASTAs at `OUTPUT_pipeline/<N>-output/rgs_fastas/` + a per-group summary
-TSV (the file STEP_1 iterates over) — so STEP_1 / STEP_2 / STEP_3
-downstream are oblivious to which mode generated the input.
+All three STEP_0 workflows produce the **same output shape** — per-group
+RGS FASTAs at `OUTPUT_pipeline/<N>-output/rgs_fastas/` + a per-group
+summary TSV (the file STEP_1 iterates over) — so STEP_1 / STEP_2 /
+STEP_3 downstream are oblivious to which mode generated the input.
 
 ---
 
 ## Subproject-level HGNC reference
 
-Both STEP_0 workflows share a single canonical copy of HGNC's
+All three STEP_0 workflows share a single canonical copy of HGNC's
 `hgnc_complete_set.txt` at
 [`../output_to_input/hugo_hgnc_database/`](../output_to_input/hugo_hgnc_database/).
 The 000-prefix download script is idempotent against that location —
@@ -117,8 +132,8 @@ mv user_gene_set_EXAMPLE.tsv user_gene_set.tsv
 #   snap_family<TAB>...<TAB>SNAP29
 #   snap_family<TAB>...<TAB>SNAP47
 
-# 3. Run STEP_0 (the user_list mode for this case)
-cd ../STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/
+# 3. Run STEP_0 (the user-gene-symbols mode for this case)
+cd ../STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/
 bash RUN-workflow.sh
 # → 000 downloads hgnc_complete_set.txt (or reuses canonical)
 # → 001 resolves SNAP23/25/29/47 → UniProt accessions via HGNC
@@ -147,7 +162,7 @@ via either gene-symbol search (uniprot-sourced) or NCBI accession match
 (hgnc/ncbi-sourced) — no BLAST fallback is needed. Forward and reciprocal
 BLAST for the actual homolog discovery is unchanged.
 
-Both STEP_0 workflows produce the same per-group RGS FASTA + per-group
+All three STEP_0 workflows produce the same per-group RGS FASTA + per-group
 summary TSV, so the downstream pipeline runs identically regardless of
 mode. See the STEP-level AI_GUIDEs for details:
 
@@ -186,5 +201,7 @@ gene group, and dispatches per `execution_mode` (`local`,
 - [../README.md](../README.md) — subproject overview
 - [AI_GUIDE.md](AI_GUIDE.md) — this template's AI guide
 - [STEP_0-hgnc_based_rgs/AI_GUIDE.md](STEP_0-hgnc_based_rgs/AI_GUIDE.md) — STEP_0 concepts
-- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md) — batch HGNC mode
-- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md) — user-list mode
+- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md) — batch HGNC mode (MODE 1)
+- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/ai/AI_GUIDE.md) — user-gene-symbols mode (MODE 2)
+- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/README.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/README.md) — user-HGNC-group-names mode (MODE 3) — user-facing
+- [STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/ai/AI_GUIDE.md](STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/ai/AI_GUIDE.md) — user-HGNC-group-names mode (MODE 3) — AI guide

@@ -3,6 +3,7 @@
 <!-- ============================================================================
 AI:      Claude Code | Opus 4.6 | 2026 March (initial)
 AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+AI:      Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass — MODE 3 added)
 Human:   Eric Edsinger
 ============================================================================ -->
 
@@ -35,7 +36,7 @@ are hand-curated per family.
 | Path | Type | Purpose |
 |------|------|---------|
 | `gene_groups-COPYME/` | **Template (generic)** | Master pattern for non-HGNC sources. Has empty `STEP_0-placeholder/` for user to fill in source-specific RGS prep. Per §47 + memory `feedback_instance_naming_follows_template_prefix`, instances of THIS template are named `gene_groups-<source>/`. |
-| `gene_groups_hgnc-COPYME/` | **Template (HGNC-specialized)** | Master pattern for HGNC-derived sources, with concrete `STEP_0-hgnc_based_rgs/` containing two workflows: `workflow-COPYME-hgnc_database/` (full HGNC download) and `workflow-COPYME-hgnc_user_list/` (curated subset). Per §47 + the same naming memory, instances of THIS template are named `gene_groups_hgnc-<source>/`. |
+| `gene_groups_hgnc-COPYME/` | **Template (HGNC-specialized)** | Master pattern for HGNC-derived sources, with concrete `STEP_0-hgnc_based_rgs/` containing three workflows: `workflow-COPYME-hgnc_database/` (full HGNC download), `workflow-COPYME-hgnc_user_gene_symbols/` (curated subset by user gene SYMBOLS), and `workflow-COPYME-hgnc_user_gene_group_names/` (curated subset by user-supplied HGNC group NAMES or `gg<N>` IDs). Per §47 + the same naming memory, instances of THIS template are named `gene_groups_hgnc-<source>/`. |
 | `gene_groups-hugo_hgnc/` | **FROZEN instance** | Older HGNC instance (~1,974 protein-coding groups) — predates `gene_groups_hgnc-COPYME`, uses its own pre-rework STEP_0 structure. Frozen per memory `feedback_research_instances_are_frozen_artifacts`. |
 | `gene_groups-snap_family/` | **FROZEN instance** | SNAP family experiment using newer STEP_0-hgnc_based_rgs layout. Frozen per the same rule. |
 | `output_to_input/` | Subproject output | Auto-populated by workflows |
@@ -48,7 +49,7 @@ are hand-curated per family.
 
 Both templates share STEPs 1-3; STEP_0 differs:
 - **Generic template** (`gene_groups-COPYME`): `STEP_0-placeholder/` — user fills in source-specific RGS prep
-- **HGNC template** (`gene_groups_hgnc-COPYME`): `STEP_0-hgnc_based_rgs/` with `workflow-COPYME-hgnc_database/` + `workflow-COPYME-hgnc_user_list/`
+- **HGNC template** (`gene_groups_hgnc-COPYME`): `STEP_0-hgnc_based_rgs/` with `workflow-COPYME-hgnc_database/` + `workflow-COPYME-hgnc_user_gene_symbols/` + `workflow-COPYME-hgnc_user_gene_group_names/`
 
 | Step | Name | What |
 |------|------|------|
@@ -102,64 +103,3 @@ Each STEP's workflow has its own conda env in `ai/conda_environment.yml`, named 
 ## For AI Assistants
 
 See `AI_GUIDE.md`.
-
----
-
-## Session hygiene (per §61 in `ai/ai_FYIs/gigantic_conventions.md`)
-
-GIGANTIC's chat-as-research-notebook convention (§9) works best with
-disciplined session hygiene. Two recommendations.
-
-### Always root at the named gigantic_project-COPYME
-
-Every chat session for project work should be initiated rooted at the
-user's renamed copy of `gigantic_project-COPYME/` — e.g.,
-`gigantic_project-cephalopod_evolution/`.
-
-**Not** at:
-- `GIGANTIC/` (the framework root, reserved for framework-development
-  sessions per §16)
-- `subprojects/<X>/` (a subproject directory)
-- `subprojects/<X>/<BLOCK_or_STEP>/workflow-COPYME-*/` (a workflow directory)
-- Any other directory deeper than the named project root
-
-Why: the renamed project copy is the canonical session root. All
-project conventions, INPUT_user paths, research_notebook captures,
-and AI guidance are scoped to that directory. Rooting deeper than
-that scopes the AI's view too narrowly and loses cross-subproject
-context (and the AI guides at lower levels assume the session was
-rooted above them). Rooting at `GIGANTIC/` is reserved for
-framework-development sessions per §16.
-
-### One chat session per subproject + a side channel for small questions
-
-For productive project work:
-
-- **One session per subproject** you're actively working in. A session
-  focused on `phylonames/` is different from one focused on
-  `genomesDB/` is different from one focused on `trees_species/` —
-  each maintains its own context, convention reminders, and recent
-  state.
-- **Continue the same session over many compactions** until it
-  becomes overly reactive, muddled, or slow. Compactions are
-  lossless (per §9 the full transcript is captured), so a long
-  session isn't a problem until it starts feeling like one.
-- **When a session goes muddled, start a fresh one** at the same
-  named `gigantic_project-*/` root, focused on the same subproject,
-  and bring it back up to speed (read the relevant AI_GUIDEs, recent
-  commits, etc.).
-- **Keep a separate "small questions" session** for random or
-  cross-cutting questions (e.g., "what does this convention mean?"
-  or "is this NCBI accession a GCF or GCA?"). This keeps the
-  subproject sessions focused on their actual work and prevents
-  context pollution.
-
-### What this prevents
-
-- Sessions that try to hold every subproject's state in context and
-  end up confused about which one they're operating on.
-- Sessions that get derailed by one-off questions and lose their
-  thread on the subproject work.
-- Session captures (per §9) that mix multiple unrelated subprojects
-  into a single transcript, making the lab-notebook record harder
-  to grep later.

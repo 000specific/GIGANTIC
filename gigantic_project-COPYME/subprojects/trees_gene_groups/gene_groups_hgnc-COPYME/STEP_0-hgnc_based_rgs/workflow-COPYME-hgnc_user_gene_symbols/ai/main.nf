@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 /*
- * GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_list
+ * GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_gene_symbols
  * AI: Claude Code | Opus 4.7 | 2026 May 25
  * Human: Eric Edsinger
  *
@@ -16,6 +16,7 @@
  *       symbols; fails fast if any symbol cannot be resolved.
  *    2: Fetch the canonical Swiss-Prot FASTA from the UniProt REST API
  *       for each accession and emit per-group RGS FASTAs (script 002).
+ *    3: Write workflow run log to ai/logs/ (script 003; GIGANTIC §45).
  *
  * Output Layout:
  *   OUTPUT_pipeline/0-output/hgnc_complete_set.txt
@@ -32,6 +33,7 @@ nextflow.enable.dsl = 2
 
 params.user_gene_set_file = null
 params.output_dir = "OUTPUT_pipeline"
+params.project_name = "gigantic_project"
 
 // ============================================================================
 // PROCESS 0: Download HGNC complete_set TSV
@@ -131,6 +133,32 @@ process fetch_uniprot_fastas_and_emit_rgs {
 }
 
 // ============================================================================
+// PROCESS 3: Write Run Log (GIGANTIC §45)
+// Script: 003 - Writes a timestamped run log to ai/logs/ documenting the run
+//               (workflow name, subproject, project, status, timestamp).
+// Final step. Gated on Process 2 completion.
+// ============================================================================
+
+process write_run_log {
+    label 'local'
+
+    input:
+        val previous_step_done
+
+    output:
+        val true, emit: log_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \\
+        --workflow-name "hgnc_user_gene_symbols" \\
+        --subproject-name "trees_gene_groups" \\
+        --project-name "${params.project_name}" \\
+        --status success
+    """
+}
+
+// ============================================================================
 // WORKFLOW
 // ============================================================================
 // NOTE: Symlinks to subproject output_to_input/ are created by RUN-workflow.sh
@@ -139,7 +167,7 @@ process fetch_uniprot_fastas_and_emit_rgs {
 workflow {
     log.info """
     ========================================================================
-    GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_list
+    GIGANTIC trees_gene_groups STEP_0-hgnc_based_rgs / workflow-COPYME-hgnc_user_gene_symbols
     ========================================================================
     User gene set : ${params.user_gene_set_file}
     Output dir    : ${params.output_dir}
@@ -167,6 +195,9 @@ workflow {
 
     // ---- Process 2: Fetch FASTAs + emit RGS ----
     fetch_uniprot_fastas_and_emit_rgs( resolve_user_symbols_to_uniprot.out.resolved_dir )
+
+    // ---- Process 3: Write run log (FINAL STEP; §45) ----
+    write_run_log( fetch_uniprot_fastas_and_emit_rgs.out.rgs_dir )
 }
 
 // Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).

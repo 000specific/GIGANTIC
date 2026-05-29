@@ -10,7 +10,9 @@ Human:   Eric Edsinger
 
 - Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
 - Parent (template AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
-- Sister workflow: [`../../workflow-COPYME-hgnc_user_list/`](../../workflow-COPYME-hgnc_user_list/) — curated subset variant
+- Sister workflows:
+  - [`../../workflow-COPYME-hgnc_user_gene_symbols/`](../../workflow-COPYME-hgnc_user_gene_symbols/) — MODE 2 (curated subset by gene SYMBOLS; UniProt-sourced)
+  - [`../../workflow-COPYME-hgnc_user_gene_group_names/`](../../workflow-COPYME-hgnc_user_gene_group_names/) — MODE 3 (curated subset by HGNC group NAMES/IDs; reuses MODE 1's scripts 000+001 and the local human proteome)
 - Reads from: HGNC public database (network download)
 - Outputs to: per-gene-group RGS FASTAs in `OUTPUT_pipeline/` for downstream `../../../STEP_1-homolog_discovery/`
 - Conda env: `aiG-trees_gene_groups-hgnc_based_rgs` (urllib stdlib only — no `requests`)
@@ -108,11 +110,14 @@ What it does:
 | `download_hgnc_data` | `001_*.py` | (genenames.org URLs hardcoded in script) | `1-output/family.csv` etc. |
 | `build_aggregated_gene_sets` | `002_*.py` | `1-output/` | `2-output/2_ai-aggregated_gene_sets.tsv` |
 | `generate_rgs_fasta_files` | `003_*.py` | `2-output/...tsv`, `params.human_proteome_path` | `3-output/rgs_fastas/*.aa`, `3-output/3_ai-rgs_generation_summary.tsv` |
+| `write_run_log` | `004_*.py` | `generate_rgs_fasta_files.out.rgs_output_dir` (gate) | `ai/logs/run_<timestamp>-trees_gene_groups_success.log` (GIGANTIC §45 final step) |
 
 Process 0 (`download_hgnc_complete_set`) is **parallel** to the others
 (no data dependency from it to processes 1-3 in this workflow — it
-exists here so the canonical reference data is populated for the
-sibling `workflow-COPYME-hgnc_user_list`).
+exists here so the canonical reference data is populated for sibling
+workflows `workflow-COPYME-hgnc_user_gene_symbols` (MODE 2) and
+`workflow-COPYME-hgnc_user_gene_group_names` (MODE 3), which both reuse
+the canonical copy via `output_to_input/hugo_hgnc_database/`).
 
 Processes 1 → 2 → 3 form a chain with explicit data dependencies.
 
@@ -186,9 +191,9 @@ Common fail-fast conditions:
 
 ---
 
-## Differences From `workflow-COPYME-hgnc_user_list`
+## Differences From `workflow-COPYME-hgnc_user_gene_symbols`
 
-| | `workflow-COPYME-hgnc_database` | `workflow-COPYME-hgnc_user_list` |
+| | `workflow-COPYME-hgnc_database` | `workflow-COPYME-hgnc_user_gene_symbols` |
 |---|---|---|
 | Group definition source | HGNC's gene-group taxonomy | User-supplied TSV |
 | Sequence source | Local human proteome | UniProt REST API |
@@ -204,5 +209,6 @@ Common fail-fast conditions:
 
 - `../AI_GUIDE.md` — STEP_0 concepts
 - `../../AI_GUIDE.md` — template-level guide
-- `../workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md` — sibling workflow
+- `../workflow-COPYME-hgnc_user_gene_symbols/ai/AI_GUIDE.md` — sibling workflow (MODE 2)
+- `../workflow-COPYME-hgnc_user_gene_group_names/ai/AI_GUIDE.md` — sibling workflow (MODE 3)
 - `../../../output_to_input/hugo_hgnc_database/README.md` — canonical reference data

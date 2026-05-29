@@ -1,8 +1,9 @@
-# AI Guide: workflow-COPYME-hgnc_user_list (STEP_0 / HGNC-Based RGS)
+# AI Guide: workflow-COPYME-hgnc_user_gene_symbols (STEP_0 / HGNC-Based RGS)
 
 <!-- ============================================================================
 AI:      Claude Code | Opus 4.6 | 2026 March (initial)
 AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+AI:      Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass)
 Human:   Eric Edsinger
 ============================================================================ -->
 
@@ -10,7 +11,9 @@ Human:   Eric Edsinger
 
 - Parent STEP guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
 - Parent (template AI guide): [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
-- Sister workflow: [`../../workflow-COPYME-hgnc_database/`](../../workflow-COPYME-hgnc_database/) — full HGNC variant
+- Sister workflows:
+  - [`../../workflow-COPYME-hgnc_database/`](../../workflow-COPYME-hgnc_database/) — MODE 1 (all ~2060 HGNC groups; full sweep)
+  - [`../../workflow-COPYME-hgnc_user_gene_group_names/`](../../workflow-COPYME-hgnc_user_gene_group_names/) — MODE 3 (curated subset by HGNC group NAMES/IDs)
 - Reads from: `../../../INPUT_user/user_gene_set_*.tsv` (user-curated subset) + HGNC public database
 - Outputs to: per-gene-group RGS FASTAs in `OUTPUT_pipeline/` for downstream `../../../STEP_1-homolog_discovery/`
 - Conda env: `aiG-trees_gene_groups-hgnc_based_rgs`
@@ -21,9 +24,9 @@ Human:   Eric Edsinger
 `../../../../AI_GUIDE.md`,
 `../../../AI_GUIDE.md`, and
 `../../AI_GUIDE.md` first. This file is the workflow-level
-execution guide for `workflow-COPYME-hgnc_user_list`.
+execution guide for `workflow-COPYME-hgnc_user_gene_symbols`.
 
-**Location**: `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/`
+**Location**: `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/`
 
 ---
 
@@ -45,7 +48,7 @@ The killer case this enables: gene families that **HGNC doesn't curate
 as one gene group**. Example: the **SNAP family** (SNAP23, SNAP25, SNAP29,
 SNAP47). HGNC has a "SNAREs" gene group (1124) containing SNAP23/25/29
 plus syntaxins and VAMPs, but SNARE is a protein-complex category, not
-a gene family, and SNAP47 isn't in any HGNC group. The user-list mode
+a gene family, and SNAP47 isn't in any HGNC group. The user-gene-symbols mode (MODE 2)
 handles this cleanly — declare your gene set by listing the symbols, and
 HGNC's complete_set table is used only as a symbol → UniProt mapping.
 
@@ -104,8 +107,9 @@ OUTPUT_pipeline/
 | `download_hgnc_complete_set` | `000_*.py` | (canonical-source check) | `0-output/hgnc_complete_set.txt` |
 | `resolve_user_symbols_to_uniprot` | `001_*.py` | `0-output/hgnc_complete_set.txt`, user_gene_set_file | `1-output/1_ai-resolved_symbols.tsv` |
 | `fetch_uniprot_fastas_and_emit_rgs` | `002_*.py` | `1-output/1_ai-resolved_symbols.tsv` | `2-output/rgs_fastas/*.aa`, `2-output/2_ai-rgs_generation_summary.tsv`, `2-output/2_ai-rgs_generation_manifest.tsv` |
+| `write_run_log` | `003_*.py` | `fetch_uniprot_fastas_and_emit_rgs.out.rgs_dir` (gate) | `ai/logs/run_<timestamp>-trees_gene_groups_success.log` (GIGANTIC §45 final step) |
 
-Processes 0 → 1 → 2 form a strict chain.
+Processes 0 → 1 → 2 → 3 form a strict chain.
 
 ---
 
@@ -202,7 +206,7 @@ mv user_gene_set_EXAMPLE.tsv user_gene_set.tsv
 # (edit if needed — the EXAMPLE happens to be SNAP family)
 
 # 3. Run
-cd ../STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/
+cd ../STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/
 bash RUN-workflow.sh
 ```
 
@@ -250,6 +254,7 @@ from a **local human proteome**.
 
 - `../AI_GUIDE.md` — STEP_0 concepts
 - `../../AI_GUIDE.md` — template-level guide
-- `../workflow-COPYME-hgnc_database/ai/AI_GUIDE.md` — sibling workflow
+- `../workflow-COPYME-hgnc_database/ai/AI_GUIDE.md` — sibling workflow (MODE 1)
+- `../workflow-COPYME-hgnc_user_gene_group_names/ai/AI_GUIDE.md` — sibling workflow (MODE 3)
 - `../../INPUT_user/README.md` — user_gene_set.tsv format and location
 - `../../../output_to_input/hugo_hgnc_database/README.md` — canonical reference data

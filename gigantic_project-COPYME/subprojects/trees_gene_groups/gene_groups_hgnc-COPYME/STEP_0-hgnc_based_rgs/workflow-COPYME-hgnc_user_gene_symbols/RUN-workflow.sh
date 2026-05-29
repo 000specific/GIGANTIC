@@ -1,5 +1,6 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.7 | 2026 May 25 | Purpose: Run STEP_0-hgnc_based_rgs workflow-COPYME-hgnc_user_list orchestrator
+# AI: Claude Code | Opus 4.7 | 2026 May 25 | Purpose: Run STEP_0-hgnc_based_rgs workflow-COPYME-hgnc_user_gene_symbols orchestrator
+# AI: Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass)
 # Human: Eric Edsinger
 
 # =============================================================================
@@ -49,7 +50,7 @@ fi
 # ============================================================================
 # Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
-# Shared env across workflow-COPYME-hgnc_database and workflow-COPYME-hgnc_user_list under
+# Shared env across workflow-COPYME-hgnc_database and workflow-COPYME-hgnc_user_gene_symbols under
 # this STEP. Auto-created on first run from ai/conda_environment.yml; mamba
 # preferred, conda fallback.
 
@@ -125,11 +126,11 @@ if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
 
     mkdir -p slurm_logs
 
-    SBATCH_ARGS="--job-name=hgnc_user_list"
+    SBATCH_ARGS="--job-name=hgnc_user_gene_symbols"
     SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
     SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
     SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
-    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/hgnc_user_list-%j.log"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/hgnc_user_gene_symbols-%j.log"
 
     if [ -n "${SLURM_ACCOUNT}" ]; then
         SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
@@ -169,9 +170,10 @@ echo "  [OK] Configuration file found"
 echo ""
 
 echo "========================================================================"
-echo "Starting STEP_0-hgnc_based_rgs workflow-COPYME-hgnc_user_list pipeline"
+echo "Starting STEP_0-hgnc_based_rgs workflow-COPYME-hgnc_user_gene_symbols pipeline"
 echo "========================================================================"
 
+# Optionally resume from cached work/ if user enabled it in config
 RESUME=$(read_config "resume" "false")
 RESUME_FLAG=""
 if [ "${RESUME}" == "true" ]; then
@@ -278,7 +280,7 @@ done
 
 echo ""
 echo "========================================================================"
-echo "SUCCESS! STEP_0-hgnc_based_rgs workflow-COPYME-hgnc_user_list complete."
+echo "SUCCESS! STEP_0-hgnc_based_rgs workflow-COPYME-hgnc_user_gene_symbols complete."
 echo ""
 echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/0-output/  (HGNC complete_set TSV; shared reference)"
@@ -294,3 +296,8 @@ echo ""
 echo "Next: Use individual RGS files in STEP_1 (homolog discovery)."
 echo "========================================================================"
 echo "Completed: $(date)"
+
+# ============================================================================
+# Deactivate Conda Environment
+# ============================================================================
+conda deactivate 2>/dev/null || true

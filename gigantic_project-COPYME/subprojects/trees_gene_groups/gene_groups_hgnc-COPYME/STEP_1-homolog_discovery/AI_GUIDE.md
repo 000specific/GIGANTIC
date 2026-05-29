@@ -83,13 +83,13 @@ mechanism per RGS:
 
 | RGS header format | Producer | Mechanism |
 |---|---|---|
-| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-COPYME-hgnc_user_list` | **Improvement 0** — strict gene-symbol search against the proteome's `>g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
+| 4-field uniprot-sourced (`rgs_<group>-<species>-<symbol>-uniprot<id>`) | `workflow-COPYME-hgnc_user_gene_symbols` | **Improvement 0** — strict gene-symbol search against the proteome's `>g_<SYMBOL>-` headers (exactly one match required, else fail-fast) |
 | 5-field hgnc/ncbi-sourced (`rgs_<group>-<species>-<symbol>-<source>-<NP_id>`) | `workflow-COPYME-hgnc_database` | **Improvement 1** — exact NCBI accession match against the proteome's `p_<accession>` |
 
 Both mechanisms are strict and **fail-fast**. There is no BLAST rescue path
 for RGS that doesn't cleanly resolve via its header's primary key. This is
 intentional: gene_groups_hgnc RGS are always either NCBI-accession-tagged
-(database mode) or HGNC-symbol-tagged (user-list mode), and Improvements
+(MODE 1 hgnc_database or MODE 3 hgnc_user_gene_group_names — both source from the local human proteome) or UniProt-accession-tagged (MODE 2 hgnc_user_gene_symbols, source from UniProt REST). Improvements
 0 + 1 cover both cases exactly. The historical Improvements 2–4 (BLAST
 fallback + Hungarian assignment) were inherited from trees_gene_families
 and were dead code here — they were removed in 2026-05-26.

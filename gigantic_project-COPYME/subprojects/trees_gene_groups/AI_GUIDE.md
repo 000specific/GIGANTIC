@@ -3,6 +3,7 @@
 <!-- ============================================================================
 AI:      Claude Code | Opus 4.6 | 2026 March (initial)
 AI:      Claude Code | Opus 4.7 (1M context) | 2026 May 26 (detailed eval pass)
+AI:      Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass — MODE 3 added)
 Human:   Eric Edsinger
 ============================================================================ -->
 
@@ -43,14 +44,15 @@ Human:   Eric Edsinger
 | GIGANTIC project overview | `../../AI_GUIDE.md` |
 | trees_gene_groups concepts (this file) | this file |
 | Generic (source-agnostic) template | `gene_groups-COPYME/README.md` |
-| HGNC-anchored template (newer, two STEP_0 modes) | `gene_groups_hgnc-COPYME/AI_GUIDE.md` |
+| HGNC-anchored template (newer, three STEP_0 modes) | `gene_groups_hgnc-COPYME/AI_GUIDE.md` |
 | HGNC source specifics (legacy instance) | `gene_groups-hugo_hgnc/AI_GUIDE-hugo_hgnc.md` (now in gitignored data dir; read on disk, not in git) |
 | Canonical HGNC reference data | `output_to_input/hugo_hgnc_database/README.md` |
 | STEP_1 concepts (RBH/RBF) | `gene_groups-COPYME/STEP_1-homolog_discovery/AI_GUIDE.md` |
 | STEP_2 concepts | `gene_groups-COPYME/STEP_2-phylogenetic_analysis/AI_GUIDE.md` |
 | STEP_3 concepts | `gene_groups-COPYME/STEP_3-tree_visualization/AI_GUIDE.md` |
 | HGNC STEP_0 (batch all HGNC groups) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/ai/AI_GUIDE.md` |
-| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list/ai/AI_GUIDE.md` |
+| HGNC STEP_0 (ad-hoc user gene set) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols/ai/AI_GUIDE.md` |
+| HGNC STEP_0 (user-supplied HGNC group names/IDs) | `gene_groups_hgnc-COPYME/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_group_names/ai/AI_GUIDE.md` |
 | Workflow execution details (STEP_1/2/3) | each `workflow-*/ai/AI_GUIDE-*.md` |
 | Shared RBH/RBF methodology with sister subproject | `../trees_gene_families/AI_GUIDE.md` |
 
@@ -88,10 +90,12 @@ trees_gene_groups/
 │   └── STEP_1, STEP_2, STEP_3                             (shared)
 │
 ├── gene_groups_hgnc-COPYME/                               ← TEMPLATE 2: HGNC-anchored (NEW)
-│   ├── INPUT_user/user_gene_set_EXAMPLE.tsv               (for the user_list mode)
+│   ├── INPUT_user/user_gene_set_EXAMPLE.tsv               (for the hgnc_user_gene_symbols mode / MODE 2)
+│   ├── INPUT_user/user_gene_group_names_EXAMPLE.tsv       (for the hgnc_user_gene_group_names mode / MODE 3)
 │   ├── STEP_0-hgnc_based_rgs/                             (HGNC-specific)
 │   │   ├── workflow-COPYME-hgnc_database/                        ← MODE 1: all HGNC groups
-│   │   └── workflow-COPYME-hgnc_user_list/                       ← MODE 2: ad-hoc user set
+│   │   ├── workflow-COPYME-hgnc_user_gene_symbols/               ← MODE 2: ad-hoc user gene set (gene SYMBOLS)
+│   │   └── workflow-COPYME-hgnc_user_gene_group_names/           ← MODE 3: user-supplied HGNC group names/IDs
 │   └── STEP_1, STEP_2, STEP_3                             (inherited from gene_groups-COPYME)
 │
 └── gene_groups-<instance>/                                ← INSTANCE: copy of one of the templates
@@ -105,7 +109,8 @@ instances:
   classifications) — replace its `STEP_0-placeholder/` with a
   source-specific STEP_0.
 - `gene_groups_hgnc-COPYME` is for HGNC-anchored analyses (batch or
-  ad-hoc) — already has STEP_0 wired with two workflow modes.
+  ad-hoc) — already has STEP_0 wired with three workflow modes
+  (database / user gene symbols / user gene group names).
 
 ### Why a research codebase keeps both
 
@@ -121,7 +126,7 @@ Per-instance examples currently:
   Older code path; **kept as a research artifact**.
 - `gene_groups-snap_family/` — Synaptosomal-Associated Proteins
   (SNAP23/25/29/47); instance of `gene_groups_hgnc-COPYME` using the
-  `workflow-COPYME-hgnc_user_list` mode.
+  `workflow-COPYME-hgnc_user_gene_symbols` mode.
 
 ---
 
@@ -146,7 +151,7 @@ and Improvements 2–4 in script 008) was removed as dead code. RGS produced by
 either STEP_0 workflow always resolves cleanly via one of:
 
 - **Improvement 0** — strict gene-symbol search (4-field uniprot-sourced
-  RGS from `workflow-COPYME-hgnc_user_list`)
+  RGS from `workflow-COPYME-hgnc_user_gene_symbols`)
 - **Improvement 1** — exact NCBI accession match (5-field hgnc/ncbi-sourced
   RGS from `workflow-COPYME-hgnc_database`)
 
@@ -181,7 +186,7 @@ Each STEP has its own conda env defined in `workflow-COPYME-*/ai/conda_environme
 | STEP | Env name | Key dependencies |
 |------|----------|------------------|
 | STEP_0 (legacy hugo_hgnc instance) | `aiG-trees_gene_groups-hgnc_gene_groups` | python, pyyaml, nextflow (urllib stdlib for downloads) |
-| STEP_0 (gene_groups_hgnc-COPYME, both workflows) | `aiG-trees_gene_groups-hgnc_based_rgs` | python, pyyaml, nextflow (urllib stdlib only — no `requests`) |
+| STEP_0 (gene_groups_hgnc-COPYME, all three workflows) | `aiG-trees_gene_groups-hgnc_based_rgs` | python, pyyaml, nextflow (urllib stdlib only — no `requests`) |
 | STEP_1 | `aiG-trees_gene_groups-rbh_rbf_homologs` | python, pyyaml, nextflow, blast, numpy, scipy |
 | STEP_2 | `aiG-trees_gene_groups-phylogenetic_analysis` | python, pyyaml, nextflow, mafft, clipkit, fasttree, iqtree, veryfasttree |
 | STEP_3 | `aiG-trees_gene_groups-visualization` | python, pyyaml, pip → toytree, toyplot, reportlab |
@@ -227,16 +232,16 @@ Pick the right template first:
 
 ### Case A: HGNC-anchored (human gene symbols → UniProt)
 
-Use `gene_groups_hgnc-COPYME`. The STEP_0 already supports two modes
-(batch HGNC + ad-hoc user list); no STEP_0 customization is needed in
-the common case.
+Use `gene_groups_hgnc-COPYME`. The STEP_0 already supports three modes
+(batch HGNC / ad-hoc user gene symbols / ad-hoc user gene group names);
+no STEP_0 customization is needed in the common case.
 
 ```bash
 # 1. Instantiate
 cp -r gene_groups_hgnc-COPYME gene_groups-<my_analysis>
 
 # 2a. Ad-hoc mode: edit INPUT_user/user_gene_set.tsv with your symbols
-#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_list && bash RUN-workflow.sh
+#     Then: cd <instance>/STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_user_gene_symbols && bash RUN-workflow.sh
 
 # 2b. Batch mode: edit STEP_0-hgnc_based_rgs/workflow-COPYME-hgnc_database/START_HERE-user_config.yaml
 #     to point at your human proteome.
@@ -285,10 +290,12 @@ mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-pfam_clans/
 | File | Purpose | User Edits? |
 |------|---------|-------------|
 | `gene_groups-COPYME/` | Source-agnostic master template | No (copy it to make non-HGNC instances) |
-| `gene_groups_hgnc-COPYME/` | HGNC-anchored template (two STEP_0 modes) | No (copy it to make HGNC-anchored instances) |
+| `gene_groups_hgnc-COPYME/` | HGNC-anchored template (three STEP_0 modes) | No (copy it to make HGNC-anchored instances) |
 | `output_to_input/hugo_hgnc_database/hgnc_complete_set.txt` | Canonical HGNC reference (auto-fetched by STEP_0 000) | No (managed by STEP_0) |
-| `gene_groups_hgnc-COPYME/INPUT_user/user_gene_set_EXAMPLE.tsv` | Template example for the user_list workflow | No (replace in the instance) |
-| `gene_groups-<instance>/INPUT_user/user_gene_set.tsv` | User-supplied gene set for the user_list workflow | **YES** |
+| `gene_groups_hgnc-COPYME/INPUT_user/user_gene_set_EXAMPLE.tsv` | Template example for the hgnc_user_gene_symbols workflow (MODE 2) | No (replace in the instance) |
+| `gene_groups_hgnc-COPYME/INPUT_user/user_gene_group_names_EXAMPLE.tsv` | Template example for the hgnc_user_gene_group_names workflow (MODE 3) | No (replace in the instance) |
+| `gene_groups-<instance>/INPUT_user/user_gene_set.tsv` | User-supplied gene set for the hgnc_user_gene_symbols workflow (MODE 2) | **YES** |
+| `gene_groups-<instance>/INPUT_user/user_gene_group_names.tsv` | User-supplied HGNC group names/IDs for the hgnc_user_gene_group_names workflow (MODE 3) | **YES** |
 | `gene_groups-<instance>/AI_GUIDE-<instance>.md` (optional) | Instance-specific AI guidance | Read only |
 | `gene_groups-<instance>/STEP_0-*/workflow-*/START_HERE-user_config.yaml` | STEP_0 config | **YES** |
 | `gene_groups-<instance>/STEP_1-*/workflow-*/START_HERE-user_config.yaml` | STEP_1 config | **YES** |
@@ -307,22 +314,3 @@ mkdir -p gene_groups-pfam/STEP_0-pfam_clans/workflow-pfam_clans/
 | Before STEP_1 | "Local, slurm-standard, or slurm-burst? Which QOS / resources?" |
 | Before STEP_2 | "Which tree methods? FastTree (fast), IQ-TREE (publication), VeryFastTree (large), PhyloBayes (Bayesian)?" |
 | Before STEP_3 | "Has STEP_2 completed? Which tree methods produced output?" |
-
----
-
-## Session hygiene (per §61)
-
-For productive project work:
-- **Root every chat session at this named `gigantic_project-*/` directory**.
-  Not at `GIGANTIC/` (framework root, reserved for framework dev per §16),
-  not at `subprojects/<X>/`, not at a `workflow-COPYME-*/` dir, not at
-  any directory deeper than the named project root.
-- **One chat session per subproject** you're actively working in — keeps
-  context focused and prevents cross-subproject confusion.
-- **Continue the same session over many compactions** (lossless per §9)
-  until it becomes muddled or slow; then start fresh in a new session,
-  same root, same subproject focus.
-- **Keep a separate "small questions" session** for one-off questions
-  so subproject sessions stay focused.
-
-See `ai/ai_FYIs/gigantic_conventions.md` §61 for the full rationale.

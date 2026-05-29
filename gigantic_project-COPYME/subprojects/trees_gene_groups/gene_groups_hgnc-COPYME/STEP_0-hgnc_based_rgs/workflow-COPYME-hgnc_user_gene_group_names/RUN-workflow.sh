@@ -1,12 +1,15 @@
 #!/bin/bash
-# AI: Claude Code | Opus 4.6 | 2026 March 30 | Purpose: Run STEP_0 HGNC gene group RGS generation Nextflow pipeline
-# AI: Claude Code | Opus 4.7 | 2026 May 29 (parity-finishing pass)
+# AI: Claude Code | Opus 4.7 | 2026 May 29 | Purpose: Run STEP_0 HGNC user-gene-group-names RGS generation Nextflow pipeline
 # Human: Eric Edsinger
 
 # =============================================================================
 # RUN-workflow.sh
 # =============================================================================
-# Runs the STEP_0 HGNC Gene Group RGS Generation Nextflow pipeline.
+# Runs the STEP_0 HGNC User Gene Group NAMES RGS generation Nextflow pipeline.
+# Filters HGNC gene groups to the user's named groups (by HGNC name or by
+# 'gg<N>' HGNC id) and emits per-group RGS FASTAs + a side-car
+# gene_symbol -> hgnc_group annotation map.
+#
 # Supports both local and SLURM execution via START_HERE-user_config.yaml.
 #
 # Usage:
@@ -27,10 +30,8 @@ cd "${SCRIPT_DIR}"
 # Derive instance + step names from the directory hierarchy
 # ============================================================================
 # SCRIPT_DIR points at the workflow dir; one level up is the STEP dir; two
-# levels up is the instance dir (e.g. gene_groups-hugo_hgnc, or a
-# user-gene-symbols instance like gene_groups-snap_family). Derived
-# dynamically so this script works for every instance of
-# gene_groups_hgnc-COPYME, not just hugo_hgnc.
+# levels up is the instance dir. Derived dynamically so this script works
+# for every instance of gene_groups_hgnc-COPYME.
 STEP_NAME="$( basename "$( cd "${SCRIPT_DIR}/.." && pwd )" )"
 INSTANCE_NAME="$( basename "$( cd "${SCRIPT_DIR}/../.." && pwd )" )"
 
@@ -41,16 +42,18 @@ if [[ "${INSTANCE_NAME}" == *COPYME* ]]; then
     echo ""
     echo "Copy this template to a real instance, e.g.:"
     echo "  cp -r ../../../${INSTANCE_NAME} ../../../gene_groups-<your_name>"
-    echo "Then run from inside the new instance's workflow dir."
+    echo "Then edit INPUT_user/user_gene_group_names.tsv and run from inside"
+    echo "the new instance's workflow dir."
     exit 1
 fi
 
 # ============================================================================
 # Activate GIGANTIC Environment (on-demand creation)
 # ============================================================================
-# The environment is auto-created on first RUN_1 run from the yml spec
-# colocated at ai/conda_environment.yml. mamba is preferred (much faster);
-# conda is the fallback if mamba is not available.
+# Shared env across the three STEP_0-hgnc_based_rgs workflows
+# (workflow-COPYME-hgnc_database, workflow-COPYME-hgnc_user_gene_symbols,
+# workflow-COPYME-hgnc_user_gene_group_names). Auto-created on first run from
+# ai/conda_environment.yml; mamba preferred, conda fallback.
 
 # Disable NextFlow telemetry/update checks (prevents curl hangs on compute nodes)
 export NXF_OFFLINE=true
@@ -117,7 +120,6 @@ if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
     echo "Execution mode: SLURM (submitting job)"
     echo ""
 
-    # Read resources and SLURM settings from config
     SLURM_CPUS=$(read_config "cpus" "4")
     SLURM_MEM=$(read_config "memory_gb" "16")
     SLURM_TIME=$(read_config "time_hours" "1")
@@ -126,11 +128,11 @@ if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
 
     mkdir -p slurm_logs
 
-    SBATCH_ARGS="--job-name=hgnc_gene_groups"
+    SBATCH_ARGS="--job-name=hgnc_user_gene_group_names"
     SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
     SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
     SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
-    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/hgnc_gene_groups-%j.log"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/hgnc_user_gene_group_names-%j.log"
 
     if [ -n "${SLURM_ACCOUNT}" ]; then
         SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
@@ -171,7 +173,7 @@ echo "  [OK] Configuration file found"
 echo ""
 
 echo "========================================================================"
-echo "Starting STEP_0 HGNC Gene Group RGS Generation Pipeline"
+echo "Starting STEP_0 HGNC User Gene Group NAMES RGS Pipeline"
 echo "========================================================================"
 
 # Optionally resume from cached work/ if user enabled it in config
@@ -182,8 +184,8 @@ if [ "${RESUME}" == "true" ]; then
     echo "  resume: enabled (using NextFlow work/ cache)"
 fi
 
-# Flatten START_HERE-user_config.yaml → .params.json for nextflow -params-file.
-# Compatible with nextflow 26.x strict-mode config parser (no Groovy `import` in nextflow.config).
+# Flatten START_HERE-user_config.yaml -> .params.json for nextflow -params-file.
+# Compatible with nextflow 26.x strict-mode config parser.
 python3 - <<'PYTHON_FLATTEN'
 import yaml, json
 from pathlib import Path
@@ -194,7 +196,10 @@ def resolve(rel):
     if rel is None: return None
     return str((WORKFLOW_ROOT / rel).resolve())
 flat = {
+    'user_gene_group_names_file': resolve(cfg.get('inputs', {}).get('user_gene_group_names_file')),
     'human_proteome_path': resolve(cfg.get('inputs', {}).get('human_proteome_path')),
+    'include_pseudogenes': bool(cfg.get('filters', {}).get('include_pseudogenes', False)),
+    'include_non_protein_coding': bool(cfg.get('filters', {}).get('include_non_protein_coding', False)),
     'output_dir': cfg.get('output', {}).get('base_dir', 'OUTPUT_pipeline'),
     'cpus': cfg.get('cpus', 4),
     'memory_gb': cfg.get('memory_gb', 16),
@@ -221,22 +226,13 @@ fi
 # ============================================================================
 # Create symlinks for output_to_input (subproject root)
 # ============================================================================
-# Real files live in this workflow's OUTPUT_pipeline/N-output/ (created by
-# NextFlow above). Symlinks are organized at the subproject-root
-# output_to_input/ in two scopes:
-#
-#   1. Subproject-level (shared across instances) for HGNC reference data:
+# Two scopes:
+#   1. Subproject-level (shared) HGNC reference:
 #        ../../../output_to_input/hugo_hgnc_database/hgnc_complete_set.txt
-#      Consumed by the sibling workflow-COPYME-hgnc_user_gene_symbols to resolve user
-#      symbols to UniProt accessions without re-downloading HGNC.
-#
-#   2. Per-instance for this workflow's RGS FASTAs and manifests:
+#   2. Per-instance RGS FASTAs + manifest + side-car annotation map:
 #        ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/...
-#      Consumed by STEP_1 (homolog discovery).
-#
-# Symlink targets are RELATIVE paths from the symlink location back to the
-# real files in OUTPUT_pipeline/. ${INSTANCE_NAME} and ${STEP_NAME} are
-# derived from the directory hierarchy at the top of this script.
+#      (Same target as workflow-COPYME-hgnc_database -- STEP_1 reads from a
+#       single canonical path regardless of which workflow produced the RGS.)
 # ============================================================================
 
 echo ""
@@ -254,7 +250,7 @@ if [ -f "OUTPUT_pipeline/0-output/hgnc_complete_set.txt" ]; then
     echo "  hgnc_complete_set.txt symlink created (subproject reference)"
 fi
 
-# --- 2. Per-instance: RGS FASTAs + manifests ---
+# --- 2. Per-instance: RGS FASTAs + manifests + annotation map ---
 SYMLINK_DIR="../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}"
 mkdir -p "${SYMLINK_DIR}/rgs_fastas"
 
@@ -276,9 +272,13 @@ if [ -d "OUTPUT_pipeline/3-output/rgs_fastas" ]; then
     echo "  RGS FASTA symlinks created: ${RGS_COUNT} gene groups"
 fi
 
-# Symlink the summary and manifest TSVs
+# Symlink the summary, manifest, and side-car annotation map TSVs
 for tsv_file in OUTPUT_pipeline/3-output/3_ai-rgs_generation_summary.tsv \
-                OUTPUT_pipeline/3-output/3_ai-rgs_generation_manifest.tsv; do
+                OUTPUT_pipeline/3-output/3_ai-rgs_generation_manifest.tsv \
+                OUTPUT_pipeline/3-output/3_ai-gene_symbol_to_hgnc_group_map.tsv \
+                OUTPUT_pipeline/2-output/2_ai-resolved_user_groups.tsv \
+                OUTPUT_pipeline/2-output/2_ai-hgnc_group_catalog.tsv \
+                OUTPUT_pipeline/2-output/2_ai-filter_policy.tsv; do
     if [ -f "$tsv_file" ]; then
         FILENAME=$( basename "$tsv_file" )
         ln -sf "../../../${INSTANCE_NAME}/${STEP_NAME}/${WORKFLOW_DIR_NAME}/${tsv_file}" \
@@ -289,21 +289,25 @@ done
 
 echo ""
 echo "========================================================================"
-echo "SUCCESS! STEP_0 pipeline complete."
+echo "SUCCESS! STEP_0 HGNC user-gene-group-names pipeline complete."
 echo ""
 echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/0-output/  (HGNC complete_set TSV; shared reference)"
 echo "  OUTPUT_pipeline/1-output/  (downloaded HGNC gene-group data)"
-echo "  OUTPUT_pipeline/2-output/  (aggregated gene sets)"
-echo "  OUTPUT_pipeline/3-output/  (RGS FASTA files + manifest/summary)"
+echo "  OUTPUT_pipeline/2-output/  (filtered aggregated gene sets + resolution trail + catalog + filter policy)"
+echo "  OUTPUT_pipeline/3-output/  (RGS FASTA files + manifest/summary + side-car annotation map)"
 echo ""
 echo "Downstream symlinks:"
 echo "  ../../../output_to_input/hugo_hgnc_database/hgnc_complete_set.txt"
 echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/rgs_fastas/"
 echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/3_ai-rgs_generation_summary.tsv"
 echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/3_ai-rgs_generation_manifest.tsv"
+echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/3_ai-gene_symbol_to_hgnc_group_map.tsv"
+echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/2_ai-resolved_user_groups.tsv"
+echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/2_ai-hgnc_group_catalog.tsv"
+echo "  ../../../output_to_input/${INSTANCE_NAME}/${STEP_NAME}/2_ai-filter_policy.tsv"
 echo ""
-echo "Next: Use individual RGS files in STEP_1 (validation) or STEP_2 (homolog discovery)"
+echo "Next: Use individual RGS files in STEP_1 (homolog discovery)."
 echo "========================================================================"
 echo "Completed: $(date)"
 

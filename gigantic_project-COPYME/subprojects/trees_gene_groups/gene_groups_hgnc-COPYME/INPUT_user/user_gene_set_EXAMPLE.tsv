@@ -1,4 +1,4 @@
-# Example user gene set for workflow-COPYME-hgnc_user_list (STEP_0-hgnc_based_rgs).
+# Example user gene set for workflow-COPYME-hgnc_user_gene_symbols (STEP_0-hgnc_based_rgs).
 #
 # Replace this file with your own user_gene_set.tsv at the same path
 # (gene_groups-<your_instance>/INPUT_user/user_gene_set.tsv) when you

@@ -11,7 +11,7 @@ without an API hop. It is required by both STEP_0 workflows in
 `gene_groups_hgnc-COPYME`:
 
   - workflow-COPYME-hgnc_database/   (for downstream RGS sequence sourcing)
-  - workflow-COPYME-hgnc_user_list/  (to resolve user-supplied symbols to UniProt
+  - workflow-COPYME-hgnc_user_gene_symbols/  (to resolve user-supplied symbols to UniProt
                                accessions before fetching FASTAs)
 
 Idempotency:

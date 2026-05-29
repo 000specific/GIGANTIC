@@ -2,8 +2,9 @@
 # Per-workflow conda env, auto-created from this file on first run by
 # RUN-workflow.sh (mamba preferred; conda fallback).
 #
-# Shared by BOTH workflows under STEP_0-hgnc_based_rgs (workflow-COPYME-hgnc_database
-# and workflow-COPYME-hgnc_user_list) — same dependency surface, single env name.
+# Shared by ALL THREE workflows under STEP_0-hgnc_based_rgs
+# (workflow-COPYME-hgnc_database, workflow-COPYME-hgnc_user_gene_symbols,
+# workflow-COPYME-hgnc_user_gene_group_names) — same dependency surface, single env name.
 #
 # Needs:
 #   - python>=3.10 (stdlib urllib for HTTP, csv, argparse — no `requests` needed)

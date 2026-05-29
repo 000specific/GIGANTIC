@@ -1,0 +1,97 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# GIGANTIC trees_gene_groups STEP_0 - HGNC User Gene Group NAMES Workflow
+# AI: Claude Code | Opus 4.7 | 2026 May 29
+# Human: Eric Edsinger
+#
+# This workflow takes a user-supplied list of HGNC gene group NAMES
+# (e.g. "Collagens") or IDs (e.g. "gg483") and emits per-group RGS FASTAs
+# from the GIGANTIC human T1 proteome -- sharing all download + aggregation
+# logic with workflow-COPYME-hgnc_database, but emitting ONLY the user's
+# groups.
+#
+# Usage:
+#     cp -r workflow-COPYME-hgnc_user_gene_group_names workflow-RUN_01-hgnc_user_gene_group_names
+#     # Place your user_gene_group_names.tsv at ../../INPUT_user/user_gene_group_names.tsv
+#     # Edit this config (verify paths + filter flags)
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (REQUIRED)
+# ============================================================================
+
+inputs:
+  # User-supplied TSV of HGNC group names/IDs (REQUIRED).
+  # Instance-level: lives at <instance>/INPUT_user/user_gene_group_names.tsv
+  # (see INPUT_user/user_gene_group_names_EXAMPLE.tsv for format).
+  user_gene_group_names_file: "../../INPUT_user/user_gene_group_names.tsv"
+
+  # Path to GIGANTIC human T1 proteome .aa file (REQUIRED).
+  # Header format: >g_GENE_SYMBOL-t_TRANSCRIPT-p_PROTEIN-n_PHYLONAME
+  # From genomesDB subproject output (same path as workflow-COPYME-hgnc_database).
+  human_proteome_path: "../../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes/Metazoa_Chordata_Mammalia_Primates_Hominidae_Homo_sapiens-T1-proteome.aa"
+
+# ============================================================================
+# LOCUS-TYPE FILTER
+# ============================================================================
+# Defaults match workflow-COPYME-hgnc_database exactly: only
+#   'gene with protein product' + 'complex locus constituent'
+# Pseudogenes / RNA genes / Ig / TR / readthrough / ERV are DROPPED by default.
+
+filters:
+  # Default: drop pseudogenes (matches MODE 1 database default).
+  # Set to true to ADD locus type 'pseudogene' to the allowlist.
+  include_pseudogenes: false
+
+  # Default: drop RNA / Ig / TR / readthrough / ERV loci.
+  # Flip only if you genuinely want non-protein-coding loci in the RGS.
+  include_non_protein_coding: false
+
+# ============================================================================
+# RGS GENERATION SETTINGS
+# ============================================================================
+
+rgs:
+  # Date stamp for RGS filenames (YYYYMMDD format). Leave empty to use today's.
+  date_stamp: ""
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# Computational Resources
+# ============================================================================
+# STEP_0 is lightweight - downloads + Python processing only (no BLAST).
+# These values are used by BOTH NextFlow (process resources) and SLURM.
+
+cpus: 4
+memory_gb: 16
+time_hours: 1
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# "local" - Run directly on this machine (default)
+# "slurm" - Submit as a SLURM cluster job
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# Default: false -- stale-cache surprises have caused incorrect results in the
+# past, so explicit opt-in is safer for research reproducibility.
+
+resume: false
