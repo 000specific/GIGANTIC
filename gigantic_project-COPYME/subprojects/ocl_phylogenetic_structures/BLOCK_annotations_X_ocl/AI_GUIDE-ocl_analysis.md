@@ -3,8 +3,8 @@
 **AI**: Claude Code | Opus 4.6 | 2026 April 18
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read the subproject guide (`../AI_GUIDE-annotations_X_ocl.md`) first.
-This guide covers STEP-specific details.
+**For AI Assistants**: Read the BLOCK guide (`AI_GUIDE-annotations_X_ocl.md`, sibling) first.
+This guide covers BLOCK workflow-execution details.
 
 ---
 
@@ -12,8 +12,9 @@ This guide covers STEP-specific details.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../AI_GUIDE-project.md` |
-| Subproject concepts | `../AI_GUIDE-annotations_X_ocl.md` |
+| GIGANTIC overview | `../../../AI_GUIDE.md` |
+| BLOCK concepts (legacy filename retains "annotations_X_ocl") | `AI_GUIDE-annotations_X_ocl.md` (sibling) |
+| Parent subproject (phylogenetic-axis OCL) | `../README.md` and `../AI_GUIDE.md` |
 | STEP architecture | This file |
 | Running the workflow | `workflow-COPYME-ocl_analysis/ai/AI_GUIDE-ocl_analysis_workflow.md` |
 
@@ -30,7 +31,7 @@ combination of species set and annotation database.
 ## COPYME Pattern
 
 ```
-BLOCK_ocl_analysis/
+BLOCK_annotations_X_ocl/             # this BLOCK
 ├── workflow-COPYME-ocl_analysis/    # Template (never run directly)
 ├── workflow-RUN_01-ocl_analysis/    # Copy for species70 pfam
 ├── workflow-RUN_02-ocl_analysis/    # Copy for species70 gene3d
@@ -38,7 +39,9 @@ BLOCK_ocl_analysis/
 ```
 
 Each copy has its own `START_HERE-user_config.yaml` with a unique `run_label`, and outputs go to
-separate subdirectories in `output_to_input/BLOCK_ocl_analysis/{run_label}/`.
+separate subdirectories in `../output_to_input/BLOCK_ocl_analysis/{run_label}/` at the parent
+subproject level. (Note: `output_to_input/BLOCK_ocl_analysis/` retains its legacy subdir name
+from when this BLOCK was its own subproject; Phase 5 of the reorg may rename it.)
 
 ---
 
@@ -94,7 +97,7 @@ five codes: **A** Inherited Absence, **O** Origin, **P** Inherited Presence,
 **L** Loss, **X** Inherited Loss. Event blocks carry state O or L; inheritance
 blocks carry state A, P, or X.
 
-See Rule 7 of `../../../AI_GUIDE-project.md`.
+See Rule 7 of `../../../AI_GUIDE.md`.
 
 ### Database-Specific Subtype Defaults
 

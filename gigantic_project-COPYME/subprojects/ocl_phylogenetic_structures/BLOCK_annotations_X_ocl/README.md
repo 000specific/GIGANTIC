@@ -1,8 +1,17 @@
-# annotations_X_ocl
+# BLOCK_annotations_X_ocl
+
+<!-- ============================================================================
+History: this BLOCK is what used to be the `annotations_X_ocl/` subproject.
+Migrated 2026-05-29 (OCL reorg Phase 1, Commit 3/6) under the new parent
+`ocl_phylogenetic_structures/`. The body below is largely the original
+subproject documentation with path/title cross-references corrected for
+the new depth. Phase 5 will harvest the methodology content into the
+parent README and slim this BLOCK README to BLOCK-specific concerns.
+============================================================================ -->
 
 Origin-Conservation-Loss (OCL) analysis of annotation groups (annogroups) across species tree topologies.
 
-## What This Subproject Does
+## What This BLOCK Does
 
 Integrates per-species annotation data with species tree phylogenetic features to determine:
 
@@ -53,7 +62,7 @@ Processes all annogroups across user-selected species tree topologies in paralle
   structure. Used as the canonical atomic identifier throughout this subproject
   (never split into `clade_id` and `clade_name` for lookups).
 
-For full canonical definitions of Rules 1-7, see `../../AI_GUIDE-project.md`.
+For full canonical definitions of Rules 1-7, see `../../../AI_GUIDE.md`.
 
 ## Design: COPYME for Multi-Database Exploration
 
@@ -91,25 +100,25 @@ causes exit code 1 and stops the pipeline. Edge cases (division by zero for zero
 annogroups) are handled explicitly in Scripts 003-004 so they never produce invalid metrics
 that validation would flag.
 
-## Directory Structure
+## Directory Structure (post-reorg)
 
 ```
-annotations_X_ocl/
-├── README.md                              # THIS FILE
-├── AI_GUIDE-annotations_X_ocl.md          # AI guidance
-│
-├── output_to_input/
-│   └── BLOCK_ocl_analysis/               # Populated by RUN-workflow.sh symlinks
-│       ├── species70_pfam/                # run_label from RUN_01
+ocl_phylogenetic_structures/               # parent subproject (NEW)
+├── README.md, AI_GUIDE.md                 # parent docs (Phase 1 stubs)
+├── output_to_input/                       # parent-level, shared across BLOCKs
+│   └── BLOCK_ocl_analysis/               # legacy subdir name; will be renamed in Phase 5
+│       ├── species70_pfam/                # run_label from a RUN copy
 │       │   ├── structure_001/
 │       │   └── ...
-│       └── species70_gene3d/              # run_label from RUN_02
+│       └── species70_gene3d/              # run_label from another RUN copy
+├── upload_to_server/                      # parent-level publishing
+├── research_notebook/ai_research/         # parent-level research notebook
+├── RUN-update_upload_to_server.sh         # parent-level publisher (§38)
 │
-├── upload_to_server/
-├── research_notebook/ai_research/
-│
-└── BLOCK_ocl_analysis/
-    ├── AI_GUIDE-ocl_analysis.md
+└── BLOCK_annotations_X_ocl/               # THIS BLOCK
+    ├── README.md                          # THIS FILE
+    ├── AI_GUIDE-annotations_X_ocl.md      # BLOCK-level AI guide (legacy filename)
+    ├── AI_GUIDE-ocl_analysis.md           # BLOCK-level AI guide (workflow-execution focus)
     └── workflow-COPYME-ocl_analysis/
         ├── START_HERE-user_config.yaml
         ├── RUN-workflow.sh                # Self-submits to SLURM if execution_mode=slurm
@@ -119,19 +128,20 @@ annotations_X_ocl/
             ├── conda_environment.yml      # Per-BLOCK env (on-demand create)
             ├── main.nf
             ├── nextflow.config
-            └── scripts/                   # 6 Python scripts (001-006)
+            └── scripts/                   # Python scripts (001-007)
 ```
 
 ## Dependencies
 
-### annotations_X_ocl reads FROM:
-- `trees_species/output_to_input/BLOCK_permutations_and_features/` - Phylogenetic blocks,
+### BLOCK_annotations_X_ocl reads FROM:
+- `../../trees_species/output_to_input/BLOCK_permutations_and_features/` - Phylogenetic blocks,
   paths, parent-child relationships, clade-species mappings
-- `annotations_hmms/output_to_input/BLOCK_build_annotation_database/` - Per-species
+- `../../annotations_hmms/output_to_input/BLOCK_build_annotation_database/` - Per-species
   annotation files (7-column TSV per species per database)
 
-### annotations_X_ocl provides TO:
-- Integration with orthogroups_X_ocl for combined functional/orthology views
+### BLOCK_annotations_X_ocl provides TO:
+- Parent `output_to_input/` for downstream analysis
+- Sibling BLOCK `BLOCK_orthogroups_X_ocl/` (combined functional/orthology views)
 - Cross-database comparison analyses
 - upload_to_server for GIGANTIC server
 

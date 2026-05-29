@@ -12,9 +12,10 @@ first for concepts and architecture. This guide focuses on running the workflow.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview | `../../../../AI_GUIDE-project.md` |
-| Subproject concepts | `../../../AI_GUIDE-annotations_X_ocl.md` |
-| STEP architecture | `../../AI_GUIDE-ocl_analysis.md` |
+| GIGANTIC overview | `../../../../AI_GUIDE.md` |
+| Parent subproject | `../../../README.md` and `../../../AI_GUIDE.md` |
+| BLOCK concepts | `../../AI_GUIDE-annotations_X_ocl.md` |
+| BLOCK workflow-execution overview | `../../AI_GUIDE-ocl_analysis.md` |
 | Running the workflow | This file |
 
 ---

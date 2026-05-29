@@ -1,11 +1,22 @@
-# AI Guide: annotations_X_ocl Subproject
+# AI Guide: BLOCK_annotations_X_ocl
 
-**AI**: Claude Code | Opus 4.6 | 2026 April 18
+**AI**: Claude Code | Opus 4.6 | 2026 April 18 (initial)
+**AI**: Claude Code | Opus 4.7 (1M context) | 2026 May 29 (OCL reorg Phase 1: depth + cross-ref fixes)
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview,
-directory structure, and general patterns. This guide covers annotations_X_ocl-specific
-concepts and troubleshooting.
+<!-- ============================================================================
+History: this BLOCK was the standalone subproject `annotations_X_ocl/` before
+the 2026-05-29 OCL reorg. Phase 1 migrated it under the new parent subproject
+`ocl_phylogenetic_structures/`. The body below is the original subproject
+AI guide with path/title cross-references corrected for the new depth.
+Phase 5 will harvest content into the parent AI_GUIDE and trim this file to
+BLOCK-specific concerns.
+============================================================================ -->
+
+**For AI Assistants**: Read `../../../AI_GUIDE.md` first for GIGANTIC overview,
+directory structure, and general patterns. Then read `../README.md` (parent
+subproject) and `../AI_GUIDE.md` (parent guide). This file covers
+BLOCK_annotations_X_ocl-specific concepts and troubleshooting.
 
 ---
 
@@ -13,13 +24,14 @@ concepts and troubleshooting.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| annotations_X_ocl concepts, troubleshooting | This file |
-| Running the workflow | `BLOCK_ocl_analysis/workflow-COPYME-ocl_analysis/ai/AI_GUIDE-ocl_analysis_workflow.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| Parent subproject (phylogenetic-axis OCL) | `../README.md` and `../AI_GUIDE.md` |
+| BLOCK_annotations_X_ocl concepts, troubleshooting | This file |
+| Running the workflow | `workflow-COPYME-ocl_analysis/ai/AI_GUIDE-ocl_analysis_workflow.md` |
 
 ---
 
-## What This Subproject Does
+## What This BLOCK Does
 
 Performs Origin-Conservation-Loss (OCL) analysis of annotation groups (annogroups) across
 phylogenetic species tree structures. For each annogroup, determines:
@@ -41,31 +53,33 @@ architectures:
 ## Directory Structure
 
 ```
-annotations_X_ocl/
-├── README.md
-├── AI_GUIDE-annotations_X_ocl.md              # THIS FILE
-├── research_notebook/
-│   └── ai_research/
-├── output_to_input/                            # Downstream output
-│   └── BLOCK_ocl_analysis/                    # Contains run_label subdirs
-│       ├── species70_pfam/                     # From RUN copy with that label
+ocl_phylogenetic_structures/                   # parent subproject
+├── README.md, AI_GUIDE.md                     # parent docs (Phase 1 stubs)
+├── research_notebook/ai_research/             # parent-level (shared across BLOCKs)
+├── output_to_input/                           # parent-level shared output
+│   └── BLOCK_ocl_analysis/                   # legacy subdir name (Phase 5 may rename)
+│       ├── species70_pfam/                    # From RUN copy with that label
 │       │   ├── structure_001/
 │       │   │   └── 4_ai-structure_001_annogroups-complete_ocl_summary-all_types.tsv
 │       │   └── ...
-│       └── species70_gene3d/                   # From another RUN copy
+│       └── species70_gene3d/                  # From another RUN copy
 │           └── ...
-├── upload_to_server/
-└── BLOCK_ocl_analysis/
-    ├── AI_GUIDE-ocl_analysis.md
+├── upload_to_server/                          # parent-level publishing
+├── RUN-update_upload_to_server.sh             # parent-level publisher (§38)
+│
+└── BLOCK_annotations_X_ocl/                   # THIS BLOCK
+    ├── README.md                              # BLOCK README
+    ├── AI_GUIDE-annotations_X_ocl.md          # THIS FILE
+    ├── AI_GUIDE-ocl_analysis.md               # workflow-execution-focused guide
     └── workflow-COPYME-ocl_analysis/
-        ├── RUN-workflow.sh                     # Self-submits to SLURM when execution_mode=slurm
+        ├── RUN-workflow.sh                    # Self-submits to SLURM when execution_mode=slurm
         ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   └── structure_manifest.tsv
         ├── OUTPUT_pipeline/
         └── ai/
             ├── AI_GUIDE-ocl_analysis_workflow.md
-            ├── conda_environment.yml           # Per-BLOCK env spec (created on first run)
+            ├── conda_environment.yml          # Per-BLOCK env spec (created on first run)
             ├── main.nf
             ├── nextflow.config
             └── scripts/
@@ -74,7 +88,9 @@ annotations_X_ocl/
                 ├── 003_ai-python-quantify_conservation_loss.py
                 ├── 004_ai-python-comprehensive_ocl_analysis.py
                 ├── 005_ai-python-validate_results.py
-                └── 006_ai-python-write_run_log.py
+                ├── 006_ai-python-write_run_log.py
+                ├── 007_ai-python-aggregate_run_summary.py
+                └── utils_run_summary.py
 ```
 
 ---
@@ -84,7 +100,7 @@ annotations_X_ocl/
 ### Phylogenetic Blocks and Block-States (Rule 7)
 
 OCL analysis operates on two related kinds of tree objects, defined in Rule 7
-of `../../AI_GUIDE-project.md`:
+of `../../../AI_GUIDE.md`:
 
 - A **phylogenetic block** is a single parent-to-child edge of a species tree
   structure, containing both endpoint clades with no intervening nodes.
@@ -177,7 +193,7 @@ content and branching arrangement. Same biological clade -> same
 identifier -- never split into `clade_id` and `clade_name` for dict lookups
 or cross-table joins.
 
-For the full canonical definition, see Rule 6 in `../../AI_GUIDE-project.md`.
+For the full canonical definition, see Rule 6 in `../../../AI_GUIDE.md`.
 
 ---
 
