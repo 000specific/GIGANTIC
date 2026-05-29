@@ -3,7 +3,7 @@
 **AI**: Claude Code | Opus 4.6 | 2026 April 18
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read the subproject guide (`../../../AI_GUIDE-annotations_X_ocl.md`)
+**For AI Assistants**: Read the BLOCK guide (`../../AI_GUIDE.md`)
 first for concepts and architecture. This guide focuses on running the workflow.
 
 ---
@@ -14,8 +14,7 @@ first for concepts and architecture. This guide focuses on running the workflow.
 |---------------|----------|
 | GIGANTIC overview | `../../../../AI_GUIDE.md` |
 | Parent subproject | `../../../README.md` and `../../../AI_GUIDE.md` |
-| BLOCK concepts | `../../AI_GUIDE-annotations_X_ocl.md` |
-| BLOCK workflow-execution overview | `../../AI_GUIDE-ocl_analysis.md` |
+| BLOCK concepts + workflow-execution overview | `../../AI_GUIDE.md` |
 | Running the workflow | This file |
 
 ---

@@ -128,8 +128,7 @@ ocl_phylogenetic_structures/               # parent subproject (NEW)
 │
 └── BLOCK_orthogroups_X_ocl/               # THIS BLOCK
     ├── README.md                          # THIS FILE
-    ├── AI_GUIDE-orthogroups_X_ocl.md      # BLOCK-level AI guide (legacy filename)
-    ├── AI_GUIDE-ocl_analysis.md           # BLOCK-level AI guide (workflow-execution focus)
+    ├── AI_GUIDE.md                        # BLOCK-level AI guide (consolidated per §3)
     └── workflow-COPYME-ocl_analysis/
         ├── START_HERE-user_config.yaml
         ├── RUN-workflow.sh                # Self-submits to SLURM if execution_mode=slurm

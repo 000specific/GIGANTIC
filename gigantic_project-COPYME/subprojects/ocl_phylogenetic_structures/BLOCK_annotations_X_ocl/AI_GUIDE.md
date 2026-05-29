@@ -27,7 +27,7 @@ BLOCK_annotations_X_ocl-specific concepts and troubleshooting.
 | GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
 | Parent subproject (phylogenetic-axis OCL) | `../README.md` and `../AI_GUIDE.md` |
 | BLOCK_annotations_X_ocl concepts, troubleshooting | This file |
-| Running the workflow | `workflow-COPYME-ocl_analysis/ai/AI_GUIDE-ocl_analysis_workflow.md` |
+| Running the workflow | `workflow-COPYME-ocl_analysis/ai/AI_GUIDE.md` |
 
 ---
 
@@ -69,8 +69,7 @@ ocl_phylogenetic_structures/                   # parent subproject
 │
 └── BLOCK_annotations_X_ocl/                   # THIS BLOCK
     ├── README.md                              # BLOCK README
-    ├── AI_GUIDE-annotations_X_ocl.md          # THIS FILE
-    ├── AI_GUIDE-ocl_analysis.md               # workflow-execution-focused guide
+    ├── AI_GUIDE.md                            # THIS FILE (consolidated per §3)
     └── workflow-COPYME-ocl_analysis/
         ├── RUN-workflow.sh                    # Self-submits to SLURM when execution_mode=slurm
         ├── START_HERE-user_config.yaml
@@ -78,7 +77,7 @@ ocl_phylogenetic_structures/                   # parent subproject
         │   └── structure_manifest.tsv
         ├── OUTPUT_pipeline/
         └── ai/
-            ├── AI_GUIDE-ocl_analysis_workflow.md
+            ├── AI_GUIDE.md                    # workflow-level guide (renamed from AI_GUIDE-ocl_analysis_workflow.md per §3)
             ├── conda_environment.yml          # Per-BLOCK env spec (created on first run)
             ├── main.nf
             ├── nextflow.config
@@ -248,3 +247,79 @@ subtypes. Per-subtype summaries are also available for focused analysis.
 | Domain vs simple database | "Domain databases support single/combo/zero subtypes; simple databases use single only" |
 | User wants a subset of structures | "Which structure IDs should I add to the manifest?" |
 | Validation failures | "Would you like me to investigate the error log?" |
+
+---
+
+## Workflow Execution Quick Reference
+
+(Folded in from the previously-separate `AI_GUIDE-ocl_analysis.md` per
+§3 — one `AI_GUIDE.md` per directory.)
+
+### COPYME Pattern
+
+```
+BLOCK_annotations_X_ocl/             # this BLOCK
+├── workflow-COPYME-ocl_analysis/    # Template (never run directly)
+├── workflow-RUN_01-ocl_analysis/    # Copy for species70 pfam
+├── workflow-RUN_02-ocl_analysis/    # Copy for species70 gene3d
+└── workflow-RUN_03-ocl_analysis/    # Copy for species70 deeploc
+```
+
+Each copy has its own `START_HERE-user_config.yaml` with a unique
+`run_label`, and outputs are symlinked into separate run_label
+subdirectories at `../output_to_input/BLOCK_annotations_X_ocl/{run_label}/`
+at the parent subproject level.
+
+### Creating a New Run
+
+```bash
+# 1. Copy the template
+cp -r workflow-COPYME-ocl_analysis workflow-RUN_01-ocl_analysis
+
+# 2. Edit config for this specific run
+cd workflow-RUN_01-ocl_analysis
+nano START_HERE-user_config.yaml
+# Set: run_label, species_set_name, annotation_database,
+#      annogroup_subtypes, input paths,
+#      execution_mode ("local" or "slurm"), and if slurm:
+#      slurm_account/slurm_qos
+
+# 3. Edit structure manifest (one structure_id per line)
+nano INPUT_user/structure_manifest.tsv
+
+# 4. Run — single entry point for both local and SLURM
+bash RUN-workflow.sh
+```
+
+The conda environment (`aiG-ocl_phylogenetic_structures-annotations_X_ocl`,
+per §28 — renamed from the legacy `aiG-annotations_X_ocl-ocl_analysis`
+during the OCL reorg) is created on-demand from
+`ai/conda_environment.yml` on first run.
+
+### The 7-Script Pipeline (workflow-COPYME-ocl_analysis/ai/scripts/)
+
+| Script | Purpose | Key Output |
+|--------|---------|------------|
+| 001 | Create annogroups from per-species annotation files | Annogroup catalog with single/combo/zero subtypes |
+| 002 | Determine MRCA origin of each annogroup | Annogroup origins with `Origin_Phylogenetic_Block` and `Origin_Phylogenetic_Block_State` |
+| 003 | Classify each (block, annogroup) pair into the five-state vocabulary (A/O/P/L/X) | Per-block stats, per-annogroup patterns |
+| 004 | Generate comprehensive summaries per subtype + all-types | Complete OCL summary tables |
+| 005 | Validate all results (fail-fast per §36) | Validation report, error log, QC metrics |
+| 006 | Write run log (per §45) | Timestamped log of this run |
+| 007 | Aggregate run summary across structures | Per-RUN aggregate `RUN_SUMMARY.md` |
+
+Scripts are sequential per structure but parallel across structures
+(NextFlow manages this).
+
+### Output Per Structure
+
+```
+OUTPUT_pipeline/structure_NNN/
+├── 1-output/    Annogroups built from per-species annotations
+├── 2-output/    Annogroup origins + per-clade files
+├── 3-output/    Conservation/loss per block + per annogroup
+├── 4-output/    Comprehensive summaries (primary downstream files,
+│                including 4_ai-structure_NNN_annogroups-complete_ocl_summary-all_types.tsv)
+├── 5-output/    Validation report + QC metrics
+└── logs/        Per-script log files
+```
