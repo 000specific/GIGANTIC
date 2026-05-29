@@ -1,0 +1,91 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running RUN-workflow.sh
+# ============================================================================
+#
+# Gene Coordinates Extractor Toolkit
+# AI: Claude Code | Opus 4.7 | 2026 May 29
+# Human: Eric Edsinger
+#
+# WHAT THIS TOOLKIT DOES
+# ----------------------
+# Extracts per-species gene-coordinate TSVs from GFF3 annotation files for
+# downstream consumption by the hotspots subproject (BLOCK_identify_hotspots).
+#
+# Output schema (5 columns; matches the species70 convention):
+#   Source_Gene_ID  Seqid  Gene_Start  Gene_End  Strand
+#
+# WHY THIS LIVES OUTSIDE THE hotspots SUBPROJECT
+# ----------------------------------------------
+# GFF / GTF formats vary widely across sources (NCBI RefSeq, NCBI GenBank,
+# AUGUSTUS de-novo predictions, BRAKER, custom curated, etc.). The
+# hotspots subproject deliberately does NOT attempt extraction itself —
+# producing the per-species TSVs is a USER RESPONSIBILITY. This toolkit
+# is the canonical GIGANTIC tool for fulfilling that responsibility for
+# the three GFF flavors used in this project (NCBI / AUGUSTUS / BRAKER).
+# Users with other GFF/GTF flavors may need to extend `001_ai-python-*`
+# or build their own extractor following the same output schema.
+#
+# USAGE
+# -----
+#   1. Instantiate this template:
+#        cp -r toolkit-COPYME-gene_coordinates_extractor toolkit-RUN_1-gene_coordinates_extractor
+#        cd toolkit-RUN_1-gene_coordinates_extractor
+#   2. Edit this config (verify paths below).
+#   3. Run:
+#        bash RUN-workflow.sh
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (REQUIRED)
+# ============================================================================
+
+inputs:
+  # Directory of <phyloname>-genome.gff3 files. Default points at the
+  # canonical genomesDB STEP_4 output for the species42 deuterostomes
+  # demo project (paths are resolved relative to this RUN dir).
+  annotations_dir: "../../../../../subprojects/genomesDB/output_to_input/STEP_4-create_final_species_set/species42_gigantic_genome_annotations"
+
+  # Directory where hotspots BLOCK_identify_hotspots expects per-species
+  # gene-coordinates TSVs to live. The bridge step (script 003) symlinks
+  # each validated TSV here.
+  hotspots_gene_coordinates_dir: "../../../../research_user/subproject-hotspots/gene_coordinates"
+
+  # OPTIONAL: comma-separated whitelist of Genus_species values to process.
+  # Leave empty to process every GFF found in annotations_dir.
+  species_whitelist: ""
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# PROJECT METADATA (used by the run-log step §45)
+# ============================================================================
+
+project:
+  name: "gigantic_project"   # overridden per instance if you wish
+
+# ============================================================================
+# Resume from cached NextFlow work directory
+# ============================================================================
+
+resume: false
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# "local" - recommended; the extractor is lightweight (a few seconds per
+#           species, all stdlib Python).
+# "slurm" - supported for consistency but rarely needed.
+
+execution_mode: "local"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+cpus: 2
+memory_gb: 15
+time_hours: 1
