@@ -1,0 +1,109 @@
+================================================================================
+GIGANTIC Phylonames Workflow Run Log
+================================================================================
+
+## Run Information
+
+Timestamp:      2026-03-05 15:56:37
+Project Name:   species71
+Status:         SUCCESS
+
+## Input
+
+Species File:   species_list.txt
+Species Count:  71
+
+Species List:
+  - Abeoforma_whisleri
+  - Acropora_muricata
+  - Adineta_vaga
+  - Amphiscolops_sp_MND2022
+  - Aplysia_californica
+  - Berghia_stephanieae
+  - Beroe_ovata
+  - Biomphalaria_glabrata
+  - Bolinopsis_microptera
+  - Branchiostoma_lanceolatum
+  - Caenorhabditis_elegans
+  - Capsaspora_owczarzaki
+  - Chaetoderma_sp_LZ_2023a
+  - Chondrosia_reniformis
+  - Chromosphaera_perkinsii
+  - Cladtertia_collaboinventa
+  - Convolutriloba_macropyga
+  - Corallochytrium_limacisporum
+  - Corticium_candelabrum
+  - Crassostrea_virginica
+  - Creolimax_fragrantissima
+  - Dicyema_japonicum
+  - Drosophila_melanogaster
+  - Dysidea_avara
+  - Ephydatia_muelleri
+  - Fonticula_alba
+  - Gordionus_sp_m_RMFG_2023
+  - Halichondria_panicea
+  - Haliotis_asinina
+  - Hoilungia_hongkongensis_H13
+  - Homo_sapiens
+  - Hormiphora_californensis
+  - Hydractinia_symbiolongicarpus
+  - Hydra_vulgaris
+  - Hypsibius_dujardini
+  - Ichthyophonus_hoferi
+  - Intoshia_linei
+  - Lineus_longissimus
+  - Lingula_anatina
+  - Liolophura_japonica
+  - Lissachatina_fulica
+  - Lytechinus_variegatus
+  - Membranipora_membranacea
+  - Ministeria_vibrans
+  - Mnemiopsis_leidyi
+  - Monosiga_brevicollis_MX1
+  - Nautilus_pompilius
+  - Nematostella_vectensis
+  - Octopus_bimaculoides
+  - Oscarella_lobularis
+  - Parvularia_atlantis
+  - Patella_vulgata
+  - Phoronis_australis
+  - Pictodentalium_vernedei
+  - Pigoraptor_chileana
+  - Pigoraptor_vietnamica
+  - Pirum_gemmata
+  - Pleurobrachia_bachei
+  - Pocillopora_verrucosa
+  - Pomacea_canaliculata
+  - Priapulus_caudatus
+  - Salpingoeca_rosetta
+  - Schizocardium_californicum
+  - Schmidtea_mediterranea
+  - Sphaeroforma_arctica
+  - Styela_plicata
+  - Sycon_ciliatum
+  - Symsagittifera_roscoffensis
+  - Trichoplax_adhaerens
+  - Trichoplax_sp_H2
+  - Urechis_unicinctus
+
+## Output
+
+Output File:    species71_map-genus_species_X_phylonames.tsv
+Species Mapped: 71
+
+Sample Mappings (first 3):
+  Abeoforma_whisleri → Kingdom10919_Phylum10918_Ichthyosporea_Ichthyophonida_Family10931_Abeoforma_whisleri
+  Acropora_muricata → Metazoa_Cnidaria_Anthozoa_Scleractinia_Acroporidae_Acropora_muricata
+  Adineta_vaga → Metazoa_Rotifera_Eurotatoria_Adinetida_Adinetidae_Adineta_vaga
+
+## Workflow Details
+
+Pipeline: phylonames (workflow-COPYME-generate_phylonames)
+Scripts executed:
+  1. 001_ai-bash-download_ncbi_taxonomy.sh
+  2. 002_ai-python-generate_phylonames.py
+  3. 003_ai-python-create_species_mapping.py
+
+================================================================================
+Log written to: /blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/research_notebook/research_ai/subproject-phylonames/logs/run_20260305_155637-phylonames_success.log
+================================================================================
