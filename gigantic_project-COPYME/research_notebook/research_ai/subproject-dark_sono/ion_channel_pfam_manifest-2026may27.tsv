@@ -1,0 +1,25 @@
+Pfam_Accession	Pfam_Short_Name	Architecture_Group	Channel_Families	Specificity_Notes
+PF00520	Ion_trans	voltage_gated_6tm_cation	Nav,Cav,Kv,TRP,CNG,HCN,NALCN,KCNQ,BK,SK,IK	channel-specific; also pore region of RyR/IP3R
+PF07885	Ion_chan	minimal_2tm_pore	K2P,bacterial_K	channel-specific; K2P carries it twice (tandem pore)
+PF01007	IRK	kir_2tm	Kir1-Kir7	channel-specific
+PF02931	Neur_chan_LBD	pentameric_cys_loop	nAChR,GABA-A,GlyR,5-HT3	channel-specific; ligand binding domain
+PF02932	Neur_chan_memb	pentameric_cys_loop	nAChR,GABA-A,GlyR,5-HT3	channel-specific; TM/pore region
+PF00060	Lig_chan	tetrameric_iglur	NMDA,AMPA,kainate	channel-specific; TM/pore region
+PF10613	Lig_chan-Glu_bd	tetrameric_iglur	NMDA,AMPA,kainate	channel-specific; S1/S2 ligand binding
+PF00858	ASC	trimeric_enac_degenerin	ENaC,ASIC,degenerin,FaNaC	channel-specific
+PF00864	P2X_receptor	trimeric_p2x	P2X1-P2X7	channel-specific
+PF12166	Piezo	piezo_blade	Piezo1,Piezo2	channel-specific
+PF02714	RSN1_7TM	osca_tmem63	OSCA1-3,TMEM63A,TMEM63B,TMEM63C	channel-specific
+PF01030	MS_channel	bacterial_mscs	MscS_family	channel-specific
+PF01741	MscL	bacterial_mscl	MscL_family	channel-specific
+PF08709	Ins145_P3_rec	intracellular_ca_release	RyR,IP3R	channel-specific; RyR and IP3R both (verified locally)
+PF01365	RIH	intracellular_ca_release	RyR,IP3R	channel-specific; RyR and IP3R both
+PF08454	RIH_assoc	intracellular_ca_release	RyR,IP3R	channel-specific; RyR and IP3R both
+PF02026	RyR	intracellular_ca_release	RyR	channel-specific; RyR only
+PF06459	RR_TM4-6	intracellular_ca_release	RyR	channel-specific; RyR pore region
+PF21119	RyR_junc_solenoid	intracellular_ca_release	RyR	channel-specific; RyR only
+PF00029	Connexin	gap_junction_hexamer	Vertebrate_connexins	channel-specific
+PF00876	Innexin	gap_junction_octamer	Invertebrate_innexins,Vertebrate_pannexins	channel-specific
+PF00654	Voltage_CLC	double_barrel_clc	CLC_channels,CLC_Cl_H_antiporters	channel-family-specific; includes transporter relatives within the same family
+PF04547	Anoctamin	anoctamin_tmem16	TMEM16_channels,TMEM16_scramblases	channel-family-specific; includes scramblase relatives within the same family
+PF01062	Bestrophin	bestrophin	BEST1,BEST2,BEST3,BEST4	channel-specific
