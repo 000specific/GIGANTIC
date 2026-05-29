@@ -865,6 +865,7 @@ class GIGANTICServer:
           - All children named STEP_*       → 'STEPS'
           - All children named BLOCK_*      → 'BLOCKS'
           - All children named workflow-*   → 'WORKFLOWS'
+          - All children named structure_NNN → 'STRUCTURES'
           - All children look like N-output or *-output → 'OUTPUTS'
           - depth 1, parent starts with 'trees_' → strip 'trees_' and uppercase
             (e.g. 'trees_gene_families' → 'GENE FAMILIES')
@@ -879,6 +880,9 @@ class GIGANTICServer:
             return 'BLOCKS'
         if all( n.startswith( 'workflow-' ) for n in names ):
             return 'WORKFLOWS'
+        structure_regex = re.compile( r'^structure_\d+$' )
+        if all( structure_regex.search( n ) for n in names ):
+            return 'STRUCTURES'
         output_regex = re.compile( r'^\d+[-_]output$|-output$' )
         if all( output_regex.search( n ) for n in names ):
             return 'OUTPUTS'

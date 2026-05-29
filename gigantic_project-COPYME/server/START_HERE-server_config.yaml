@@ -53,30 +53,26 @@ refresh_interval_seconds: 300
 # This is an explicit allowlist — edit to include/exclude subprojects.
 
 subproject_order:
-  # With files (alphabetical) — appear first on landing page
+  # Alphabetical. Each entry is a real subproject directory under subprojects/.
   - annotations_hmms
   - dark_proteomes
   - gene_sizes
   - homolog_counts
   - hotspots
-  - ocl_phylogenetic_structures   # NEW parent; absorbed annotations_X_ocl + orthogroups_X_ocl as BLOCKs (2026-05-29 reorg)
+  - ocl_phylogenetic_structures
   - secretome
   - trees_gene_families
   - trees_gene_groups
   - trees_species
-  # Without files yet (alphabetical) — placeholders, "NO DATA YET"
-  - gene_sizes_X_ocl
-  # NOTE: ocl_perspectives, trees_gene_families_X_ocl, trees_gene_groups_X_ocl,
-  # synteny_X_ocl, and z_ocl_using_simple_taxonomy were standalone placeholders
-  # before the 2026-05-29 OCL reorg. They are now either:
-  #   - BLOCK_* directories under ocl_phylogenetic_structures/ (surface through
-  #     that parent's upload_to_server/) — synteny_X_ocl, trees_gene_*_X_ocl
-  #   - migrated under z_ocl_taxonomic_hierarchies/ (z_ early-dev, not shown
-  #     until promoted) — simple_taxonomy DESIGN
-  #   - still standalone z_ siblings — z_ocl_perspectives, z_parsimony_tree_structures
-  # Drop them from this allowlist if you don't want individual landing-page cards;
-  # add them back as `z_*` entries if you do.
-  - synteny
+  # OCL note: ocl_phylogenetic_structures is a parent subproject. Its
+  # functional BLOCKs (BLOCK_orthogroups_X_ocl, BLOCK_annotations_X_ocl)
+  # surface through that single landing-page card via the parent's
+  # upload_to_server/ tree — they are NOT separate allowlist entries.
+  # Placeholder BLOCKs (trees_gene_families_X_ocl, trees_gene_groups_X_ocl,
+  # synteny_X_ocl, hotspots_X_ocl, dark_proteomes_X_ocl) and z_* siblings
+  # (z_ocl_perspectives, z_ocl_taxonomic_hierarchies,
+  # z_parsimony_tree_structures, z_species_trees_vs_gene_trees) are
+  # intentionally excluded; add an entry only when promoted out of placeholder/z_.
 
 # ============================================================================
 # Landing Page: Empty Subprojects
@@ -100,7 +96,8 @@ show_empty_subprojects: true
 # Example:
 #   trees_gene_families: "GENE FAMILY TREES"
 #   trees_species: "SPECIES TREES"
-display_names: {}
+display_names:
+  ocl_phylogenetic_structures: "OCL × PHYLOGENETIC STRUCTURES"
 
 # ============================================================================
 # File Filtering
