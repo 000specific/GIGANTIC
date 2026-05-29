@@ -37,20 +37,28 @@ BLOCK roster; the substrate differs.
 For session context and rationale see
 `../../research_notebook/research_ai/HANDOFF-ocl_reorganization-2026may28.md`.
 
-## BLOCK roster (Phase 1 — all placeholders)
+## BLOCK roster (planned — not yet materialized on disk)
 
 | BLOCK | Status | Notes |
 |-------|--------|-------|
-| `BLOCK_simple_taxonomy_X_ocl/` | placeholder | Phase 3 — design doc already drafted (see `DESIGN-ocl_using_simple_taxonomy.md`) |
-| `BLOCK_orthogroups_X_ocl/` | placeholder | mirror of phylogenetic sibling |
-| `BLOCK_annotations_X_ocl/` | placeholder | mirror of phylogenetic sibling |
-| `BLOCK_trees_gene_families_X_ocl/` | placeholder | mirror of phylogenetic sibling |
-| `BLOCK_trees_gene_groups_X_ocl/` | placeholder | mirror of phylogenetic sibling |
-| `BLOCK_synteny_X_ocl/` | placeholder | mirror of phylogenetic sibling |
-| `BLOCK_hotspots_X_ocl/` | placeholder | mirror of phylogenetic sibling |
-| `BLOCK_dark_proteomes_X_ocl/` | placeholder | mirror of phylogenetic sibling |
+| `BLOCK_simple_taxonomy_X_ocl/` | planned | Phase 3 — design doc already drafted (see `DESIGN-ocl_using_simple_taxonomy.md` in this directory) |
+| `BLOCK_orthogroups_X_ocl/` | planned | mirror of phylogenetic sibling |
+| `BLOCK_annotations_X_ocl/` | planned | mirror of phylogenetic sibling |
+| `BLOCK_trees_gene_families_X_ocl/` | planned | mirror of phylogenetic sibling |
+| `BLOCK_trees_gene_groups_X_ocl/` | planned | mirror of phylogenetic sibling |
+| `BLOCK_synteny_X_ocl/` | planned | mirror of phylogenetic sibling |
+| `BLOCK_hotspots_X_ocl/` | planned | mirror of phylogenetic sibling |
+| `BLOCK_dark_proteomes_X_ocl/` | planned | mirror of phylogenetic sibling |
 
-## Reads FROM
+**Why no on-disk BLOCK placeholder directories?** Per §49, the gitignore
+rules that protect `z_*` subprojects allow only the subproject-root
+`README.md` to be tracked — any `BLOCK_*/README.md` inside this subproject
+would be untrackable. Concrete BLOCK directories will appear here only as
+each BLOCK is promoted out of placeholder state and given real workflow
+code. Until then, this README and the migrated `DESIGN-*.md` carry the
+intent. Phase 3 promotes `BLOCK_simple_taxonomy_X_ocl/` first.
+
+## Reads FROM (planned)
 
 - `../phylonames/` — taxonomic hierarchy (NCBI or user-supplied)
 - Feature subprojects upstream of each BLOCK
@@ -70,7 +78,7 @@ inline in this README.
 | Project overview | `../../README.md` and `../../AI_GUIDE.md` |
 | OCL reorg context | `../../research_notebook/research_ai/HANDOFF-ocl_reorganization-2026may28.md` |
 | Rule 5 (tree vs hierarchy) | `../../AI_GUIDE.md` (Terminology Discipline section) |
-| Design for first concrete BLOCK | `DESIGN-ocl_using_simple_taxonomy.md` (migrated in Commit 5) |
+| Design for first concrete BLOCK | `DESIGN-ocl_using_simple_taxonomy.md` (in this dir; gitignored per §49 but present on disk) |
 
 ### Key terminology reminder
 
