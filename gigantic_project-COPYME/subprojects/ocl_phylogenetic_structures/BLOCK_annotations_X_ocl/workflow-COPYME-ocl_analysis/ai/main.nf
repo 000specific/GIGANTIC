@@ -210,7 +210,7 @@ process write_run_log {
     """
     python3 ${projectDir}/scripts/006_ai-python-write_run_log.py \
         --workflow-name "ocl_analysis" \
-        --subproject-name "BLOCK_annotations_X_ocl" \
+        --subproject-name "ocl_phylogenetic_structures-BLOCK_annotations_X_ocl" \
         --project-name "${params.project_name}" \
         --status success
     """
