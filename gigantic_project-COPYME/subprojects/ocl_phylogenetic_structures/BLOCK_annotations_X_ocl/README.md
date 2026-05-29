@@ -104,15 +104,17 @@ that validation would flag.
 
 ```
 ocl_phylogenetic_structures/               # parent subproject (NEW)
-├── README.md, AI_GUIDE.md                 # parent docs (Phase 1 stubs)
-├── output_to_input/                       # parent-level, shared across BLOCKs
-│   └── BLOCK_ocl_analysis/               # legacy subdir name; will be renamed in Phase 5
-│       ├── species70_pfam/                # run_label from a RUN copy
-│       │   ├── structure_001/
-│       │   └── ...
-│       └── species70_gene3d/              # run_label from another RUN copy
+├── README.md, AI_GUIDE.md                 # parent docs
+├── output_to_input/                       # parent-level (per §2 mirrors producer paths)
+│   ├── BLOCK_annotations_X_ocl/           # this BLOCK's downstream symlinks
+│   │   ├── species70_pfam/                # run_label from a RUN copy
+│   │   │   ├── structure_001/
+│   │   │   └── ...
+│   │   └── species70_gene3d/              # run_label from another RUN copy
+│   └── BLOCK_orthogroups_X_ocl/           # sibling BLOCK's downstream symlinks
 ├── upload_to_server/                      # parent-level publishing
-├── research_notebook/ai_research/         # parent-level research notebook
+# (no per-subproject research_notebook/ per §1; sandbox at
+#  ../../research_notebook/research_ai/subproject-ocl_phylogenetic_structures/)
 ├── RUN-update_upload_to_server.sh         # parent-level publisher (§38)
 │
 └── BLOCK_annotations_X_ocl/               # THIS BLOCK

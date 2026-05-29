@@ -39,7 +39,7 @@
 #
 # OUTPUT:
 # Results in OUTPUT_pipeline/structure_NNN/1-output/ through 5-output/
-# Downstream symlinks in ../../output_to_input/BLOCK_ocl_analysis/{run_label}/
+# Downstream symlinks in ../../output_to_input/BLOCK_annotations_X_ocl/{run_label}/
 #
 ################################################################################
 
@@ -365,12 +365,12 @@ fi
 # Create symlinks for output_to_input directory
 # ============================================================================
 # Real files live in OUTPUT_pipeline/structure_NNN/4-output/ (created by pipeline).
-# Symlinks go to ../../output_to_input/BLOCK_ocl_analysis/{run_label}/
+# Symlinks go to ../../output_to_input/BLOCK_annotations_X_ocl/{run_label}/
 # Each structure gets a symlink: structure_NNN -> real 4-output summary file.
 #
 # The run_label provides namespacing so different database explorations coexist:
-#   output_to_input/BLOCK_ocl_analysis/species70_pfam/structure_001/
-#   output_to_input/BLOCK_ocl_analysis/species70_gene3d/structure_001/
+#   output_to_input/BLOCK_annotations_X_ocl/species70_pfam/structure_001/
+#   output_to_input/BLOCK_annotations_X_ocl/species70_gene3d/structure_001/
 # ============================================================================
 
 echo ""
@@ -380,7 +380,7 @@ echo "Creating symlinks for downstream subprojects..."
 # (supports both COPYME templates and RUN_XX instances)
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-SHARED_DIR="../../output_to_input/BLOCK_ocl_analysis/${RUN_LABEL}"
+SHARED_DIR="../../output_to_input/BLOCK_annotations_X_ocl/${RUN_LABEL}"
 mkdir -p "${SHARED_DIR}"
 
 # Remove any stale symlinks from previous runs
@@ -401,7 +401,7 @@ for structure_dir in OUTPUT_pipeline/structure_*; do
             mkdir -p "${SHARED_DIR}/${structure_name}"
             # NOTE: BLOCK dir was renamed from BLOCK_ocl_analysis to BLOCK_annotations_X_ocl
             # in the 2026-05-29 OCL reorg Phase 1, Commit 3/6.
-            # The output_to_input/BLOCK_ocl_analysis/ subdir name is retained for now to
+            # The output_to_input/BLOCK_annotations_X_ocl/ subdir name is retained for now to
             # preserve existing symlinks; Phase 5 may rename that too.
             ln -sf "../../../../BLOCK_annotations_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv" \
                 "${SHARED_DIR}/${structure_name}/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv"
@@ -410,7 +410,7 @@ for structure_dir in OUTPUT_pipeline/structure_*; do
 done
 
 SYMLINK_COUNT=$(find "${SHARED_DIR}" -name "*.tsv" -type l 2>/dev/null | wc -l)
-echo "  output_to_input/BLOCK_ocl_analysis/${RUN_LABEL}/ -> ${SYMLINK_COUNT} symlinks created"
+echo "  output_to_input/BLOCK_annotations_X_ocl/${RUN_LABEL}/ -> ${SYMLINK_COUNT} symlinks created"
 
 echo ""
 echo "========================================================================"
@@ -427,7 +427,7 @@ echo "Primary downstream file (per structure):"
 echo "  4_ai-{structure}_annogroups-complete_ocl_summary-all_types.tsv"
 echo ""
 echo "Downstream symlinks:"
-echo "  ../../output_to_input/BLOCK_ocl_analysis/${RUN_LABEL}/"
+echo "  ../../output_to_input/BLOCK_annotations_X_ocl/${RUN_LABEL}/"
 echo ""
 echo "Run Label: ${RUN_LABEL}"
 echo "Annotation Database: ${ANNOTATION_DATABASE}"

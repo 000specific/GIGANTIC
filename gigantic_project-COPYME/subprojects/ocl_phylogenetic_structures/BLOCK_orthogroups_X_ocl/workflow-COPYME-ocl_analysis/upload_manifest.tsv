@@ -1,4 +1,4 @@
-# GIGANTIC upload_manifest.tsv — BLOCK_ocl_analysis template (orthogroups_X_ocl)
+# GIGANTIC upload_manifest.tsv — BLOCK_orthogroups_X_ocl template
 # ============================================================================
 # When workflow-COPYME-ocl_analysis is copied to workflow-RUN_N-ocl_analysis,
 # this manifest travels with it and describes which files from
@@ -8,7 +8,7 @@
 #   workflow-RUN_N/upload_manifest.tsv
 #     → build by: bash ../../RUN-update_upload_to_server.sh
 #     → symlinks populated at:
-#         ../../upload_to_server/BLOCK_ocl_analysis/workflow-RUN_N/structure_NNN/N-output/
+#         ../../upload_to_server/BLOCK_orthogroups_X_ocl/workflow-RUN_N/structure_NNN/N-output/
 #
 # ============================================================================
 # COLUMNS (TAB-separated — mind the tab count; header row REQUIRED):

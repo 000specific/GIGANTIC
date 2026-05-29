@@ -117,14 +117,17 @@ ocl_phylogenetic_structures/               # parent subproject (NEW)
 ├── README.md                              # parent README (Phase 1 stub)
 ├── AI_GUIDE.md                            # parent AI guide (Phase 1 stub)
 ├── output_to_input/                       # parent-level, shared across BLOCKs
-│   └── BLOCK_ocl_analysis/               # legacy subdir name from when this BLOCK was its own subproject;
-│       ├── species70_X_OrthoHMM/          #   will be renamed in Phase 5 to match new BLOCK roster
-│       │   ├── structure_001/
-│       │   └── ...
-│       └── species70_X_OrthoFinder/       # run_label from RUN_02
+│   ├── BLOCK_orthogroups_X_ocl/         # per-BLOCK output subdir (§2 mirrors producer paths)
+│   │   ├── species70_X_OrthoHMM/          # run_label from a RUN copy
+│   │   │   ├── structure_001/
+│   │   │   └── ...
+│   │   └── species70_X_OrthoFinder/       # run_label from another RUN copy
+│   └── BLOCK_annotations_X_ocl/           # sibling BLOCK output subdir
+│       └── species70_pfam/                # annotations run_label
 ├── upload_to_server/                      # parent-level publishing
-├── research_notebook/ai_research/         # parent-level research notebook
 ├── RUN-update_upload_to_server.sh         # parent-level publisher (§38)
+# (no per-subproject research_notebook/ per §1; sandbox content lives at
+#  ../../research_notebook/research_ai/subproject-ocl_phylogenetic_structures/)
 │
 └── BLOCK_orthogroups_X_ocl/               # THIS BLOCK
     ├── README.md                          # THIS FILE

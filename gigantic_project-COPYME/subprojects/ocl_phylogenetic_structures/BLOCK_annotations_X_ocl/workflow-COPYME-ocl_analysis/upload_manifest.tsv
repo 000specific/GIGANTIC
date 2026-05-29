@@ -1,4 +1,4 @@
-# GIGANTIC upload_manifest.tsv — BLOCK_ocl_analysis template (annotations_X_ocl)
+# GIGANTIC upload_manifest.tsv — BLOCK_annotations_X_ocl template
 # ============================================================================
 # Publishes OCL results keyed on functional annotation groups (annogroups)
 # rather than orthogroups. Mirrors the orthogroups_X_ocl manifest structure.
@@ -7,7 +7,7 @@
 # this manifest travels with it. Flip lines to `yes` to publish.
 # ============================================================================
 # Destination (auto-derived by shared helper):
-#   upload_to_server/BLOCK_ocl_analysis/workflow-RUN_N/structure_NNN/N-output/
+#   upload_to_server/BLOCK_annotations_X_ocl/workflow-RUN_N/structure_NNN/N-output/
 #
 # Policy: each subproject hosts its OWN outputs only. The phylogenetic
 # substrate files (parent_child_table, phylogenetic_blocks, phylogenetic_paths,

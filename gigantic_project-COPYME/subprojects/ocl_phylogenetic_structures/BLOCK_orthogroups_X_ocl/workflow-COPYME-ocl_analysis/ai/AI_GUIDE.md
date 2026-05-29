@@ -97,7 +97,7 @@ cat OUTPUT_pipeline/structure_001/5-output/5_ai-validation_report.txt
 cat OUTPUT_pipeline/structure_001/5-output/5_ai-qc_metrics.tsv
 
 # Check symlinks were created
-ls ../../output_to_input/BLOCK_ocl_analysis/species70_X_OrthoHMM/
+ls ../../output_to_input/BLOCK_orthogroups_X_ocl/species70_X_OrthoHMM/
 ```
 
 ---

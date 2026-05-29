@@ -49,18 +49,20 @@ inherited" (theoretical expectation) from "actually present in species" (genomic
 
 ```
 ocl_phylogenetic_structures/                   # parent subproject
-├── README.md, AI_GUIDE.md                     # parent docs (Phase 1 stubs)
-├── research_notebook/ai_research/             # parent-level
-├── output_to_input/                           # parent-level shared output
-│   └── BLOCK_ocl_analysis/                   # legacy subdir name (to be renamed in Phase 5)
-│       ├── species70_X_OrthoHMM/              # From RUN copy with that label
-│       │   ├── structure_001/
-│       │   │   └── 4_ai-orthogroups-complete_ocl_summary.tsv
-│       │   └── ...
-│       └── species70_X_OrthoFinder/           # From another RUN copy
-│           └── ...
+├── README.md, AI_GUIDE.md                     # parent docs
+├── output_to_input/                           # parent-level shared output (per §2 mirrors producer paths)
+│   ├── BLOCK_orthogroups_X_ocl/              # this BLOCK's downstream symlinks
+│   │   ├── species70_X_OrthoHMM/              # From RUN copy with that label
+│   │   │   ├── structure_001/
+│   │   │   │   └── 4_ai-orthogroups-complete_ocl_summary.tsv
+│   │   │   └── ...
+│   │   └── species70_X_OrthoFinder/           # From another RUN copy
+│   └── BLOCK_annotations_X_ocl/               # sibling BLOCK's downstream symlinks
+│       └── species70_pfam/
 ├── upload_to_server/                          # parent-level publishing
 ├── RUN-update_upload_to_server.sh             # parent-level publisher (§38)
+# (no per-subproject research_notebook/ per §1; sandbox at
+#  ../../research_notebook/research_ai/subproject-ocl_phylogenetic_structures/)
 │
 └── BLOCK_orthogroups_X_ocl/                   # THIS BLOCK
     ├── README.md                              # BLOCK README

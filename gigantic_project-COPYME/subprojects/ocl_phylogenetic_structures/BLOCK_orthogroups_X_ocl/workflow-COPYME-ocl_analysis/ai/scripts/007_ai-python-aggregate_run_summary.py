@@ -551,7 +551,7 @@ def main():
         lines.append( f"... plus {len( structure_ids ) - 5} more" )
     lines.append( "```" )
     lines.append( "" )
-    lines.append( f"Downstream symlinks: `../../output_to_input/BLOCK_ocl_analysis/{run_label}/`" )
+    lines.append( f"Downstream symlinks: `../../output_to_input/BLOCK_orthogroups_X_ocl/{run_label}/`" )
     lines.append( "" )
 
     summary_path = workflow_directory / 'RUN_SUMMARY.md'
