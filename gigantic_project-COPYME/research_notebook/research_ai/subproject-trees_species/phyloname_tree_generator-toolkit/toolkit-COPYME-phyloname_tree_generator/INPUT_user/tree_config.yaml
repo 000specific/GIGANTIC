@@ -1,0 +1,104 @@
+# ============================================================================
+# Tree Generator Configuration
+# AI: Claude Code | Opus 4.7 | 2026 May 29
+# Human: Eric Edsinger
+#
+# Backbone topology + backbone-leaf assignment rules + optional internal-
+# clade constraints + RNG seed for reproducible polytomy resolution.
+# Defaults are calibrated for the species42 deuterostome demo project.
+# ============================================================================
+
+# ============================================================================
+# BACKBONE TOPOLOGY (nested list-of-lists; leaves are backbone-leaf names)
+# ============================================================================
+# Each backbone leaf is the root of a subtree containing all species the
+# generator assigns to that leaf (see backbone_leaves below). Once the
+# species' below-leaf taxonomic dict is resolved, the subtree is
+# substituted into the backbone topology at the leaf's position.
+#
+# User-provided Newick (interpreted, 2026-05-28):
+#   ( ( (octopus, (drosophila, caenorhabditis)),
+#       ( (hemichordates, echinoderms),
+#         (cephalochordates, (urochordates, vertebrate_chordates)) ) ) )
+# ----------------------------------------------------------------------------
+backbone_topology:
+  - - - "Mollusca"
+      - - "Arthropoda"
+        - "Nematoda"
+    - - - "Hemichordata"
+        - "Echinodermata"
+      - - "Cephalochordata"
+        - - "Urochordata"
+          - "Vertebrata"
+
+
+# ============================================================================
+# BACKBONE-LEAF ASSIGNMENT RULES
+# ============================================================================
+# Evaluated in order; first match wins.
+#
+# `match` keys are phyloname token positions (0=Kingdom, 1=Phylum, 2=Class,
+# 3=Order, 4=Family). Values can be a single string OR a list of strings
+# (any in the list matches). A literal '*' matches anything.
+# `skip_depth` is the number of phyloname tokens absorbed by this backbone
+# leaf -- the remaining tokens form the subtree below it.
+# ----------------------------------------------------------------------------
+backbone_leaves:
+  - name: Mollusca
+    skip_depth: 2
+    match: { "1": Mollusca }
+
+  - name: Arthropoda
+    skip_depth: 2
+    match: { "1": Arthropoda }
+
+  - name: Nematoda
+    skip_depth: 2
+    match: { "1": Nematoda }
+
+  - name: Hemichordata
+    skip_depth: 2
+    match: { "1": Hemichordata }
+
+  - name: Echinodermata
+    skip_depth: 2
+    match: { "1": Echinodermata }
+
+  - name: Cephalochordata
+    skip_depth: 3
+    match: { "1": Chordata, "2": Leptocardii }
+
+  - name: Urochordata
+    skip_depth: 2
+    match: { "1": Chordata, "2": [Ascidiacea, Appendicularia, Thaliacea] }
+
+  - name: Vertebrata
+    skip_depth: 2
+    match: { "1": Chordata, "2": [Mammalia, Actinopteri] }
+
+
+# ============================================================================
+# INTERNAL CLADE CONSTRAINTS (optional)
+# ============================================================================
+# Named monophyletic clades anywhere in the tree. When a polytomy is
+# resolved, the generator first checks each constraint: if ALL the
+# constraint's `siblings` are present at the same level under a parent,
+# they're grouped into one composite subtree (named for the constraint)
+# BEFORE the polytomy is randomly paired. The composite then participates
+# in the polytomy as a single child.
+#
+# Useful when NCBI's phyloname hierarchy doesn't encode a clade that
+# biology accepts (e.g. NCBI puts Cetacea families and Hippopotamidae as
+# siblings under Artiodactyla, but Cetacea is monophyletic and sister to
+# Hippopotamidae — declare Cetacea here so the random pairing doesn't put
+# Hippo nested inside it).
+# ----------------------------------------------------------------------------
+internal_clade_constraints:
+  - name: Cetacea
+    siblings: [ Balaenopteridae, Delphinidae, Phocoenidae ]
+
+
+# ============================================================================
+# RNG SEED
+# ============================================================================
+seed: 42

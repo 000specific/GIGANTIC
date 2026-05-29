@@ -1,0 +1,15 @@
+# Phyloname Tree Generator Toolkit - conda env
+# AI: Claude Code | Opus 4.7 | 2026 May 29
+# Human: Eric Edsinger
+#
+# Just python (stdlib + PyYAML) + nextflow. No third-party tree libs needed —
+# the generator emits a Newick string directly.
+name: aiG-research_ai-phyloname_tree_generator
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - nextflow>=23.0,<26.0   # PIN: NF 26.x strict-DSL retroactively breaks these workflows

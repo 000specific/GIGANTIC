@@ -1,0 +1,93 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running RUN-workflow.sh
+# ============================================================================
+#
+# Phyloname Tree Generator Toolkit
+# AI: Claude Code | Opus 4.7 | 2026 May 29
+# Human: Eric Edsinger
+#
+# WHAT THIS TOOLKIT DOES
+# ----------------------
+# Generate a binary species-tree Newick from a phylonames TSV map. The
+# generator honors:
+#   1. A user-specified backbone topology (the high-level shape of the
+#      tree at the level where phylonames alone don't encode it, e.g.
+#      protostome/deuterostome relationships, Ambulacraria, Olfactores).
+#   2. Optional internal-clade constraints (named monophyletic clades
+#      anywhere in the tree, e.g. Cetacea grouping Balaenopteridae +
+#      Delphinidae + Phocoenidae so Hippopotamidae lands sister to it
+#      rather than nested inside).
+#   3. Reproducible random polytomy resolution (seeded RNG; same seed +
+#      same inputs -> identical output).
+#
+# After generation the Newick is symlinked into
+#   trees_species/BLOCK_gigantic_species_tree/workflow-COPYME-gigantic_species_tree/INPUT_user/species_tree.newick
+# so the canonical GIGANTIC workflow can pick it up and do the
+# `ancestral_clade_NNN` labeling.
+#
+# USAGE
+# -----
+#   cp -r toolkit-COPYME-phyloname_tree_generator toolkit-RUN_1-phyloname_tree_generator
+#   cd toolkit-RUN_1-phyloname_tree_generator
+#   $EDITOR INPUT_user/tree_config.yaml        # backbone + constraints + seed
+#   bash RUN-workflow.sh
+# ============================================================================
+
+# ============================================================================
+# INPUT PATHS (REQUIRED)
+# ============================================================================
+
+inputs:
+  # Phylonames TSV (positional read: col 0 = genus_species, col 1 = phyloname).
+  # Default points at the species42 demo project's phylonames map.
+  phylonames: "../../../../subprojects/phylonames/output_to_input/maps/species42_map-genus_species_X_phylonames.tsv"
+
+  # Backbone + constraints + seed live in INPUT_user/tree_config.yaml.
+  # See INPUT_user/README.md for the schema.
+  config_file: "INPUT_user/tree_config.yaml"
+
+  # trees_species BLOCK_gigantic_species_tree INPUT_user dir. The bridge
+  # step (script 003) symlinks the generated Newick here as
+  # `species_tree.newick` so the canonical workflow consumes it.
+  trees_species_input_user_dir: "../../../../subprojects/trees_species/BLOCK_gigantic_species_tree/workflow-COPYME-gigantic_species_tree/INPUT_user"
+
+# ============================================================================
+# OUTPUT NAMING
+# ============================================================================
+
+prefix: "species42"
+seed: 42
+
+# ============================================================================
+# OUTPUT SETTINGS
+# ============================================================================
+
+output:
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# PROJECT METADATA (for the §45 run log)
+# ============================================================================
+
+project:
+  name: "gigantic_project"
+
+# ============================================================================
+# Resume from cached NextFlow work directory
+# ============================================================================
+
+resume: false
+
+# ============================================================================
+# Execution Mode
+# ============================================================================
+# "local" - recommended; the generator runs in seconds.
+# "slurm" - supported for consistency but overkill for this lightweight tool.
+
+execution_mode: "local"
+
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+cpus: 2
+memory_gb: 15
+time_hours: 1
