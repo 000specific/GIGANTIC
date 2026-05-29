@@ -111,7 +111,7 @@ BLOCK_orthohmm_GIGANTIC/
 - `summary_statistics.tsv`
 - `per_species_summary.tsv`
 
-Filenames match `BLOCK_orthohmm` so downstream subprojects (e.g., `orthogroups_X_ocl`, `BLOCK_comparison`) can consume from either.
+Filenames match `BLOCK_orthohmm` so downstream subprojects (e.g., `ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`, `BLOCK_comparison`) can consume from either.
 
 ## Configuration Knobs
 

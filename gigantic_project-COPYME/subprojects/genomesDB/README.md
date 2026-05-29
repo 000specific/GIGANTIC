@@ -375,8 +375,9 @@ reads from `genomesDB/output_to_input/` at some point:
 - **gene_sizes** — reads STEP_2 standardized genomes + annotations
 - **hotspots**, **secretome**, **one_direction_homologs**,
   **dark_proteomes** — all consume STEP_2 / STEP_4 proteomes
-- **orthogroups_X_ocl**, **annotations_X_ocl** — indirect (through
-  their producer subprojects)
+- **`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`**,
+  **`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/`** — indirect
+  (through their producer subprojects)
 
 ---
 

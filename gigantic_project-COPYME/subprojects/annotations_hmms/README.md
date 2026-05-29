@@ -20,7 +20,7 @@ Human:   Eric Edsinger
   - `BLOCK_tmbed/` — TMBed transmembrane topology results (symlinks)
   - `BLOCK_build_annotation_database/` — integrated 7-column annotation database (symlinks)
 - Downstream consumers:
-  - `annotations_X_ocl/` — orthogroups × annotations evolutionary inference
+  - `ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` — annotation × species-tree-structure evolutionary inference
   - `secretome/` — uses SignalP + TMBed evidence
   - `dark_proteomes/` — uses unannotated (no domain) classification
   - `upload_to_server/` (subproject root) — curated subset for the GIGANTIC server

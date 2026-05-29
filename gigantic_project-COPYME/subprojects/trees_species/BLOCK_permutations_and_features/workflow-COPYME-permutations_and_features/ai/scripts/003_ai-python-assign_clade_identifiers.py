@@ -37,9 +37,9 @@ Purpose:
     an identical grouping appearing in multiple candidate topologies gets
     the same ID.
 
-    Downstream subprojects (orthogroups_X_ocl, the planned occams_tree) can
-    safely use `clade_id_name` as a cross-structure key without further
-    composition.
+    Downstream subprojects (ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/,
+    the planned occams_tree) can safely use `clade_id_name` as a cross-structure
+    key without further composition.
 
 Inputs:
     --workflow-dir: Workflow root directory

@@ -105,9 +105,9 @@ If the same ambiguous-zone grouping appears in multiple candidate topologies,
 it receives the SAME ID. Named clades outside the unresolved zone (Metazoa,
 Bilateria, etc.) have globally stable IDs across all 105 structures.
 
-Downstream consumers (`orthogroups_X_ocl`, the planned `occams_tree`) use
-`clade_id_name` as an atomic cross-structure key — never split into
-`clade_id` and `clade_name` for lookups.
+Downstream consumers (`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`,
+the planned `occams_tree`) use `clade_id_name` as an atomic cross-structure
+key — never split into `clade_id` and `clade_name` for lookups.
 
 See `README.md` Terminology section (rule "Clade IDs as Topologically-
 Structured Species Sets") and Rule 6 of `../../AI_GUIDE.md` for the

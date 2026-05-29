@@ -292,7 +292,8 @@ fi
 # Symlinks are created in ONE location at the subproject root:
 #   ../../output_to_input/BLOCK_permutations_and_features/
 #
-# Downstream subprojects (orthogroups_X_ocl, annotations_X_ocl) read from here.
+# Downstream subprojects (ocl_phylogenetic_structures/BLOCK_{orthogroups,annotations}_X_ocl/)
+# read from here.
 # ============================================================================
 
 echo ""

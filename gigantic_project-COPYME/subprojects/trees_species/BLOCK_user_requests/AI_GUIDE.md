@@ -15,7 +15,7 @@ trees_species subproject context. This guide covers the user-requests BLOCK.
 - Parent project: [`../../../AI_GUIDE.md`](../../../AI_GUIDE.md)
 - Upstream BLOCK (prerequisite): [`../BLOCK_permutations_and_features/`](../BLOCK_permutations_and_features/) — must have run first; this BLOCK reads its `output_to_input/BLOCK_permutations_and_features/Species_Phylogenetic_Blocks/` to do the matching.
 - Workflow to run: [`workflow-COPYME-select_structures/`](workflow-COPYME-select_structures/) (no top-level workflow README — start with `INPUT_user/query_manifest.yaml` and `START_HERE-user_config.yaml`).
-- Output is consumed by: downstream OCL subprojects that want to restrict analysis to a hand-picked subset of structures (e.g., annotations_X_ocl run on the 4 structures matching specific user hypotheses).
+- Output is consumed by: downstream OCL BLOCKs that want to restrict analysis to a hand-picked subset of structures (e.g., `ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` run on the 4 structures matching specific user hypotheses).
 
 ---
 
@@ -102,7 +102,8 @@ users can see all equivalent structures if they want.
   Ctenophora-sister vs Porifera-sister)
 - You want to test specific sister-clade arrangements at contested nodes
 - You need to feed a small, hand-picked set of structures into a downstream
-  subproject (e.g., annotations_X_ocl run restricted to 4 trees)
+  BLOCK (e.g., `ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` run
+  restricted to 4 trees)
 
 **Not a fit:**
 - Complex constraints involving branch lengths, bootstrap support, or

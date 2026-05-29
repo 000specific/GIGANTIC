@@ -14,7 +14,7 @@ Human:   Eric Edsinger
 - This subproject: [`README.md`](README.md), this file
 - Prerequisite: [`../genomesDB/STEP_4-create_final_species_set/`](../genomesDB/STEP_4-create_final_species_set/) — provides standardized proteomes
 - Prerequisite (naming): [`../phylonames/`](../phylonames/) — clade naming conventions
-- Downstream consumers: `orthogroups_X_ocl`, plus orthogroup-aware analyses (`gene_sizes`, `dark_proteomes`, `hotspots`, `secretome`, `one_direction_homologs`)
+- Downstream consumers: `ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`, plus orthogroup-aware analyses (`gene_sizes`, `dark_proteomes`, `hotspots`, `secretome`, `one_direction_homologs`)
 
 ## Quick Reference
 

@@ -415,7 +415,7 @@ User provides initial species tree      OR      BLOCK_de_novo_species_tree (futu
                                        ↓
                         trees_species/output_to_input/
                                        ↓
-                        Downstream: orthogroups_X_ocl, annotations_X_ocl
+                        Downstream: ocl_phylogenetic_structures/BLOCK_{orthogroups,annotations}_X_ocl/
 ```
 
 ## Outputs Shared Downstream (`output_to_input/`)
@@ -435,10 +435,11 @@ trees_species/output_to_input/
 **Downstream consumers (per §40)** — every OCL-flavored or phylogeny-aware
 subproject reads from `trees_species/output_to_input/`:
 
-- **orthogroups_X_ocl** — reads phylogenetic blocks, clade-species
-  mappings, and phylogenetic paths to compute orthogroup OCL inferences
-  across structures
-- **annotations_X_ocl** — same data flow at the per-annotation grain
+- **`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`** — reads
+  phylogenetic blocks, clade-species mappings, and phylogenetic paths to
+  compute orthogroup OCL inferences across structures
+- **`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/`** — same data
+  flow at the per-annotation grain
 - **occams_tree** (planned) — cross-structure aggregation that uses
   `clade_id_name` as the global key (per Rule 6)
 - **trees_gene_families / trees_gene_groups** — gene-tree subprojects

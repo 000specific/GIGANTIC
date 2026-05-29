@@ -193,7 +193,7 @@ python3 ai/scripts/002_ai-python-visualize_structures.py \
 # Create symlinks for output_to_input
 # ============================================================================
 # Expose the selected structures at output_to_input level for downstream use
-# (e.g., a user-specific annotations_X_ocl run on just these 4 trees).
+# (e.g., a user-specific ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/ run on just these 4 trees).
 
 echo ""
 echo "Creating symlinks for downstream subprojects..."

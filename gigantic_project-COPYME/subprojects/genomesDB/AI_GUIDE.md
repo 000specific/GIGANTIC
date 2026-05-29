@@ -467,8 +467,9 @@ standardized proteomes / genomes / annotations:
 - **gene_sizes** — reads genomes + annotations from STEP_2 outputs
 - **hotspots**, **secretome**, **one_direction_homologs**,
   **dark_proteomes**, etc. — all consume standardized proteomes
-- **orthogroups_X_ocl**, **annotations_X_ocl** — indirect (through
-  their producer subprojects)
+- **`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`**,
+  **`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/`** — indirect
+  (through their producer subprojects)
 
 In practice every "real" GIGANTIC subproject reads from
 `genomesDB/output_to_input/` at some point. **genomesDB must run

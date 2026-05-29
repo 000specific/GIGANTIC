@@ -633,7 +633,7 @@ The unified driver:
 - Cleans up runtime artifacts on exit
 
 The canonical example (most recently modernized) is the
-`annotations_X_ocl` subproject's workflow.
+`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` workflow.
 
 ---
 
@@ -958,9 +958,10 @@ relevant AI_GUIDE to note the consumer. This bidirectional cross-
 reference makes the data-flow graph navigable from either end.
 
 **Example**: trees_species' STEP that produces species-tree structures
-gets a note in its AI_GUIDE saying "downstream consumers: orthogroups_X_ocl
-reads these structures; annotations_X_ocl reads them via orthogroups_X_ocl's
-output_to_input/."
+gets a note in its AI_GUIDE saying "downstream consumers:
+`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/` reads these structures;
+`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` reads them via the
+sibling BLOCK's `output_to_input/`."
 
 **Why**: an AI walking into a subproject and finding it produces data
 should be able to answer "who uses this?" without grep'ing the whole

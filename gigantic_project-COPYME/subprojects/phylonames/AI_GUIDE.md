@@ -341,8 +341,9 @@ used throughout the framework:
   phyloname
 - **trees_gene_families**, **trees_gene_groups** — label gene-family /
   gene-group tree tips by phyloname
-- **orthogroups_X_ocl**, **annotations_X_ocl** — propagate phyloname
-  labels through OCL analyses
+- **`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`**,
+  **`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/`** — propagate
+  phyloname labels through OCL analyses
 - **gene_sizes**, **homolog_counts**, **hotspots**, **secretome**,
   **one_direction_homologs**, and so on — all use phylonames
 

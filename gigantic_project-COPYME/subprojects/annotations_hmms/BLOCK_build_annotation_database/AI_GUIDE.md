@@ -17,7 +17,7 @@ Human:   Eric Edsinger
 - Conda env: `aiG-annotations_hmms-build_annotation_database`
 - Reads FROM: `../output_to_input/BLOCK_{interproscan,deeploc,signalp,metapredict,tmbed}/` (auto-discovers what's present)
 - Outputs TO: `../output_to_input/BLOCK_build_annotation_database/` (24+ database subdirs)
-- Downstream consumers: `../../annotations_X_ocl/`, `../../secretome/`, `../../dark_proteomes/`, `../upload_to_server/`
+- Downstream consumers: `../../ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/`, `../../secretome/`, `../../dark_proteomes/`, `../upload_to_server/`
 
 ---
 
@@ -92,7 +92,7 @@ Script 002 downloads GO from `http://purl.obolibrary.org/obo/go/go-basic.obo`:
 
 ## Unannotated Protein Identification
 
-Parsers 003-007 can optionally identify proteins with zero annotations from each database and add unannotated entries to the output. This is required for downstream `annotations_X_ocl` analysis (which needs `zero` subtype annogroups).
+Parsers 003-007 can optionally identify proteins with zero annotations from each database and add unannotated entries to the output. This is required for downstream `ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` analysis (which needs `zero` subtype annogroups).
 
 **How it works**: Each parser compares the set of annotated proteins against the complete set of proteins from the proteome FASTA files. Proteins with no annotations get entries with the format:
 - Domain_Start: `0`, Domain_Stop: `0`

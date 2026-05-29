@@ -117,10 +117,10 @@ across different structures are the SAME clade (same `clade_id_name`, e.g.,
   registry's `appears_in_structures` column tracks which candidate
   structures each clade belongs to.
 
-**Cross-structure use**: downstream subprojects (e.g., `orthogroups_X_ocl`
-and the planned `occams_tree`) can treat `clade_id_name` as a globally
-stable key for a biological clade. No structure-prefixed composite
-identifier is needed.
+**Cross-structure use**: downstream subprojects (e.g.,
+`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/` and the planned
+`occams_tree`) can treat `clade_id_name` as a globally stable key for a
+biological clade. No structure-prefixed composite identifier is needed.
 
 **Auto-naming**: ambiguous-zone internal clades with no literature name
 get placeholder names like `Clade_069`. The `clade_id` is the semantic
@@ -188,5 +188,7 @@ This block publishes to `output_to_input/BLOCK_permutations_and_features/` at th
 - `Species_Phylogenetic_Blocks/` - Phylogenetic block identifiers
 - `Species_Clade_Species_Mappings/` - Clade-to-descendant-species mappings
 
-Downstream subprojects (orthogroups_X_ocl, annotations_X_ocl, origins_conservation_loss)
-access these via the subproject-root `output_to_input/` directory.
+Downstream subprojects — `ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`,
+`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/`, and the rest of the
+`ocl_phylogenetic_structures/` BLOCK roster — access these via the subproject-root
+`output_to_input/` directory.

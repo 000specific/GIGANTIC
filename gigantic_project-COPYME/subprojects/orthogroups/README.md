@@ -10,8 +10,8 @@ Human:   Eric Edsinger
 
 `orthogroups` runs after `genomesDB STEP_4` produces the final species
 proteomes. Each BLOCK runs an independent orthogroup-discovery tool;
-their standardized outputs feed `orthogroups_X_ocl` and other
-downstream OCL-flavored analyses.
+their standardized outputs feed `ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`
+and other downstream OCL-flavored analyses.
 
 - Parent project landing page: [`../../README.md`](../../README.md)
 - Parent project AI guide: [`../../AI_GUIDE.md`](../../AI_GUIDE.md)
@@ -168,9 +168,9 @@ orthogroups/
 Per §38 + §2, downstream subprojects read from the per-BLOCK
 subdirectories under `output_to_input/`. **Downstream consumers (per §40)**:
 
-- **orthogroups_X_ocl** — reads any tool BLOCK's standardized orthogroups
-  table to compute orthogroup-level OCL inferences across species tree
-  structures
+- **`ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/`** — reads any tool
+  BLOCK's standardized orthogroups table to compute orthogroup-level OCL
+  inferences across species tree structures
 - **gene_sizes**, **dark_proteomes**, **hotspots**, **secretome**,
   **one_direction_homologs** — orthogroup-aware analyses can use
   any tool BLOCK's output

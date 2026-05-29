@@ -20,7 +20,7 @@ Human:   Eric Edsinger
   - `BLOCK_tmbed/` — TMBed
   - `BLOCK_build_annotation_database/` — integrated 7-column DB
 - Downstream consumers:
-  - `annotations_X_ocl/` — orthogroups × annotations evolutionary inference
+  - `ocl_phylogenetic_structures/BLOCK_annotations_X_ocl/` — annotation × species-tree-structure evolutionary inference
   - `secretome/` — SignalP + TMBed evidence
   - `dark_proteomes/` — no-annotation classification
   - `upload_to_server/` — curated subset
@@ -142,8 +142,8 @@ deeploc, signalp, metapredict, tmbed (+ tool-specific subviews).
               output_to_input/BLOCK_build_annotation_database/
                             │
                             ▼
-              → downstream subprojects (annotations_X_ocl, secretome,
-                dark_proteomes, server)
+              → downstream subprojects (ocl_phylogenetic_structures/BLOCK_annotations_X_ocl,
+                secretome, dark_proteomes, server)
 ```
 
 Each tool BLOCK's pipeline ends with `*_ai-python-write_run_log.py` per §45.
