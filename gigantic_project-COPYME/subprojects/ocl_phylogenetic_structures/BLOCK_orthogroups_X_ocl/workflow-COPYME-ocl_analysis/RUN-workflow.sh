@@ -412,7 +412,11 @@ for structure_dir in OUTPUT_pipeline/structure_*; do
 
         if [ -f "$summary_file" ]; then
             mkdir -p "${SHARED_DIR}/${structure_name}"
-            ln -sf "../../../../BLOCK_ocl_analysis/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/${source_filename}" \
+            # NOTE: BLOCK dir was renamed from BLOCK_ocl_analysis to BLOCK_orthogroups_X_ocl
+            # in the 2026-05-29 OCL reorg Phase 1, Commit 2/6.
+            # The output_to_input/BLOCK_ocl_analysis/ subdir name is retained for now to
+            # preserve existing symlinks; Phase 5 may rename that too.
+            ln -sf "../../../../BLOCK_orthogroups_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/${source_filename}" \
                 "${SHARED_DIR}/${structure_name}/4_ai-orthogroups-complete_ocl_summary.tsv"
         fi
     fi

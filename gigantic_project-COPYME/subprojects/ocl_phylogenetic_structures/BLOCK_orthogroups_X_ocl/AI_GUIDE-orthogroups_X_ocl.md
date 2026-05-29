@@ -1,11 +1,22 @@
-# AI Guide: orthogroups_X_ocl Subproject
+# AI Guide: BLOCK_orthogroups_X_ocl
 
-**AI**: Claude Code | Opus 4.6 | 2026 April 13
+**AI**: Claude Code | Opus 4.6 | 2026 April 13 (initial)
+**AI**: Claude Code | Opus 4.7 (1M context) | 2026 May 29 (OCL reorg Phase 1: depth + cross-ref fixes)
 **Human**: Eric Edsinger
 
-**For AI Assistants**: Read `../../AI_GUIDE-project.md` first for GIGANTIC overview,
-directory structure, and general patterns. This guide covers orthogroups_X_ocl-specific
-concepts and troubleshooting.
+<!-- ============================================================================
+History: this BLOCK was the standalone subproject `orthogroups_X_ocl/` before
+the 2026-05-29 OCL reorg. Phase 1 migrated it under the new parent subproject
+`ocl_phylogenetic_structures/`. The body below is the original subproject
+AI guide with path/title cross-references corrected for the new depth.
+Phase 5 will harvest content into the parent AI_GUIDE and trim this file to
+BLOCK-specific concerns.
+============================================================================ -->
+
+**For AI Assistants**: Read `../../../AI_GUIDE.md` first for GIGANTIC overview,
+directory structure, and general patterns. Then read `../README.md` (parent
+subproject) and `../AI_GUIDE.md` (parent guide). This file covers
+BLOCK_orthogroups_X_ocl-specific concepts and troubleshooting.
 
 ---
 
@@ -13,13 +24,14 @@ concepts and troubleshooting.
 
 | User needs... | Go to... |
 |---------------|----------|
-| GIGANTIC overview, directory structure | `../../AI_GUIDE-project.md` |
-| orthogroups_X_ocl concepts, troubleshooting | This file |
-| Running the workflow | `BLOCK_ocl_analysis/workflow-COPYME-ocl_analysis/ai/AI_GUIDE-ocl_analysis_workflow.md` |
+| GIGANTIC overview, directory structure | `../../../AI_GUIDE.md` |
+| Parent subproject (phylogenetic-axis OCL) | `../README.md` and `../AI_GUIDE.md` |
+| BLOCK_orthogroups_X_ocl concepts, troubleshooting | This file |
+| Running the workflow | `workflow-COPYME-ocl_analysis/ai/AI_GUIDE-ocl_analysis_workflow.md` |
 
 ---
 
-## What This Subproject Does
+## What This BLOCK Does
 
 Performs Origin-Conservation-Loss (OCL) analysis of orthogroups across phylogenetic
 species tree structures. For each orthogroup, determines:
@@ -36,31 +48,33 @@ inherited" (theoretical expectation) from "actually present in species" (genomic
 ## Directory Structure
 
 ```
-orthogroups_X_ocl/
-├── README.md
-├── AI_GUIDE-orthogroups_X_ocl.md              # THIS FILE
-├── research_notebook/
-│   └── ai_research/
-├── output_to_input/                            # Downstream output
-│   └── BLOCK_ocl_analysis/                    # Contains run_label subdirs
-│       ├── species70_X_OrthoHMM/               # From RUN copy with that label
+ocl_phylogenetic_structures/                   # parent subproject
+├── README.md, AI_GUIDE.md                     # parent docs (Phase 1 stubs)
+├── research_notebook/ai_research/             # parent-level
+├── output_to_input/                           # parent-level shared output
+│   └── BLOCK_ocl_analysis/                   # legacy subdir name (to be renamed in Phase 5)
+│       ├── species70_X_OrthoHMM/              # From RUN copy with that label
 │       │   ├── structure_001/
 │       │   │   └── 4_ai-orthogroups-complete_ocl_summary.tsv
 │       │   └── ...
-│       └── species70_X_OrthoFinder/            # From another RUN copy
+│       └── species70_X_OrthoFinder/           # From another RUN copy
 │           └── ...
-├── upload_to_server/
-└── BLOCK_ocl_analysis/
-    ├── AI_GUIDE-ocl_analysis.md
+├── upload_to_server/                          # parent-level publishing
+├── RUN-update_upload_to_server.sh             # parent-level publisher (§38)
+│
+└── BLOCK_orthogroups_X_ocl/                   # THIS BLOCK
+    ├── README.md                              # BLOCK README
+    ├── AI_GUIDE-orthogroups_X_ocl.md          # THIS FILE
+    ├── AI_GUIDE-ocl_analysis.md               # workflow-execution-focused guide
     └── workflow-COPYME-ocl_analysis/
-        ├── RUN-workflow.sh                     # Self-submits to SLURM when execution_mode=slurm
+        ├── RUN-workflow.sh                    # Self-submits to SLURM when execution_mode=slurm
         ├── START_HERE-user_config.yaml
         ├── INPUT_user/
         │   └── structure_manifest.tsv
         ├── OUTPUT_pipeline/
         └── ai/
             ├── AI_GUIDE-ocl_analysis_workflow.md
-            ├── conda_environment.yml           # Per-BLOCK env spec (created on first run)
+            ├── conda_environment.yml          # Per-BLOCK env spec (created on first run)
             ├── main.nf
             ├── nextflow.config
             └── scripts/
@@ -69,7 +83,9 @@ orthogroups_X_ocl/
                 ├── 003_ai-python-quantify_conservation_loss.py
                 ├── 004_ai-python-comprehensive_ocl_analysis.py
                 ├── 005_ai-python-validate_results.py
-                └── 006_ai-python-write_run_log.py
+                ├── 006_ai-python-write_run_log.py
+                ├── 007_ai-python-aggregate_run_summary.py
+                └── utils_run_summary.py
 ```
 
 ### Planned STEP_2
@@ -95,7 +111,7 @@ directly tell us how the user's input tree compares to alternative topologies.
 ### Phylogenetic Blocks and Block-States (Rule 7)
 
 OCL analysis operates on two related kinds of tree objects, defined in Rule 7
-of `../../AI_GUIDE-project.md`:
+of `../../../AI_GUIDE.md`:
 
 - A **phylogenetic block** is a single parent-to-child edge of a species tree
   structure, containing both endpoint clades with no intervening nodes.
@@ -220,7 +236,7 @@ structure-prefixed composite is needed because the upstream clade assignment
 policy already makes the same biological clade share an ID across structures.
 
 For the full canonical definition, see Rule 6 in
-`../../AI_GUIDE-project.md` or `../trees_species/README.md` (Terminology
+`../../../AI_GUIDE.md` or `../../trees_species/README.md` (Terminology
 section).
 
 ---
@@ -262,7 +278,7 @@ This is used by:
 
 | File | User Edits? | Purpose |
 |------|------------|---------|
-| `START_HERE-user_config.yaml` | Yes | All configuration: run_label, tool, paths, FASTA flag, `execution_mode` (local or slurm), SLURM account/qos, `resume` flag, `cpus` + `memory_gb` for SLURM sizing. For parallel per-structure runs: `cpus = N_structures + 1`, `memory_gb = cpus × 7.5` (HiPerGator ratio) — see "CPU and Memory Configuration" in `../../AI_GUIDE-project.md` for full rationale |
+| `START_HERE-user_config.yaml` | Yes | All configuration: run_label, tool, paths, FASTA flag, `execution_mode` (local or slurm), SLURM account/qos, `resume` flag, `cpus` + `memory_gb` for SLURM sizing. For parallel per-structure runs: `cpus = N_structures + 1`, `memory_gb = cpus × 7.5` (HiPerGator ratio) — see "CPU and Memory Configuration" in `../../../AI_GUIDE.md` for full rationale |
 | `INPUT_user/structure_manifest.tsv` | Yes | Which tree structures to analyze (one structure_id per line) |
 | `RUN-workflow.sh` | No | Single entry point: `bash RUN-workflow.sh`. If `execution_mode: "slurm"`, self-submits as a SLURM job via `sbatch`. Also creates per-STEP conda env on first run from `ai/conda_environment.yml` |
 | `ai/conda_environment.yml` | No | Per-BLOCK conda env spec (name: `aiG-orthogroups_X_ocl-ocl_analysis`) |

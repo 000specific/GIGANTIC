@@ -1,8 +1,17 @@
-# orthogroups_X_ocl
+# BLOCK_orthogroups_X_ocl
+
+<!-- ============================================================================
+History: this BLOCK is what used to be the `orthogroups_X_ocl/` subproject.
+Migrated 2026-05-29 (OCL reorg Phase 1, Commit 2/6) under the new parent
+`ocl_phylogenetic_structures/`. The body below is largely the original
+subproject documentation with path/title cross-references corrected for
+the new depth. Phase 5 will harvest the methodology content into the
+parent README and slim this BLOCK README to BLOCK-specific concerns.
+============================================================================ -->
 
 Origin-Conservation-Loss (OCL) analysis of orthogroups across species tree topologies.
 
-## What This Subproject Does
+## What This BLOCK Does
 
 Integrates orthogroup clustering results with species tree phylogenetic features to determine:
 
@@ -50,10 +59,10 @@ For full canonical definitions of `phylogenetic` vs `evolutionary`, structure
 vs topology, the resolved-vs-unresolved input species tree distinction, the
 species-tree-vs-gene-tree explicitness rule, the topologically-structured
 species sets rule for clade IDs, and the phylogenetic block / block-state
-five-state vocabulary, see `../trees_species/README.md` (Terminology section)
-and Rules 1-7 of `../../AI_GUIDE-project.md`. The complete specification of
+five-state vocabulary, see `../../trees_species/README.md` (Terminology section)
+and Rules 1-7 of `../../../AI_GUIDE.md`. The complete specification of
 blocks, block-states, and the five-state vocabulary is in
-`research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`.
+`../research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`.
 
 ## Design: COPYME for Multi-Tool Exploration
 
@@ -79,7 +88,7 @@ structures. For a run covering `N` structures (e.g., 105 for species70 with 5
 unresolved clades), request `cpus: N + 1` and match memory to HiPerGator's
 standard 7.5 GB per CPU ratio (so `memory_gb: (N + 1) × 7.5`). For 105 structures
 that is `cpus: 106, memory_gb: 795`. See the "CPU and Memory Configuration"
-section of `../../AI_GUIDE-project.md` for the full rationale and non-HiPerGator
+section of `../../../AI_GUIDE.md` for the full rationale and non-HiPerGator
 adjustments.
 
 The conda environment (`aiG-orthogroups_X_ocl-ocl_analysis`) is created on-demand
@@ -101,25 +110,26 @@ species trees by total-loss minimization. Since trees_species always assigns
 reports how the user's input tree compares to alternative topologies under an
 Occam's-razor (fewest-losses) criterion.
 
-## Directory Structure
+## Directory Structure (post-reorg)
 
 ```
-orthogroups_X_ocl/
-├── README.md                              # THIS FILE
-├── AI_GUIDE-orthogroups_X_ocl.md          # AI guidance
-│
-├── output_to_input/
-│   └── BLOCK_ocl_analysis/               # Populated by RUN-workflow.sh symlinks
-│       ├── species70_X_OrthoHMM/          # run_label from RUN_01
+ocl_phylogenetic_structures/               # parent subproject (NEW)
+├── README.md                              # parent README (Phase 1 stub)
+├── AI_GUIDE.md                            # parent AI guide (Phase 1 stub)
+├── output_to_input/                       # parent-level, shared across BLOCKs
+│   └── BLOCK_ocl_analysis/               # legacy subdir name from when this BLOCK was its own subproject;
+│       ├── species70_X_OrthoHMM/          #   will be renamed in Phase 5 to match new BLOCK roster
 │       │   ├── structure_001/
 │       │   └── ...
 │       └── species70_X_OrthoFinder/       # run_label from RUN_02
+├── upload_to_server/                      # parent-level publishing
+├── research_notebook/ai_research/         # parent-level research notebook
+├── RUN-update_upload_to_server.sh         # parent-level publisher (§38)
 │
-├── upload_to_server/
-├── research_notebook/ai_research/
-│
-└── BLOCK_ocl_analysis/
-    ├── AI_GUIDE-ocl_analysis.md
+└── BLOCK_orthogroups_X_ocl/               # THIS BLOCK
+    ├── README.md                          # THIS FILE
+    ├── AI_GUIDE-orthogroups_X_ocl.md      # BLOCK-level AI guide (legacy filename)
+    ├── AI_GUIDE-ocl_analysis.md           # BLOCK-level AI guide (workflow-execution focus)
     └── workflow-COPYME-ocl_analysis/
         ├── START_HERE-user_config.yaml
         ├── RUN-workflow.sh                # Self-submits to SLURM if execution_mode=slurm
@@ -129,21 +139,21 @@ orthogroups_X_ocl/
             ├── conda_environment.yml      # Per-BLOCK env (on-demand create)
             ├── main.nf
             ├── nextflow.config
-            └── scripts/                   # 6 Python scripts (001-006)
+            └── scripts/                   # Python scripts (001-007)
 ```
 
 ## Dependencies
 
-### orthogroups_X_ocl reads FROM:
-- `trees_species/output_to_input/BLOCK_permutations_and_features/` - Phylogenetic blocks,
+### BLOCK_orthogroups_X_ocl reads FROM:
+- `../../trees_species/output_to_input/BLOCK_permutations_and_features/` - Phylogenetic blocks,
   paths, parent-child relationships, clade-species mappings
-- `orthogroups/output_to_input/BLOCK_orthofinder/` (or BLOCK_orthohmm, BLOCK_broccoli) -
+- `../../orthogroups/output_to_input/BLOCK_orthofinder/` (or BLOCK_orthohmm, BLOCK_broccoli) -
   Orthogroup assignments in GIGANTIC identifiers
-- `genomesDB/output_to_input/STEP_4-.../` - Proteome FASTA files
+- `../../genomesDB/output_to_input/STEP_4-.../` - Proteome FASTA files
 
-### orthogroups_X_ocl provides TO:
-- Downstream analysis and visualization subprojects
-- upload_to_server for GIGANTIC server
+### BLOCK_orthogroups_X_ocl provides TO:
+- Parent `output_to_input/` for downstream analysis and visualization
+- Parent `upload_to_server/` for the GIGANTIC server
 
 ---
 

@@ -3,8 +3,14 @@
 # Human: Eric Edsinger
 
 ################################################################################
-# GIGANTIC orthogroups_X_ocl - Upload to Server Builder
+# GIGANTIC ocl_phylogenetic_structures - Upload to Server Builder
 ################################################################################
+#
+# History: this script was migrated from the standalone orthogroups_X_ocl/
+# subproject during the 2026-05-29 OCL reorg Phase 1 (Commit 2/6). It now
+# serves the new parent subproject ocl_phylogenetic_structures/. Commit 3
+# will reconcile this with annotations_X_ocl's publisher (single publisher
+# per subproject per §38).
 #
 # PURPOSE:
 # Build this subproject's upload_to_server/ tree from per-workflow manifests.
