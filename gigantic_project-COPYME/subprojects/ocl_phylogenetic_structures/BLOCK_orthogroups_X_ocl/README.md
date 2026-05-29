@@ -62,7 +62,7 @@ species sets rule for clade IDs, and the phylogenetic block / block-state
 five-state vocabulary, see `../../trees_species/README.md` (Terminology section)
 and Rules 1-7 of `../../../AI_GUIDE.md`. The complete specification of
 blocks, block-states, and the five-state vocabulary is in
-`../research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`.
+`../../../ai/ai_FYIs/ocl_phylogenetic_structures-rule_7_whitepaper.md`.
 
 ## Design: COPYME for Multi-Tool Exploration
 

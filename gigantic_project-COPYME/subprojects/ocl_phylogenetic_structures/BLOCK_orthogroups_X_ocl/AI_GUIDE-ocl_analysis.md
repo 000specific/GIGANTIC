@@ -103,7 +103,7 @@ five codes: **A** Inherited Absence, **O** Origin, **P** Inherited Presence,
 blocks carry state A, P, or X.
 
 See Rule 7 of `../../../AI_GUIDE.md` and the full specification in
-`../research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`.
+`../../../ai/ai_FYIs/ocl_phylogenetic_structures-rule_7_whitepaper.md`.
 
 ---
 

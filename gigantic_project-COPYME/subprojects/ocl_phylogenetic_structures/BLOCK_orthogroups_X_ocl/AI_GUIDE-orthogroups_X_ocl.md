@@ -167,7 +167,7 @@ X's. Script 005 CHECK 8 enforces this invariant across every row.
 
 Full specification with mathematical definitions, identifier hierarchy, prose
 conventions, and implementation notes:
-`research_notebook/ai_research/planning-phylogenetic_blocks_and_locks/whitepaper.md`.
+`../../../ai/ai_FYIs/ocl_phylogenetic_structures-rule_7_whitepaper.md`.
 
 ### TEMPLATE_03 Dual-Metric Tracking
 
