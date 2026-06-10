@@ -32,9 +32,9 @@ the workflow.
 
 | # | Script | Process | Function |
 |---|--------|---------|----------|
-| 001 | `classify_orthogroups.py` | `classify_orthogroups` | Classify every orthogroup `bilaterian_only` / `non_bilaterian_only` / `mixed` via the Bilateria (`C103`) species set → `1-output/`; fail-fast if the clade row or inputs are missing |
-| 002 | `build_nonbilaterian_orthogroups.py` | `build_nonbilaterian_orthogroups` | Table 2 — filter the composition table to `non_bilaterian_only` → `2-output/` |
-| 003 | `build_annogroup_X_orthogroups.py` | `build_annogroup_X_orthogroups` | Table 1 — join annogroup membership onto the protein→orthogroup map; keep annogroups with ≥1 non-bilaterian-only orthogroup → `3-output/` |
+| 001 | `classify_orthogroups.py` | `classify_orthogroups` | Classify every orthogroup into 4 classes (`bilaterian_only` / `mixed_with_bilaterian` / `non_bilaterian_metazoan` / `non_metazoan_only`) via the Bilateria (`C103`) + Metazoa (`C082`) species sets → `1-output/`; fail-fast if the clade row or inputs are missing |
+| 002 | `build_nonbilaterian_orthogroups.py` | `build_nonbilaterian_orthogroups` | Table 2 — filter the composition table to `non_bilaterian_metazoan` (qualifying) → `2-output/` |
+| 003 | `build_annogroup_X_orthogroups.py` | `build_annogroup_X_orthogroups` | Table 1 — join annogroup membership onto the protein→orthogroup map; keep annogroups with ≥1 non-bilaterian-metazoan (qualifying) orthogroup → `3-output/` |
 | 004 | `validate_results.py` | `validate_results` | Cross-checks (class validity, Table 2 count, Table 1 arithmetic + referential integrity + keep-rule); fail-fast (§36) → `4-output/` |
 | 005 | `write_run_log.py` | `write_run_log` | Run log → `ai/logs/` (§45) |
 | — | `utils_integrator.py` | — | Shared helpers (config, GIGANTIC-ID parsing, header indexing, `DELIM`) |
@@ -68,7 +68,7 @@ with `parallelism_mode: local` is the natural choice.
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `Bilateria clade '...' not found in mapping file` (001) | `bilateria_clade_id_name` / `bilateria_reference_structure` wrong | Check `awk -F'\t' '$2 ~ /^C103/' <mappings>` resolves a row |
+| `clade '...' not found in mapping file` (001) | `bilateria_clade_id_name` / `metazoa_clade_id_name` / `clade_reference_structure` wrong | Check `awk -F'\t' '$2 ~ /^C103/' <mappings>` resolves a row |
 | `orthogroups file not found` (001/003) | `inputs.orthogroups_file` wrong/empty | Verify `orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv` |
 | `annogroup membership file not found` (003) | a `annogroup_subtypes` entry has no exposed membership file | Verify the OCL block exposed `1_ai-<structure>_annogroups-<subtype>.tsv` (see OCL block AI_GUIDE) |
 | `annogroup all-types summary not found` (003) | `annogroups_dir`/`reference_structure` wrong | `ls <annogroups_dir>/<reference_structure>/` |
@@ -78,7 +78,7 @@ with `parallelism_mode: local` is the natural choice.
 
 ```bash
 # Composition class distribution
-cut -f6 OUTPUT_pipeline/1-output/1_ai-orthogroups-species_composition.tsv | tail -n +2 | sort | uniq -c
+cut -f7 OUTPUT_pipeline/1-output/1_ai-orthogroups-species_composition.tsv | tail -n +2 | sort | uniq -c
 
 # Table row counts
 wc -l OUTPUT_pipeline/2-output/*.tsv OUTPUT_pipeline/3-output/*.tsv
@@ -99,9 +99,10 @@ bash RUN-workflow.sh   # fresh, no -resume
 
 ## Validated first-run reference (species70_pfam_X_OrthoHMM)
 
-A direct end-to-end run (2026-06-09) produced: 202,994 orthogroups classified
-(121,403 bilaterian-only / 69,391 non-bilaterian-only / 12,200 mixed); Table 2 =
-69,391 rows; 73,954 annogroups read (single+combo) → 5,515 kept; validation PASS.
+An end-to-end run (2026-06-09) produced: 202,994 orthogroups classified
+(121,403 bilaterian_only / 12,200 mixed_with_bilaterian / 31,092
+non_bilaterian_metazoan [qualifying] / 38,299 non_metazoan_only); Table 2 =
+31,092 rows; 73,954 annogroups read (single+combo) → 3,214 kept; validation PASS.
 Treat as an order-of-magnitude sanity reference, not a guarantee.
 
 ## See also

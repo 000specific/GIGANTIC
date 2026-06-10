@@ -17,7 +17,7 @@ Scope:   BLOCK_annotations_X_orthogroups.
 - Reads FROM:
   - `../../ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl/<run_label>/<reference_structure>/` — `1_ai-*-annogroups-single.tsv` + `1_ai-*-annogroups-combo.tsv` (annogroup member `Sequence_IDs`) + `4_ai-*-complete_ocl_summary-all_types.tsv` (pfam accessions/definitions)
   - `../../orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv` — orthogroup membership
-  - `../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv` — Bilateria (`C103`) species set
+  - `../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv` — Bilateria (`C103`) + Metazoa (`C082`) species sets
 - Outputs TO: `../output_to_input/BLOCK_annotations_X_orthogroups/<run_label>/`
 - Conda env: `aiG-integrator-annotations_X_orthogroups`
 
@@ -44,18 +44,27 @@ filters by the orthogroups' bilaterian / non-bilaterian species composition.
   `ocl_phylogenetic_structures/BLOCK_annotations_X_ocl` (`run_label=species70_pfam`).
 - **Orthogroup**: a set of orthologous genes across species (from
   `orthogroups/BLOCK_orthohmm_GIGANTIC`).
-- **Bilaterian / non-bilaterian**: a species is bilaterian iff it is in the
-  `C103_Bilateria` clade (from `trees_species`). **Non-bilaterian = everything
-  else** — non-bilaterian metazoans AND non-metazoan outgroups.
-- **Orthogroup composition**: `bilaterian_only` (all member species bilaterian),
-  `non_bilaterian_only` (no member species bilaterian), or `mixed`.
+- **Species 3-way category** (from two `trees_species` clades, Bilateria
+  `C103_Bilateria` ⊂ Metazoa `C082_Metazoa`):
+  - **bilaterian** — in Bilateria
+  - **non-bilaterian metazoan** — in Metazoa but not Bilateria (sponges,
+    cnidarians, ctenophores, placozoans)
+  - **non-metazoan** — not in Metazoa (unicellular outgroups)
+- **Orthogroup composition** (4 classes by member-species categories):
+  - `bilaterian_only` — only bilaterians
+  - `mixed_with_bilaterian` — bilaterians + any non-bilaterians
+  - `non_bilaterian_metazoan` — **zero bilaterians AND ≥1 non-bilaterian
+    metazoan** (non-metazoans allowed) → the **QUALIFYING** class
+  - `non_metazoan_only` — zero bilaterians, no metazoans (unicell-only) → does
+    NOT qualify
 
 ### Join model
 
 The annogroup↔orthogroup link is **shared member proteins** (full GIGANTIC IDs).
 Each protein belongs to exactly one annogroup (a clean `single`+`combo` partition,
 verified against real data) and at most one orthogroup. An annogroup's orthogroups
-= the orthogroups its member proteins fall into.
+= the orthogroups its member proteins fall into. An annogroup is **kept** iff at
+least one of those orthogroups is `non_bilaterian_metazoan` (qualifying).
 
 ### Structure-invariance (efficiency)
 
@@ -69,23 +78,27 @@ integration with no per-structure fan-out** — distinct from the sibling
 
 ### Table 1 — annogroups X orthogroups (`3-output/`)
 One row per **kept** annogroup. **Keep rule (user-approved)**: keep iff the
-annogroup has ≥1 `non_bilaterian_only` orthogroup; drop annogroups whose
-orthogroups are all bilaterian-only **and** drop all-mixed annogroups (no
-non-bilaterian-only orthogroup). Columns: Annogroup_ID, Subtype,
+annogroup has ≥1 `non_bilaterian_metazoan` (qualifying) orthogroup; drop every
+other annogroup (including those whose only non-bilaterian orthogroups are
+non-metazoan-unicell-only). Columns: Annogroup_ID, Subtype,
 Annotation_Accessions, Annotation_Definitions, Annogroup_Species_Count,
 Annogroup_Member_Protein_Count, Members_With/Without_Orthogroup_Count,
-Orthogroup_Count, per-class counts (NonBilaterian_Only / Bilaterian_Only / Mixed),
-per-class Orthogroup_IDs lists, and All_Orthogroup_IDs. **All** of a kept
-annogroup's orthogroups are reported regardless of their composition.
+Orthogroup_Count, the four per-class counts (NonBilaterian_Metazoan /
+NonMetazoan_Only / Bilaterian_Only / Mixed_With_Bilaterian), the four per-class
+Orthogroup_IDs lists, and All_Orthogroup_IDs. **All** of a kept annogroup's
+orthogroups are reported regardless of their composition.
 
-### Table 2 — non-bilaterian-only orthogroups (`2-output/`)
-One row per orthogroup classified `non_bilaterian_only`: Orthogroup_ID,
-Member_Protein_Count, Species_Count, NonBilaterian_Species_Count, Species_List.
+### Table 2 — non-bilaterian-metazoan orthogroups (`2-output/`)
+File `2_ai-nonbilaterian_metazoan_orthogroups.tsv`. One row per orthogroup
+classified `non_bilaterian_metazoan` (qualifying): Orthogroup_ID,
+Member_Protein_Count, Species_Count, NonBilaterian_Metazoan_Species_Count,
+NonMetazoan_Species_Count, Species_List.
 
 ### Supporting — orthogroup composition (`1-output/`)
-Every orthogroup with its `Composition_Class` and bilaterian/non-bilaterian species
-counts — the shared basis for both tables (Table 2 is its `non_bilaterian_only`
-slice; Table 1 uses it as the per-orthogroup class lookup).
+Every orthogroup with its `Composition_Class` (one of the four), bilaterian /
+non-bilaterian-metazoan / non-metazoan species counts, and a `Qualifies` flag —
+the shared basis for both tables (Table 2 is its `non_bilaterian_metazoan` slice;
+Table 1 uses it as the per-orthogroup class lookup).
 
 ## Upstream dependency: annogroup membership exposure
 
@@ -102,8 +115,8 @@ Script 003 fails fast with a clear message. See
 
 | # | Script | Process | Function |
 |---|--------|---------|----------|
-| 001 | `classify_orthogroups.py` | `classify_orthogroups` | Classify every orthogroup by species composition; fail-fast if the Bilateria clade row or inputs are missing |
-| 002 | `build_nonbilaterian_orthogroups.py` | `build_nonbilaterian_orthogroups` | Table 2 — `non_bilaterian_only` slice |
+| 001 | `classify_orthogroups.py` | `classify_orthogroups` | Classify every orthogroup into one of 4 composition classes via the Bilateria (`C103`) + Metazoa (`C082`) species sets; fail-fast if a clade row or inputs are missing |
+| 002 | `build_nonbilaterian_orthogroups.py` | `build_nonbilaterian_orthogroups` | Table 2 — `non_bilaterian_metazoan` (qualifying) slice |
 | 003 | `build_annogroup_X_orthogroups.py` | `build_annogroup_X_orthogroups` | Table 1 — join annogroup membership onto protein→orthogroup map; apply keep rule |
 | 004 | `validate_results.py` | `validate_results` | Cross-check class validity, Table 2 count, Table 1 arithmetic + referential integrity + keep-rule; fail-fast (§36) |
 | 005 | `write_run_log.py` | `write_run_log` | Timestamped run log (§45) |

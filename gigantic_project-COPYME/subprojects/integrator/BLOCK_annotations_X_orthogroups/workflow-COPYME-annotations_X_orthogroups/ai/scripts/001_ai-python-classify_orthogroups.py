@@ -1,28 +1,36 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09 | Purpose: Classify every orthogroup by bilaterian / non-bilaterian species composition
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09 | Purpose: Classify every orthogroup by bilaterian / non-bilaterian-metazoan / non-metazoan species composition
 # Human: Eric Edsinger
 
 """
 Script 001 — Orthogroup species-composition classification.
 
 Reads the orthogroups membership table (headerless: OG_ID then tab-delimited
-member full GIGANTIC IDs) and the Bilateria clade species set from trees_species.
+member full GIGANTIC IDs) and two clade species sets from trees_species:
+Bilateria (C103) and Metazoa (C082).
 
-For each orthogroup, member species are resolved from each member's
--n_<phyloname> and classified relative to the Bilateria species set:
+Each member species is placed in one of three categories:
+  - bilaterian            : species in Bilateria
+  - non_bilaterian_metazoan: species in Metazoa but NOT in Bilateria
+                            (ctenophores, sponges, cnidarians, placozoans)
+  - non_metazoan          : species NOT in Metazoa (unicellular outgroups)
 
-  - bilaterian_only     : every member species is in Bilateria
-  - non_bilaterian_only : NO member species is in Bilateria (i.e. zero
-                          bilaterian members; non-bilaterian metazoans AND
-                          non-metazoan outgroups both count as non-bilaterian)
-  - mixed               : both bilaterian and non-bilaterian members present
+Each orthogroup is classified by its member-species composition (B = bilaterian
+count, M = non-bilaterian-metazoan count, U = non-metazoan count):
+  - bilaterian_only        : B>0, M==0, U==0
+  - mixed_with_bilaterian  : B>0 and (M>0 or U>0)
+  - non_bilaterian_metazoan: B==0, M>0           <-- the QUALIFYING class
+  - non_metazoan_only      : B==0, M==0, U>0      (unicell-only; does NOT qualify)
+
+A QUALIFYING orthogroup (class non_bilaterian_metazoan) has zero bilaterians and
+at least one non-bilaterian metazoan; non-metazoan members may ride along.
 
 This classification is the shared spine for Table 2 (Script 002) and the
 per-orthogroup class lookup for Table 1 (Script 003). Structure-independent:
-the Bilateria species set is a named clade outside the unresolved zone and is
+both clade species sets are named clades outside the unresolved zone and are
 stable across all species-tree structures (Rule 6).
 
-Fail-fast: exits 1 if the Bilateria clade row, the clade-mapping file, or the
+Fail-fast: exits 1 if a requested clade row, the clade-mapping file, or the
 orthogroups file is missing.
 """
 
@@ -34,16 +42,16 @@ sys.path.insert( 0, str( Path( __file__ ).parent ) )
 import utils_integrator as U
 
 
-def load_bilateria_species( mappings_path: Path, reference_structure: str, clade_id_name: str ) -> set:
+def load_clade_species( mappings_path: Path, reference_structure: str, clade_id_name: str ) -> set:
     """
-    Read the Bilateria descendant-species set from the trees_species
-    clade->species mapping file for one reference structure.
+    Read a clade's descendant-species set from the trees_species clade->species
+    mapping file for one reference structure. Returns a set of Genus_species.
 
-    Returns a set of Genus_species strings. Exits 1 if the requested clade row
-    is not found (a clade name typo or wrong species set must fail loudly, not
-    silently yield an empty bilaterian set that would mislabel every orthogroup).
+    Exits 1 if the requested clade row is not found or resolves to zero species
+    (a clade typo or wrong species set must fail loudly, not silently yield an
+    empty set that would mislabel every orthogroup).
     """
-    bilaterian_species = set()
+    clade_species = set()
     found = False
     with open( mappings_path, 'r' ) as input_mappings:
         # Structure_ID (...)\tClade_ID_Name (...)\tPhylogenetic_Block (...)\tDescendant_Species_Count (...)\tDescendant_Species_List (...)
@@ -60,46 +68,55 @@ def load_bilateria_species( mappings_path: Path, reference_structure: str, clade
             parts = line.split( '\t' )
             if parts[ index_structure ] == reference_structure and parts[ index_clade ] == clade_id_name:
                 species_cell = parts[ index_species_list ] if index_species_list < len( parts ) else ""
-                bilaterian_species = { s for s in species_cell.split( ',' ) if s }
+                clade_species = { s for s in species_cell.split( ',' ) if s }
                 found = True
                 break
 
     if not found:
-        print( f"CRITICAL ERROR: Bilateria clade '{clade_id_name}' not found in mapping file", file = sys.stderr )
+        print( f"CRITICAL ERROR: clade '{clade_id_name}' not found in mapping file", file = sys.stderr )
         print( f"  File: {mappings_path}", file = sys.stderr )
         print( f"  Reference structure: {reference_structure}", file = sys.stderr )
-        print( "  Verify bilateria_clade_id_name + bilateria_reference_structure in the config.", file = sys.stderr )
+        print( "  Verify the clade_id_name + clade_reference_structure in the config.", file = sys.stderr )
         sys.exit( 1 )
-    if not bilaterian_species:
-        print( f"CRITICAL ERROR: Bilateria clade '{clade_id_name}' resolved to ZERO species", file = sys.stderr )
+    if not clade_species:
+        print( f"CRITICAL ERROR: clade '{clade_id_name}' resolved to ZERO species", file = sys.stderr )
         print( f"  File: {mappings_path}", file = sys.stderr )
         sys.exit( 1 )
 
-    return bilaterian_species
+    return clade_species
 
 
-def classify_composition( member_species: set, bilaterian_species: set ) -> tuple:
+def classify_composition( member_species: set, bilaterian_species: set, metazoan_species: set ) -> tuple:
     """
-    Return ( composition_class, bilaterian_count, non_bilaterian_count ) for one
-    orthogroup's member-species set.
+    Return ( composition_class, bilaterian_count, non_bilaterian_metazoan_count,
+    non_metazoan_count ) for one orthogroup's member-species set.
     """
     bilaterian_members = member_species & bilaterian_species
-    non_bilaterian_members = member_species - bilaterian_species
+    # non-bilaterian metazoan = in Metazoa but not in Bilateria
+    non_bilaterian_metazoan_members = ( member_species & metazoan_species ) - bilaterian_species
+    # non-metazoan = not in Metazoa
+    non_metazoan_members = member_species - metazoan_species
+
     bilaterian_count = len( bilaterian_members )
-    non_bilaterian_count = len( non_bilaterian_members )
+    non_bilaterian_metazoan_count = len( non_bilaterian_metazoan_members )
+    non_metazoan_count = len( non_metazoan_members )
 
-    if non_bilaterian_count == 0 and bilaterian_count > 0:
-        composition_class = "bilaterian_only"
-    elif bilaterian_count == 0 and non_bilaterian_count > 0:
-        composition_class = "non_bilaterian_only"
+    if bilaterian_count > 0:
+        if non_bilaterian_metazoan_count == 0 and non_metazoan_count == 0:
+            composition_class = "bilaterian_only"
+        else:
+            composition_class = "mixed_with_bilaterian"
     else:
-        composition_class = "mixed"
+        if non_bilaterian_metazoan_count > 0:
+            composition_class = "non_bilaterian_metazoan"
+        else:
+            composition_class = "non_metazoan_only"
 
-    return ( composition_class, bilaterian_count, non_bilaterian_count )
+    return ( composition_class, bilaterian_count, non_bilaterian_metazoan_count, non_metazoan_count )
 
 
 def main():
-    parser = argparse.ArgumentParser( description = "Classify orthogroups by bilaterian/non-bilaterian species composition" )
+    parser = argparse.ArgumentParser( description = "Classify orthogroups by bilaterian / non-bilaterian-metazoan / non-metazoan composition" )
     parser.add_argument( '--config', required = True )
     parser.add_argument( '--output_dir', required = True )
     args = parser.parse_args()
@@ -108,23 +125,33 @@ def main():
     workflow_root = U.workflow_root_from_output_dir( args.output_dir )
 
     input_orthogroups_path = U.resolve_input_path( workflow_root, config[ "inputs" ][ "orthogroups_file" ] )
-    input_mappings_path = U.resolve_input_path( workflow_root, config[ "inputs" ][ "bilateria_clade_species_mappings" ] )
+    input_mappings_path = U.resolve_input_path( workflow_root, config[ "inputs" ][ "clade_species_mappings" ] )
     bilateria_clade_id_name = config[ "inputs" ][ "bilateria_clade_id_name" ]
-    bilateria_reference_structure = config[ "inputs" ][ "bilateria_reference_structure" ]
+    metazoa_clade_id_name = config[ "inputs" ][ "metazoa_clade_id_name" ]
+    clade_reference_structure = config[ "inputs" ][ "clade_reference_structure" ]
 
     if not input_orthogroups_path.is_file():
         print( f"CRITICAL ERROR: orthogroups file not found: {input_orthogroups_path}", file = sys.stderr )
         print( "  Verify inputs.orthogroups_file resolves to a populated output_to_input/ table.", file = sys.stderr )
         sys.exit( 1 )
     if not input_mappings_path.is_file():
-        print( f"CRITICAL ERROR: Bilateria clade-species mapping not found: {input_mappings_path}", file = sys.stderr )
-        print( "  Verify inputs.bilateria_clade_species_mappings (trees_species output_to_input).", file = sys.stderr )
+        print( f"CRITICAL ERROR: clade-species mapping not found: {input_mappings_path}", file = sys.stderr )
+        print( "  Verify inputs.clade_species_mappings (trees_species output_to_input).", file = sys.stderr )
         sys.exit( 1 )
 
-    bilaterian_species = load_bilateria_species(
-        input_mappings_path, bilateria_reference_structure, bilateria_clade_id_name
-    )
+    bilaterian_species = load_clade_species( input_mappings_path, clade_reference_structure, bilateria_clade_id_name )
+    metazoan_species = load_clade_species( input_mappings_path, clade_reference_structure, metazoa_clade_id_name )
+    non_bilaterian_metazoan_species = metazoan_species - bilaterian_species
     print( f"[001] Bilateria ({bilateria_clade_id_name}) = {len( bilaterian_species )} species" )
+    print( f"[001] Metazoa ({metazoa_clade_id_name}) = {len( metazoan_species )} species "
+           f"-> {len( non_bilaterian_metazoan_species )} non-bilaterian metazoans" )
+
+    # Sanity: Bilateria must be a subset of Metazoa, else the clade IDs are wrong.
+    if not bilaterian_species.issubset( metazoan_species ):
+        stray = sorted( bilaterian_species - metazoan_species )[ :5 ]
+        print( "CRITICAL ERROR: Bilateria is not a subset of Metazoa — clade IDs look wrong", file = sys.stderr )
+        print( f"  Example bilaterian species not in Metazoa: {stray}", file = sys.stderr )
+        sys.exit( 1 )
 
     output_dir = Path( args.output_dir ) / "1-output"
     output_dir.mkdir( parents = True, exist_ok = True )
@@ -134,13 +161,20 @@ def main():
         "Orthogroup_ID (orthogroup identifier from the orthogroups subproject)",
         "Member_Protein_Count (number of member protein sequence identifiers in the orthogroup)",
         "Species_Count (number of unique species among the member proteins)",
-        "Bilaterian_Species_Count (count of member species that are in the Bilateria clade)",
-        "NonBilaterian_Species_Count (count of member species that are not in the Bilateria clade)",
-        "Composition_Class (bilaterian_only if every species is bilaterian, non_bilaterian_only if no species is bilaterian, mixed otherwise)",
+        "Bilaterian_Species_Count (count of member species in the Bilateria clade)",
+        "NonBilaterian_Metazoan_Species_Count (count of member species in Metazoa but not in Bilateria)",
+        "NonMetazoan_Species_Count (count of member species not in Metazoa; unicellular outgroups)",
+        "Composition_Class (one of bilaterian_only, mixed_with_bilaterian, non_bilaterian_metazoan, non_metazoan_only)",
+        "Qualifies_NonBilaterian_Metazoan (yes when Composition_Class is non_bilaterian_metazoan: zero bilaterians and at least one non-bilaterian metazoan)",
         "Species_List (comma delimited list of member species as Genus_species)",
     ]
 
-    counts___classes = { "bilaterian_only": 0, "non_bilaterian_only": 0, "mixed": 0 }
+    counts___classes = {
+        "bilaterian_only": 0,
+        "mixed_with_bilaterian": 0,
+        "non_bilaterian_metazoan": 0,
+        "non_metazoan_only": 0,
+    }
     orthogroup_count = 0
     unparsed_member_count = 0
 
@@ -149,7 +183,7 @@ def main():
         output_composition.write( '\t'.join( header_columns ) + '\n' )
 
         # Headerless: OG_ID\tmember_full_id\tmember_full_id...
-        # OG000000\tg_g5785-t_g5785.t1-p_g5785.t1-n_Holozoa..._Abeoforma_whisleri\tg_LOC...-n_Metazoa_Cnidaria_..._Acropora_muricata\t...
+        # OG000000\tg_g5785-...-n_Holozoa..._Abeoforma_whisleri\tg_LOC...-n_Metazoa_Cnidaria_..._Acropora_muricata\t...
         for line in input_orthogroups:
             line = line.rstrip( '\n' )
             if not line:
@@ -166,18 +200,21 @@ def main():
                     continue
                 member_species.add( genus_species )
 
-            composition_class, bilaterian_count, non_bilaterian_count = classify_composition(
-                member_species, bilaterian_species
+            composition_class, bilaterian_count, non_bilaterian_metazoan_count, non_metazoan_count = classify_composition(
+                member_species, bilaterian_species, metazoan_species
             )
             counts___classes[ composition_class ] += 1
+            qualifies = "yes" if composition_class == "non_bilaterian_metazoan" else "no"
 
             output = '\t'.join( [
                 orthogroup_id,
                 str( len( members ) ),
                 str( len( member_species ) ),
                 str( bilaterian_count ),
-                str( non_bilaterian_count ),
+                str( non_bilaterian_metazoan_count ),
+                str( non_metazoan_count ),
                 composition_class,
+                qualifies,
                 U.DELIM.join( sorted( member_species ) ),
             ] ) + '\n'
             output_composition.write( output )
@@ -185,8 +222,9 @@ def main():
 
     print( f"[001] classified {orthogroup_count} orthogroups -> {output_composition_path}" )
     print( f"[001]   bilaterian_only={counts___classes[ 'bilaterian_only' ]}  "
-           f"non_bilaterian_only={counts___classes[ 'non_bilaterian_only' ]}  "
-           f"mixed={counts___classes[ 'mixed' ]}" )
+           f"mixed_with_bilaterian={counts___classes[ 'mixed_with_bilaterian' ]}  "
+           f"non_bilaterian_metazoan={counts___classes[ 'non_bilaterian_metazoan' ]} (QUALIFYING)  "
+           f"non_metazoan_only={counts___classes[ 'non_metazoan_only' ]}" )
     if unparsed_member_count:
         print( f"[001]   note: {unparsed_member_count} member IDs did not parse to a phyloname (skipped from species sets)" )
 

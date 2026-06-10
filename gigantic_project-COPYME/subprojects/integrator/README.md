@@ -30,7 +30,7 @@ biology — it combines existing results.
 | BLOCK | Integrates | Status |
 |-------|-----------|--------|
 | [`BLOCK_orthogroups_ocl_X_features`](BLOCK_orthogroups_ocl_X_features/) | OCL orthogroup analysis (per species-tree structure) × dark proteome × hotspots × secretome | Built 2026-06-04 (scaffold + scripts; not yet run end-to-end) |
-| [`BLOCK_annotations_X_orthogroups`](BLOCK_annotations_X_orthogroups/) | pfam annogroups × orthogroups, focused on non-bilaterian-only orthogroups (structure-independent) | Built 2026-06-09 (scaffold + scripts; join validated end-to-end against real data) |
+| [`BLOCK_annotations_X_orthogroups`](BLOCK_annotations_X_orthogroups/) | pfam annogroups × orthogroups, focused on non-bilaterian-metazoan orthogroups (structure-independent) | Built 2026-06-09 (scaffold + scripts; join validated end-to-end against real data) |
 
 Future BLOCKs will integrate other combinations (each its own independent
 BLOCK).

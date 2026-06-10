@@ -1,7 +1,7 @@
 # GIGANTIC upload_manifest.tsv — integrator / BLOCK_annotations_X_orthogroups
 # ============================================================================
 # Publishes the pfam-annogroups X orthogroups integration deliverables
-# (non-bilaterian-only focus). Source globs are relative to this manifest's
+# (non-bilaterian-metazoan focus). Source globs are relative to this manifest's
 # directory (the workflow-RUN_*-annotations_X_orthogroups/ root).
 #
 # Build with (from the integrator subproject root):
@@ -19,11 +19,11 @@
 source_path	include	dest_name	display_label	file_category	description	order	dir_label
 #
 # ----- Headline deliverables: the two integration tables -----
-OUTPUT_pipeline/3-output/3_ai-annogroups_X_orthogroups.tsv	yes		Table 1 — annogroups X orthogroups	data	One row per kept pfam annogroup (annogroups with at least one non-bilaterian-only orthogroup). Reports all of the annogroup's orthogroups (non-bilaterian-only / bilaterian-only / mixed) with per-class counts and ID lists, plus the annogroup's pfam accessions and definitions.	10	integration tables
-OUTPUT_pipeline/2-output/2_ai-nonbilaterian_orthogroups.tsv	yes		Table 2 — non-bilaterian-only orthogroups	data	One row per orthogroup whose member species contain no bilaterian (every member is a non-bilaterian metazoan or a non-metazoan outgroup). Columns: member protein count, species count, and the non-bilaterian species list.	20	integration tables
+OUTPUT_pipeline/3-output/3_ai-annogroups_X_orthogroups.tsv	yes		Table 1 — annogroups X orthogroups	data	One row per kept pfam annogroup (annogroups with at least one qualifying orthogroup: zero bilaterians and at least one non-bilaterian metazoan). Reports all of the annogroup's orthogroups grouped by the four composition classes (non_bilaterian_metazoan / non_metazoan_only / bilaterian_only / mixed_with_bilaterian) with per-class counts and ID lists, plus the annogroup's pfam accessions and definitions.	10	integration tables
+OUTPUT_pipeline/2-output/2_ai-nonbilaterian_metazoan_orthogroups.tsv	yes		Table 2 — non-bilaterian-metazoan orthogroups	data	One row per qualifying orthogroup: zero bilaterian members and at least one non-bilaterian metazoan (sponge, cnidarian, ctenophore, placozoan). Non-metazoan unicellular outgroups may ride along; unicell-only orthogroups are excluded. Columns: member protein count, species count, and the species list.	20	integration tables
 #
 # ----- Supporting: full orthogroup species-composition classification -----
-OUTPUT_pipeline/1-output/1_ai-orthogroups-species_composition.tsv	yes		Orthogroup species composition	summary	Every orthogroup classified bilaterian_only / non_bilaterian_only / mixed against the Bilateria (C103) species set, with bilaterian and non-bilaterian species counts. The shared basis for Tables 1 and 2.	30	supporting
+OUTPUT_pipeline/1-output/1_ai-orthogroups-species_composition.tsv	yes		Orthogroup species composition	summary	Every orthogroup classified into one of four composition classes (bilaterian_only / mixed_with_bilaterian / non_bilaterian_metazoan / non_metazoan_only) against the Bilateria (C103) and Metazoa (C082) clades, with bilaterian / non-bilaterian-metazoan / non-metazoan species counts. The shared basis for Tables 1 and 2.	30	supporting
 #
 # ----- QC: validation report -----
 OUTPUT_pipeline/4-output/4_ai-validation_report.txt	yes		Validation report	qc	Fail-fast validation cross-checks (composition-class validity, Table 2 count, Table 1 arithmetic and referential integrity, and the keep-rule). Status PASS means every cross-check held.	40	quality control

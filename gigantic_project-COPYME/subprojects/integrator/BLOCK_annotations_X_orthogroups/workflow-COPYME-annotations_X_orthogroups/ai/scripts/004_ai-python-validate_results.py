@@ -10,18 +10,19 @@ writes a FAIL report and exits 1 (research-integrity: a silent join artifact in
 published results is unacceptable, per AI_BEHAVIOR.md).
 
 Checks:
-  1. Composition_Class is one of {bilaterian_only, non_bilaterian_only, mixed}
-     for every orthogroup.
-  2. Table 2 row count == count of non_bilaterian_only rows in the composition
-     table, and every Table 2 orthogroup is classified non_bilaterian_only.
+  1. Composition_Class is one of the four valid classes for every orthogroup,
+     and the Qualifies flag agrees with the class.
+  2. Table 2 row count == count of non_bilaterian_metazoan rows in the
+     composition table, and every Table 2 orthogroup is classified
+     non_bilaterian_metazoan.
   3. Table 1 referential integrity: every orthogroup ID referenced in Table 1
      exists in the composition table.
   4. Table 1 internal arithmetic per row:
-       - NonBilaterian + Bilaterian + Mixed counts == Orthogroup_Count
+       - the four per-class counts sum to Orthogroup_Count
        - each per-class ID-list length == its per-class count
        - Members_With + Members_Without == Annogroup_Member_Protein_Count
   5. Table 1 keep-rule: every retained annogroup has
-     NonBilaterian_Only_Orthogroup_Count >= 1.
+     NonBilaterian_Metazoan_Orthogroup_Count >= 1.
 """
 
 import argparse
@@ -31,7 +32,8 @@ from pathlib import Path
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
 import utils_integrator as U
 
-VALID_CLASSES = { "bilaterian_only", "non_bilaterian_only", "mixed" }
+VALID_CLASSES = { "bilaterian_only", "mixed_with_bilaterian", "non_bilaterian_metazoan", "non_metazoan_only" }
+QUALIFYING_CLASS = "non_bilaterian_metazoan"
 
 
 def split_cell( cell: str ) -> list:
@@ -46,7 +48,7 @@ def main():
 
     output_base = Path( args.output_dir )
     composition_path = output_base / "1-output" / "1_ai-orthogroups-species_composition.tsv"
-    table2_path = output_base / "2-output" / "2_ai-nonbilaterian_orthogroups.tsv"
+    table2_path = output_base / "2-output" / "2_ai-nonbilaterian_metazoan_orthogroups.tsv"
     table1_path = output_base / "3-output" / "3_ai-annogroups_X_orthogroups.tsv"
 
     failures = []
@@ -58,11 +60,12 @@ def main():
 
     # ---- load composition: orthogroup -> class --------------------------------
     orthogroups___classes = {}
-    composition_non_bilaterian_count = 0
+    composition_qualifying_count = 0
     with open( composition_path, 'r' ) as input_composition:
         header_ids___indices = U.build_header_index( input_composition.readline() )
         index_og = header_ids___indices[ "Orthogroup_ID" ]
         index_class = header_ids___indices[ "Composition_Class" ]
+        index_qualifies = header_ids___indices[ "Qualifies_NonBilaterian_Metazoan" ]
         for line in input_composition:
             line = line.rstrip( '\n' )
             if not line:
@@ -70,11 +73,15 @@ def main():
             parts = line.split( '\t' )
             orthogroup_id = parts[ index_og ]
             composition_class = parts[ index_class ]
+            qualifies = parts[ index_qualifies ]
             orthogroups___classes[ orthogroup_id ] = composition_class
             if composition_class not in VALID_CLASSES:
                 failures.append( f"Check 1: orthogroup {orthogroup_id} has invalid Composition_Class '{composition_class}'" )
-            if composition_class == "non_bilaterian_only":
-                composition_non_bilaterian_count += 1
+            expected_qualifies = "yes" if composition_class == QUALIFYING_CLASS else "no"
+            if qualifies != expected_qualifies:
+                failures.append( f"Check 1: orthogroup {orthogroup_id} Qualifies='{qualifies}' disagrees with class '{composition_class}'" )
+            if composition_class == QUALIFYING_CLASS:
+                composition_qualifying_count += 1
 
     # ---- Table 2 ------------------------------------------------------------
     table2_row_count = 0
@@ -88,12 +95,12 @@ def main():
             parts = line.split( '\t' )
             table2_row_count += 1
             orthogroup_id = parts[ index_og ]
-            if orthogroups___classes.get( orthogroup_id ) != "non_bilaterian_only":
-                failures.append( f"Check 2: Table 2 orthogroup {orthogroup_id} is not classified non_bilaterian_only in composition table" )
+            if orthogroups___classes.get( orthogroup_id ) != QUALIFYING_CLASS:
+                failures.append( f"Check 2: Table 2 orthogroup {orthogroup_id} is not classified {QUALIFYING_CLASS} in composition table" )
 
-    if table2_row_count != composition_non_bilaterian_count:
+    if table2_row_count != composition_qualifying_count:
         failures.append(
-            f"Check 2: Table 2 row count ({table2_row_count}) != non_bilaterian_only count in composition table ({composition_non_bilaterian_count})"
+            f"Check 2: Table 2 row count ({table2_row_count}) != {QUALIFYING_CLASS} count in composition table ({composition_qualifying_count})"
         )
 
     # ---- Table 1 ------------------------------------------------------------
@@ -105,12 +112,14 @@ def main():
         index_with = header_ids___indices[ "Members_With_Orthogroup_Count" ]
         index_without = header_ids___indices[ "Members_Without_Orthogroup_Count" ]
         index_og_count = header_ids___indices[ "Orthogroup_Count" ]
-        index_non_count = header_ids___indices[ "NonBilaterian_Only_Orthogroup_Count" ]
+        index_qual_count = header_ids___indices[ "NonBilaterian_Metazoan_Orthogroup_Count" ]
+        index_unicell_count = header_ids___indices[ "NonMetazoan_Only_Orthogroup_Count" ]
         index_bil_count = header_ids___indices[ "Bilaterian_Only_Orthogroup_Count" ]
-        index_mixed_count = header_ids___indices[ "Mixed_Orthogroup_Count" ]
-        index_non_ids = header_ids___indices[ "NonBilaterian_Only_Orthogroup_IDs" ]
+        index_mixed_count = header_ids___indices[ "Mixed_With_Bilaterian_Orthogroup_Count" ]
+        index_qual_ids = header_ids___indices[ "NonBilaterian_Metazoan_Orthogroup_IDs" ]
+        index_unicell_ids = header_ids___indices[ "NonMetazoan_Only_Orthogroup_IDs" ]
         index_bil_ids = header_ids___indices[ "Bilaterian_Only_Orthogroup_IDs" ]
-        index_mixed_ids = header_ids___indices[ "Mixed_Orthogroup_IDs" ]
+        index_mixed_ids = header_ids___indices[ "Mixed_With_Bilaterian_Orthogroup_IDs" ]
         index_all_ids = header_ids___indices[ "All_Orthogroup_IDs" ]
 
         for line in input_table1:
@@ -121,7 +130,8 @@ def main():
             table1_row_count += 1
             annogroup_id = parts[ index_annogroup ]
 
-            non_count = int( parts[ index_non_count ] )
+            qual_count = int( parts[ index_qual_count ] )
+            unicell_count = int( parts[ index_unicell_count ] )
             bil_count = int( parts[ index_bil_count ] )
             mixed_count = int( parts[ index_mixed_count ] )
             og_count = int( parts[ index_og_count ] )
@@ -129,21 +139,23 @@ def main():
             with_count = int( parts[ index_with ] )
             without_count = int( parts[ index_without ] )
 
-            non_ids = split_cell( parts[ index_non_ids ] )
+            qual_ids = split_cell( parts[ index_qual_ids ] )
+            unicell_ids = split_cell( parts[ index_unicell_ids ] )
             bil_ids = split_cell( parts[ index_bil_ids ] )
             mixed_ids = split_cell( parts[ index_mixed_ids ] )
             all_ids = split_cell( parts[ index_all_ids ] )
 
             # Check 5: keep-rule
-            if non_count < 1:
-                failures.append( f"Check 5: annogroup {annogroup_id} retained with NonBilaterian_Only_Orthogroup_Count {non_count} (< 1)" )
+            if qual_count < 1:
+                failures.append( f"Check 5: annogroup {annogroup_id} retained with NonBilaterian_Metazoan_Orthogroup_Count {qual_count} (< 1)" )
 
             # Check 4: arithmetic
-            if non_count + bil_count + mixed_count != og_count:
-                failures.append( f"Check 4: annogroup {annogroup_id} class counts {non_count}+{bil_count}+{mixed_count} != Orthogroup_Count {og_count}" )
+            if qual_count + unicell_count + bil_count + mixed_count != og_count:
+                failures.append( f"Check 4: annogroup {annogroup_id} class counts {qual_count}+{unicell_count}+{bil_count}+{mixed_count} != Orthogroup_Count {og_count}" )
             if with_count + without_count != member_count:
                 failures.append( f"Check 4: annogroup {annogroup_id} members {with_count}+{without_count} != Member_Protein_Count {member_count}" )
-            if len( non_ids ) != non_count or len( bil_ids ) != bil_count or len( mixed_ids ) != mixed_count:
+            if ( len( qual_ids ) != qual_count or len( unicell_ids ) != unicell_count
+                 or len( bil_ids ) != bil_count or len( mixed_ids ) != mixed_count ):
                 failures.append( f"Check 4: annogroup {annogroup_id} ID-list lengths do not match per-class counts" )
             if len( all_ids ) != og_count:
                 failures.append( f"Check 4: annogroup {annogroup_id} All_Orthogroup_IDs length {len( all_ids )} != Orthogroup_Count {og_count}" )
@@ -166,10 +178,10 @@ def main():
         "",
         f"Status: {status}",
         "",
-        f"Orthogroups classified:            {len( orthogroups___classes )}",
-        f"  non_bilaterian_only:             {composition_non_bilaterian_count}",
-        f"Table 2 rows (non-bilaterian-only): {table2_row_count}",
-        f"Table 1 rows (kept annogroups):    {table1_row_count}",
+        f"Orthogroups classified:                {len( orthogroups___classes )}",
+        f"  qualifying (non_bilaterian_metazoan): {composition_qualifying_count}",
+        f"Table 2 rows (qualifying orthogroups):  {table2_row_count}",
+        f"Table 1 rows (kept annogroups):        {table1_row_count}",
         "",
         f"Failures: {len( failures )}",
     ]

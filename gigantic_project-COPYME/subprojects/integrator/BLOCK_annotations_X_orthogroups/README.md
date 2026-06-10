@@ -8,7 +8,8 @@ Scope:   BLOCK_annotations_X_orthogroups.
 # BLOCK_annotations_X_orthogroups
 
 Integrates **pfam annogroups** (annotation groups) with **orthogroups**, anchored
-on shared member proteins and focused on **non-bilaterian-only** orthogroups.
+on shared member proteins and focused on **non-bilaterian-metazoan** orthogroups
+(present in non-bilaterian metazoans, absent from bilaterians).
 
 ## Where this fits
 
@@ -22,23 +23,27 @@ on shared member proteins and focused on **non-bilaterian-only** orthogroups.
 
 1. **Table 1 — annogroups X orthogroups** (one row per annogroup). An annogroup
    is **kept** when at least one of the orthogroups its member proteins fall into
-   is **non-bilaterian-only**; annogroups whose orthogroups are all bilaterian-only
-   are dropped. Every orthogroup of a kept annogroup is reported (non-bilaterian-only,
-   bilaterian-only, and mixed) with per-class counts + ID lists + pfam
+   is **qualifying**; annogroups with no qualifying orthogroup are dropped. Every
+   orthogroup of a kept annogroup is reported, grouped by the four composition
+   classes (non_bilaterian_metazoan, non_metazoan_only, bilaterian_only,
+   mixed_with_bilaterian) with per-class counts + ID lists + pfam
    accessions/definitions.
-2. **Table 2 — non-bilaterian-only orthogroups** (one row per orthogroup): every
-   orthogroup whose member species contain no bilaterian.
+2. **Table 2 — non-bilaterian-metazoan orthogroups** (one row per orthogroup):
+   every **qualifying** orthogroup.
 
 The research question: *which pfam annotation groups are represented in
-orthogroups confined to the non-bilaterian part of the tree?*
+orthogroups present in non-bilaterian metazoans but absent from bilaterians?*
 
 ## In one sentence
 
-"Non-bilaterian" = any species **not** in the Bilateria clade (`C103_Bilateria`,
-from `trees_species`) — non-bilaterian metazoans (ctenophores, sponges, cnidarians,
-placozoans) **and** non-metazoan outgroups. The annogroup↔orthogroup link is
-shared member proteins (full GIGANTIC IDs); the integration is
-**structure-independent** (no per-structure fan-out).
+A **qualifying orthogroup** has **zero bilaterian members AND ≥1 non-bilaterian
+metazoan member** (sponge, cnidarian, ctenophore, placozoan). Non-metazoan /
+unicellular outgroup members may ride along, but an orthogroup made of *only*
+non-metazoan unicells does **not** qualify — just like any bilaterian-containing
+orthogroup. Bilateria = `C103_Bilateria` and Metazoa = `C082_Metazoa` (from
+`trees_species`); non-bilaterian metazoan = in Metazoa but not in Bilateria. The
+annogroup↔orthogroup link is shared member proteins (full GIGANTIC IDs); the
+integration is **structure-independent** (no per-structure fan-out).
 
 ## Quick start
 

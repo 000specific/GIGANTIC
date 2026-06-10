@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09 | Purpose: Build Table 1 — annogroups joined to their orthogroups, kept when they touch a non-bilaterian-only orthogroup
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09 | Purpose: Build Table 1 — annogroups joined to their orthogroups, kept when they touch a qualifying (non-bilaterian-metazoan) orthogroup
 # Human: Eric Edsinger
 
 """
@@ -7,12 +7,13 @@ Script 003 — Table 1: annogroups X orthogroups.
 
 For each pfam annogroup (subtypes from config; default single + combo), map its
 member proteins to the orthogroups they belong to (shared full GIGANTIC IDs),
-then KEEP the annogroup if at least one of its orthogroups is non_bilaterian_only.
-Annogroups whose orthogroups are all bilaterian-only (or have no non-bilaterian-only
-orthogroup at all) are dropped.
+then KEEP the annogroup if at least one of its orthogroups is QUALIFYING — class
+non_bilaterian_metazoan (zero bilaterians AND >=1 non-bilaterian metazoan).
+Annogroups with no qualifying orthogroup are dropped (this includes annogroups
+whose orthogroups are only bilaterian-containing and/or only non-metazoan-unicell).
 
-For each kept annogroup ALL of its orthogroups are reported — non_bilaterian_only,
-bilaterian_only, and mixed — with per-class counts and comma-delimited ID lists.
+For each kept annogroup ALL of its orthogroups are reported, grouped by the four
+composition classes, with per-class counts and comma-delimited ID lists.
 
 Inputs:
   - orthogroups file (headerless)        -> protein -> orthogroup map
@@ -32,6 +33,8 @@ from pathlib import Path
 
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
 import utils_integrator as U
+
+QUALIFYING_CLASS = "non_bilaterian_metazoan"
 
 
 def load_orthogroup_classes( composition_path: Path ) -> dict:
@@ -164,12 +167,14 @@ def main():
         "Members_With_Orthogroup_Count (count of member proteins that map to an orthogroup)",
         "Members_Without_Orthogroup_Count (count of member proteins that map to no orthogroup)",
         "Orthogroup_Count (number of distinct orthogroups the member proteins fall into)",
-        "NonBilaterian_Only_Orthogroup_Count (count of those orthogroups classified non_bilaterian_only)",
-        "Bilaterian_Only_Orthogroup_Count (count of those orthogroups classified bilaterian_only)",
-        "Mixed_Orthogroup_Count (count of those orthogroups classified mixed)",
-        "NonBilaterian_Only_Orthogroup_IDs (comma delimited orthogroup identifiers classified non_bilaterian_only)",
-        "Bilaterian_Only_Orthogroup_IDs (comma delimited orthogroup identifiers classified bilaterian_only)",
-        "Mixed_Orthogroup_IDs (comma delimited orthogroup identifiers classified mixed)",
+        "NonBilaterian_Metazoan_Orthogroup_Count (count of those orthogroups that are qualifying: zero bilaterians and at least one non-bilaterian metazoan)",
+        "NonMetazoan_Only_Orthogroup_Count (count of those orthogroups made of only non-metazoan unicellular outgroups)",
+        "Bilaterian_Only_Orthogroup_Count (count of those orthogroups made of only bilaterians)",
+        "Mixed_With_Bilaterian_Orthogroup_Count (count of those orthogroups that contain bilaterians plus non-bilaterian members)",
+        "NonBilaterian_Metazoan_Orthogroup_IDs (comma delimited qualifying orthogroup identifiers)",
+        "NonMetazoan_Only_Orthogroup_IDs (comma delimited non-metazoan-unicell-only orthogroup identifiers)",
+        "Bilaterian_Only_Orthogroup_IDs (comma delimited bilaterian-only orthogroup identifiers)",
+        "Mixed_With_Bilaterian_Orthogroup_IDs (comma delimited bilaterian-plus-non-bilaterian orthogroup identifiers)",
         "All_Orthogroup_IDs (comma delimited list of every distinct orthogroup the member proteins fall into)",
     ]
 
@@ -204,23 +209,26 @@ def main():
                     members_with_orthogroup += 1
                     orthogroup_ids.add( orthogroup_id )
 
-                non_bilaterian_ogs = []
-                bilaterian_ogs = []
-                mixed_ogs = []
+                non_bilaterian_metazoan_ogs = []
+                non_metazoan_only_ogs = []
+                bilaterian_only_ogs = []
+                mixed_with_bilaterian_ogs = []
                 for orthogroup_id in sorted( orthogroup_ids ):
                     composition_class = orthogroups___classes.get( orthogroup_id )
-                    if composition_class == "non_bilaterian_only":
-                        non_bilaterian_ogs.append( orthogroup_id )
+                    if composition_class == "non_bilaterian_metazoan":
+                        non_bilaterian_metazoan_ogs.append( orthogroup_id )
+                    elif composition_class == "non_metazoan_only":
+                        non_metazoan_only_ogs.append( orthogroup_id )
                     elif composition_class == "bilaterian_only":
-                        bilaterian_ogs.append( orthogroup_id )
-                    elif composition_class == "mixed":
-                        mixed_ogs.append( orthogroup_id )
+                        bilaterian_only_ogs.append( orthogroup_id )
+                    elif composition_class == "mixed_with_bilaterian":
+                        mixed_with_bilaterian_ogs.append( orthogroup_id )
                     # An orthogroup with no class would be a referential-integrity
                     # error; Script 004 validates that none slip through.
 
                 # KEEP rule (user-approved): keep iff at least one orthogroup is
-                # non_bilaterian_only. Drop all-bilaterian-only and all-mixed.
-                if len( non_bilaterian_ogs ) == 0:
+                # qualifying (non_bilaterian_metazoan). Drop everything else.
+                if len( non_bilaterian_metazoan_ogs ) == 0:
                     continue
 
                 subtype_from_summary, accessions, definitions = annogroups___annotations.get(
@@ -238,18 +246,20 @@ def main():
                     str( members_with_orthogroup ),
                     str( members_without_orthogroup ),
                     str( len( orthogroup_ids ) ),
-                    str( len( non_bilaterian_ogs ) ),
-                    str( len( bilaterian_ogs ) ),
-                    str( len( mixed_ogs ) ),
-                    U.DELIM.join( non_bilaterian_ogs ),
-                    U.DELIM.join( bilaterian_ogs ),
-                    U.DELIM.join( mixed_ogs ),
+                    str( len( non_bilaterian_metazoan_ogs ) ),
+                    str( len( non_metazoan_only_ogs ) ),
+                    str( len( bilaterian_only_ogs ) ),
+                    str( len( mixed_with_bilaterian_ogs ) ),
+                    U.DELIM.join( non_bilaterian_metazoan_ogs ),
+                    U.DELIM.join( non_metazoan_only_ogs ),
+                    U.DELIM.join( bilaterian_only_ogs ),
+                    U.DELIM.join( mixed_with_bilaterian_ogs ),
                     U.DELIM.join( all_ogs ),
                 ] ) + '\n'
                 output_table.write( output )
                 annogroup_kept += 1
 
-    print( f"[003] annogroups kept (>=1 non-bilaterian-only orthogroup): {annogroup_kept} of {annogroup_total} -> {output_table_path}" )
+    print( f"[003] annogroups kept (>=1 qualifying orthogroup): {annogroup_kept} of {annogroup_total} -> {output_table_path}" )
 
     if annogroup_total == 0:
         print( "CRITICAL ERROR: zero annogroups read — membership files appear empty", file = sys.stderr )

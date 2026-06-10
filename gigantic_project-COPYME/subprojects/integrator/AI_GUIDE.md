@@ -20,7 +20,7 @@ subprojects' outputs into integrated tables.
 - Subproject README: [`README.md`](README.md)
 - BLOCKs:
   - [`BLOCK_orthogroups_ocl_X_features/AI_GUIDE.md`](BLOCK_orthogroups_ocl_X_features/AI_GUIDE.md) — OCL orthogroups × dark/hotspot/secretome (per structure)
-  - [`BLOCK_annotations_X_orthogroups/AI_GUIDE.md`](BLOCK_annotations_X_orthogroups/AI_GUIDE.md) — pfam annogroups × orthogroups, non-bilaterian-only focus (structure-independent)
+  - [`BLOCK_annotations_X_orthogroups/AI_GUIDE.md`](BLOCK_annotations_X_orthogroups/AI_GUIDE.md) — pfam annogroups × orthogroups, non-bilaterian-metazoan focus (structure-independent)
 - Reads FROM (per `BLOCK_orthogroups_ocl_X_features`):
   - `../ocl_phylogenetic_structures/output_to_input/BLOCK_orthogroups_X_ocl/<run_label>/` (OCL orthogroup summary + path_states, per structure)
   - `../dark_proteomes/output_to_input/BLOCK_classify_dark_proteome/dark_proteome/`

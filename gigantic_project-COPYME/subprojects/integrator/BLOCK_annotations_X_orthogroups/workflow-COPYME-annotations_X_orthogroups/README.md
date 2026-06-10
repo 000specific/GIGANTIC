@@ -8,7 +8,7 @@ Scope:   workflow-COPYME-annotations_X_orthogroups.
 # Workflow: annotations_X_orthogroups
 
 Integrates **pfam annogroups** with **orthogroups**, focused on
-**non-bilaterian-only** orthogroups. Produces two tables.
+**non-bilaterian-metazoan** orthogroups. Produces two tables.
 
 ## Where this fits
 
@@ -17,35 +17,40 @@ Integrates **pfam annogroups** with **orthogroups**, focused on
 - Inputs (all from upstream `output_to_input/`, set in `START_HERE-user_config.yaml`):
   pfam annogroups (`ocl_phylogenetic_structures/BLOCK_annotations_X_ocl`),
   orthogroups (`orthogroups/BLOCK_orthohmm_GIGANTIC`),
-  Bilateria species set (`trees_species`)
+  Bilateria + Metazoa species sets (`trees_species`)
 - Outputs: `../../../output_to_input/BLOCK_annotations_X_orthogroups/<run_label>/`
 
 ## What you get
 
 - **Table 1 — annogroups X orthogroups** (`OUTPUT_pipeline/3-output/`): one row
   per **kept annogroup**. An annogroup is kept when at least one of the
-  orthogroups its member proteins fall into is **non-bilaterian-only**; annogroups
-  whose orthogroups are all bilaterian-only are dropped. All of a kept annogroup's
-  orthogroups are reported (non-bilaterian-only, bilaterian-only, and mixed), with
-  per-class counts and ID lists, plus the annogroup's pfam accessions/definitions.
-- **Table 2 — non-bilaterian-only orthogroups** (`OUTPUT_pipeline/2-output/`): one
-  row per orthogroup whose member species contain **no bilaterian** (every member
-  is a non-bilaterian metazoan or a non-metazoan outgroup).
-- **Supporting** (`OUTPUT_pipeline/1-output/`): every orthogroup classified
-  `bilaterian_only` / `non_bilaterian_only` / `mixed` (the basis for both tables).
+  orthogroups its member proteins fall into is **qualifying** (zero bilaterians
+  AND ≥1 non-bilaterian metazoan); annogroups with no qualifying orthogroup are
+  dropped. All of a kept annogroup's orthogroups are reported, grouped by the four
+  composition classes (non_bilaterian_metazoan, non_metazoan_only, bilaterian_only,
+  mixed_with_bilaterian), with per-class counts and ID lists, plus the annogroup's
+  pfam accessions/definitions.
+- **Table 2 — non-bilaterian-metazoan orthogroups** (`OUTPUT_pipeline/2-output/`):
+  one row per **qualifying** orthogroup (no bilaterians, ≥1 non-bilaterian
+  metazoan; non-metazoan unicells may ride along).
+- **Supporting** (`OUTPUT_pipeline/1-output/`): every orthogroup classified into
+  one of the four composition classes (the basis for both tables).
 
 The research question: *which pfam annotation groups are represented in
-orthogroups confined to the non-bilaterian part of the tree?*
+orthogroups present in non-bilaterian metazoans but absent from bilaterians?*
 
 ## Join model
 
 The annogroup↔orthogroup link is **shared member proteins** (full GIGANTIC IDs).
 Each protein belongs to exactly one annogroup (a clean single+combo partition) and
-at most one orthogroup. "Non-bilaterian" = any species **not** in the Bilateria
-clade (`C103_Bilateria`) — non-bilaterian metazoans AND non-metazoan outgroups.
-This is a **structure-independent** integration (annogroup membership, orthogroup
-membership, and the Bilateria species set are all invariant across the 105
-species-tree structures), so there is no per-structure fan-out.
+at most one orthogroup. Member species are split three ways using two
+`trees_species` clades (Bilateria `C103` ⊂ Metazoa `C082`): **bilaterian** (in
+Bilateria), **non-bilaterian metazoan** (in Metazoa, not Bilateria), **non-metazoan**
+(not in Metazoa; unicellular outgroups). A **qualifying** orthogroup has zero
+bilaterians and ≥1 non-bilaterian metazoan. This is a **structure-independent**
+integration (annogroup membership, orthogroup membership, and the clade species
+sets are all invariant across the 105 species-tree structures), so there is no
+per-structure fan-out.
 
 ## Quick start
 
@@ -53,7 +58,7 @@ species-tree structures), so there is no per-structure fan-out.
 cd workflow-COPYME-annotations_X_orthogroups   # (copy to workflow-RUN_N for a real run)
 # 1. Edit START_HERE-user_config.yaml: run_label, species_set_name,
 #    annogroup_subtypes, execution_mode (+ slurm_account/slurm_qos if slurm),
-#    input paths, bilateria_clade_id_name
+#    input paths, bilateria_clade_id_name + metazoa_clade_id_name
 # 2. Run:
 bash RUN-workflow.sh
 ```
@@ -65,9 +70,9 @@ bash RUN-workflow.sh
 | In | `inputs.annogroups_dir/<reference_structure>/1_ai-*-annogroups-{single,combo}.tsv` | annogroup member `Sequence_IDs` |
 | In | `inputs.annogroups_dir/<reference_structure>/4_ai-*-complete_ocl_summary-all_types.tsv` | pfam accessions/definitions |
 | In | `inputs.orthogroups_file` | headerless orthogroup membership |
-| In | `inputs.bilateria_clade_species_mappings` (+ `bilateria_clade_id_name`) | Bilateria species set |
+| In | `inputs.clade_species_mappings` (+ `bilateria_clade_id_name`, `metazoa_clade_id_name`) | Bilateria + Metazoa species sets |
 | Out | `OUTPUT_pipeline/1-output/1_ai-orthogroups-species_composition.tsv` | all orthogroups classified |
-| Out | `OUTPUT_pipeline/2-output/2_ai-nonbilaterian_orthogroups.tsv` | Table 2 |
+| Out | `OUTPUT_pipeline/2-output/2_ai-nonbilaterian_metazoan_orthogroups.tsv` | Table 2 |
 | Out | `OUTPUT_pipeline/3-output/3_ai-annogroups_X_orthogroups.tsv` | Table 1 |
 | Out | `OUTPUT_pipeline/4-output/4_ai-validation_report.txt` | fail-fast validation (§36) |
 

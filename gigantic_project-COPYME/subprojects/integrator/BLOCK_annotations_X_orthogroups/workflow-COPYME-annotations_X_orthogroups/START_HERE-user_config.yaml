@@ -14,12 +14,18 @@
 # Human: Eric Edsinger
 #
 # Integrates pfam ANNOGROUPS (annotation groups) with ORTHOGROUPS, focused on
-# non-bilaterian-only orthogroups. Produces two tables:
+# orthogroups present in non-bilaterian metazoans but absent from bilaterians.
+#
+# A QUALIFYING orthogroup has ZERO bilaterian members AND at least one
+# non-bilaterian metazoan member (non-metazoan / unicellular outgroup members are
+# allowed to ride along; orthogroups made of only non-metazoan unicells do NOT
+# qualify, just like bilaterian-containing orthogroups).
+#
+# Produces two tables:
 #   Table 1 (one row per annogroup): annogroups that include at least one
-#           non-bilaterian-only orthogroup are kept (annogroups whose orthogroups
-#           are all bilaterian-only are dropped); all orthogroups of a kept
-#           annogroup are reported regardless of their composition.
-#   Table 2 (one row per orthogroup): non-bilaterian-only orthogroups.
+#           qualifying orthogroup are kept; all orthogroups of a kept annogroup
+#           are reported regardless of their composition.
+#   Table 2 (one row per orthogroup): qualifying orthogroups.
 #
 # The annogroup<->orthogroup link is SHARED MEMBER PROTEINS (full GIGANTIC IDs).
 # This is a structure-independent integration (no per-structure fan-out):
@@ -64,17 +70,24 @@ inputs:
   # member full GIGANTIC IDs. Each member's species comes from its -n_<phyloname>.
   orthogroups_file: "../../../orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv"
 
-  # Bilateria species set (from trees_species). A clade_id_name resolves to its
-  # descendant species; "non-bilaterian" = every species70 species NOT under it.
-  bilateria_clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
+  # Clade species sets (from trees_species). A clade_id_name resolves to its
+  # descendant species. Two clades drive the species 3-way classification:
+  #   - Bilateria (C103): bilaterian species
+  #   - Metazoa   (C082): all metazoan species
+  # => non-bilaterian metazoan = in Metazoa but NOT in Bilateria
+  #    non-metazoan (unicell outgroup) = NOT in Metazoa
+  # A qualifying orthogroup has ZERO bilaterians AND >=1 non-bilaterian metazoan
+  # (non-metazoan members allowed; unicell-only orthogroups do NOT qualify).
+  clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
   bilateria_clade_id_name: "C103_Bilateria"
-  bilateria_reference_structure: "structure_001"
+  metazoa_clade_id_name: "C082_Metazoa"
+  clade_reference_structure: "structure_001"
 
 # Output configuration
 output:
   # Main output directory (relative to this workflow directory).
   #   OUTPUT_pipeline/1-output/  orthogroup species-composition classification
-  #   OUTPUT_pipeline/2-output/  Table 2 (non-bilaterian-only orthogroups)
+  #   OUTPUT_pipeline/2-output/  Table 2 (qualifying non-bilaterian-metazoan orthogroups)
   #   OUTPUT_pipeline/3-output/  Table 1 (annogroups X orthogroups)
   #   OUTPUT_pipeline/4-output/  validation report
   base_dir: "OUTPUT_pipeline"

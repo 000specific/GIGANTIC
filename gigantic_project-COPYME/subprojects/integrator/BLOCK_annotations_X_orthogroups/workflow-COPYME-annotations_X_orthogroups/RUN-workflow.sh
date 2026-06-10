@@ -7,7 +7,7 @@
 ################################################################################
 #
 # PURPOSE:
-# Integrate pfam ANNOGROUPS with ORTHOGROUPS, focused on non-bilaterian-only
+# Integrate pfam ANNOGROUPS with ORTHOGROUPS, focused on non-bilaterian-metazoan
 # orthogroups. The annogroup<->orthogroup link is shared member proteins
 # (full GIGANTIC IDs). Structure-independent — a handful of singleton processes,
 # no per-structure fan-out.
@@ -34,7 +34,7 @@
 # 1. Creates (or reuses) per-BLOCK conda env from ai/conda_environment.yml
 # 2. Runs the pipeline:
 #    001: classify orthogroups by species composition  (1-output)
-#    002: non-bilaterian-only orthogroups              (Table 2, 2-output)
+#    002: qualifying (non-bilaterian-metazoan) orthogroups (Table 2, 2-output)
 #    003: annogroup x orthogroups                      (Table 1, 3-output)
 #    004: validate results (strict fail-fast)
 #    005: write run log
@@ -42,7 +42,7 @@
 #
 # OUTPUT:
 #   OUTPUT_pipeline/1-output/   orthogroup species-composition classification
-#   OUTPUT_pipeline/2-output/   Table 2 (non-bilaterian-only orthogroups)
+#   OUTPUT_pipeline/2-output/   Table 2 (qualifying non-bilaterian-metazoan orthogroups)
 #   OUTPUT_pipeline/3-output/   Table 1 (annogroups X orthogroups)
 #   OUTPUT_pipeline/4-output/   validation report
 #   ../../output_to_input/BLOCK_annotations_X_orthogroups/<run_label>/
@@ -254,7 +254,7 @@ done
 
 declare -A TABLE_MAP=(
     ["1-output/1_ai-orthogroups-species_composition.tsv"]="1_ai-orthogroups-species_composition.tsv"
-    ["2-output/2_ai-nonbilaterian_orthogroups.tsv"]="2_ai-nonbilaterian_orthogroups.tsv"
+    ["2-output/2_ai-nonbilaterian_metazoan_orthogroups.tsv"]="2_ai-nonbilaterian_metazoan_orthogroups.tsv"
     ["3-output/3_ai-annogroups_X_orthogroups.tsv"]="3_ai-annogroups_X_orthogroups.tsv"
 )
 for src_rel in "${!TABLE_MAP[@]}"; do
@@ -282,7 +282,7 @@ cat > "${SUMMARY_FILE}" <<EOF
 
 ## Outputs (real files)
 - \`OUTPUT_pipeline/1-output/\`   orthogroup species-composition classification
-- \`OUTPUT_pipeline/2-output/\`   Table 2 (non-bilaterian-only orthogroups)
+- \`OUTPUT_pipeline/2-output/\`   Table 2 (qualifying non-bilaterian-metazoan orthogroups)
 - \`OUTPUT_pipeline/3-output/\`   Table 1 (annogroups X orthogroups)
 - \`OUTPUT_pipeline/4-output/\`   validation report
 EOF
