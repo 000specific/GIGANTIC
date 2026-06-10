@@ -1,0 +1,35 @@
+# GIGANTIC integrator - BLOCK_orthogroups_ocl_X_features environment
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 04
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_orthogroups_ocl_X_features.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# Pure-Python integration BLOCK (no external aligners/search tools) — it
+# joins OCL orthogroup tables with per-gene dark / hotspot / secretome
+# feature tables. Dependencies are intentionally minimal.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-integrator-orthogroups_ocl_X_features
+
+name: aiG-integrator-orthogroups_ocl_X_features
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows (see reference_nextflow_version_pin)
+
+  # Configuration parsing
+  - pyyaml

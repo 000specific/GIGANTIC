@@ -212,6 +212,27 @@ The primary downstream file is `4_ai-{structure}_annogroups-complete_ocl_summary
 which provides per-annogroup origin, block-state counts, and species composition across all
 subtypes. Per-subtype summaries are also available for focused analysis.
 
+### Exposed in `output_to_input/BLOCK_annotations_X_ocl/{run_label}/structure_NNN/`
+
+| File | Carries | Notes |
+|------|---------|-------|
+| `4_ai-{structure}_annogroups-complete_ocl_summary-all_types.tsv` | per-annogroup origin, OCL block-state counts, species composition, annotation accessions/definitions | the OCL spine; does **not** carry member `Sequence_IDs` |
+| `1_ai-{structure}_annogroups-single.tsv` | per-annogroup member `Sequence_IDs` (single subtype) | annogroup membership; **structure-invariant** (annotation-derived) |
+| `1_ai-{structure}_annogroups-combo.tsv` | per-annogroup member `Sequence_IDs` (combo subtype) | annogroup membership; **structure-invariant** |
+
+The membership files (added 2026-06-09) are exposed because the OCL summary lacks
+the per-protein member IDs needed for cross-feature joins. Because annogroup
+membership does not depend on tree topology, a consumer needs only one structure's
+copy (e.g. `structure_001`).
+
+### Downstream consumers (per §40)
+
+- **`integrator/BLOCK_annotations_X_orthogroups`** — joins the annogroup membership
+  `Sequence_IDs` (single + combo) against orthogroup membership to find annogroups
+  touching non-bilaterian-only orthogroups. Reads the `1_ai-...annogroups-{single,combo}.tsv`
+  membership files exposed above (and the all-types summary for pfam
+  accessions/definitions). See `../../integrator/BLOCK_annotations_X_orthogroups/AI_GUIDE.md`.
+
 ---
 
 ## Troubleshooting

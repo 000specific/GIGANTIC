@@ -1,0 +1,103 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+#
+# GIGANTIC integrator - BLOCK_orthogroups_ocl_X_features
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 04
+# Human: Eric Edsinger
+#
+# Integrates OCL orthogroup analysis (per phylogenetic species-tree structure)
+# with three per-gene feature sources: dark proteome, hotspots, secretome.
+# The OCL orthogroup summary is the spine; each orthogroup's member sequence
+# IDs are the bridge to the per-gene feature tables.
+
+# Run identification
+# run_label names the output_to_input subdirectory for this integration run.
+# Convention: mirror the OCL run_label being integrated so provenance is clear.
+run_label: "species70_X_OrthoHMM"
+
+# Species set identifier (must match the upstream OCL + feature subprojects)
+species_set_name: "species70"
+
+# Input paths (relative to this workflow directory)
+inputs:
+  # Structure manifest: which tree structures to integrate (one structure_id
+  # per line, e.g. "001" ... "105"). Must be a subset of the structures the
+  # upstream OCL run produced.
+  structure_manifest: "INPUT_user/structure_manifest.tsv"
+
+  # OCL orthogroups (the spine). Points at a specific run_label subdir of
+  # ocl_phylogenetic_structures/BLOCK_orthogroups_X_ocl/output_to_input/.
+  # Each structure_NNN/ subdir holds:
+  #   4_ai-orthogroups-complete_ocl_summary.tsv   (orthogroup OCL + Sequence_IDs)
+  #   4_ai-path_states-per_orthogroup_per_species.tsv  (per-block states; table 2)
+  ocl_orthogroups_dir: "../../../ocl_phylogenetic_structures/output_to_input/BLOCK_orthogroups_X_ocl/species70_X_OrthoHMM"
+
+  # dark_proteome: per-species DARK/ANNOTATED classification
+  dark_proteome_dir: "../../../dark_proteomes/output_to_input/BLOCK_classify_dark_proteome/dark_proteome"
+
+  # hotspots: per-species hotspot tables (member gene IDs per hotspot)
+  hotspots_dir: "../../../hotspots/output_to_input/BLOCK_identify_hotspots/hotspots"
+
+  # secretome (filtered membership): per-species filtered secretome tables
+  secretome_filtered_dir: "../../../secretome/output_to_input/STEP_2-filter_secretome"
+
+  # secretome (evidence): per-species wide evidence tables (SignalP / DeepLoc /
+  # Pfam columns) used to attach evidence columns to the gene-level drill-down.
+  secretome_evidence_dir: "../../../secretome/output_to_input/BLOCK_secretome_evidence_table"
+
+# Output configuration
+output:
+  # Main output directory (relative to this workflow directory).
+  # Shared (structure-invariant) feature lookup: OUTPUT_pipeline/_shared/1-output/
+  # Per-structure tables:                        OUTPUT_pipeline/structure_NNN/2-output/ .. 5-output/
+  base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# Used by SLURM (job resources) when execution_mode is "slurm". Integration is
+# light, mostly-serial Python (dict joins); defaults fit a 105-structure
+# species70 run.
+
+cpus: 3
+memory_gb: 20
+time_hours: 8
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the NextFlow driver).
+#   "local" - Run directly on this machine
+#   "slurm" - Self-submit as a SLURM job (driver runs on a compute node)
+
+execution_mode: "slurm"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Parallelism Mode
+# =============================================================================
+# How NextFlow dispatches the per-structure tasks (composes with execution_mode).
+#   "local" - all per-structure tasks run in parallel within this process
+#             (best for many short tasks — default; integration is seconds/task)
+#   "slurm" - each per-structure task submits as its own SLURM job
+
+parallelism_mode: "local"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# false (default) re-runs every task from scratch — safer for reproducibility.
+# true re-uses cached results for unchanged tasks (partial-failure recovery).
+
+resume: false

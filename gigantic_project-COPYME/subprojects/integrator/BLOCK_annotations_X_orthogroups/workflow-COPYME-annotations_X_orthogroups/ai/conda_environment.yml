@@ -1,0 +1,36 @@
+# GIGANTIC integrator - BLOCK_annotations_X_orthogroups environment
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_annotations_X_orthogroups.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# Pure-Python integration BLOCK (no external aligners/search tools) — it
+# joins pfam annogroup membership with orthogroup membership and classifies
+# orthogroups by bilaterian / non-bilaterian species composition.
+# Dependencies are intentionally minimal.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-integrator-annotations_X_orthogroups
+
+name: aiG-integrator-annotations_X_orthogroups
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows (see reference_nextflow_version_pin)
+
+  # Configuration parsing
+  - pyyaml

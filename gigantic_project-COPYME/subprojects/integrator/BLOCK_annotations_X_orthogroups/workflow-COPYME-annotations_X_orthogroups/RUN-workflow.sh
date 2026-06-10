@@ -1,0 +1,299 @@
+#!/bin/bash
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09 | Purpose: Run annotations_X_orthogroups integration (local or SLURM via config)
+# Human: Eric Edsinger
+
+################################################################################
+# GIGANTIC integrator - BLOCK_annotations_X_orthogroups
+################################################################################
+#
+# PURPOSE:
+# Integrate pfam ANNOGROUPS with ORTHOGROUPS, focused on non-bilaterian-only
+# orthogroups. The annogroup<->orthogroup link is shared member proteins
+# (full GIGANTIC IDs). Structure-independent — a handful of singleton processes,
+# no per-structure fan-out.
+#
+# USAGE:
+#   bash RUN-workflow.sh
+#
+# BEFORE RUNNING:
+# 1. Edit START_HERE-user_config.yaml:
+#    - run_label (e.g. "species70_pfam_X_OrthoHMM")
+#    - species_set_name (e.g. "species70")
+#    - annogroup_subtypes (default: single, combo — 'zero' excluded)
+#    - execution_mode ("local" or "slurm"); if slurm, slurm_account + slurm_qos
+#    - input paths (annogroups_dir, orthogroups_file, bilateria clade mapping)
+# 2. Verify upstream output_to_input/ are populated:
+#    - ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl/<run_label>/<structure>/
+#         (must expose 1_ai-<structure>_annogroups-single.tsv,
+#          1_ai-<structure>_annogroups-combo.tsv,
+#          4_ai-<structure>_annogroups-complete_ocl_summary-all_types.tsv)
+#    - orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv
+#    - trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/
+#
+# WHAT THIS DOES:
+# 1. Creates (or reuses) per-BLOCK conda env from ai/conda_environment.yml
+# 2. Runs the pipeline:
+#    001: classify orthogroups by species composition  (1-output)
+#    002: non-bilaterian-only orthogroups              (Table 2, 2-output)
+#    003: annogroup x orthogroups                      (Table 1, 3-output)
+#    004: validate results (strict fail-fast)
+#    005: write run log
+# 3. Creates output_to_input symlinks for downstream consumers
+#
+# OUTPUT:
+#   OUTPUT_pipeline/1-output/   orthogroup species-composition classification
+#   OUTPUT_pipeline/2-output/   Table 2 (non-bilaterian-only orthogroups)
+#   OUTPUT_pipeline/3-output/   Table 1 (annogroups X orthogroups)
+#   OUTPUT_pipeline/4-output/   validation report
+#   ../../output_to_input/BLOCK_annotations_X_orthogroups/<run_label>/
+################################################################################
+
+echo "========================================================================"
+echo "GIGANTIC integrator - annotations_X_orthogroups"
+echo "========================================================================"
+echo ""
+echo "Started: $(date)"
+echo ""
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "${SCRIPT_DIR}"
+
+# ============================================================================
+# Read flat YAML keys (no Python dependency)
+# ============================================================================
+read_config() {
+    local value=$(grep "^${1}:" START_HERE-user_config.yaml 2>/dev/null | head -1 | sed 's/^[^:]*: *//' | sed 's/^"//;s/"$//')
+    echo "${value:-$2}"
+}
+
+EXECUTION_MODE=$(read_config "execution_mode" "local")
+RUN_LABEL=$(read_config "run_label" "")
+SPECIES_SET=$(read_config "species_set_name" "")
+
+# ============================================================================
+# RUN_SUMMARY.md placeholder (so status is visible immediately on submit)
+# ============================================================================
+SUMMARY_FILE="RUN_SUMMARY.md"
+WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
+
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    STATUS_EMOJI="⏳"; STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
+    STATUS_NOTE="Waiting for SLURM to schedule the job. This file updates to IN PROGRESS when it starts and to a final summary on completion."
+else
+    STATUS_EMOJI="🔄"; STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
+    STATUS_NOTE="This run is currently executing. On success the final block below is replaced with a SUCCESS summary."
+fi
+
+cat > "${SUMMARY_FILE}" <<EOF
+# Workflow Run Summary: ${RUN_LABEL}
+
+**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
+
+**Run label**: \`${RUN_LABEL}\`
+**Species set**: \`${SPECIES_SET}\`
+**Execution mode**: ${EXECUTION_MODE}
+
+${STATUS_NOTE}
+EOF
+cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
+
+# ============================================================================
+# SLURM self-submission (if execution_mode=slurm and not already in a job)
+# ============================================================================
+if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
+    echo "Execution mode: SLURM (submitting job)"
+    echo ""
+    SLURM_CPUS=$(read_config "cpus" "3")
+    SLURM_MEM=$(read_config "memory_gb" "20")
+    SLURM_TIME=$(read_config "time_hours" "4")
+    SLURM_ACCOUNT=$(read_config "slurm_account" "")
+    SLURM_QOS=$(read_config "slurm_qos" "")
+
+    mkdir -p slurm_logs
+    SBATCH_ARGS="--job-name=integrator_annotations_X_orthogroups"
+    SBATCH_ARGS="${SBATCH_ARGS} --cpus-per-task=${SLURM_CPUS}"
+    SBATCH_ARGS="${SBATCH_ARGS} --mem=${SLURM_MEM}gb"
+    SBATCH_ARGS="${SBATCH_ARGS} --time=${SLURM_TIME}:00:00"
+    SBATCH_ARGS="${SBATCH_ARGS} --output=slurm_logs/integrator_annotations_X_orthogroups-%j.log"
+    [ -n "${SLURM_ACCOUNT}" ] && SBATCH_ARGS="${SBATCH_ARGS} --account=${SLURM_ACCOUNT}"
+    [ -n "${SLURM_QOS}" ] && SBATCH_ARGS="${SBATCH_ARGS} --qos=${SLURM_QOS}"
+
+    echo "Submitting with: sbatch ${SBATCH_ARGS}"
+    sbatch ${SBATCH_ARGS} --wrap="bash $(realpath $0)"
+    echo ""
+    echo "Job submitted. Check slurm_logs/ for output."
+    exit 0
+fi
+
+if [ -n "${SLURM_JOB_ID}" ]; then
+    echo "Running inside SLURM job ${SLURM_JOB_ID}"
+else
+    echo "Execution mode: local"
+fi
+echo ""
+
+# ============================================================================
+# Activate conda env (on-demand creation)
+# ============================================================================
+ENV_NAME="aiG-integrator-annotations_X_orthogroups"
+ENV_YML="ai/conda_environment.yml"
+
+module load conda 2>/dev/null || true
+
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found!"
+    echo "On HPC (HiPerGator): module load conda"
+    exit 1
+fi
+
+if ! conda env list 2>/dev/null | grep -q "^${ENV_NAME} "; then
+    echo "Environment '${ENV_NAME}' not found. Creating on-demand..."
+    if [ ! -f "${ENV_YML}" ]; then
+        echo "ERROR: Environment spec not found at: ${ENV_YML}"
+        exit 1
+    fi
+    if command -v mamba &> /dev/null; then
+        mamba env create -f "${ENV_YML}" -y; CREATE_EXIT=$?
+    else
+        conda env create -f "${ENV_YML}" -y; CREATE_EXIT=$?
+    fi
+    if [ $CREATE_EXIT -ne 0 ]; then
+        echo "ERROR: Failed to create conda environment '${ENV_NAME}' (exit ${CREATE_EXIT})"
+        echo "If a partial env was left behind: mamba env remove -n ${ENV_NAME} -y"
+        exit 1
+    fi
+    echo "Environment '${ENV_NAME}' created."
+    echo ""
+fi
+
+if conda activate "${ENV_NAME}" 2>/dev/null; then
+    echo "Activated conda environment: ${ENV_NAME}"
+else
+    echo "WARNING: Could not activate '${ENV_NAME}'. Continuing with current environment."
+fi
+
+if ! command -v nextflow &> /dev/null; then
+    echo "NextFlow not found in conda env. Trying system module..."
+    module load nextflow 2>/dev/null || true
+    if ! command -v nextflow &> /dev/null; then
+        echo "ERROR: NextFlow not available! Install in env or 'module load nextflow'."
+        exit 1
+    fi
+    echo "Using NextFlow from system module"
+else
+    echo "NextFlow available"
+fi
+echo ""
+
+# ============================================================================
+# Validate prerequisites
+# ============================================================================
+echo "Validating prerequisites..."
+[ -f "START_HERE-user_config.yaml" ] || { echo "ERROR: START_HERE-user_config.yaml not found!"; exit 1; }
+echo "  [OK] Configuration file found"
+echo ""
+echo "Configuration:"
+echo "  Run Label   : ${RUN_LABEL}"
+echo "  Species Set : ${SPECIES_SET}"
+echo ""
+
+# ============================================================================
+# Run NextFlow pipeline
+# ============================================================================
+echo "Running NextFlow pipeline..."
+echo ""
+
+RESUME=$(read_config "resume" "false")
+RESUME_FLAG=""
+if [ "${RESUME}" == "true" ]; then
+    RESUME_FLAG="-resume"
+    echo "  resume: enabled (using NextFlow work/ cache)"
+fi
+
+PARALLELISM_MODE=$(read_config "parallelism_mode" "local")
+case "${PARALLELISM_MODE}" in
+    slurm) PROFILE_FLAG="-profile standard" ;;
+    local) PROFILE_FLAG="-profile local" ;;
+    *)
+        echo "ERROR: unknown parallelism_mode: '${PARALLELISM_MODE}' (valid: 'slurm' | 'local')"
+        exit 1
+        ;;
+esac
+echo "  parallelism_mode: ${PARALLELISM_MODE} (nextflow ${PROFILE_FLAG})"
+
+# Universal GIGANTIC YAML->params pattern: pass the YAML directly via
+# -params-file (NextFlow loads it natively, populating params.X.Y.Z).
+nextflow run ai/main.nf ${RESUME_FLAG} ${PROFILE_FLAG} \
+    -params-file START_HERE-user_config.yaml
+
+EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "========================================================================"
+    echo "FAILED! Pipeline exited with code ${EXIT_CODE}"
+    echo "========================================================================"
+    exit $EXIT_CODE
+fi
+
+# ============================================================================
+# Create symlinks for output_to_input (downstream consumers)
+# ============================================================================
+# Real files live in OUTPUT_pipeline/{1,2,3}-output/. Expose the two integration
+# tables (+ the orthogroup composition table for context) under a
+# run_label-namespaced subdir so downstream paths are stable.
+echo ""
+echo "Creating symlinks for downstream consumers..."
+
+SHARED_DIR="../../output_to_input/BLOCK_annotations_X_orthogroups/${RUN_LABEL}"
+mkdir -p "${SHARED_DIR}"
+
+# Remove stale table symlinks from previous runs
+for old in "${SHARED_DIR}"/*.tsv; do
+    [ -L "$old" ] && rm -f "$old"
+done
+
+declare -A TABLE_MAP=(
+    ["1-output/1_ai-orthogroups-species_composition.tsv"]="1_ai-orthogroups-species_composition.tsv"
+    ["2-output/2_ai-nonbilaterian_orthogroups.tsv"]="2_ai-nonbilaterian_orthogroups.tsv"
+    ["3-output/3_ai-annogroups_X_orthogroups.tsv"]="3_ai-annogroups_X_orthogroups.tsv"
+)
+for src_rel in "${!TABLE_MAP[@]}"; do
+    clean_name="${TABLE_MAP[$src_rel]}"
+    if [ -f "OUTPUT_pipeline/${src_rel}" ]; then
+        ln -sf "../../../BLOCK_annotations_X_orthogroups/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${src_rel}" \
+            "${SHARED_DIR}/${clean_name}"
+    fi
+done
+
+SYMLINK_COUNT=$(find "${SHARED_DIR}" -name "*.tsv" -type l 2>/dev/null | wc -l)
+echo "  output_to_input/BLOCK_annotations_X_orthogroups/${RUN_LABEL}/ -> ${SYMLINK_COUNT} symlinks created"
+
+# ============================================================================
+# Final RUN_SUMMARY.md (SUCCESS)
+# ============================================================================
+cat > "${SUMMARY_FILE}" <<EOF
+# Workflow Run Summary: ${RUN_LABEL}
+
+**Status**: ✅ **SUCCESS (completed $(date '+%Y-%m-%d %H:%M:%S'))**
+
+**Run label**: \`${RUN_LABEL}\`
+**Species set**: \`${SPECIES_SET}\`
+**Downstream symlinks**: ${SYMLINK_COUNT} (in ../../output_to_input/BLOCK_annotations_X_orthogroups/${RUN_LABEL}/)
+
+## Outputs (real files)
+- \`OUTPUT_pipeline/1-output/\`   orthogroup species-composition classification
+- \`OUTPUT_pipeline/2-output/\`   Table 2 (non-bilaterian-only orthogroups)
+- \`OUTPUT_pipeline/3-output/\`   Table 1 (annogroups X orthogroups)
+- \`OUTPUT_pipeline/4-output/\`   validation report
+EOF
+cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
+
+echo ""
+echo "========================================================================"
+echo "SUCCESS! Integration complete."
+echo "  Run Label: ${RUN_LABEL}"
+echo "  Downstream: ../../output_to_input/BLOCK_annotations_X_orthogroups/${RUN_LABEL}/"
+echo "========================================================================"
+echo "Completed: $(date)"
+
+conda deactivate 2>/dev/null || true

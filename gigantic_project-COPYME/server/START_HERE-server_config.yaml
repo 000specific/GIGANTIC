@@ -59,6 +59,7 @@ subproject_order:
   - gene_sizes
   - homolog_counts
   - hotspots
+  - integrator
   - leonid_requests
   - ocl_phylogenetic_structures
   - orthogroups

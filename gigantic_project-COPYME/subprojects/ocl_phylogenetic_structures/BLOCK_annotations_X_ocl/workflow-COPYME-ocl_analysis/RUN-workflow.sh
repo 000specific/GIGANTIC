@@ -391,7 +391,14 @@ for old_link in "${SHARED_DIR}"/structure_*; do
 done
 
 # Create symlinks for each structure directory
-# Primary downstream file is the all-types integrated summary
+# Primary downstream file is the all-types integrated summary.
+#
+# Also expose the annogroup MEMBERSHIP files (single + combo) from 1-output.
+# These carry per-annogroup member Sequence_IDs, which the OCL all-types summary
+# does NOT. Annogroup membership is structure-invariant (it is annotation-derived,
+# not topology-derived), so any structure's copy is equivalent; we expose every
+# structure for uniformity. Downstream consumer: integrator/BLOCK_annotations_X_orthogroups
+# joins these member IDs against orthogroup membership (added 2026-06-09).
 for structure_dir in OUTPUT_pipeline/structure_*; do
     if [ -d "$structure_dir" ]; then
         structure_name=$(basename "$structure_dir")
@@ -406,6 +413,16 @@ for structure_dir in OUTPUT_pipeline/structure_*; do
             ln -sf "../../../../BLOCK_annotations_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv" \
                 "${SHARED_DIR}/${structure_name}/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv"
         fi
+
+        # Annogroup membership (single + combo): per-annogroup member Sequence_IDs.
+        for subtype in single combo; do
+            membership_file="${structure_dir}/1-output/1_ai-${structure_name}_annogroups-${subtype}.tsv"
+            if [ -f "$membership_file" ]; then
+                mkdir -p "${SHARED_DIR}/${structure_name}"
+                ln -sf "../../../../BLOCK_annotations_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/1-output/1_ai-${structure_name}_annogroups-${subtype}.tsv" \
+                    "${SHARED_DIR}/${structure_name}/1_ai-${structure_name}_annogroups-${subtype}.tsv"
+            fi
+        done
     fi
 done
 

@@ -1,0 +1,123 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+#
+# GIGANTIC integrator - BLOCK_annotations_X_orthogroups
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09
+# Human: Eric Edsinger
+#
+# Integrates pfam ANNOGROUPS (annotation groups) with ORTHOGROUPS, focused on
+# non-bilaterian-only orthogroups. Produces two tables:
+#   Table 1 (one row per annogroup): annogroups that include at least one
+#           non-bilaterian-only orthogroup are kept (annogroups whose orthogroups
+#           are all bilaterian-only are dropped); all orthogroups of a kept
+#           annogroup are reported regardless of their composition.
+#   Table 2 (one row per orthogroup): non-bilaterian-only orthogroups.
+#
+# The annogroup<->orthogroup link is SHARED MEMBER PROTEINS (full GIGANTIC IDs).
+# This is a structure-independent integration (no per-structure fan-out):
+# annogroup membership, orthogroup membership, and the Bilateria species set are
+# all invariant across the 105 species-tree structures.
+
+# Run identification
+# run_label names the output_to_input subdirectory for this integration run.
+# Convention: mirror the annotation database + orthogroup tool being integrated.
+run_label: "species70_pfam_X_OrthoHMM"
+
+# Species set identifier (must match the upstream annogroup + orthogroup subprojects)
+species_set_name: "species70"
+
+# Annotation database the annogroups were built from (provenance label only;
+# the actual files are pointed at by inputs.annogroups_dir below).
+annotation_database: "pfam"
+
+# Annogroup subtypes to include. 'zero' (unannotated proteins) is intentionally
+# excluded by default. Each listed subtype must have a membership file exposed in
+# inputs.annogroups_dir/<reference_structure>/1_ai-<structure>_annogroups-<subtype>.tsv
+annogroup_subtypes:
+  - "single"
+  - "combo"
+
+# Input paths (relative to this workflow directory)
+inputs:
+  # Annogroups (the Table 1 spine). A run_label subdir of the OCL annotations
+  # block's output_to_input. Each structure_NNN/ subdir exposes:
+  #   1_ai-<structure>_annogroups-single.tsv   (member Sequence_IDs; single subtype)
+  #   1_ai-<structure>_annogroups-combo.tsv    (member Sequence_IDs; combo subtype)
+  #   4_ai-<structure>_annogroups-complete_ocl_summary-all_types.tsv
+  #       (pfam Annotation_Accessions + Annotation_Definitions per annogroup)
+  # Annogroup membership is structure-invariant, so reference_structure picks ONE.
+  annogroups_dir: "../../../ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl/species70_pfam"
+
+  # Which structure's annogroup membership/summary to read (membership is
+  # structure-invariant; structure_001 is the user-provided input species tree).
+  reference_structure: "structure_001"
+
+  # Orthogroups (the Table 2 spine). Headerless TSV: OG_ID then tab-delimited
+  # member full GIGANTIC IDs. Each member's species comes from its -n_<phyloname>.
+  orthogroups_file: "../../../orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv"
+
+  # Bilateria species set (from trees_species). A clade_id_name resolves to its
+  # descendant species; "non-bilaterian" = every species70 species NOT under it.
+  bilateria_clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
+  bilateria_clade_id_name: "C103_Bilateria"
+  bilateria_reference_structure: "structure_001"
+
+# Output configuration
+output:
+  # Main output directory (relative to this workflow directory).
+  #   OUTPUT_pipeline/1-output/  orthogroup species-composition classification
+  #   OUTPUT_pipeline/2-output/  Table 2 (non-bilaterian-only orthogroups)
+  #   OUTPUT_pipeline/3-output/  Table 1 (annogroups X orthogroups)
+  #   OUTPUT_pipeline/4-output/  validation report
+  base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# Used by SLURM (job resources) when execution_mode is "slurm". This is light,
+# mostly-serial Python (dict joins over the orthogroup + annogroup tables);
+# the orthogroup protein->orthogroup map dominates memory.
+
+cpus: 3
+memory_gb: 20
+time_hours: 4
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the NextFlow driver).
+#   "local" - Run directly on this machine
+#   "slurm" - Self-submit as a SLURM job (driver runs on a compute node)
+
+execution_mode: "slurm"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Parallelism Mode
+# =============================================================================
+# How NextFlow dispatches processes (composes with execution_mode). This BLOCK
+# has no per-structure fan-out (a handful of singleton processes), so "local" is
+# the natural choice.
+#   "local" - processes run within this allocation/machine
+#   "slurm" - each process submits as its own SLURM job
+
+parallelism_mode: "local"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# false (default) re-runs every task from scratch — safer for reproducibility.
+# true re-uses cached results for unchanged tasks (partial-failure recovery).
+
+resume: false
