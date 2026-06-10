@@ -1,4 +1,5 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Classify phylogenetic block-states per annogroup and aggregate per-block counts
+# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Append Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) to per-annogroup conservation patterns output
 # Human: Eric Edsinger
 
 """
@@ -57,7 +58,7 @@ import yaml
 
 # Add scripts directory to path for utility imports
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
-from utils_run_summary import emit_run_summary_fragment
+from utils_run_summary import emit_run_summary_fragment, load_annogroup_annotation_lookup
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -126,6 +127,8 @@ input_clade_mappings_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_clad
 input_parent_child_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_parent_child_table.tsv'
 input_phylogenetic_paths_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
 input_annogroups_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_annogroups-species_identifiers.tsv'
+# Annogroup map carries Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions)
+input_annogroup_map_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_annogroup_map.tsv'
 
 # Input files from Script 002
 input_origins_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_annogroup_origins.tsv'
@@ -784,8 +787,13 @@ def write_block_statistics( block_statistics ):
     logger.info( f"Wrote {len( block_statistics )} block statistics" )
 
 
-def write_annogroup_patterns( annogroup_patterns ):
-    """Write per-annogroup block-state counts (Rule 7)."""
+def write_annogroup_patterns( annogroup_patterns, annogroup_ids___annotation_columns ):
+    """Write per-annogroup block-state counts (Rule 7).
+
+    Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) are
+    appended as the final two columns, looked up by Annogroup_ID from the
+    Script 001 annogroup map.
+    """
     logger.info( f"Writing per-annogroup block-state counts to: {output_annogroup_patterns_file}" )
 
     with open( output_annogroup_patterns_file, 'w', newline = '', encoding = 'utf-8' ) as output_file:
@@ -804,7 +812,9 @@ def write_annogroup_patterns( annogroup_patterns ):
             'Conservation_Events (count of phylogenetic blocks in block-state P where annogroup is present at both parent and child clades)',
             'Loss_Events (count of phylogenetic blocks in block-state L where annogroup is present at parent and absent at child)',
             'Continued_Absence_Events (count of phylogenetic blocks in block-state X where annogroup is absent at both parent and child after an upstream loss)',
-            'Species_List (comma delimited list of all species containing this annogroup)'
+            'Species_List (comma delimited list of all species containing this annogroup)',
+            'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
+            'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)'
         ]
 
         # Write single-row header
@@ -814,6 +824,10 @@ def write_annogroup_patterns( annogroup_patterns ):
         sorted_patterns = sorted( annogroup_patterns, key = lambda x: x[ 'annogroup_id' ] )
 
         for pattern in sorted_patterns:
+            annotation_columns = annogroup_ids___annotation_columns.get( pattern[ 'annogroup_id' ], {} )
+            annotation_accessions = annotation_columns.get( 'accessions', '' )
+            annotation_definitions = annotation_columns.get( 'definitions', '' )
+
             output_row = [
                 pattern[ 'annogroup_id' ],
                 pattern[ 'phylogenetic_block' ],
@@ -825,12 +839,14 @@ def write_annogroup_patterns( annogroup_patterns ):
                 pattern[ 'conservation_events' ],
                 pattern[ 'loss_origin_events' ],
                 pattern[ 'continued_absence_events' ],
-                pattern[ 'species_list' ]
+                pattern[ 'species_list' ],
+                annotation_accessions,
+                annotation_definitions
             ]
 
             csv_writer.writerow( output_row )
 
-    logger.info( f"Wrote {len( annogroup_patterns )} annogroup patterns (11 columns)" )
+    logger.info( f"Wrote {len( annogroup_patterns )} annogroup patterns (13 columns)" )
 
 
 def write_summary( block_statistics, annogroup_patterns ):
@@ -935,8 +951,11 @@ def main():
 
     # STEP 6: Write outputs
     logger.info( "STEP 6: Writing outputs..." )
+    # Annotation accessions + definitions (Pfam IDs + definitions) keyed by Annogroup_ID
+    annogroup_ids___annotation_columns = load_annogroup_annotation_lookup( input_annogroup_map_file )
+    logger.info( f"Loaded annotation columns for {len( annogroup_ids___annotation_columns )} annogroups from map" )
     write_block_statistics( block_statistics )
-    write_annogroup_patterns( annogroup_patterns )
+    write_annogroup_patterns( annogroup_patterns, annogroup_ids___annotation_columns )
     write_summary( block_statistics, annogroup_patterns )
     logger.info( "" )
 

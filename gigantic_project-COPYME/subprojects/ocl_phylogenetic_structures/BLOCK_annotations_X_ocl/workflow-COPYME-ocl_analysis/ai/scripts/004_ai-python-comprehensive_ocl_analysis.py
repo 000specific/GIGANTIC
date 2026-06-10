@@ -1,4 +1,5 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Integrate Scripts 002+003 into per-annogroup, per-clade, and per-species summaries (Rule 7 counts)
+# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Append Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) to complete OCL summaries and path-states
 # Human: Eric Edsinger
 
 """
@@ -37,7 +38,7 @@ import yaml
 
 # Add scripts directory to path for utility imports
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
-from utils_run_summary import emit_run_summary_fragment
+from utils_run_summary import emit_run_summary_fragment, load_annogroup_annotation_lookup
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -107,6 +108,8 @@ input_directory_003 = Path( args.output_dir ) / TARGET_STRUCTURE / '3-output'
 input_clade_mappings_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
 input_phylogenetic_paths_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
 input_annogroups_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_annogroups-species_identifiers.tsv'
+# Annogroup map carries Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions)
+input_annogroup_map_file = input_directory_001 / f'1_ai-{TARGET_STRUCTURE}_annogroup_map.tsv'
 
 # Input files from Script 002
 input_origins_file = input_directory_002 / f'2_ai-{TARGET_STRUCTURE}_annogroup_origins.tsv'
@@ -864,12 +867,17 @@ def cross_validate_results( annogroup_summaries, clade_statistics, species_summa
 # SECTION 6: WRITE OUTPUTS
 # ============================================================================
 
-def write_annogroup_summaries( annogroup_summaries, output_file_path, subtype_filter = None ):
+def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_ids___annotation_columns, subtype_filter = None ):
     """Write per-annogroup summaries (Rule 7 block-state counts).
+
+    Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) are
+    appended as the final two columns, looked up by Annogroup_ID from the
+    Script 001 annogroup map.
 
     Args:
         annogroup_summaries: List of summary dicts
         output_file_path: Path to write to
+        annogroup_ids___annotation_columns: { annogroup_id: { 'accessions', 'definitions' } }
         subtype_filter: If provided, only write summaries matching this subtype
     """
     if subtype_filter:
@@ -893,12 +901,18 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, subtype_fi
             'Conservation_Events (count of phylogenetic blocks in block-state P where annogroup is present at both parent and child clades)',
             'Loss_Events (count of phylogenetic blocks in block-state L where annogroup is present at parent and absent at child)',
             'Continued_Absence_Events (count of phylogenetic blocks in block-state X where annogroup is absent at both parent and child after an upstream loss)',
-            'Species_List (comma delimited list of all species containing this annogroup)'
+            'Species_List (comma delimited list of all species containing this annogroup)',
+            'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
+            'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)'
         ]
 
         csv_writer.writerow( header_columns )
 
         for summary in filtered_summaries:
+            annotation_columns = annogroup_ids___annotation_columns.get( summary[ 'annogroup_id' ], {} )
+            annotation_accessions = annotation_columns.get( 'accessions', '' )
+            annotation_definitions = annotation_columns.get( 'definitions', '' )
+
             output_row = [
                 summary[ 'annogroup_id' ],
                 summary[ 'annogroup_subtype' ],
@@ -910,12 +924,14 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, subtype_fi
                 summary[ 'conservation_events' ],
                 summary[ 'loss_origin_events' ],
                 summary[ 'continued_absence_events' ],
-                summary[ 'species_list' ]
+                summary[ 'species_list' ],
+                annotation_accessions,
+                annotation_definitions
             ]
 
             csv_writer.writerow( output_row )
 
-    logger.info( f"Wrote {len( filtered_summaries )} annogroup summaries (11 columns)" )
+    logger.info( f"Wrote {len( filtered_summaries )} annogroup summaries (13 columns)" )
 
 
 def write_clade_statistics( clade_statistics ):
@@ -962,7 +978,16 @@ def write_species_summaries( species_summaries ):
 
 
 def write_path_states( path_state_rows ):
-    """Write per (annogroup, species) path-states to a standalone TSV file."""
+    """Write per (annogroup, species) path-states to a standalone TSV file.
+
+    NOTE: Pfam Annotation_Accessions + Annotation_Definitions are deliberately
+    NOT added here. This file is an annogroup x species state matrix (hundreds
+    of millions of rows / >100 GB); repeating the annotation columns on every
+    row would bloat it enormously for no information gain. The Pfam IDs and
+    definitions live on the per-annogroup files (annogroup map, origins,
+    conservation patterns, complete OCL summaries), which join to this file on
+    Annogroup_ID.
+    """
     logger.info( f"Writing phylogenetic path-states to: {output_path_states_file}" )
 
     header_columns = [
@@ -1080,13 +1105,17 @@ def main():
     # STEP 6: Write outputs
     logger.info( "STEP 6: Writing outputs..." )
 
+    # Annotation accessions + definitions (Pfam IDs + definitions) keyed by Annogroup_ID
+    annogroup_ids___annotation_columns = load_annogroup_annotation_lookup( input_annogroup_map_file )
+    logger.info( f"Loaded annotation columns for {len( annogroup_ids___annotation_columns )} annogroups from map" )
+
     # All-types integrated summary (primary downstream file)
-    write_annogroup_summaries( annogroup_summaries, output_annogroup_complete_file )
+    write_annogroup_summaries( annogroup_summaries, output_annogroup_complete_file, annogroup_ids___annotation_columns )
 
     # Per-subtype summaries
     for subtype in ANNOGROUP_SUBTYPES:
         subtype_output_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{subtype}.tsv'
-        write_annogroup_summaries( annogroup_summaries, subtype_output_file, subtype_filter = subtype )
+        write_annogroup_summaries( annogroup_summaries, subtype_output_file, annogroup_ids___annotation_columns, subtype_filter = subtype )
 
     write_clade_statistics( clade_statistics )
     write_species_summaries( species_summaries )

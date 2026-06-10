@@ -1,0 +1,217 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat
+{\fonttbl{\f0\fswiss\fcharset0 Helvetica;}{\f1\fmodern\fcharset0 Courier New;}}
+{\colortbl ;\red100\green100\blue100;}
+\f0\fs22 
+\par
+{\b\fs36 White Paper: Phylogenetic Species Tree Inference via Genome-Scale Homology-Feature Parsimony}\par
+\par
+\par
+{\b Working title for the STEP_2-occams_tree method.} Draft synthesis of brainstorming session 2026-04-14.\par
+\par
+\par
+{\b\fs30 Abstract}\par
+\par
+\par
+We propose {\b STEP_2-occams_tree}, a species-tree inference method that scores candidate\par
+topologies by the total number of evolutionary loss events their branching patterns require\par
+to explain the observed presence/absence distribution of genome-wide homology features across\par
+a species set. The method operates at the GIGANTIC_1 framework's orthogroup, gene-family, and\par
+domain levels \u8212? each treated as an independent "unit of evolution" \u8212? and sidesteps the\par
+well-known limitations of sequence-alignment-dependent phylogenomic methods by treating the\par
+homology feature as the phylogenetic character, not the sequence within it. Candidate\par
+topologies are enumerated from user-flagged ambiguous nodes via a prior pipeline step\par
+(trees_species: all (2N-3)!! binary resolutions of N unresolved clades), and each candidate\par
+is scored by its minimum-loss accounting under a five-state event vocabulary (Inherited\par
+Absence / Origin / Inherited Presence / Loss / Inherited Loss) that refines classical Dollo\par
+parsimony's event types. Ranking is robust to several well-known failure modes of classical\par
+approaches: sequence-level rate heterogeneity is bypassed entirely at the unit of analysis;\par
+topology-invariant error is a shared constant across candidates and cancels out of ranking;\par
+and law-of-large-numbers averaging across thousands of independent origins reduces the\par
+impact of any individual feature's noise. Outputs include a per-topology total-loss ranking,\par
+per-feature topology-contingent loss decomposition, and bootstrap-analog subsample\par
+confidence. The method is designed as a complement \u8212? not replacement \u8212? for alignment-based\par
+phylogenomics, particularly for contested deep nodes where sequence signal breaks down and\par
+for organismal groups where rate heterogeneity undermines standard assumptions. Per-tool\par
+(per-feature-class) execution allows cross-tool concordance to serve as an additional\par
+layer of confidence: when orthogroup-based, gene-family-based, and domain-based rankings\par
+converge on the same topology, the evidence multiplies; when they diverge, the method\par
+surfaces the discordance as scientific data rather than hiding it.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs30 1. Motivation}\par
+\par
+\par
+Species tree inference at genome scale has entered a regime where traditional alignment-based\par
+methods hit three compounding problems:\par
+\par
+\li360  1. {\b Alignment quality} \u8212? as species sets broaden and deepen, multiple sequence alignment\par
+   becomes inconsistent for fast-evolving regions and highly divergent homologs. Downstream\par
+   trees inherit alignment error.\par
+\li360  2. {\b Rate heterogeneity} \u8212? evolutionary rates vary enormously across species and genes;\par
+   even with partition / mixture models, deep nodes and long-branch taxa remain contested\par
+   (the cteno/sponge deep-branching debate being a contemporary example).\par
+\li360  3. {\b Underutilized annotation} \u8212? billions of compute-cycles go into generating genome\par
+   annotations (InterProScan, Pfam, TM/signal-peptide prediction, orthology assignment,\par
+   gene family curation). Typically well under 1% of that information is used for any\par
+   given phylogenetic question.\par
+\par
+Alignment-free phylogenetic signal classes have emerged \u8212? 3D structure comparison (limited\par
+by database coverage and structural convergence), synteny blocks (elegant for rare/derived\par
+events, unclear generalization). This proposal adds a complementary signal class:\par
+**parsimony over homology-feature presence/absence, evaluated across enumerated candidate\par
+topologies.**\par
+\par
+\par
+{\b\fs30 2. Core Method}\par
+\par
+\par
+{\b Inputs:}\par
+\li360  \u8226?  A species set (e.g., species70 in the reference GIGANTIC_1 instance)\par
+\li360  \u8226?  A partially-resolved species tree from the user, with N clades flagged as "unresolved"\par
+\li360  \u8226?  Genome-scale homology features: orthogroups (OrthoHMM / OrthoFinder / Broccoli), gene\par
+  families (HGNC / PANTHER / expert RGS), protein domains (Pfam / SMART / etc.)\par
+\par
+{\b Candidate topology enumeration (STEP trees_species, prior step):}\par
+\li360  \u8226?  The (2N-3)!! binary resolutions of the N unresolved clades. For N=5 this is 105.\par
+\li360  \u8226?  {\f1 structure_001} is reserved for the user's input topology.\par
+\par
+{\b Per-feature Origin-Conservation-Loss (OCL) analysis (STEP_1):}\par
+\li360  \u8226?  For each candidate topology and each feature, classify each tree node as one of five\par
+  states (see Section 4 vocabulary).\par
+\li360  \u8226?  Count Loss events per topology per feature.\par
+\par
+{\b Tree scoring (STEP_2):}\par
+\li360  \u8226?  Aggregate Loss events across all features per topology.\par
+\li360  \u8226?  Rank topologies by ascending total-loss score \u8212? lowest-loss topology is most parsimonious.\par
+\li360  \u8226?  {\f1 structure_001} (user's input tree) is simply one of the candidates \u8212? it may or may not\par
+  rank first, and its ranking is itself a diagnostic.\par
+\par
+{\b Confidence via subsampling:}\par
+\li360  \u8226?  Subsample features, recompute rankings, observe stability of the top-ranked topology.\par
+\li360  \u8226?  Report: "topology_X ranked first in Y% of subsamples" and/or ties / near-ties.\par
+\par
+\par
+{\b\fs30 3. The Ambiguous-Zone Insight}\par
+\par
+\par
+Not all features contribute to topology differentiation. Only features whose origin event\par
+lands {\i between} the deepest unresolved node and the clade roots provide topology signal.\par
+\par
+\par
+{\f1\fs18 | Origin zone | Contribution to ranking |}\par
+{\f1\fs18 |-------------|-------------------------|}\par
+{\f1\fs18 | Before deepest unresolved node (all clades have it) | Zero \u8212? invariant |}\par
+{\f1\fs18 | Inside a single clade | Zero \u8212? clade-internal events don't depend on clade position |}\par
+{\f1\fs18 | Between deepest unresolved node and clade roots | All the differentiating signal |}\par
+\par
+\par
+Practically, topology-discriminating features have {\b 4/5 or near-4/5 clade representation}\par
+(present in most but not all unresolved clades, forcing loss accounting to depend on where\par
+the missing clade sits). Features with 5/5 representation act as noise-reducing controls\par
+(they should score identical across topologies; if not, that's a diagnostic).\par
+\par
+\par
+{\b\fs30 4. Event Vocabulary (5-State Formal Set)}\par
+\par
+\par
+\par
+{\f1\fs18 | State | Meaning | Event or Inheritance |}\par
+{\f1\fs18 |-------|---------|----------------------|}\par
+{\f1\fs18 | Inherited Absence | Pre-origin; feature has not yet arisen | inheritance |}\par
+{\f1\fs18 | Origin | Node where feature first appears | event |}\par
+{\f1\fs18 | Inherited Presence | Descendant of origin; conservation | inheritance |}\par
+{\f1\fs18 | Loss | Node where feature is first lost | event |}\par
+{\f1\fs18 | Inherited Loss | Descendant of a loss; continued absence | inheritance |}\par
+\par
+\par
+Two events (Origin, Loss) flanked by three inherited states. This vocabulary refines\par
+classical Dollo parsimony by explicitly separating pre-origin absence from post-loss\par
+inherited absence \u8212? distinct biological meanings that standard Dollo conflates.\par
+\par
+For narrative framing the umbrella term {\b Origin-Conservation-Loss (OCL)} is retained; the\par
+5-state set is used for data columns, per-node labels, and methods text.\par
+\par
+\par
+{\b\fs30 5. Novelty Claims (Bounded)}\par
+\par
+\par
+What is {\b not new}: parsimony itself. Dollo parsimony. Gene-content phylogenetics (long\par
+tradition in microbial COG/KEGG analyses). Ancestral state reconstruction.\par
+\par
+What {\b is new} (as an integrated approach):\par
+\li360  \u8226?  {\b Orthogroup-as-phylogenetic-unit} \u8212? alignment-free because the feature is the\par
+  clustering-level entity, not the sequence\par
+\li360  \u8226?  {\b 5-state event accounting} \u8212? standard Dollo flattens inherited-absence vs\par
+  inherited-loss; we preserve the distinction, which matters for downstream hypothesis\par
+  testing about pre-origin absences\par
+\li360  \u8226?  {\b Constrained candidate space} \u8212? ranking against enumerated, structurally meaningful\par
+  topologies (the (2N-3)!! resolutions from trees_species) rather than unconstrained tree\par
+  search \u8212? tractable and interpretable\par
+\li360  \u8226?  {\b Per-tool standalone execution} \u8212? orthogroups / gene families / domains each generate\par
+  an independent ranking; cross-tool concordance is emergent evidence rather than forced\par
+  integration\par
+\li360  \u8226?  {\b Integrated GIGANTIC architecture} \u8212? the pipeline composes cleanly with the upstream\par
+  phylogenetic feature extraction in trees_species and the annotation subprojects,\par
+  providing end-to-end reproducibility at genome scale\par
+\par
+\par
+{\b\fs30 6. Robustness Analysis}\par
+\par
+\par
+\par
+{\f1\fs18 | Concern | Robustness argument |}\par
+{\f1\fs18 |---------|---------------------|}\par
+{\f1\fs18 | Sequence rate heterogeneity | Unit of analysis is the feature, not the sequence. Heterogeneity within a feature's member sequences doesn't propagate to the parsimony score. |}\par
+{\f1\fs18 | Lineage-specific high loss rates | Topology-invariant losses are a shared constant across all 105 candidates \u8594? cancel out of ranking. Only topology-contingent losses differentiate. |}\par
+{\f1\fs18 | Correlated losses (genome-assembly quality, chromosome region co-loss, pathway co-loss) | Bias score magnitude but typically not ranking. Independence argument for the method is about origins (genuinely independent events), not about absences. |}\par
+{\f1\fs18 | LBA at the clustering stage (rapid-evolvers pulled into phantom orthogroups) | Real concern. Mitigated by requiring \u8805?4/5 clade representation for inclusion (the discriminating-signal criterion) \u8212? most phantom orthogroups won't satisfy this. |}\par
+{\f1\fs18 | Incomplete genomes / failed annotations | Real. Mitigated by scale (noise averages across thousands of features) and by cross-tool concordance (same signal should appear in orthogroups AND gene families if genuine). |}\par
+{\f1\fs18 | Cryptic phylogenetic signal duplication across tools | Real. Deferred to future work \u8212? coordinate-level dedup proposed but not in the initial implementation. Per-tool standalone analysis allows diagnostic cross-tool comparison in the meantime. |}\par
+\par
+\par
+\par
+{\b\fs30 7. Validation Plan}\par
+\par
+\par
+Before deploying for contested nodes, the method must recover {\b known-resolved clades}\par
+from the same dataset. Mammalian relationships within species70 are well-resolved; if the\par
+method fails there, the deep-node claim is moot. Validation checks:\par
+\li360  1. Within clade-level species, does the rank-one topology recover expert-accepted resolution?\par
+\li360  2. Across orthogroups / gene families / domains (STEP_2 per-tool runs), is concordance\par
+   high where biology is settled?\par
+\li360  3. For the known-contested ambiguous nodes (cteno/sponge/placozoa placement), how does\par
+   ranking stability compare to alignment-based methods' bootstrap support?\par
+\par
+\par
+{\b\fs30 8. Scope and Limitations}\par
+\par
+\par
+\li360  \u8226?  Depends on the user's confidence that species are assigned to the correct unresolved\par
+  clade (species-to-clade membership). Internal clade topology errors are tolerated.\par
+\li360  \u8226?  Bounded by the (2N-3)!! candidate space \u8212? if the true tree requires permuting a node\par
+  the user did not flag as unresolved, the method picks best-among-wrong.\par
+\li360  \u8226?  Per-tool standalone analyses are the initial deliverable; pooled and coordinate-dedup'd\par
+  integrations are future work.\par
+\par
+\par
+{\b\fs30 9. Relationship to Prior Art}\par
+\par
+\par
+This method sits alongside and complements, not replaces:\par
+\li360  \u8226?  {\b Alignment-based phylogenomics} (RAxML, IQ-TREE) \u8212? primary method for most cases;\par
+  struggles at the deep/rapid boundary\par
+\li360  \u8226?  {\b Coalescent methods} (ASTRAL) \u8212? orthogonal data (gene tree distributions); doesn't\par
+  address alignment quality\par
+\li360  \u8226?  {\b Synteny phylogenomics} (Simakov/Rokhsar) \u8212? complementary alignment-free signal;\par
+  targets rare/derived events vs. our common/abundant events\par
+\li360  \u8226?  {\b Classical Dollo parsimony at gene-content level} (COG-based microbial work) \u8212? direct\par
+  methodological ancestor; we refine event accounting and operationalize at modern\par
+  animal-genome scale\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+}

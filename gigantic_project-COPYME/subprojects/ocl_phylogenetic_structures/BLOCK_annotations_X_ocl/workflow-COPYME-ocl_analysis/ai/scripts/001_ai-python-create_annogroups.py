@@ -1,4 +1,5 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Create annotation groups (annogroups) from annotation files and prepare inputs for OCL analysis
+# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Capture per-accession descriptions and emit Annotation_Definitions (acc=def) alongside Annotation_Accessions on annogroup outputs
 # Human: Eric Edsinger
 
 """
@@ -53,7 +54,7 @@ import yaml
 
 # Add scripts directory to path for utility imports
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
-from utils_run_summary import emit_run_summary_fragment
+from utils_run_summary import emit_run_summary_fragment, format_annotation_definitions, sanitize_annotation_text
 
 
 # ============================================================================
@@ -607,6 +608,11 @@ def load_annotation_files():
     target_database_lower = ANNOTATION_DATABASE.lower()
 
     species_names___annotations = {}
+    # accession -> signature description (InterProScan col 5). One accession maps
+    # to one description; we keep the first non-empty description seen and note
+    # genuine conflicts. Used to build the Annotation_Definitions column.
+    accessions___descriptions = {}
+    conflicting_accessions = set()
     total_annotations_loaded = 0
     total_rows_scanned = 0
 
@@ -634,7 +640,20 @@ def load_annotation_files():
 
                 sequence_identifier = parts[ 0 ]
                 annotation_identifier = parts[ 4 ]
-                annotation_details = parts[ 5 ] if parts[ 5 ] != '-' else ''
+                annotation_details = sanitize_annotation_text( parts[ 5 ] ) if parts[ 5 ] != '-' else ''
+
+                # Record accession -> description. Keep the first non-empty
+                # description for each accession; flag genuine conflicts once.
+                if annotation_details:
+                    previous_description = accessions___descriptions.get( annotation_identifier, '' )
+                    if not previous_description:
+                        accessions___descriptions[ annotation_identifier ] = annotation_details
+                    elif previous_description != annotation_details and annotation_identifier not in conflicting_accessions:
+                        conflicting_accessions.add( annotation_identifier )
+                        logger.warning(
+                            f"Accession {annotation_identifier} has multiple descriptions; "
+                            f"keeping first seen ('{previous_description}'), ignoring ('{annotation_details}')"
+                        )
 
                 # Extract species name from GIGANTIC protein ID
                 # Format: g_XXX-t_XXX-p_XXX-n_Kingdom_Phylum_Class_Order_Family_Genus_species
@@ -663,6 +682,9 @@ def load_annotation_files():
 
     logger.info( f"Scanned {total_rows_scanned} total InterProScan rows across {len( interproscan_files )} files" )
     logger.info( f"Loaded {total_annotations_loaded} {ANNOTATION_DATABASE} annotations across {len( species_names___annotations )} species" )
+    logger.info( f"Captured descriptions for {len( accessions___descriptions )} unique {ANNOTATION_DATABASE} accessions" )
+    if conflicting_accessions:
+        logger.info( f"{len( conflicting_accessions )} accessions had conflicting descriptions (kept first seen for each)" )
 
     if len( species_names___annotations ) == 0:
         logger.error( f"CRITICAL ERROR: No annotations loaded for database '{ANNOTATION_DATABASE}'!" )
@@ -670,14 +692,14 @@ def load_annotation_files():
         logger.error( f"Common values: Pfam, Gene3D, PANTHER, SUPERFAMILY, CDD, SMART, PRINTS, SFLD, FunFam, NCBIfam" )
         sys.exit( 1 )
 
-    return species_names___annotations
+    return species_names___annotations, accessions___descriptions
 
 
 # ============================================================================
 # PHASE C: CREATE ANNOGROUPS
 # ============================================================================
 
-def create_annogroups( species_names___annotations ):
+def create_annogroups( species_names___annotations, accessions___descriptions ):
     """
     Create annotation groups (annogroups) for each requested subtype.
 
@@ -806,6 +828,7 @@ def create_annogroups( species_names___annotations ):
                 'annogroup_subtype': 'single',
                 'annotation_database': ANNOTATION_DATABASE,
                 'annotation_accessions': accession,
+                'annotation_definitions': format_annotation_definitions( [ accession ], accessions___descriptions ),
                 'species_count': len( species_names ),
                 'sequence_count': len( sequence_identifiers ),
                 'species_list': ','.join( species_names ),
@@ -837,6 +860,7 @@ def create_annogroups( species_names___annotations ):
                 'annogroup_subtype': 'combo',
                 'annotation_database': ANNOTATION_DATABASE,
                 'annotation_accessions': accessions_string,
+                'annotation_definitions': format_annotation_definitions( list( architecture ), accessions___descriptions ),
                 'species_count': len( species_names ),
                 'sequence_count': len( sequence_identifiers ),
                 'species_list': ','.join( species_names ),
@@ -863,6 +887,9 @@ def create_annogroups( species_names___annotations ):
                 'annogroup_subtype': 'zero',
                 'annotation_database': ANNOTATION_DATABASE,
                 'annotation_accessions': zero_protein[ 'unannotated_identifier' ],
+                # Zero-subtype proteins have no database annotation, so there is
+                # no Pfam definition to attach -- mark it explicitly.
+                'annotation_definitions': f"{zero_protein[ 'unannotated_identifier' ]}=no annotation",
                 'species_count': 1,
                 'sequence_count': 1,
                 'species_list': zero_protein[ 'species_name' ],
@@ -898,7 +925,8 @@ def write_annogroup_map( annogroup_map_entries ):
         output = 'Annogroup_ID (identifier format annogroup_{db}_N)\t'
         output += 'Annogroup_Subtype (single or combo or zero)\t'
         output += 'Annotation_Database (name of annotation database)\t'
-        output += 'Annotation_Accessions (comma delimited annotation accessions from the database or unannotated identifier)\t'
+        output += 'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)\t'
+        output += 'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)\t'
         output += 'Species_Count (number of unique species with at least one member sequence)\t'
         output += 'Sequence_Count (total number of member sequences)\t'
         output += 'Species_List (comma delimited list of species names as Genus_species)\t'
@@ -910,6 +938,7 @@ def write_annogroup_map( annogroup_map_entries ):
             output += f"{entry[ 'annogroup_subtype' ]}\t"
             output += f"{entry[ 'annotation_database' ]}\t"
             output += f"{entry[ 'annotation_accessions' ]}\t"
+            output += f"{entry[ 'annotation_definitions' ]}\t"
             output += f"{entry[ 'species_count' ]}\t"
             output += f"{entry[ 'sequence_count' ]}\t"
             output += f"{entry[ 'species_list' ]}\t"
@@ -930,18 +959,25 @@ def write_annogroups_standardized( annogroup_map_entries ):
     logger.info( f"Writing standardized annogroups to: {output_annogroups_file}" )
 
     with open( output_annogroups_file, 'w' ) as output_file:
-        # Single-row GIGANTIC_1 header
+        # Single-row GIGANTIC_1 header. Annotation_Accessions and
+        # Annotation_Definitions are appended as the final two columns so the
+        # positional parsers in Scripts 002-005 (which read columns 0-3) are
+        # unaffected.
         output = 'Annogroup_ID (annogroup identifier format annogroup_{db}_N)\t'
         output += 'Annogroup_Subtype (single or combo or zero)\t'
         output += 'Species_Count (number of unique species in annogroup)\t'
-        output += 'Species_List (comma delimited list of species names as Genus_species)\n'
+        output += 'Species_List (comma delimited list of species names as Genus_species)\t'
+        output += 'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)\t'
+        output += 'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)\n'
         output_file.write( output )
 
         for entry in annogroup_map_entries:
             output = f"{entry[ 'annogroup_id' ]}\t"
             output += f"{entry[ 'annogroup_subtype' ]}\t"
             output += f"{entry[ 'species_count' ]}\t"
-            output += f"{entry[ 'species_list' ]}\n"
+            output += f"{entry[ 'species_list' ]}\t"
+            output += f"{entry[ 'annotation_accessions' ]}\t"
+            output += f"{entry[ 'annotation_definitions' ]}\n"
             output_file.write( output )
 
     logger.info( f"Wrote {len( annogroup_map_entries )} annogroups to {output_annogroups_file.name}" )
@@ -960,7 +996,9 @@ def write_per_subtype_annogroup_files( subtypes___annogroup_data ):
             output += 'Species_Count (number of unique species in annogroup)\t'
             output += 'Sequence_Count (total count of sequences in annogroup)\t'
             output += 'Species_List (comma delimited list of species names as Genus_species)\t'
-            output += 'Sequence_IDs (comma delimited list of sequence identifiers)\n'
+            output += 'Sequence_IDs (comma delimited list of sequence identifiers)\t'
+            output += 'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)\t'
+            output += 'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)\n'
             output_file.write( output )
 
             for entry in annogroup_entries:
@@ -968,7 +1006,9 @@ def write_per_subtype_annogroup_files( subtypes___annogroup_data ):
                 output += f"{entry[ 'species_count' ]}\t"
                 output += f"{entry[ 'sequence_count' ]}\t"
                 output += f"{entry[ 'species_list' ]}\t"
-                output += f"{entry[ 'sequence_ids' ]}\n"
+                output += f"{entry[ 'sequence_ids' ]}\t"
+                output += f"{entry[ 'annotation_accessions' ]}\t"
+                output += f"{entry[ 'annotation_definitions' ]}\n"
                 output_file.write( output )
 
         logger.info( f"Wrote {len( annogroup_entries )} {subtype} annogroups" )
@@ -1049,14 +1089,14 @@ def main():
     # ========================================================================
     logger.info( "" )
     logger.info( "PHASE B: Loading annotation files..." )
-    species_names___annotations = load_annotation_files()
+    species_names___annotations, accessions___descriptions = load_annotation_files()
 
     # ========================================================================
     # PHASE C: Create annogroups
     # ========================================================================
     logger.info( "" )
     logger.info( "PHASE C: Creating annogroups..." )
-    annogroup_map_entries, subtypes___annogroup_data = create_annogroups( species_names___annotations )
+    annogroup_map_entries, subtypes___annogroup_data = create_annogroups( species_names___annotations, accessions___descriptions )
 
     # ========================================================================
     # PHASE D: Write annogroup outputs

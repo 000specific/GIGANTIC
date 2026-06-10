@@ -1,0 +1,14 @@
+Orthogroups processed: 202994
+Species parsed and matched to a group: 70 / 70
+Unmatched parsed species (should be 0): 0
+
+Ancestral features (present in >=1 outgroup species): 47621
+Informative loss features (ancestral, >=1 clade present, >=2 clades in loss): 4005
+
+Among ancestral features, number of the 5 clades in loss state (count of clades with 0 species):
+  0 clades lost: 4150
+  1 clades lost: 1167
+  2 clades lost: 868
+  3 clades lost: 1020
+  4 clades lost: 2117
+  5 clades lost: 38299

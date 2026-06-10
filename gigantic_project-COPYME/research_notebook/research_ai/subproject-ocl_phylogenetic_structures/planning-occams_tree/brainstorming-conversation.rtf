@@ -1,0 +1,945 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat
+{\fonttbl{\f0\fswiss\fcharset0 Helvetica;}{\f1\fmodern\fcharset0 Courier New;}}
+{\colortbl ;\red100\green100\blue100;}
+\f0\fs22 
+\par
+{\b\fs36 STEP_2-occams_tree \u8212? Brainstorming Notes}\par
+\par
+\par
+{\b Date}: 2026-04-14\par
+{\b Participants}: Eric Edsinger + Claude (Opus 4.6, Claude Code session)\par
+{\b Purpose}: Design conversation for {\f1 STEP_2-occams_tree}, a planned post-processing step\par
+that consumes STEP_1's per-structure OCL summaries and ranks candidate species trees\par
+by total-loss minimization. This document preserves the exploratory dialogue verbatim\par
+so nothing is lost as we iterate. Not a specification \u8212? a working draft of thinking.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs30 Session begins \u8212? user prompts for brainstorm}\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i Ok - lets work on brainstorming STEP_2 - what are your impressions so far and I can work on gettings us fully aligned with my thinking/framework - and see what you think}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Here's where my thinking is \u8212? partly confident, partly fuzzy. Let me lay it out so you can redirect:\par
+\par
+{\b What I think STEP_2 does (basic version):}\par
+\li360  \u8226?  Input: the 105 {\f1 complete_ocl_summary.tsv} from STEP_1\par
+\li360  \u8226?  Per orthogroup \u215? per structure: loss count (probably "loss at origin" events, not "continued absence")\par
+\li360  \u8226?  Aggregate per structure \u8594? total-loss score\par
+\li360  \u8226?  Rank structures by ascending total loss \u8594? structure_001 (user's input tree) lands somewhere in the ranking\par
+\li360  \u8226?  Output: {\f1 structure_ranking.tsv} + maybe {\f1 per_orthogroup_structure_matrix.tsv}\par
+\par
+{\b What I'm less sure about (open design questions):}\par
+\par
+\li360  1. {\b What counts as a "loss"} \u8212? loss_at_origin only, or also continued_absence weighted less, or a composite?\par
+\li360  2. {\b Weighting} \u8212? raw count? or weighted by clade depth, orthogroup size, species count affected?\par
+\li360  3. {\b Normalization} \u8212? raw loss count can bias toward trees that just make fewer things possible. Divide by total blocks? By conservation events?\par
+\li360  4. {\b Significance} \u8212? is structure_007 really better than structure_008, or noise? Some confidence indicator on the ranking vs. pure ordinal.\par
+\li360  5. {\b Whole-tree vs per-orthogroup winners} \u8212? one output: "best tree overall." Another output: "for each orthogroup, which tree fits best" \u8212? the second surfaces heterogeneity (different orthogroups support different topologies).\par
+\par
+{\b Where I think the novelty lives (partly a guess):}\par
+\par
+Not in the occam's-razor idea itself (standard parsimony territory) but in the {\b specific combination}:\par
+\li360  \u8226?  Orthogroup presence/absence as characters\par
+\li360  \u8226?  Genome-scale (150k+ orthogroups)\par
+\li360  \u8226?  Using OCL's clean loss-at-origin vs continued-absence distinction (most parsimony methods don't separate these)\par
+\li360  \u8226?  Constrained to structurally meaningful topologies (the 105 from trees_species resolutions), not unconstrained tree search\par
+\li360  \u8226?  Can flag heterogeneity \u8212? does the data tell one story, or do different orthogroup classes tell different stories?\par
+\par
+{\b What I'd want to hear from you:}\par
+\li360  \u8226?  Is the scoring fundamentally loss-count-based, or something different?\par
+\li360  \u8226?  Do you envision STEP_2 outputting a single "winner" or showing the distribution of evidence?\par
+\li360  \u8226?  How much does "weight by biology" matter (depth, size, species count) vs. starting with clean raw counts?\par
+\li360  \u8226?  Is STEP_2 supposed to be reusable across {\f1 _X_ocl} flavors (orthogroups, annotations, etc.) or specific to orthogroups?\par
+\li360  \u8226?  Is there a STEP_2 parallel in GIGANTIC_0 I should look at?\par
+\par
+Your turn \u8212? correct me where I'm off and fill in what I'm missing.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I think that is a pretty good technical start on things - and you raise important technical questions we need to address in detail!}\par
+{\li720\i }\par
+{\li720\i But let me give you more on the motivation and novelty side of things - why it could be useful as a new tool in resolving species trees and understanding evolution at genome-scale across species and for specific biological systems etc.}\par
+{\li720\i }\par
+{\li720\i And it is really just an idea in my head - so please as you gain understanding of my thinking - be a critical devil's advocate to ensure the ideas hold up as rigors and potentially informative - rather than half-baked and a poor choice of direction in analysis.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Understood \u8212? devil's advocate mode engaged.\par
+\par
+I'll push on things like:\par
+\li360  \u8226?  Claims of novelty (what's actually new vs. existing phylogenomic methods like ASTRAL, Dollo parsimony, gene tree reconciliation)\par
+\li360  \u8226?  Whether the signal from orthogroup presence/absence is clean enough to resolve contested nodes (deep nodes like ctenophore-sister vs sponge-sister have been fought over precisely because genomic data is noisy)\par
+\li360  \u8226?  Whether "minimum losses" is the right parsimony criterion (biological losses aren't uniformly probable \u8212? some lineages are prone to gene loss, which could bias the score toward tree topologies that cluster loss-prone lineages conveniently)\par
+\li360  \u8226?  Whether 105 structures is enough resolution (what about topologies not in that set?)\par
+\li360  \u8226?  Whether structure_001 having any particular rank is scientifically meaningful or just a quirk of how the pipeline orders\par
+\par
+I'll try to make the pushback specific and technical, not rhetorical. Fire away with the motivation.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i Ok - so phylogenetic signal in sequences - aligned and used to build species trees - can be problematic for certain nodes in organismal evolution - including deeper nodes or nodes including taxa that are rapidily evolving - rates of evolution are greatly different across species and genes etc.}\par
+{\li720\i }\par
+{\li720\i 3D structure offers a means of seeing deeper into the twilight zone of sequence alignment - so some gains can be made there - the so far limitations are problematic and depth of gains ultimately limited I would imagine.}\par
+{\li720\i }\par
+{\li720\i Synteny is a novel phylogenetic signal that has proposed resolution of the sponge vs ctenophore debate - but really in a sense it is like fossils or pre-genomics species phylogenetics. Unique things are hard to argue with when shared in a precise manner. Its too early to know how powerful this will be for other phylogenetic challenges in the field - or if it will hold up over time. I love it - and was a postdoc with Dan Rokhsar and when Oleg Simakov was visiting his lab - but TBD for general use and broad applications or not.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Tracking so far:\par
+\par
+\li360  \u8226?  {\b Sequence-based phylogenetics:} rate heterogeneity across species and genes makes deep nodes and fast-evolving taxa unreliable \u8212? the classical failure mode\par
+\li360  \u8226?  {\b 3D structure:} pushes past the sequence twilight zone but has ceiling (structure is itself under selection and converges; not everything has a resolvable fold in databases)\par
+\li360  \u8226?  {\b Synteny:} novel signal class; Rokhsar/Simakov work on sponge/cteno. Treating unique shared configurations as quasi-fossil evidence \u8212? rare/derived states carry weight because they're unlikely to convergently arise\par
+\par
+Pushback I'm holding in reserve (not to interrupt your flow, just registering):\par
+\li360  \u8226?  On synteny-as-fossil \u8212? persistent-state evidence isn't quite like single-observation fossils; the analogy may overstate the epistemic weight\par
+\li360  \u8226?  On sequence methods \u8212? they DO account for rate heterogeneity (partition models, mixture models, LG+C60, etc.); the critique has to be that even with accounting, deep nodes stay contested, which points to signal limitation, not method limitation\par
+\par
+Continue \u8212? where does orthogroup loss parsimony fit into this landscape? What gap does it address that the three above don't?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i The challenge with sequences is getting the alignments right - it can just get really messy - especially if you are going deep and broad in the species set.}\par
+{\li720\i }\par
+{\li720\i From another direction - there is a LOT of homology-based data generated in genome projects that is rarely leveraged beyond specific biological questions - maybe 0.1-1% is utilized if that out of a full interproscan annotation with all of its tools - plus TM and signalp tools etc. They are informative - even at scale in providing a framework - but the phylogenetic signal that brought a annotation to a sequence is rarely if ever then used to solve a phylogenetic problem beyond a specific biological feature for a limited subset of annotations.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Now I see the shape of the argument \u8212? and I like parts of it and want to pressure-test others.\par
+\par
+{\b What I find compelling:}\par
+\li360  \u8226?  Annotation data IS under-leveraged phylogenetically. Billions of compute-cycles go into generating these annotations; the downstream phylogenetic use is a tiny fraction of their information content\par
+\li360  \u8226?  HMMs (InterProScan, Pfam) can detect homologs past the sequence-alignment twilight zone \u8212? that's their whole point. So annotation-derived signal can reach deeper than raw alignment\par
+\li360  \u8226?  Scale argument: 150k orthogroups \u215? 70 species is a genome-scale character matrix. Even noisy per-orthogroup signal might aggregate to clean collective signal\par
+\li360  \u8226?  The OCL loss-at-origin vs continued-absence distinction is sharper than standard gene-content phylogenetics, which usually just tallies shared presence\par
+\par
+{\b Devil's advocate concerns I'd want to hear addressed:}\par
+\par
+\li360  1. {\b Circularity} \u8212? orthogroups are computed with their own models (OrthoHMM, OrthoFinder); annotations come from HMMs trained on known homology relationships. Using these as independent phylogenetic characters conflates "observed data" with "prior homology inference." How much of the signal is truly independent from what went into the annotation pipeline?\par
+\par
+\li360  2. {\b Absence ambiguity} \u8212? a species "missing" a Pfam domain could be: real loss, incomplete genome, failed annotation (HMM drift past detection), or rapid evolution. The parsimony score treats these as equivalent. In practice, trees that happen to cluster genome-assembly-poor species together might score better by accident.\par
+\par
+\li360  3. {\b Prior art} \u8212? "gene content phylogeny" goes back decades in microbes (COG-based). How is this materially different from "OCL-based gene content phylogeny"? The differentiator has to be more than scale.\par
+\par
+\li360  4. {\b Synteny contrast} \u8212? synteny's power is rare + derived. Annotation presence/absence is common + ubiquitous. Those are different epistemic regimes. Does this work more like a statistical signal (law of large numbers across many orthogroups) or more like synteny's "unique events are unambiguous" logic?\par
+\par
+Keep going \u8212? what's the deeper motivation?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i All interesting/great points we need to come back to!}\par
+{\li720\i }\par
+{\li720\i Focusing for now on orthogroups - people will use sequences from some orthogroups to build species trees - like using BUSCO Metazoa for example - these are single gene orthogroups where the gene is conserved across nearly all species without duplication nearly all of the time. But again, you then have the mess of alignment and tree building off of the mess of alignment.}\par
+{\li720\i }\par
+{\li720\i HOWEVER}\par
+{\li720\i }\par
+{\li720\i The orthogroup itself should be a robust evolutionary feature of the species set. Given how it was derived, it is highly likely that the orthogroup as an entity is a real product of evolution - and so its sequences are closely homologous and species and their sequences are likely fully represented across the species tree for most orthogroups - with everything in general. There are always scattered exceptions but highly likely for all all things in general.}\par
+{\li720\i }\par
+{\li720\i Also in general - loss of an orthogroup after its origin in a species tree should be fairly uncommon. It does happen - and I think it happens a lot more than is commonly appreciated but notheless, it is uncommon and even might be considered rare - something we might quantify later within GIGANTIC I think - as another STEP or BLOCK here or elsewhere.}\par
+{\li720\i }\par
+{\li720\i Given all this - if you have the true species tree and you have mapped orgins, conservation, and loss of an orthogroup (or any feature evaluated in a homology context across all species of a species set) onto the tree - any changes in the train that change branching after the origin of the orthogroup or feature will most likely impose additional losses of the orthogroup or feature.}\par
+{\li720\i }\par
+{\li720\i This is a very general thing - any specific instance of an orthogroup will behave based on the actual data / specifics of its actual evolution across the species set.}\par
+{\li720\i }\par
+{\li720\i HOWEVER}\par
+{\li720\i }\par
+{\li720\i if we have hundreds or even a thousand or more independent orthogroups or features - and we score across all possible species topologies of relevance - I think it should be the case that the true species tree will have the fewest number of losses overall.}\par
+{\li720\i }\par
+{\li720\i Or something like this!}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+This is coherent and the logic tracks. The core claim \u8212? true tree minimizes forced extra losses \u8212? is a valid parsimony argument. But let me push on four specific things:\par
+\par
+{\b 1. "Losses are rare" is load-bearing and contestable.} Loss rates are highly heterogeneous across lineages. Cteno genomes in particular show extensive lineage-specific loss \u8212? they're exactly the kind of clade where this method could be misled. Parsimony under high-loss regimes has known failure modes (analog to long-branch attraction). The method needs to either (a) be robust to rate heterogeneity, (b) explicitly model it, or (c) flag uncertainty when rates are high.\par
+\par
+{\b 2. Independence assumption is probably wrong.} 1000 orthogroups is NOT 1000 independent observations:\par
+\li360  \u8226?  Orthogroups share genome-assembly fate (incomplete assembly \u8594? many co-absent)\par
+\li360  \u8226?  Physical clustering (losses in same chromosome region co-occur)\par
+\li360  \u8226?  Pathway-level loss (you lose one, the rest become dispensable)\par
+\li360  \u8226?  The "effective number of independent characters" could be ~50\u8211?100, which changes the law-of-large-numbers math materially.\par
+\par
+{\b 3. This looks a lot like Dollo parsimony.} Dollo is specifically designed for presence/absence characters where gain is rare/unique and loss is possible multiple times. That's exactly the orthogroup-origin scenario. So the question is: is this a new method, or is it {\b "Dollo parsimony applied rigorously to modern genomic orthogroups at scale, using the OCL framework's loss-at-origin vs continued-absence distinction"}? The latter is still valuable and defensible, but the novelty framing should be about data + rigor + scale, not a new parsimony principle.\par
+\par
+{\b 4. Validation test:} Before claiming this resolves contested nodes, show it recovers KNOWN-resolved nodes. Mammals are well-resolved, arthropods are well-resolved. Run this on species70 and ask: does it correctly place primates, or does it place some cteno-species-equivalent loss-heavy lineage wrongly? If it fails on settled relationships, the deep-node claim is moot.\par
+\par
+{\b What I think holds up:}\par
+\li360  \u8226?  Alignment-independence is a real and valuable niche\par
+\li360  \u8226?  Scale (genome-wide orthogroup matrix) is a real advantage over traditional parsimony\par
+\li360  \u8226?  The OCL distinction (loss_at_origin vs continued_absence) is a meaningful refinement \u8212? standard Dollo doesn't make this\par
+\par
+{\b What I think needs careful claiming:}\par
+\li360  \u8226?  Not "new method" \u8212? "rigorous application of Dollo-style parsimony with modern genomic data + refined event accounting"\par
+\li360  \u8226?  Sensitivity analysis to lineage-specific loss rates is table stakes before publishing\par
+\li360  \u8226?  Discordance flagging is probably more scientifically honest than picking a "winner"\par
+\par
+Your thoughts on the lineage-specific-loss concern specifically? That's the one I think could kill it if unaddressed.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i 1: I think it might be robust to a lot of the lineage specific heterogenity and losses. For two reasons - one is that it is not counted losses of species or ancestral species nodes in particular. It is just summing losses across the entire tree. Its fine if some species are high loss on the true species tree. The second is that clustering pulls in homologs at the level of e-3 or -5 or something very relaxed and promiscuous - and then in comparisons refines things into orthogroups. So we have a lot of confidence that the set of sequences are deeply homologous / accurately homolgous and that all sequences that should be included are likely included. (To an extent - singletons are problematic, as they might be rapidly evolving sequences that belong in an orthogroup - but again the robustness to this is that even still, I think the accurate species tree will have the fewest losses -but we might want to discuss or model this somehow).}\par
+{\li720\i }\par
+{\li720\i Anyways - if the orthogroups or feature is largely accurate sets sequences or feature units across the species tree - then we can leverage the phylogenetic signal withOUT alignment and tree building - which are messy and problematic - but we still get to leverage the phylogenetic signal.}\par
+{\li720\i }\par
+{\li720\i 2. 1000 orthogroups are 1000 independent origins in evolution - the other traits are not relevant to this independence - they may generate noise, like artefacts related to assemblies - but the orthogroups or features are independent in actual evolution of the species set - at least in terms of their origins in evolution - biology might be linked across orthogroups but again, this is not relevant I don't think.}\par
+{\li720\i }\par
+{\li720\i 3. I'm not trying to claim a new parsimony prinicple - just a new approach to species tree phylogenetics/phylogenomics.}\par
+{\li720\i }\par
+{\li720\i 4. That is a great idea!}\par
+{\li720\i }\par
+{\li720\i I stil disagree on this -Not "new method" \u8212? "rigorous application of Dollo-style parsimony with modern genomic data + refined event accounting" - it is a framework and approach that is very unique I think. the algorithm of parsimony or occams razor or dollo specifically is classic to ancient in human thinking - probably neandertals and maybe even liviing primates and mice utilize it - who knows - octopus?}\par
+{\li720\i }\par
+{\li720\i I'm not clear what you mean here - Sensitivity analysis to lineage-specific loss rates is table stakes before publishing - I'm not familiar with the phrase "table stakes before publishing"}\par
+{\li720\i }\par
+{\li720\i Even if you pick a winner - there might be a tie - this happens all the time in tree building and sensitivity analyses for them!  and there are approaches to address this that might be used in a parallel manner.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Your responses are good \u8212? let me recalibrate:\par
+\par
+{\b Point 1 (lineage heterogeneity):} You're partially right and I under-credited you. Losses that appear under ALL 105 candidate trees cancel out of the ranking \u8212? what matters is topology-dependent loss differences. A high-loss lineage's raw loss count contributes to the score's magnitude but not necessarily its ranking bias. I'd still want to see this quantified (split losses into topology-invariant vs topology-contingent and confirm heterogeneity lives mostly in the former), but the logic is defensible.\par
+\par
+{\b Point 2 (independence):} You made a distinction I missed \u8212? you're talking about independence of {\b origins}, not independence of {\b loss events}. Origins are genuinely independent evolutionary events. Loss correlation is real but biases score magnitude more than ranking. I partly retract my concern. Partly \u8212? because co-loss across correlated orthogroups can still bias ranking toward trees where the correlation-generating lineages happen to cluster. But you're right that the origin-independence framing is the right unit of analysis.\par
+\par
+{\b Point 3 (novelty framing):} You're right, I was reductive. Parsimony/Dollo is the algorithmic kernel \u8212? ancient, uncontroversial. The {\b framework} is:\par
+\li360  \u8226?  Orthogroup-as-evolutionary-feature (alignment-free phylogenetic unit)\par
+\li360  \u8226?  OCL's refined event accounting (loss_at_origin vs continued_absence)\par
+\li360  \u8226?  Systematic evaluation against enumerated meaningful topologies from trees_species\par
+\li360  \u8226?  Genome-scale aggregation with per-feature traceability\par
+\par
+That IS novel as an integrated approach. Comparing to "molecular phylogenetics uses likelihood": the statistical principle is classical, but the framework around it (substitution models, partitioning, etc.) is where the field lives. Same shape here.\par
+\par
+{\b "Table stakes":} Poker term \u8212? the minimum you have to put in to be dealt into the hand. Figuratively: the bar below which reviewers won't take a submission seriously. A sensitivity analysis to heterogeneous loss rates would be a reviewer's first concern \u8212? without it, manuscript gets bounced before substantive evaluation. Not optional; not nice-to-have; the price of entry.\par
+\par
+{\b Ties and uncertainty:} Totally tractable. Borrow from tree-building tradition \u8212? bootstrap-analog: subsample orthogroups, compute loss scores, see which trees stably rank high; confidence bands around top-ranked trees; "structure_007 is best with 95% of subsamples" vs "best tie between 3 structures."\par
+\par
+{\b New concern I'd want to raise:} The 105 candidate topologies are constrained by the user's INPUT tree. If the user's input tree has a wrong non-unresolved branch (say, a misplaced genus deep inside a "fixed" clade), none of the 105 topologies contain the true tree, and the method will confidently pick the best-among-wrong. How do we defend against this? Are the "fixed" parts of the input tree always trustworthy?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I want to continue on all of your points here -but for a start I will start at the end.  New concern I'd want to raise....}\par
+{\li720\i }\par
+{\li720\i I think it doesn't matter as along as the user tree is accurate in including all species per ambiguous node - the evaluation is specific to all possible topologies given ambiguity in specific nodes. Swapping clades at those nodes does not impact anything inside the nodes - and the structure inside the nodes doesn't matter. So as long as the user has high confidence all species are within the correct clades of undersolved nodes - then it should be great, regardless of incorrect toplogies within the clades of unresolved nodes. Even, you could tree the clades of unresolved nodes as themselves fully unresolved.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Good catch, you're right. Let me walk through the logic:\par
+\par
+Since the 105 candidate topologies only permute the unresolved nodes (Ctenophora/Porifera/Placozoa/Cnidaria/Bilateria for species70), the fixed-internal-clade topology appears {\b identically} in every candidate. Any error inside a fixed clade is a constant term across all 105 scores \u8212? it inflates absolute loss counts but cancels out of the ranking. The method's answer for "which of the 105" is unaffected.\par
+\par
+The {\b residual concern} that your framing points toward is different and narrower:\par
+\par
+{\b Species-to-clade assignment} errors (e.g., a placozoan mis-classified as cnidarian) \u8212? those DO affect ranking, because they misplace leaves in a way that persists across every candidate tree's accounting of loss. All 105 scores are wrong in the same way \u8594? best-among-wrong.\par
+\par
+And you already said the right response: as long as the user has high confidence on species-to-clade membership, the method is robust to internal-clade topology errors. That's a meaningfully lighter bar than "get the whole tree right," which is the whole point.\par
+\par
+Your "could treat internal clades as also unresolved" extension is interesting \u8212? it would just generate more candidate topologies without changing the logic. Good to know the framework scales.\par
+\par
+Retracting my concern. Moving on \u8212? continue with the other points whenever ready.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i POINT 1 - I'm actually not saying this in the way you say it "Losses that appear under ALL 105 candidate trees cancel out of the ranking". We might be saying the same thing but what I want to highlight is that specific sequence or feature heterogenity of homologs across a species tree is not relevant to the methodology - and the methodology is actually robust to it. VS sequence alignment is highly sensitive to it at the level of sequence change. Only in cases where sequences evolve so fast that even the relaxed thresholds of HMMs or blast fail to detect a sequence homolog/ortholog at all will it impact the accuracy of the orthogroup species set - but this should be infrequent and again shouldn't impact things too much or not at all (have to think it through more) - for the orthogroup containing with most species the highly divergent species is absent and topologies that move it to an outgroup position will remove this articial loss improving the score of the incorrect tree.  On the other hand the second orthogroup formed of just sequence or sequences from the rapidly evolving species will not be impacted by any changes in topology.}\par
+{\li720\i }\par
+{\li720\i A more problematic orthogroup would be one formed of different rapidly evolving species pulled together by long-branch attaction at the level of the blast or hmm threshold.  For this reason, we might require use of orthogroups/features that have all ambigous clades represented - or all but one of the ambigous clades represented  - both of which would avoid this situation}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Right \u8212? I was reframing your claim as ranking-invariance when your actual point is deeper: the {\b unit of analysis} is the orthogroup-as-entity, and sequence-level heterogeneity doesn't propagate into that unit the way it does into alignment. That's the structural advantage of the approach: you sidestep the sequence-level rate heterogeneity problem by not operating on sequences at all. Cleaner framing; I'll hold that.\par
+\par
+{\b On your LBA-at-clustering concern \u8212? that's sharp.} The failure mode you describe is:\par
+\li360  \u8226?  Rapid-evolving species fail HMM detection \u8594? artificial absence \u8594? score inflates for wrong topologies that place that species as outgroup\par
+\li360  \u8226?  {\i Worse}: rapid-evolvers from multiple lineages pass relaxed thresholds together, forming a phantom orthogroup that carries false signal\par
+\par
+This is real long-branch attraction at the clustering stage. I hadn't fully articulated it.\par
+\par
+{\b On your proposed filter \u8212? "all unresolved clades represented" (or all-but-one):} Good instinct, but note a subtle point:\par
+\par
+\li360  \u8226?  {\b All 5 clades represented}: the orthogroup was present at the LCA of all 5 \u8594? its parsimony score is {\i identical or near-identical} across all 105 topologies. These orthogroups carry no differentiating signal \u8212? they're confirming but not discriminating.\par
+\li360  \u8226?  {\b All-but-one (4/5 clades)}: this is where the signal actually lives. The missing clade must have either lost it or never had it, and WHERE that missing clade sits in a candidate topology changes the implied loss events. Best discriminating orthogroups.\par
+\li360  \u8226?  {\b Fewer than 4}: more discriminating signal {\i per orthogroup} but higher LBA risk.\par
+\par
+So the filter strategy might be: {\b weight or gate by representation pattern}. The 4/5 orthogroups are the sweet spot. The 5/5 orthogroups act as noise-reducing "controls" that should score equal across topologies (if they DON'T, that itself is a diagnostic flag).\par
+\par
+{\b New question that I'd want to raise:} What fraction of the 150K orthogroups pass a 4/5 or 5/5 filter? If it's a tiny slice (say, <5%), the effective-N drops, and you're back to a smaller signal pool \u8212? still at genome scale, but worth quantifying. Also: broadly-conserved orthogroups skew toward ancient core-biology genes, which is a different bias (phylogenetic signal from housekeeping might differ from signal in lineage-specific innovations).\par
+\par
+Good sharpening of your point. Your turn.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i Orthogroups (in this case) that originate inside the clade of an ambiguous node have no relevant phylogenetic signal and will not change across all topologies. Similarly, orthogroups/homology features that originate before the deepest ambiguous node will be not change across topologies.}\par
+{\li720\i }\par
+{\li720\i It is only orthogroups that arise between the two that provide phylogenetic signal. And in orthogroups, this number might drop to not so many.}\par
+{\li720\i }\par
+{\li720\i HOWEVER}\par
+{\li720\i }\par
+{\li720\i similar to how phylogenetics was being done in the 90s - where different kinds of data types were being leveraged on the tree - we can pull all genomic annotations evaluated across all species in the species set - so orthogroups, pfam domains, synteny blocks, etc etc we would need to be careful that different tools are not reevaluating the same thing - so SMART and Pfam and GO might overlap in annotating the same feature - but orthogroups and Pfam might be seen as distinct ?  Not sure - but we can probably increase our numbers in this manner}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Right \u8212? only the "between" zone carries signal. Let me sharpen your three cases:\par
+\par
+\par
+{\f1\fs18 | Origin zone | Phylogenetic signal for 105 topologies |}\par
+{\f1\fs18 |-------------|----------------------------------------|}\par
+{\f1\fs18 | Before deepest ambiguous node (all 5 clades have it) | Zero \u8212? invariant across topologies |}\par
+{\f1\fs18 | Inside a single clade | Zero \u8212? clade-internal events don't depend on clade position |}\par
+{\f1\fs18 | **Between** deepest ambiguous node and clade roots | **All** the signal lives here |}\par
+\par
+\par
+That middle zone is the effective-N that actually matters for ranking. For orthogroups alone, this will indeed be a fraction of 150K \u8212? maybe 5\u8211?20K depending on distribution, needs measurement.\par
+\par
+{\b Feature-pooling idea is good and has prior art \u8212? but with caveats:}\par
+\par
+Pooling heterogeneous features onto a tree is basically "total-evidence" or "supermatrix" phylogenetics \u8212? established since the 90s, exactly as you remembered. The hard part is independence. Here's a rough hierarchy I'd sketch:\par
+\par
+\li360  \u8226?  {\b Truly orthogonal} (measure different biological dimensions):\par
+\li1080  \u8226?  Orthogroups (sequence homology clusters)\par
+\li1080  \u8226?  Synteny blocks (physical arrangement \u8212? "where")\par
+\li1080  \u8226?  3D/fold (structure)\par
+\li360  \u8226?  {\b Partially independent} (can be independent when carefully defined):\par
+\li1080  \u8226?  Pfam domains at the {\b per-domain} level for multi-domain proteins \u8212? a protein can lose one domain while keeping others; that's a distinct evolutionary event from losing the whole orthogroup\par
+\li360  \u8226?  {\b Not independent} (redundant with upstream sources):\par
+\li1080  \u8226?  GO terms (mostly inherited from Pfam/InterPro)\par
+\li1080  \u8226?  SMART vs Pfam (extensive overlap in domain calls)\par
+\li1080  \u8226?  SignalP/TM (function of sequence itself)\par
+\par
+{\b Your double-counting instinct is right.} A workable rule: for each feature type, ask "what biological event's presence/absence does this measure?" If two feature types measure the same event (e.g., SMART and Pfam both catching the same kinase domain call), they're one vote, not two.\par
+\par
+{\b Open design question:} do we {\i deduplicate} (pick one representative feature per biological event) or {\i weight down} (count redundant features fractionally)? Deduplication is cleaner but loses information. Weighting is more informative but harder to justify rigorously.\par
+\par
+Where are you on that tradeoff \u8212? clean-and-defensible, or information-rich-and-calibrated?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i Open design question: I'm not sure what you are saying here. In general, clean and rigorous is my preference}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Sorry, let me clarify with a concrete example:\par
+\par
+Say a gene has a kinase domain. Pfam detects it. SMART also detects it. Both tools independently annotate the same biological feature. Two choices:\par
+\par
+{\b Deduplicate} (your preference, based on "clean and rigorous"):\par
+\li360  \u8226?  Pick one canonical source (say, Pfam) as the authoritative caller for kinase domains\par
+\li360  \u8226?  Ignore SMART's annotation of that same kinase\par
+\li360  \u8226?  Clean, defensible: "one biological event = one character in the parsimony matrix"\par
+\li360  \u8226?  Cost: throws away cases where SMART catches something Pfam misses (or vice versa)\par
+\par
+{\b Weight down:}\par
+\li360  \u8226?  Count the kinase domain once, but if both Pfam and SMART detect it, give it weight 1.5 or similar "confidence-weighted" score\par
+\li360  \u8226?  More information-rich but requires justifying the weighting scheme\par
+\par
+{\b Clean-and-rigorous \u8594? deduplicate.} Locked in.\par
+\par
+Implementation implication: we'd need a mapping of "which annotation tool is authoritative for which kind of feature" \u8212? a deduplication rule set. Simpler than it sounds: Pfam for domains, orthogroups for gene families, synteny blocks for physical arrangement, etc. A handful of non-overlapping categories rather than a hairy reconciliation problem.\par
+\par
+Moving on \u8212? continue the brainstorm or want to pivot?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I think we do it at the level of data selection - given HMM annotations of domains - what single tool will we use - pick one. More sophisticated means might be brought to bear - sequences that only one tool annotations are included from any tool and all tools are given a rank order when more than one tool annotates a sequence - and we think the tools are operationally very similar in what they are evaluating}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+That's clean and the right level of pragmatism. Let me restate to confirm:\par
+\par
+{\b Dedup rule at data-selection level:}\par
+\li360  1. Per category of annotation (e.g., "domain annotation", "signal peptide", "transmembrane"), define a canonical {\b rank order} of tools \u8212? e.g., {\f1 Pfam > SMART > SUPERFAMILY > PRINTS} for domains\par
+\li360  2. For each sequence, check what each tool annotated:\par
+\li1440  \u8226?  If only one tool in the category hit it \u8594? include that annotation\par
+\li1440  \u8226?  If multiple tools in the same category hit the same feature \u8594? include only the highest-ranked tool's call\par
+\li360  3. Different categories (domain vs signal peptide vs fold) are independent and ALL pass through \u8212? no cross-category deduplication needed\par
+\par
+Result: for each sequence \u215? feature, exactly one canonical presence/absence call per feature, drawn from the best tool that saw it.\par
+\par
+{\b Implementation implication:} we need a documented annotation-tool-category table for GIGANTIC. Something like:\par
+\par
+\par
+{\f1\fs18 | Category | Rank-ordered tools |}\par
+{\f1\fs18 |----------|---------------------|}\par
+{\f1\fs18 | Domain | Pfam > SMART > SUPERFAMILY > PRINTS > ... |}\par
+{\f1\fs18 | Signal peptide | SignalP > ... |}\par
+{\f1\fs18 | Transmembrane | TMbed > DeepTMHMM > ... |}\par
+{\f1\fs18 | Fold class | ... |}\par
+{\f1\fs18 | Orthogroup | OrthoHMM > OrthoFinder > Broccoli (or however you want) |}\par
+{\f1\fs18 | Synteny | (whatever tool you use) |}\par
+\par
+\par
+The rank order is an editable artifact \u8212? reviewer could ask "why Pfam over SMART?" and we'd answer in documentation.\par
+\par
+Sound right? And is this rank-order table something we document in STEP_2's README, or does it live upstream (maybe in annotations_hmms or a project-level standard)?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I like this summary of this part of things - all of this is in STEP_2 - we don't need to think about documentation yet - still lots more brainstorming to do - but lets make a brainstorming.md file - and copy all of this conversation so far exactly in that document - and we can then continue}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+_[This file is the result of that request. Continuing the brainstorm below.]_\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs30 Continuing the brainstorm}\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i You said: Point 2 (independence): You made a distinction I missed \u8212? you're talking about independence of origins, not independence of loss events. Origins are genuinely independent evolutionary events. Loss correlation is real but biases score magnitude more than ranking. I partly retract my concern. Partly \u8212? because co-loss across correlated orthogroups can still bias ranking toward trees where the correlation-generating lineages happen to cluster. But you're right that the origin-independence framing is the right unit of analysis.}\par
+{\li720\i }\par
+{\li720\i For losses and absences - there are three situations to consider - I'm forgetting my terminology but you might know from the code here - or the documentation. But I think it is absent, lost, missing - but lets discuss and refine these now.}\par
+{\li720\i }\par
+{\li720\i absent/absence is when an orthogroup or homology feature is not present because it has not yet appeared in the species tree in actual evolution. I made this term up - not sure what is used in the literature for mapping features onto species trees - can you research this and see if there is anything.}\par
+{\li720\i }\par
+{\li720\i lost/loss is used somewhat abiguously in the literature - there is the origin of the loss and then there are later mroe recent clades that also do not have the orthogroup or feature - and people will say these clades have lost it - which is true it is missing from the genome or the species etc - but the origin of the loss was earlier - and we carry about the origins of when features appear and when they are lost.  SO I use lost/loss for the node at which a feature is originally lost in a species tree - and missing for more recent clades that have inherited this loss - but I don't like the term missing - it seems to suggest a lack of certainty but we have high certainity that the loss is real - just that the loss occured in a deeper node}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Researching the terminology landscape, then GIGANTIC's own existing vocabulary, then proposing refinements:\par
+\par
+{\b Literature conventions I can find:}\par
+\par
+\par
+{\f1\fs18 | Concept | Common terms in literature |}\par
+{\f1\fs18 |---------|----------------------------|}\par
+{\f1\fs18 | Feature never originated yet in this lineage (pre-origin) | "ancestral absence", "pre-origin absence", "primary absence", "not yet originated" |}\par
+{\f1\fs18 | Node where a feature is first lost | "loss", "loss event", "gene loss event", "loss_at_origin" (less common) |}\par
+{\f1\fs18 | Descendant inherits a prior loss | "secondary absence", "continued absence", "derived absence", "inherited absence", "descended loss" |}\par
+\par
+\par
+No widely-adopted canonical term for #1 (pre-origin absence) \u8212? you weren't alone in needing to coin. It's usually described as "not yet originated" rather than named as a state. {\b "Ancestral absence"} is the closest thing to a published convention.\par
+\par
+{\b GIGANTIC's own vocabulary (already in STEP_1 code):}\par
+\par
+The TEMPLATE_03 dual-metric tracking in script 003 uses exactly two of the three states:\par
+\li360  \u8226?  {\f1 loss_at_origin} = node where the feature is first lost\par
+\li360  \u8226?  {\f1 continued_absence} = descendants of a loss inheriting it\par
+\par
+The third state (pre-origin absence) isn't given a name in the code \u8212? it's implicit in "orthogroup is not inherited in this lineage yet." Script 003 excludes these from loss accounting, which is correct.\par
+\par
+{\b Proposed three-state system for STEP_2:}\par
+\par
+\par
+{\f1\fs18 | Your term | State meaning | Suggested refinement |}\par
+{\f1\fs18 |-----------|---------------|----------------------|}\par
+{\f1\fs18 | "absent/absence" | Pre-origin \u8212? feature hasn't arisen yet | **"Pre-origin absence"** or **"ancestral absence"** \u8212? both better than bare "absent" which reads ambiguous |}\par
+{\f1\fs18 | "lost/loss" | Node where feature is first lost | **"loss_at_origin"** (already in GIGANTIC code) |}\par
+{\f1\fs18 | "missing" (you dislike) | Descendant inheriting a prior loss | **"continued absence"** (already in GIGANTIC code, and exactly captures what you mean without the uncertainty flavor "missing" carries) |}\par
+\par
+\par
+{\b I'd argue for:}\par
+\li360  1. {\b Pre-origin absence} (or ancestral absence \u8212? your preference) for state 1\par
+\li360  2. {\b Loss} (or loss_at_origin when being formal) for state 2\par
+\li360  3. {\b Continued absence} for state 3 \u8212? replaces "missing"\par
+\par
+The word "missing" does carry a "we don't know if it's really gone" connotation, which isn't what you mean. "Continued absence" is already what the code calls it; it's neutral, descriptive, and captures the inheritance relationship directly.\par
+\par
+{\b If we want maximum visual distinctness (for color-coding / UI later):}\par
+\par
+\par
+{\f1\fs18 | State | Short label | Color semantics (suggestion) |}\par
+{\f1\fs18 |-------|-------------|------------------------------|}\par
+{\f1\fs18 | Pre-origin absence | `pre_origin` | neutral (gray) \u8212? "not yet there" |}\par
+{\f1\fs18 | Loss | `loss` | loss event color (red) \u8212? the moment of change |}\par
+{\f1\fs18 | Continued absence | `inherited_loss` | faded loss color \u8212? the consequence |}\par
+\par
+\par
+Your reaction to dropping "missing" in favor of "continued absence"?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I greatly dislike this -Your reaction to dropping "missing" in favor of "continued absence"?}\par
+{\li720\i }\par
+{\li720\i I think we need words that are distinct around the evolutionary origin of the feature}\par
+{\li720\i }\par
+{\li720\i Inherited Abscence}\par
+{\li720\i Lost/Loss}\par
+{\li720\i Inherited Loss}\par
+{\li720\i }\par
+{\li720\i or something like this maybe?}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Much better. Your proposal has a clean symmetry \u8212? both "not-present" inheritance states get an {\f1 Inherited_*} prefix, distinguished by what's being inherited:\par
+\par
+\li360  \u8226?  {\b Inherited Absence} = inherited from the pre-origin state (never existed in this lineage)\par
+\li360  \u8226?  {\b Loss} = the node where the feature is first lost\par
+\li360  \u8226?  {\b Inherited Loss} = inherited from a derived loss state (existed, got lost upstream)\par
+\par
+The "absence" vs "loss" word choice carries the distinction: absence = pristine never-had-it, loss = derived was-lost. The {\f1 Inherited_} prefix marks the state as ancestor-carried (no event at this node) vs. the node being where the event happened.\par
+\par
+{\b Extending this to the full 5-state vocabulary for symmetry:}\par
+\par
+\par
+{\f1\fs18 | State | Meaning | Event or inheritance? |}\par
+{\f1\fs18 |-------|---------|-----------------------|}\par
+{\f1\fs18 | **Inherited Absence** | Pre-origin; feature has not yet arisen | inheritance |}\par
+{\f1\fs18 | **Origin** | Node where feature first appears | event |}\par
+{\f1\fs18 | **Inherited Presence** | Descendant of origin; conservation | inheritance |}\par
+{\f1\fs18 | **Loss** | Node where feature is first lost | event |}\par
+{\f1\fs18 | **Inherited Loss** | Descendant of a loss; "continued absence" | inheritance |}\par
+\par
+\par
+Two event states (Origin, Loss), three inheritance states (the three "Inherited_*"). Clean pairing:\par
+\par
+\li360  \u8226?  Pre-origin side: Inherited Absence \u8594? Origin \u8594? Inherited Presence\par
+\li360  \u8226?  Post-origin-loss side: Inherited Presence \u8594? Loss \u8594? Inherited Loss\par
+\par
+{\b Mapping to existing GIGANTIC_1 code vocabulary (STEP_1 TEMPLATE_03):}\par
+\par
+\par
+{\f1\fs18 | New proposed term | Current code term |}\par
+{\f1\fs18 |-------------------|-------------------|}\par
+{\f1\fs18 | Inherited Absence | (no name in code \u8212? implicit) |}\par
+{\f1\fs18 | Origin | "origin" |}\par
+{\f1\fs18 | Inherited Presence | "conservation" |}\par
+{\f1\fs18 | Loss | "loss_at_origin" |}\par
+{\f1\fs18 | Inherited Loss | "continued absence" |}\par
+\par
+\par
+{\b Implications if we adopt:}\par
+\li360  1. STEP_2 vocabulary uses the new terms natively (clean)\par
+\li360  2. Eventually (separate work, not now) \u8212? migrate STEP_1 code terms to match, for project-wide consistency\par
+\li360  3. Add {\f1 Inherited Absence} as an explicit accounted-for state (STEP_1 currently lumps it with "not inherited, ignored" \u8212? but maybe it should be counted for diagnostics?)\par
+\par
+{\b Your reaction:}\par
+\li360  \u8226?  Does the 5-state full vocabulary fit what you had in mind?\par
+\li360  \u8226?  Is {\f1 Inherited Presence} the right pair for {\f1 Inherited Absence}/{\f1 Inherited Loss}, or would you rather keep {\f1 Conservation} to signal it's the "good" outcome?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I love the 5 states!  This may cause significant refactoring of STEP_1}\par
+{\li720\i }\par
+{\li720\i I think - outloud - to simplify terms}\par
+{\li720\i }\par
+{\li720\i Absence}\par
+{\li720\i Origin}\par
+{\li720\i Conservation}\par
+{\li720\i Loss}\par
+{\li720\i Gone}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+The appeal is obvious \u8212? five one-word labels, readable, speakable. Let me raise three tensions before you lock it in:\par
+\par
+{\b 1. "Absence" alone is ambiguous.}\par
+Without surrounding context, "absence" could mean any of the three not-present states. It doesn't immediately signal "pre-origin." Your {\f1 Inherited Absence} earlier was unambiguous; plain {\f1 Absence} loses that clarity.\par
+\par
+{\b 2. "Gone" is informal.}\par
+Scientifically valid (like "species X has gone extinct"), but it reads colloquial in tables, figures, legends, and paper prose. Reviewers might flag it. Not a dealbreaker but worth choosing consciously.\par
+\par
+{\b 3. The symmetry you liked is lost.}\par
+Your {\f1 Inherited_*} scheme paired the two "inherited" states explicitly:\par
+\li360  \u8226?  Inherited Absence \u8596? Inherited Loss (both inheritance)\par
+\li360  \u8226?  Origin \u8596? Loss (both events)\par
+\par
+The simplified set breaks that:\par
+\li360  \u8226?  Absence | Origin | Conservation | Loss | Gone\par
+\par
+Now {\f1 Conservation} sits alone as the only "Inherited" on the presence side, while {\f1 Absence} and {\f1 Gone} don't have an obvious shared structural relationship on the absence side. A reader has to know that {\f1 Absence} = pre-origin and {\f1 Gone} = post-loss \u8212? those words don't pair or signal that.\par
+\par
+{\b Possible middle grounds:}\par
+\par
+\par
+{\f1\fs18 | Option | Flavor |}\par
+{\f1\fs18 |--------|--------|}\par
+{\f1\fs18 | A: Absence, Origin, Conservation, Loss, **Gone** | Your simplified; ambiguous absence + informal |}\par
+{\f1\fs18 | B: **Pre-origin**, Origin, Conservation, Loss, **Post-loss** | Fully unambiguous, scientific, loses single-word elegance |}\par
+{\f1\fs18 | C: **Absent**, Origin, Conservation, Loss, **Extinct** | Extinct is evocative but overloaded (species extinction vs orthogroup extinction) |}\par
+{\f1\fs18 | D: **Naive**, Origin, Conservation, Loss, **Erased** | "Naive" for pre-experience is used in immunology \u8212? carries "not yet encountered" meaning well |}\par
+{\f1\fs18 | E: **Inherited Absence**, Origin, Conservation, Loss, **Inherited Loss** | Your previous 5-state \u8212? verbose but crystal clear |}\par
+\par
+\par
+{\b My recommendation:} Option E. The two "Inherited" states being two-word is a small price for the clarity and symmetry. For tables where space is tight, you can always abbreviate: {\f1 IA | O | C | L | IL} as a secondary short code.\par
+\par
+What lands for you?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i In terms of accuracy - Conservation includes the origin of something.}\par
+{\li720\i }\par
+{\li720\i SO while I hate it, high accuracy would be}\par
+{\li720\i }\par
+{\li720\i Inherited Absence}\par
+{\li720\i Origin}\par
+{\li720\i Inherited Presence}\par
+{\li720\i Loss}\par
+{\li720\i Inherited Loss}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+You're right and it's a real issue. "Conservation" in biology conventionally means "the feature is present across clades" \u8212? which includes the origin. Using it as a STATE label for just the post-origin descendants muddles the event/state distinction that the rest of the vocabulary takes pains to keep clean.\par
+\par
+Option E ({\f1 Inherited Absence | Origin | Inherited Presence | Loss | Inherited Loss}) is the accurate answer. The symmetry is crisp:\par
+\par
+\par
+{\f1\fs18 | Absence side | Presence side |}\par
+{\f1\fs18 |--------------|---------------|}\par
+{\f1\fs18 | Inherited Absence (inherited state) | Inherited Presence (inherited state) |}\par
+{\f1\fs18 | \u8212? | Origin (event) |}\par
+{\f1\fs18 | Loss (event) | \u8212? |}\par
+{\f1\fs18 | Inherited Loss (inherited state) | \u8212? |}\par
+\par
+\par
+Two events flanked by three inherited states, clean semantic pairs.\par
+\par
+{\b For the aesthetic tax of the longer labels:} we can mitigate where readability matters most:\par
+\par
+\li360  \u8226?  {\b Figures/narrow tables}: use the shorthand {\f1 IA | O | IP | L | IL} with a legend row or caption\par
+\li360  \u8226?  {\b Code/column headers}: {\f1 inherited_absence | origin | inherited_presence | loss | inherited_loss} (snake_case) \u8212? matches existing GIGANTIC code conventions\par
+\li360  \u8226?  {\b Prose/documentation}: full names for unambiguity\par
+\li360  \u8226?  {\b Informal discussion (meetings, chat)}: people can still say "conservation" as long as they know it's colloquial for {\f1 inherited presence}; or "absence" / "gone" in casual speech\par
+\par
+So formal vocabulary = Option E, everyday shorthand = whatever rolls off the tongue. The formal vocabulary is what defines the data; the casual names are just friendly handles.\par
+\par
+{\b Locked in?}\par
+\par
+Also worth flagging the STEP_1 refactoring implication: the current code vocabulary ({\f1 conservation}, {\f1 loss_at_origin}, {\f1 continued_absence}, implicit pre-origin) would shift to the new 5-state set. That's a meaningful but scoped refactor \u8212? not now, but worth a TODO in the brainstorming doc so we don't forget.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i use words not abbreivations not letters etc}\par
+{\li720\i }\par
+{\li720\i I think for the algorithm - and for accurate discussion we have to use these 5 terms for their clarity and symmetry and consistency.}\par
+{\li720\i }\par
+{\li720\i However, in a general sense the analysis is origin, conservation, loss - I think this can still hold for general discussion and framing - or what do you think}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Yes, that tiering works cleanly \u8212? and it's already how GIGANTIC talks about itself. The subproject is {\b orthogroups_X_ocl} \u8594? {\b O}rigin-{\b C}onservation-{\b L}oss as the analytical umbrella. That framing is correct at the narrative level: we're studying when features appear (origin), persist (conservation), and disappear (loss).\par
+\par
+{\b Two-tier vocabulary:}\par
+\par
+\par
+{\f1\fs18 | Tier | When used | Vocabulary |}\par
+{\f1\fs18 |------|-----------|------------|}\par
+{\f1\fs18 | **Framework / narrative** | Subproject names, paper framing, general discussion, figure titles | **O**rigin\u8211?**C**onservation\u8211?**L**oss (OCL) |}\par
+{\f1\fs18 | **Formal / algorithmic** | Data columns, per-node state labels, precise methods text, code | **Inherited Absence** / **Origin** / **Inherited Presence** / **Loss** / **Inherited Loss** |}\par
+\par
+\par
+At the narrative level, "conservation" captures the whole positive side (origin + inherited presence) \u8212? which is what biologists mean colloquially when they say "this orthogroup is conserved in metazoans." At the data level, we need to distinguish the node of appearance from the descendants who inherit it, because those are different event types with different phylogenetic implications.\par
+\par
+When we write methods or talk about the algorithm, we always use the 5-state words (full words, never abbreviations). When we introduce the work or frame it ("we study origin, conservation, and loss of orthogroups across..."), we use the 3-word umbrella.\par
+\par
+Both are accurate at their level. The OCL umbrella doesn't contradict the 5 states \u8212? it's a coarser slice of the same reality.\par
+\par
+{\b Proposal for the brainstorming doc:} explicitly capture this two-tier vocabulary as a design choice, so future readers (and our future selves) don't conflate the levels. Want me to append the vocabulary decisions to {\f1 brainstorming.md} now, or keep iterating and append in batches?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i you can add the conversation verbatim to the brainstorming document - at the end of brainstorming we can have you generate a detailed summary and TODO}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+_[Verbatim conversation appended to this document. Continuing the brainstorm below.]_\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i One other data type that overlaps with orthogroups but is also a different evolutionary scale / depth - gene families.}\par
+{\li720\i }\par
+{\li720\i some gene families will match an orthogroup - so we should filter these out based on ranking of say gene family > orthogroup - given expert knowledge and I would say greater rigor of gene family pipeline in gigantic - but maybe rigor is less - not sure what others will say.}\par
+{\li720\i }\par
+{\li720\i anyways - one limitation of orthogroups is how conservative they are - which is great - you get high-quality high-accuracy homolog detection across species.  But often times our natural focus is at a higher level of conservation - maybe all TRP ion channels not just TRP A ion channels (although I think there is a TRP orthogroup so need a better example here - but gene families can potential pull together deep conservation across orthogroups that otherwise are not recognized as being related to one another)}\par
+{\li720\i }\par
+{\li720\i operationally we could use gene family data similar to orthogroup data by pulling in the gene families at the level of AGS sequences and map these onto the species. Thus, again we avoid problems of alignment and treebuilding but still leverage the phylogenetic signal of homology across the species tree.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Gene families as a third data type fits the framework cleanly \u8212? same mechanics (AGS-based presence/absence), different scale of signal, same alignment-free advantage. Natural extension.\par
+\par
+{\b Where they add value that orthogroups miss:}\par
+Gene families capture ancient homology that spans multiple orthogroup-level subfamilies. An ion-channel gene family's origin event sits at a DEEPER node than any of its constituent TRPA/TRPV/TRPC orthogroups' origins. For the 105 topology ranking, deeper events in the ambiguous zone carry just-as-useful signal for distinguishing topologies \u8212? and sometimes more, if the ambiguous nodes are themselves deep.\par
+\par
+{\b Scale distinction \u8212? and the phylogenetic implication:}\par
+\par
+\par
+{\f1\fs18 | Level | Origin typically sits at | Signal for cteno/porifera/plac/cnid/bilateria ambiguous zone |}\par
+{\f1\fs18 |-------|--------------------------|---------------------------------------------------------------|}\par
+{\f1\fs18 | Gene family | Deep \u8212? often pre-Metazoan or Metazoan root | Often in the ambiguous zone \u8594? carries topology signal |}\par
+{\f1\fs18 | Orthogroup | Shallower \u8212? usually within a clade or at a subfamily origin within Metazoa | May or may not \u8212? depends on origin depth |}\par
+\par
+\par
+So gene families are MORE LIKELY to contribute topology-relevant origin events than orthogroups on average, for the specific ambiguous nodes species70 permutes.\par
+\par
+{\b On the dedup rule "gene family > orthogroup" \u8212? one refinement to consider:}\par
+\par
+An orthogroup's origin can be at the same node as its parent gene family (redundant, drop) OR at a deeper/more-recent node than its parent (distinct event). Specifically, orthogroup origin \u8805? gene family origin \u8212? never earlier, because the orthogroup is a subset of the family.\par
+\par
+Cases:\par
+\li360  \u8226?  {\b Gene family origin in ambiguous zone, orthogroups with origins inside clades}: gene family wins, drop orthogroups (they contribute no topology signal anyway \u8212? origins inside clades are invariant across the 105)\par
+\li360  \u8226?  {\b Gene family origin before ambiguous zone, orthogroups with origins IN ambiguous zone}: KEEP the orthogroups, the gene family contributes no topology signal\par
+\li360  \u8226?  {\b Both have origins coinciding at the same ambiguous-zone node}: redundant, gene family wins\par
+\par
+So the refined rule: {\b prefer the feature whose origin event lands in the ambiguous zone}. When both have ambiguous-zone origins at the same node \u8594? gene family wins (your preference, based on pipeline rigor). When one does and the other doesn't \u8594? keep the one that does.\par
+\par
+This also naturally integrates with the 4/5 clade representation filter from earlier \u8212? features with origins in the ambiguous zone are exactly those with 4/5 or 5/5 representation (conserved across or past the deepest ambiguous node but with variation at shallower ambiguous nodes).\par
+\par
+{\b Practical implication:} dedup has to be done at the {\i event} level (where does this feature's origin sit?) rather than at the {\i entity} level (is it a gene family or orthogroup?). Slightly more bookkeeping, cleaner signal.\par
+\par
+Does that nuance land, or do you want to keep the simpler "gene family > orthogroup" rule and accept some signal loss?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i Good thinking! So the refined rule: prefer the feature whose origin event lands in the ambiguous zone. When both have ambiguous-zone origins at the same node \u8594? gene family wins (your preference, based on pipeline rigor). When one does and the other doesn't \u8594? keep the one that does.}\par
+{\li720\i }\par
+{\li720\i Definitely at the event level - we want to leverage the best possible data relevant to the challenge whereever it may come from!}\par
+{\li720\i }\par
+{\li720\i The next thing with gene families is that it is a lot of work to accurately search the literature and come up with the required RGS sequences for input - please study the trees_gene_families if this is unfamiliar - I avoid lettered abbreviations but RGS, CGS, and AGS are exceptions in gigantic}\par
+{\li720\i }\par
+{\li720\i HOWEVER}\par
+{\li720\i }\par
+{\li720\i HUGO HGNC provides gene groups - see trees_gene_groups for details on this - there are nearly 2,000 gene groups - each one a set of genes in human that has been expert curated. Most of these are gene families or superfamilies - however some are functional sets of genes - maybe all ion channels for example (but need to double check on this) - and in the case of functional sets that maybe include different sets of complete gene families otherwise but the different families unrelated - but this could be tolerated - however they may also include incomplete sets of gene families unrelated to each other and this incompleteness will break the base assumption required for the GIGANTIC tree_gene_families algorithm to work.}\par
+{\li720\i }\par
+{\li720\i SO we have generated the HGNC gene group sequence sets for species70 using the trees_gene_families pipeline to generate HGNC AGS sequence sets - but we need to determine which ones are appropriate for the pipeline. I may have to do this by hand - probably just a long afternoon - I don't think there is a way to automated - I don't think there is any identifier or annotation in the database - I think I emailed HGNC at one point and the confirmed this a few years ago}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+HGNC gene groups as a bootstrap source for gene family data is elegant \u8212? expert-curated, broad coverage, sidesteps the labor of building RGS sets from literature gene by gene. Let me make sure I understand the hazard properly:\par
+\par
+{\b Why incomplete functional sets break the pipeline:}\par
+\par
+The trees_gene_families algorithm (as I understand it from a quick read of the AGS/CGS/RGS convention) assumes the RGS captures the full homology scope of a family \u8212? every homolog in the target species genome should be findable from at least one RGS member via BLAST/HMM. If the HGNC group is an INCOMPLETE functional set (say, 6 of the 12 ion channel families), then:\par
+\li360  \u8226?  Real homologs in species genomes belonging to the 6 missing families won't be pulled in (no RGS seed to find them)\par
+\li360  \u8226?  These show up as "absent" when they're actually present, just unreachable from the RGS\par
+\li360  \u8226?  Signal becomes: "we see ion channels wherever the 6 seed families happen to reach" \u8212? confounded with RGS choice\par
+\par
+For STEP_2's presence/absence signal, this is contaminating: an HGNC group with incomplete coverage would report false absences in species that have the family but a subfamily the RGS missed.\par
+\par
+{\b Confirming the scope:} ~2000 HGNC groups total; the triage is deciding which are safe (bona fide gene families, even if broad superfamilies with full coverage) vs. risky (functional mixes with partial family representation). A one-afternoon manual curation pass for 2000 entries is ~8 seconds each \u8212? plausibly doable if you can skim a group's description and member list.\par
+\par
+{\b On automating even partially:} A few programmatic heuristics that might pre-triage:\par
+\par
+\li360  1. {\b Domain-architecture coherence}: pull Pfam profiles of each member gene in a group. If \u8805?90% of members share a dominant domain architecture \u8594? likely family. If domains are heterogeneous \u8594? likely functional mix. Easy to compute since annotations_hmms already runs.\par
+\par
+\li360  2. {\b Orthogroup clustering of members}: for each HGNC group, check how its human members partition across your species70 orthogroups. If they cluster into 1 orthogroup \u8594? tight family. If they cluster into several small orthogroups that are clearly related (sharing a domain) \u8594? superfamily (still valid). If they scatter across many unrelated orthogroups \u8594? functional mix.\par
+\par
+\li360  3. {\b Cross-reference HGNC group name/description}: regex for telltale functional descriptors like "receptors", "channels", "enzymes" (functional) vs. "family", "superfamily", "subunits" (likely structural family). Not deterministic but can pre-rank for review.\par
+\par
+Combining these could reduce the manual review from "all 2000" to "review the ~200 ambiguous ones" \u8212? still an afternoon, but shorter. Not automated; just pre-sorted.\par
+\par
+{\b For STEP_2 planning purposes} \u8212? can we assume: after triage, we'll have some subset of HGNC groups (~N bona fide families) whose AGS-based presence/absence data becomes feature input for the ranking? And this adds to orthogroups + Pfam domains as the three feature classes?\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i I don't think the automate methods are fool-proof/complete enough to leverage. The failures at edges are there - and the edges can be substantial / complex - so making more trouble I suspect in the end.}\par
+{\li720\i }\par
+{\li720\i that said - domains are next to discuss!}\par
+{\li720\i }\par
+{\li720\i gene groups are often hierarchical - so I can process often 5-20 at a time.}\par
+{\li720\i }\par
+{\li720\i For STEP_2 planning purposes  - ~N bona fide families to integrate with orthogroups for greater analysis of orthogroups and gene families - but for OCL}\par
+{\li720\i }\par
+{\li720\i there are also things like PANTHER Families within the InterProScan proteome annotation data for example in annotations_hmms - this should overlap or encompass HGNC gene groups - but I haven't explored this level of redundancy. I think the phylogenetic scope building PANTHER families in terms of initial seeding sequences and species is greater than HGNC - but maybe less comprehensive of the human genome. Again, not sure but there are features that made HGNC a good place to start within gigantic several years ago. So that it is HGNC and not yet Panther or other phylogenetic annotation tools of proteomes is more historical than best option}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Noted \u8212? manual triage it is. And the hierarchical batching (5\u8211?20 at a time) makes the afternoon more realistic. Useful to know.\par
+\par
+{\b On HGNC vs PANTHER:}\par
+\par
+This is a case where STEP_2's design shouldn't lock in to a specific source. What matters is the feature matrix (presence/absence per species per feature); the source can be:\par
+\li360  \u8226?  HGNC gene groups (now, historically)\par
+\li360  \u8226?  PANTHER families (from InterProScan \u8212? broader phylogenetic scope, maybe less complete for human)\par
+\li360  \u8226?  Expert-curated RGS sets (high quality, limited breadth)\par
+\li360  \u8226?  Future tools\par
+\par
+{\b Design implication for STEP_2 input spec:}\par
+\par
+STEP_2 should accept a feature matrix with columns like:\par
+\par
+{\f1\fs18 feature_id | feature_source | feature_type | species_1 | species_2 | ... | species_N}\par
+\par
+\par
+Where {\f1 feature_source} and {\f1 feature_type} are free-form metadata (HGNC / PANTHER / OrthoHMM / Pfam). The algorithm treats them uniformly \u8212? feeds them to the dedup rule (event-level) and the parsimony scorer. The source matters for:\par
+\li360  \u8226?  Dedup decisions (which source wins when overlapping)\par
+\li360  \u8226?  Provenance/traceability (which claim came from which tool)\par
+\li360  \u8226?  But NOT the scoring math \u8212? features are features\par
+\par
+That way when PANTHER becomes the preferred gene-family source later, STEP_2 doesn't need rewriting \u8212? just swap the input feed.\par
+\par
+{\b Bridge to domains:} PANTHER Families living inside InterProScan alongside Pfam is a natural segue. The InterProScan ecosystem produces multiple feature types (families, domains, sites, motifs, repeats, etc.) \u8212? and your rank-order dedup rule from earlier applies directly. Your move on domains.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i the other thing with domains is that the are homology within proteins - but we are already leveraging the proteins themselves in orthogroups and gene families. Importantly, these two methods are leveraging blast or hmms - and at least blast is using only a small portion of the sequence in its evaluation for a threshold of inclusion or not.}\par
+{\li720\i }\par
+{\li720\i SO}\par
+{\li720\i }\par
+{\li720\i its possible or often likely that a pfam domain and a top blast hit in a gene family pipeline are leveraging the same sequence - meaning the same phylogenetic signal - making it a cryptic duplication and inflation artefact.  On the otherhand - for OrthoHMM maybe its HMMs are full-length sequences? I'm not sure - but also maybe it is just blast hits lined up to generate an HMM model. In which case - domain HMMs, orthohmm, and gene families may have cryptic duplications of phylogenetic signal.....}\par
+{\li720\i }\par
+{\li720\i HGNC we have no idea what was used - will varying widely and is unknowable.}\par
+{\li720\i }\par
+{\li720\i the only solution I guess would be to know coordinates of sequence signal - I've included this information in gigantic's parsing of annotation_hmms subproject - and I think it would be trivial to implement in a few hours for gene families (capturing the coordinates) - we could then assess for same sequence overlap across tools pulling on similar types of phylogenetic signal - but this is getting complicated - so for development purposes for now - can stick to each tool as a stand-alone assessment without integration. Can then compare tools to structure ranks and see what we think - this can probably inform / inspire for optimization and collapse/expansion of the subproject and workflow(s).}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+Your concern is sharper than I credited earlier. The "category-level dedup" from before (Pfam wins domains, orthogroups wins families, etc.) assumes the categories don't overlap at the sequence level \u8212? but they do. A Pfam domain hit at residues 50\u8211?150 of gene X and a gene-family BLAST hit on the same gene X anchored on the same conserved region are the same phylogenetic signal reported twice. My earlier "truly orthogonal" hierarchy was too optimistic.\par
+\par
+{\b Your coordinate-level solution is the principled answer, and it's deferrable:}\par
+\par
+The proper dedup: intersect coordinate ranges per gene across tools. If Pfam call at [50,150] and gene-family BLAST hit at [40,160] overlap substantially, they're one signal. Pick the higher-ranked tool for that coordinate range, drop the other. This catches cryptic duplication the category-level rule misses.\par
+\par
+But you're right to defer \u8212? implementing coordinate tracking in gene families + overlap-detection logic is meaningful engineering on top of STEP_2's already-substantial scope. Not now.\par
+\par
+{\b Standalone-per-tool analysis as the development path is smart:}\par
+\par
+Treating each tool's feature set as an independent parsimony analysis gives us:\par
+\par
+\li360  1. {\b Per-tool structure ranking} \u8212? each tool produces its own top-ranked topology and confidence\par
+\li360  2. {\b Cross-tool concordance} \u8212? if orthogroups AND gene families AND Pfam all vote structure_007, that's strong. If they disagree, we've found something\par
+\li360  3. {\b Diagnostic value on disagreement} \u8212? where tools disagree, we can investigate whether tool-specific bias (HMM library coverage, BLAST window length, seed choices) explains the split\par
+\li360  4. {\b Sensitivity check} \u8212? if structure_007 wins regardless of tool, the signal is robust. If different tools pick different winners, either we have genuine biological heterogeneity OR cryptic-duplication-adjusted methodology matters\par
+\par
+That last point is actually a {\i better} outcome than integrating everything \u8212? if independent analyses converge, you have stronger evidence than a single integrated analysis could provide, because each tool contributes an independent perspective on the same question.\par
+\par
+{\b Implication for STEP_2 design:}\par
+\par
+STEP_2 becomes tool-parameterized: given a feature matrix from ANY tool (orthogroups / HGNC / Pfam / PANTHER / future), produce structure ranking with uncertainty. Run it multiple times (once per tool), then a thin downstream comparator reports:\par
+\li360  \u8226?  Per-tool top structure + uncertainty\par
+\li360  \u8226?  Concordance matrix across tools\par
+\li360  \u8226?  Consensus if any\par
+\par
+Coordinate-level integration = future research direction (valuable enough to be a paper in itself \u8212? "how much of your gene-content phylogenetic signal is cryptically duplicated across annotation tools?").\par
+\par
+{\b Before we move on} \u8212? one question: when you say "stick to each tool as a stand-alone assessment," do you mean:\par
+(a) Run STEP_2 separately for orthogroups, separately for HGNC, separately for Pfam \u8212? 3 separate runs with 3 separate outputs\par
+(b) Run STEP_2 once with a pooled feature matrix (tool is just metadata), and the COMPARISON happens downstream\par
+(c) Something else\par
+\par
+My instinct is (a) \u8212? cleaner per-tool output \u8212? but (b) is also defensible.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+\par
+{\b\fs26 Eric}\par
+\par
+{\li720\i Definitely A - and for now just orthogroups!}\par
+{\li720\i }\par
+{\li720\i Lets capture the last part of the consersation - my brain is going to mush and I want to get the tables that should have finished a few hours ago to Leonid tonight.}\par
+{\li720\i }\par
+{\li720\i Capture brainstorm conversation verbatim}\par
+{\li720\i Generate a summary - think deeply about it - turn it into a 2-5 page white paper and with a 300 word abstract at its start}\par
+{\li720\i Generate a TODO list for STEP_1 and STEP_2}\par
+{\li720\i }\par
+{\li720\i and then lets check on the tables - if there is something I can send Leonid that would be great. And we can share the brainstorm documents with others.}\par
+\par
+\par
+{\b\fs26 Claude}\par
+\par
+_[Verbatim conversation appended. Summary white paper and TODO list follow.]_\par
+\par
+}

@@ -1,4 +1,5 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Shared utility for emitting run summary fragments
+# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Add annogroup annotation lookup so downstream scripts can append Pfam accessions + definitions
 # Human: Eric Edsinger
 
 """
@@ -129,3 +130,123 @@ def clear_fragments_directory( workflow_directory ):
             fragment_path.unlink()
         except OSError:
             pass
+
+
+# ============================================================================
+# Annogroup annotation lookup (Pfam accessions + definitions)
+# ============================================================================
+#
+# Script 001 writes the authoritative annogroup map with two annotation columns:
+#   Annotation_Accessions  -- comma delimited database accessions (e.g. Pfam PF00069)
+#                             or the unannotated identifier for the zero subtype
+#   Annotation_Definitions -- semicolon delimited accession=definition pairs, where
+#                             definition is the InterProScan signature description
+#                             (e.g. "PF00069=Protein kinase domain; PF00400=WD40 repeat")
+#
+# Downstream scripts (002, 003, 004) carry these two columns onto every output
+# that bears an Annogroup_ID by looking them up here by Annogroup_ID. They are
+# always appended as the final two columns so existing positional parsers (which
+# read fixed low indices) are unaffected.
+
+
+def sanitize_annotation_text( text ):
+    """
+    Make a single annotation field safe to embed inside one TSV column.
+
+    Tabs and newlines would break the column/row structure, so they are
+    collapsed to spaces. Commas, semicolons and '=' are left intact (the
+    accession=definition; ... format relies on them and TSV only splits on
+    tabs). Returns the cleaned string.
+    """
+    if text is None:
+        return ''
+    return text.replace( '\t', ' ' ).replace( '\r', ' ' ).replace( '\n', ' ' ).strip()
+
+
+def format_annotation_definitions( accessions, accessions___descriptions ):
+    """
+    Build the Annotation_Definitions string for one annogroup.
+
+    Accessions are DEDUPLICATED here (first-occurrence order preserved): a
+    combo architecture can repeat the same accession many times (e.g. a protein
+    with 300 PF00041 hits), but its definition only needs to appear once. The
+    full multiplicity is retained in the separate Annotation_Accessions column;
+    Annotation_Definitions is the unique domain glossary for the annogroup.
+
+    Args:
+        accessions: list of database accessions for this annogroup (may contain
+            duplicates), in the same order used for Annotation_Accessions.
+        accessions___descriptions: dict mapping accession -> definition text.
+
+    Returns:
+        str: semicolon delimited 'accession=definition' pairs over the UNIQUE
+             accessions, e.g. 'PF00069=Protein kinase domain; PF00400=WD40 repeat'.
+             Missing definitions render as 'accession=' (empty definition).
+    """
+    seen_accessions = set()
+    pairs = []
+    for accession in accessions:
+        if accession in seen_accessions:
+            continue
+        seen_accessions.add( accession )
+        definition = sanitize_annotation_text( accessions___descriptions.get( accession, '' ) )
+        pairs.append( f"{accession}={definition}" )
+    return '; '.join( pairs )
+
+
+def load_annogroup_annotation_lookup( annogroup_map_file ):
+    """
+    Load Annogroup_ID -> ( Annotation_Accessions, Annotation_Definitions ) from
+    the Script 001 annogroup map. Used by downstream scripts (002, 003, 004) to
+    append these two columns to their annogroup-bearing outputs.
+
+    Columns are located by their header_ID (the text before the first ' (' in a
+    self-documenting header), so column order in the map does not matter.
+
+    Args:
+        annogroup_map_file: Path to 1_ai-structure_NNN_annogroup_map.tsv
+
+    Returns:
+        dict: { annogroup_id: { 'accessions': str, 'definitions': str } }
+              Empty dict if the file is missing or lacks the columns (callers
+              then emit empty cells, never crash).
+    """
+    annogroup_ids___annotation_columns = {}
+
+    map_path = Path( annogroup_map_file )
+    if not map_path.exists():
+        return annogroup_ids___annotation_columns
+
+    with open( map_path, 'r' ) as input_file:
+        # Annogroup_ID (...)	Annogroup_Subtype (...)	Annotation_Database (...)	Annotation_Accessions (...)	Annotation_Definitions (...)	...
+        header_line = input_file.readline().rstrip( '\n' )
+        header_parts = header_line.split( '\t' )
+
+        column_names___indices = {}
+        for index, column_header in enumerate( header_parts ):
+            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
+            column_names___indices[ column_name ] = index
+
+        annogroup_id_index = column_names___indices.get( 'Annogroup_ID' )
+        accessions_index = column_names___indices.get( 'Annotation_Accessions' )
+        definitions_index = column_names___indices.get( 'Annotation_Definitions' )
+
+        if annogroup_id_index is None:
+            return annogroup_ids___annotation_columns
+
+        for line in input_file:
+            line = line.rstrip( '\n' )
+            if not line:
+                continue
+            parts = line.split( '\t' )
+            if annogroup_id_index >= len( parts ):
+                continue
+            annogroup_id = parts[ annogroup_id_index ]
+            accessions = parts[ accessions_index ] if accessions_index is not None and accessions_index < len( parts ) else ''
+            definitions = parts[ definitions_index ] if definitions_index is not None and definitions_index < len( parts ) else ''
+            annogroup_ids___annotation_columns[ annogroup_id ] = {
+                'accessions': accessions,
+                'definitions': definitions
+            }
+
+    return annogroup_ids___annotation_columns

@@ -8,9 +8,10 @@
 # column documentation.
 # ============================================================================
 
-source_path	include	dest_name	display_label	file_category	description	order
+source_path	include	dest_name	display_label	file_category	description	order	dir_label
 # ----- Final AGS (All Gene Set): RGS + confirmed homologs -----
-OUTPUT_pipeline/16-output/16_ai-ags-*.aa	yes		All Gene Set (AGS) FASTA	sequences	Final homolog set: RGS + reciprocal-BLAST-confirmed candidates.	10
+# dir_label = short (<=3 words) descriptor shown as the folder's subtitle on the server.
+OUTPUT_pipeline/16-output/16_ai-ags-*.aa	yes		All Gene Set (AGS) FASTA	sequences	Final homolog set: RGS + reciprocal-BLAST-confirmed candidates.	10	AGS sequences
 #
 # ----- Earlier outputs (intermediate; off by default) -----
 OUTPUT_pipeline/1-output/*.aa	no		RGS validated	qc	Validated input RGS (pre-BLAST).	20

@@ -23,10 +23,13 @@
 #   description     (optional) One-line tooltip / subtitle.
 #   order           (optional) Integer sort key within category (default 100).
 #                   Lower = earlier.
+#   dir_label       (optional) Short (<=3 words) descriptor for the FOLDER the
+#                   file lands in. Shown as the folder's subtitle on the server.
+#                   First non-empty value among files in a folder wins.
 # ============================================================================
 
-source_path	include	dest_name	display_label	file_category	description	order
-OUTPUT_pipeline/1-output/*-fasttree.pdf	yes		FastTree tree (PDF)	visualization	Annotated phylogenetic tree from FastTree.	10
+source_path	include	dest_name	display_label	file_category	description	order	dir_label
+OUTPUT_pipeline/1-output/*-fasttree.pdf	yes		FastTree tree (PDF)	visualization	Annotated phylogenetic tree from FastTree.	10	tree visualizations
 OUTPUT_pipeline/1-output/*-iqtree.pdf	yes		IQ-TREE tree (PDF)	visualization	Annotated phylogenetic tree from IQ-TREE.	20
 OUTPUT_pipeline/1-output/*-veryfasttree.pdf	yes		VeryFastTree tree (PDF)	visualization	Annotated phylogenetic tree from VeryFastTree.	30
 OUTPUT_pipeline/1-output/*-phylobayes.pdf	yes		PhyloBayes tree (PDF)	visualization	Annotated phylogenetic tree from PhyloBayes.	40

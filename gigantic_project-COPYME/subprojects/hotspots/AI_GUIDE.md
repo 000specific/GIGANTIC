@@ -20,6 +20,12 @@ Human:   Eric Edsinger
   - `output_to_input/BLOCK_self_blast/self_blast_reports/`
   - `output_to_input/BLOCK_identify_hotspots/`
 - Downstream consumers: `upload_to_server/`, comparative analyses
+  - **integrator** — `../integrator/BLOCK_orthogroups_ocl_X_features/` reads
+    `output_to_input/BLOCK_identify_hotspots/hotspots/` and inverts
+    `Member_Source_Gene_IDs` to map each member gene to its `Hotspot_ID`, then
+    joins onto OCL orthogroups (keyed by `(Genus_species, source_gene_field)`,
+    since hotspot member IDs are unique only within a species). See
+    `../integrator/AI_GUIDE.md`.
 
 ---
 

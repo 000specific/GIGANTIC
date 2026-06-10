@@ -398,26 +398,42 @@ for old_link in "${SHARED_DIR}"/structure_*; do
     fi
 done
 
-# Create symlinks for each structure directory
-# Source filename includes the structure_NNN infix (Script 004's naming convention):
-#   4_ai-structure_NNN_orthogroups-complete_ocl_summary.tsv
-# Symlink name is the clean infix-free form so downstream subprojects can use a
-# stable path: output_to_input/.../structure_NNN/4_ai-orthogroups-complete_ocl_summary.tsv
+# Create symlinks for each structure directory.
+# Source filenames include the structure_NNN infix (Script 004's naming convention);
+# the symlink name is the clean infix-free form so downstream subprojects can use a
+# stable path: output_to_input/.../structure_NNN/<clean_name>.
+#
+# TWO files are exposed per structure:
+#   4_ai-orthogroups-complete_ocl_summary.tsv          (per-orthogroup OCL + Sequence_IDs)
+#   4_ai-path_states-per_orthogroup_per_species.tsv    (per-block Rule 7 states)
+# The path_states file is consumed by the integrator subproject
+# (integrator/BLOCK_orthogroups_ocl_X_features) to build its block-state
+# expanded integration table. Added 2026-06-04.
+#
+# NOTE: BLOCK dir was renamed from BLOCK_ocl_analysis to BLOCK_orthogroups_X_ocl
+# in the 2026-05-29 OCL reorg Phase 1, Commit 2/6. The output_to_input/
+# BLOCK_orthogroups_X_ocl/ subdir name is retained for now. (On-disk symlinks
+# created before the rename pointed at the stale BLOCK_ocl_analysis target and
+# were regenerated 2026-06-04 to the correct target below.)
 for structure_dir in OUTPUT_pipeline/structure_*; do
     if [ -d "$structure_dir" ]; then
         structure_name=$(basename "$structure_dir")
         structure_num="${structure_name#structure_}"
-        source_filename="4_ai-structure_${structure_num}_orthogroups-complete_ocl_summary.tsv"
-        summary_file="${structure_dir}/4-output/${source_filename}"
+
+        summary_source="4_ai-structure_${structure_num}_orthogroups-complete_ocl_summary.tsv"
+        path_states_source="4_ai-structure_${structure_num}_path_states-per_orthogroup_per_species.tsv"
+        summary_file="${structure_dir}/4-output/${summary_source}"
+        path_states_file="${structure_dir}/4-output/${path_states_source}"
 
         if [ -f "$summary_file" ]; then
             mkdir -p "${SHARED_DIR}/${structure_name}"
-            # NOTE: BLOCK dir was renamed from BLOCK_ocl_analysis to BLOCK_orthogroups_X_ocl
-            # in the 2026-05-29 OCL reorg Phase 1, Commit 2/6.
-            # The output_to_input/BLOCK_orthogroups_X_ocl/ subdir name is retained for now to
-            # preserve existing symlinks; Phase 5 may rename that too.
-            ln -sf "../../../../BLOCK_orthogroups_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/${source_filename}" \
+            ln -sf "../../../../BLOCK_orthogroups_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/${summary_source}" \
                 "${SHARED_DIR}/${structure_name}/4_ai-orthogroups-complete_ocl_summary.tsv"
+        fi
+        if [ -f "$path_states_file" ]; then
+            mkdir -p "${SHARED_DIR}/${structure_name}"
+            ln -sf "../../../../BLOCK_orthogroups_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/${path_states_source}" \
+                "${SHARED_DIR}/${structure_name}/4_ai-path_states-per_orthogroup_per_species.tsv"
         fi
     fi
 done

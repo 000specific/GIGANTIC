@@ -326,6 +326,12 @@ def build_tree( upload_dir: Path, config: ServerConfig ) -> TreeNode:
         except ( PermissionError, FileNotFoundError ):
             return
 
+        # Reserved __DIR__ row carries a short label for THIS directory itself
+        # (rendered as a folder subtitle). Not a real file on disk.
+        dir_meta = sidecar.get( '__DIR__', {} )
+        if dir_meta.get( 'description', '' ):
+            parent.description = dir_meta[ 'description' ]
+
         for entry in entries:
             if entry.name.startswith( '.' ):
                 # hide dotfiles (sidecars, .gitkeep, etc.)
@@ -588,6 +594,20 @@ class GIGANTICServer:
             word-wrap: break-word;
         }
         .card:hover .title { color: #FFFFFF; }
+        .card .subtitle {
+            color: #333333;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            word-wrap: break-word;
+        }
+        .card:hover .subtitle { color: #FFFFFF; }
+        .dir-subtitle {
+            color: #B0B0B0;
+            font-size: 15px;
+            font-weight: 600;
+            margin: -10px 0 25px 0;
+        }
         .card .hint {
             color: #606060;
             font-size: 12px;
@@ -815,6 +835,9 @@ class GIGANTICServer:
         # Title
         last_display = htmllib.escape( self._clean_display_name( segments[ -1 ] ) )
         body_parts.append( f'<h1>{last_display}</h1>' )
+        # Optional folder descriptor (subtitle) from the __DIR__ sidecar row
+        if node.description:
+            body_parts.append( f'<div class="dir-subtitle">{htmllib.escape( node.description )}</div>' )
 
         # Partition children into subdirs and files
         subdirs = [ child for child in node.children.values() if not child.is_file ]
@@ -831,12 +854,17 @@ class GIGANTICServer:
                     child_url_segments = segments + [ child.name ]
                     url = '/' + '/'.join( urllib.parse.quote( s ) for s in child_url_segments ) + '/'
                     child_display = htmllib.escape( self._clean_display_name( child.name ) )
+                    # Optional folder descriptor (subtitle) from the __DIR__ sidecar row
+                    subtitle_html = ''
+                    if child.description:
+                        subtitle_html = f'<div class="subtitle">{htmllib.escape( child.description )}</div>'
                     # Count items as a hint
                     total_items = self._count_direct_items( child )
                     hint = f'{total_items} ITEMS &rsaquo;'
                     cards.append( f"""
             <a class="card" href="{url}">
                 <div class="title">{child_display}</div>
+                {subtitle_html}
                 <div class="hint">{hint}</div>
             </a>
 """ )

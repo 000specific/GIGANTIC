@@ -59,8 +59,13 @@ STATE_FILENAME = '.upload_state.tsv'
 REQUIRED_COLUMNS = [ 'source_path', 'include' ]
 KNOWN_COLUMNS = [
     'source_path', 'include', 'dest_name',
-    'display_label', 'file_category', 'description', 'order',
+    'display_label', 'file_category', 'description', 'order', 'dir_label',
 ]
+
+# Reserved sidecar row whose 'description' carries a label for the directory
+# ITSELF (rendered by the server as a folder subtitle), as opposed to a file.
+# Not a real filename — never matches anything on disk.
+DIR_LABEL_KEY = '__DIR__'
 
 
 class ManifestParseError( Exception ):
@@ -71,7 +76,7 @@ class ManifestEntry:
     __slots__ = (
         'source_path', 'include',
         'dest_name', 'display_label', 'file_category',
-        'description', 'order',
+        'description', 'order', 'dir_label',
     )
 
     def __init__( self, row: Dict[ str, str ] ):
@@ -81,6 +86,9 @@ class ManifestEntry:
         self.display_label = row.get( 'display_label', '' ).strip()
         self.file_category = row.get( 'file_category', '' ).strip()
         self.description = row.get( 'description', '' ).strip()
+        # Short descriptor for the destination FOLDER the file lands in
+        # (e.g. "AGS sequences"). Rendered by the server as a folder subtitle.
+        self.dir_label = row.get( 'dir_label', '' ).strip()
         try:
             self.order = int( row.get( 'order', '100' ) or '100' )
         except ValueError:
@@ -214,6 +222,8 @@ def apply_manifest( manifest_path: Path,
 
     # Group per-destination-directory so we can write one sidecar per dir
     dir_to_metadata: Dict[ Path, List[ Dict[ str, str ] ] ] = {}
+    # Per-destination-directory folder label (from manifest dir_label column)
+    dir_to_label: Dict[ Path, str ] = {}
 
     for entry in entries:
         # source_path is relative to manifest_dir
@@ -252,6 +262,28 @@ def apply_manifest( manifest_path: Path,
             # include=no lines don't reach this point, so kept_paths is exactly
             # the set of symlink paths this manifest asks to publish.
             kept_paths.add( full_dest_file )
+
+            # Record the folder label. It belongs to the N-output directory
+            # (e.g. "4-output"), NOT to a deeper subdir a file may sit in
+            # (e.g. "4-output/species64_.../"). Walk the dest subdirs to find
+            # the N-output component and attach the label there. If the file is
+            # not under an N-output dir, the label is ignored (by convention
+            # only N-output folders carry subtitles).
+            if entry.dir_label:
+                output_idx = None
+                for i, part in enumerate( dest_subdir_parts ):
+                    if re.fullmatch( r'\d+(?:_[a-z])?-output', part ):
+                        output_idx = i
+                if output_idx is not None:
+                    n_output_dir = upload_dir / dest_prefix_rel / Path( *dest_subdir_parts[ : output_idx + 1 ] )
+                    prev_label = dir_to_label.get( n_output_dir )
+                    if prev_label is None:
+                        dir_to_label[ n_output_dir ] = entry.dir_label
+                    elif prev_label != entry.dir_label:
+                        print( f"    WARN: conflicting dir_label for "
+                               f"{n_output_dir.name}: '{prev_label}' vs "
+                               f"'{entry.dir_label}' (keeping '{prev_label}')" )
+                        warnings += 1
 
             if dry_run:
                 print( f"    [DRY] would link {full_dest_file.relative_to( upload_dir )} -> {src_path}" )
@@ -292,9 +324,12 @@ def apply_manifest( manifest_path: Path,
                 'order': str( entry.order ),
             } )
 
-    # Write sidecars (one per dest dir touched)
+    # Write sidecars (one per dest dir touched, plus any N-output dir that only
+    # received a folder label because its files live in subdirectories).
     if not dry_run:
-        for target_dir, rows in dir_to_metadata.items():
+        sidecar_dirs = set( dir_to_metadata.keys() ) | set( dir_to_label.keys() )
+        for target_dir in sidecar_dirs:
+            rows = dir_to_metadata.get( target_dir, [] )
             sidecar_path = target_dir / SIDECAR_FILENAME
             # Merge with existing sidecar if present (preserve entries from OTHER manifests)
             existing: Dict[ str, Dict[ str, str ] ] = {}
@@ -319,6 +354,20 @@ def apply_manifest( manifest_path: Path,
 
             for row in rows:
                 existing[ row[ 'filename' ] ] = row
+
+            # Folder label: store as a reserved __DIR__ row so the server can
+            # render it as a subtitle on the folder card. order=0 sorts it first.
+            # Drop any pre-existing __DIR__ first so a stale/misplaced label from
+            # an earlier run is cleared; re-add only if this dir is labeled now.
+            existing.pop( DIR_LABEL_KEY, None )
+            if target_dir in dir_to_label:
+                existing[ DIR_LABEL_KEY ] = {
+                    'filename': DIR_LABEL_KEY,
+                    'display_label': '',
+                    'file_category': '',
+                    'description': dir_to_label[ target_dir ],
+                    'order': '0',
+                }
 
             header_cols = [ 'filename', 'display_label', 'file_category', 'description', 'order' ]
             with open( sidecar_path, 'w' ) as f:
@@ -406,7 +455,9 @@ def prune_sidecar_entries( upload_dir: Path, dry_run: bool ):
                 continue
             row = dict( zip( hdr, parts ) )
             fname = row.get( 'filename', '' )
-            if fname and ( root_path / fname ).exists():
+            # Keep the reserved folder-label row (it has no on-disk file) and
+            # any row whose file is still present.
+            if fname == DIR_LABEL_KEY or ( fname and ( root_path / fname ).exists() ):
                 kept_lines.append( ln )
         try:
             with open( sidecar_path, 'w' ) as f:

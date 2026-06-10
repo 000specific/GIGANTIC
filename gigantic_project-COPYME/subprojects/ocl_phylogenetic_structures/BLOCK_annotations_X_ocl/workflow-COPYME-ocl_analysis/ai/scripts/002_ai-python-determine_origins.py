@@ -1,4 +1,5 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Determine phylogenetic origins of annogroups using MRCA algorithm
+# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Append Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) to annogroup origins output
 # Human: Eric Edsinger
 
 """
@@ -46,7 +47,7 @@ import yaml
 
 # Add scripts directory to path for utility imports
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
-from utils_run_summary import emit_run_summary_fragment
+from utils_run_summary import emit_run_summary_fragment, load_annogroup_annotation_lookup
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -124,6 +125,8 @@ input_parent_child_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_parent_chi
 input_phylogenetic_paths_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_phylogenetic_paths.tsv'
 input_clade_mappings_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_clade_mappings.tsv'
 input_annogroups_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_annogroups-species_identifiers.tsv'
+# Annogroup map carries Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions)
+input_annogroup_map_file = input_directory / f'1_ai-{TARGET_STRUCTURE}_annogroup_map.tsv'
 
 # Upstream trees_species data (phylogenetic blocks with full format for block/path annotations)
 input_trees_species_directory = config_directory / config[ 'inputs' ][ 'trees_species_dir' ]
@@ -745,13 +748,18 @@ def process_annogroups( annogroup_ids___annogroup_data, species_clade_id_names__
 # SECTION 6: WRITE OUTPUTS
 # ============================================================================
 
-def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths ):
+def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths,
+                             annogroup_ids___annotation_columns ):
     """Write per-annogroup origin assignments.
 
     Per Rule 6, the origin is identified by the canonical clade_id_name form.
     Per Rule 7, the origin is a phylogenetic transition block (state O), fully
     specified by the block identifier parent::child and the block-state
     identifier parent::child-O.
+
+    Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) are
+    appended as the final two columns, looked up by Annogroup_ID from the
+    Script 001 annogroup map.
     """
     logger.info( f"Writing annogroup origins to: {output_origins_file}" )
 
@@ -767,7 +775,9 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
             'Origin_Phylogenetic_Path (phylogenetic path from root to the child endpoint of the origin block comma delimited as clade_id_name values)',
             'Shared_Clade_ID_Names (comma delimited list of shared ancestral clade_id_name values)',
             'Species_Count (total unique species in annogroup)',
-            'Species_List (comma delimited list of species in annogroup)'
+            'Species_List (comma delimited list of species in annogroup)',
+            'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
+            'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)'
         ]
 
         # Single-row header
@@ -788,6 +798,10 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
 
             species_list = ','.join( sorted( data[ 'species' ] ) )
 
+            annotation_columns = annogroup_ids___annotation_columns.get( annogroup_id, {} )
+            annotation_accessions = annotation_columns.get( 'accessions', '' )
+            annotation_definitions = annotation_columns.get( 'definitions', '' )
+
             output_row = [
                 annogroup_id,
                 annogroup_subtype,
@@ -796,7 +810,9 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
                 phylogenetic_path,
                 shared_clades_string,
                 str( species_count ),
-                species_list
+                species_list,
+                annotation_accessions,
+                annotation_definitions
             ]
 
             csv_writer.writerow( output_row )
@@ -917,7 +933,11 @@ def main():
     # Step 6: Write outputs
     logger.info( "" )
     logger.info( "STEP 6: Writing outputs..." )
-    write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths )
+    # Annotation accessions + definitions (Pfam IDs + definitions) keyed by Annogroup_ID
+    annogroup_ids___annotation_columns = load_annogroup_annotation_lookup( input_annogroup_map_file )
+    logger.info( f"Loaded annotation columns for {len( annogroup_ids___annotation_columns )} annogroups from map" )
+    write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths,
+                             annogroup_ids___annotation_columns )
     write_origins_summary( origins___annogroup_ids, clade_id_names___phylogenetic_blocks )
     write_annogroups_by_origin( origins___annogroup_ids, clade_id_names___phylogenetic_blocks )
 

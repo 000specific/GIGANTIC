@@ -19,6 +19,11 @@ Human:   Eric Edsinger
   - species set: `../genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/`
 - Outputs TO: `output_to_input/BLOCK_classify_dark_proteome/`
 - Downstream: `upload_to_server/` — curated subset for GIGANTIC server
+- Downstream consumers:
+  - **integrator** — `../integrator/BLOCK_orthogroups_ocl_X_features/` reads
+    `output_to_input/BLOCK_classify_dark_proteome/dark_proteome/` (per-gene
+    DARK/ANNOTATED Status) and joins it onto OCL orthogroups by full GIGANTIC
+    sequence ID. See `../integrator/AI_GUIDE.md`.
 
 ---
 

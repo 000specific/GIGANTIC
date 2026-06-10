@@ -155,12 +155,28 @@ class TreeNode:
         if self._canonical_cache is not None:
             return self._canonical_cache
 
+        # FIX (2026-06-03, see trees_species/KNOWN_ISSUES.md): treat any node that
+        # IS one of the 5 unresolved clades as a STOP (leaf) in the signature, even
+        # when it is an INTERNAL node. In structure_001's full species tree the 5
+        # clades are internal (species beneath them); without this stop, structure_001's
+        # signatures recurse all the way to species while the skeleton structures
+        # (002+) stop at the clade names — so the two never match and the user's
+        # internal clade names (Planulozoa, Parahoxozoa, Metazoa_Subclade_1, ...) are
+        # never reused across structures. EXACT match on the clade-name part so that
+        # e.g. 'Ctenophora_Subclade_1' does NOT collide with 'Ctenophora'.
+        this_clade_name = self.clade_name
+        if not this_clade_name and self.name:
+            name = self.name
+            prefix = name.split( '_', 1 )[ 0 ]
+            if len( name ) > 1 and name[ 0 ] == 'C' and '_' in name and prefix[ 1: ].isdigit():
+                this_clade_name = name.split( '_', 1 )[ 1 ]
+            else:
+                this_clade_name = name
+        if this_clade_name in unresolved_names:
+            self._canonical_cache = this_clade_name
+            return this_clade_name
+
         if not self.children:
-            # Check if this is an unresolved clade
-            for unresolved_name in unresolved_names:
-                if unresolved_name in self.name:
-                    self._canonical_cache = unresolved_name
-                    return unresolved_name
             self._canonical_cache = self.name
             return self.name
 

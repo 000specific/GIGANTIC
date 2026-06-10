@@ -27,6 +27,12 @@ Human:   Eric Edsinger
   - `STEP_2-filter_secretome/` — per-species filtered secretome tables
   - `BLOCK_secretome_per_moroz_17may2026/` — (future, when scripted)
 - Downstream consumers: comparative analyses, `upload_to_server/` (later)
+  - **integrator** — `../integrator/BLOCK_orthogroups_ocl_X_features/` reads
+    `output_to_input/STEP_2-filter_secretome/` (filtered-secretome membership →
+    `Is_Secreted`) and `output_to_input/BLOCK_secretome_evidence_table/`
+    (SignalP / DeepLoc / Pfam evidence columns for the gene-level drill-down),
+    joining onto OCL orthogroups by full GIGANTIC sequence ID. See
+    `../integrator/AI_GUIDE.md`.
 
 ## Naming inconsistency (flagged for future cleanup)
 

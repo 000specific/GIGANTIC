@@ -259,6 +259,21 @@ provides per-orthogroup origin, conservation rate, loss rate, and species compos
 This is used by:
 - annotations_X_ocl (integrating annotations with OCL data)
 - Any analysis comparing conservation patterns across gene families
+- **integrator** (`../../integrator/BLOCK_orthogroups_ocl_X_features/`) — uses
+  the orthogroup summary as its spine (member `Sequence_IDs`) AND the
+  per-orthogroup-per-species `path_states` file to build a block-state expanded
+  table. To support it, `RUN-workflow.sh` now also exposes
+  `4_ai-path_states-per_orthogroup_per_species.tsv` per structure in
+  `output_to_input/` alongside the summary (added 2026-06-04). See
+  `../../integrator/AI_GUIDE.md`.
+
+> **output_to_input symlink repair (2026-06-04)**: all 210 symlinks in this
+> BLOCK's `output_to_input/` were found broken — they pointed at the pre-rename
+> `BLOCK_ocl_analysis` target from before the 2026-05-29 reorg and were never
+> regenerated. They were regenerated to the correct `BLOCK_orthogroups_X_ocl`
+> target (no pipeline re-run; `workflow-RUN_1` `OUTPUT_pipeline` files already
+> existed). The `workflow-COPYME` driver target was already correct, so future
+> runs reproduce the right links automatically.
 
 ---
 

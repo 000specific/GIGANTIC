@@ -177,10 +177,19 @@ def extract_original_topology_from_tree( newick_string: str, unresolved_clade_na
             return len( self.children ) == 0
 
         def prune_to_labels( self, target_labels ):
-            """Prune tree to keep only branches leading to target labels."""
+            """Prune tree to keep only branches leading to target labels.
+
+            FIX (2026-06-03, see trees_species/KNOWN_ISSUES.md): a node whose own
+            label IS a target collapses to a leaf. The 5 unresolved clades are
+            INTERNAL nodes (species beneath them); without this check, pruning
+            recurses into their species (none of which are targets), discards
+            them all, and returns None — so the original topology was never
+            identified, which produced the duplicate structure_001/004 and a
+            dropped topology. Checking the node's own label first stops at the
+            clade node, exactly as intended."""
+            if self.label in target_labels:
+                return SimpleNode( self.label )
             if self.is_leaf():
-                if self.label in target_labels:
-                    return SimpleNode( self.label )
                 return None
 
             pruned_children = []

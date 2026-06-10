@@ -1,0 +1,110 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat
+{\fonttbl{\f0\fswiss\fcharset0 Helvetica;}{\f1\fmodern\fcharset0 Courier New;}}
+{\colortbl ;\red100\green100\blue100;}
+\f0\fs22 
+\par
+{\b\fs36 TODO: STEP_1 and STEP_2}\par
+\par
+\par
+\par
+{\b\fs30 STEP_1-ocl_analysis}\par
+\par
+\par
+\par
+{\b\fs26 Now (blocker for current species70 run)}\par
+\par
+\li360  \u8226?  [ ] {\b Debug validation failure in structure_003} (script 005): orthogroup count mismatch\par
+      (139628 vs expected 170027). Root-cause likely single-species orthogroups being dropped\par
+      silently. Decide whether the validator or the upstream filter is wrong. 2 validation\par
+      checks failing \u8212? review {\f1 5_ai-validation_error_log.txt} for the full list.\par
+\li360  \u8226?  [ ] {\b Re-run RUN_01 with fix} to generate complete per-structure 4-output summaries for\par
+      all 105 structures (94 completed before fail-fast halted).\par
+\par
+\par
+{\b\fs26 Near-term (blocks STEP_2)}\par
+\par
+\li360  \u8226?  [ ] {\b Adopt 5-state event vocabulary project-wide}: migrate {\f1 conservation},\par
+      {\f1 loss_at_origin}, {\f1 continued_absence}, and implicit pre-origin absence in scripts\par
+      003 / 004 / 005 to the new explicit vocabulary ({\f1 Inherited Absence}, {\f1 Origin},\par
+      {\f1 Inherited Presence}, {\f1 Loss}, {\f1 Inherited Loss}).\par
+\li360  \u8226?  [ ] {\b Surface pre-origin absence as an explicit accounted-for state} (currently\par
+      implicit / ignored). Diagnostically useful for understanding why some features\par
+      contribute no topology signal.\par
+\li360  \u8226?  [ ] {\b Ensure per-feature topology-contingent loss decomposition is available} in\par
+      {\f1 4-output/} summaries (STEP_2 needs this, not just the aggregate).\par
+\li360  \u8226?  [ ] {\b Add feature classification to complete_ocl_summary}: is this feature topology-\par
+      invariant, topology-discriminating (ambiguous-zone origin), or not-applicable?\par
+      STEP_2 will filter by this.\par
+\par
+\par
+{\b\fs26 Deferred}\par
+\par
+\li360  \u8226?  [ ] Vocabulary migration may require refactoring STEP_1 scripts \u8212? scope separately.\par
+\li360  \u8226?  [ ] Coordinate tracking in trees_gene_families for future coordinate-level dedup.\par
+\par
+\par
+{\b\fs30 STEP_2-occams_tree}\par
+\par
+\par
+\par
+{\b\fs26 Design (documented; not yet coded)}\par
+\par
+\li360  \u8226?  [x] Scope confirmed: orthogroups only, for now\par
+\li360  \u8226?  [x] Per-tool standalone execution (Option A \u8212? one run per tool, compare downstream)\par
+\li360  \u8226?  [x] 5-state event vocabulary locked in\par
+\li360  \u8226?  [x] Two-tier vocabulary: OCL for narrative, 5-state for algorithm / code\par
+\li360  \u8226?  [x] Source-agnostic feature matrix input spec (columns include {\f1 feature_source},\par
+      {\f1 feature_type})\par
+\li360  \u8226?  [x] Dedup at event level, not entity level (feature whose origin lands in the\par
+      ambiguous zone wins)\par
+\li360  \u8226?  [x] Tie-handling / subsample confidence intended (bootstrap-analog)\par
+\par
+\par
+{\b\fs26 Near-term (first implementation)}\par
+\par
+\li360  \u8226?  [ ] {\b Define the input feature matrix spec}: `feature_id | feature_source |\par
+      feature_type | origin_zone | species_1 | ... | species_N`. Loaded from STEP_1's\par
+      per-structure summaries.\par
+\li360  \u8226?  [ ] {\b Implement total-loss aggregator}: per topology, sum Loss events across all\par
+      features. Output: {\f1 structure_ranking.tsv} with columns `structure_id | total_loss\par
+      | rank | is_user_tree`.\par
+\li360  \u8226?  [ ] {\b Implement 4/5 clade representation filter}: features present in 4 of 5\par
+      unresolved clades are "discriminating"; included. 5/5 features are "controls";\par
+      tracked separately for diagnostics. Features with <4/5 either rejected or\par
+      flagged for LBA-at-clustering risk.\par
+\li360  \u8226?  [ ] {\b Implement bootstrap-analog subsampling}: N subsamples of features,\par
+      recompute ranking, report per-topology "ranked first in X% of subsamples".\par
+\li360  \u8226?  [ ] {\b Per-topology detail table}: {\f1 per_structure_loss_detail.tsv} \u8212? which features\par
+      contributed how many losses to each structure's score. Essential for diagnosis.\par
+\par
+\par
+{\b\fs26 Medium-term}\par
+\par
+\li360  \u8226?  [ ] {\b Validation harness}: run on data where answer is known (within-mammals,\par
+      within-arthropods) \u8212? confirm recovery of expert-accepted clade resolution.\par
+\li360  \u8226?  [ ] {\b Sensitivity analysis to lineage-specific loss rates}: partition features by\par
+      loss-rate quintile, rerun, check ranking stability. Required for publishability.\par
+\li360  \u8226?  [ ] {\b Gene families integration} (once HGNC triage is done; uses same STEP_2 logic).\par
+\li360  \u8226?  [ ] {\b Domains integration} (Pfam via annotations_hmms output).\par
+\par
+\par
+{\b\fs26 Future work (research direction in itself)}\par
+\par
+\li360  \u8226?  [ ] {\b Cross-tool concordance analysis}: after per-tool runs, implement concordance\par
+      matrix + consensus top-ranked topology.\par
+\li360  \u8226?  [ ] {\b Coordinate-level dedup}: add sequence-coordinate tracking to gene families +\par
+      Pfam, detect cryptic duplication of phylogenetic signal at the sequence level.\par
+      Own publication.\par
+\li360  \u8226?  [ ] {\b Weighting experiments}: unweighted vs clade-depth-weighted vs feature-\par
+      importance-weighted loss counts. Quantify effect on ranking.\par
+\li360  \u8226?  [ ] {\b Null distribution / significance}: permutation null for ranking; confidence\par
+      that top-ranked topology is meaningfully better than a random tree.\par
+\li360  \u8226?  [ ] {\b STEP_LEONID / STEP_3-gigantic_data_diver} integration: once rankings are\par
+      stable, expose queryable interface for collaborator-driven exploration.\par
+\par
+\brdrb\brdrs\brdrw10\brsp20\par
+\par
+\par
+_End of brainstorming document for STEP_2-occams_tree design session 2026-04-14._\par
+\par
+}
