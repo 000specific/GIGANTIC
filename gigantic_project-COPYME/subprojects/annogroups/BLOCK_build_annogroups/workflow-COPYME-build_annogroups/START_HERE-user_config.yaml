@@ -1,0 +1,67 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+#
+# GIGANTIC annogroups - BLOCK_build_annogroups
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 18
+# Human: Eric Edsinger
+#
+# Builds the four canonical annogroup types — feature, combination, architecture,
+# absent — PER SOURCE annotation database, from annotations_hmms outputs. One
+# parser plugin per source (ai/scripts/parsers/<source>.py); the four-type
+# construction is shared. How many types a source yields (3 or 4) is determined
+# by its data, not configured here.
+
+# Species set (drives the proteome universe used for `absent`)
+species_set_name: "species70"
+
+# Which annotation sources to build annogroups for.
+#   "all"            - every source that has a parser plugin AND data available
+#   [ pfam, gene3d ] - an explicit subset (each must have parsers/<source>.py)
+sources: "all"
+
+# Input paths (relative to this workflow directory), all via output_to_input (§2)
+inputs:
+  # annotations_hmms output_to_input ROOT; each parser appends its own subpath
+  # (e.g. the pfam parser reads BLOCK_interproscan_parsed/pfam/).
+  annotations_hmms_dir: "../../../annotations_hmms/output_to_input"
+
+  # Species-set proteomes (the membership universe for `absent`), from genomesDB.
+  proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
+
+# Output configuration
+output:
+  #   OUTPUT_pipeline/1-output/            sources manifest + proteome universe
+  #   OUTPUT_pipeline/2-output/<source>/   annogroup map + membership
+  #   OUTPUT_pipeline/3-output/<source>/   validation report
+  base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources (SLURM, when execution_mode is "slurm")
+# =============================================================================
+# The proteome universe (~1.4M sequences) and per-source membership dominate
+# memory; building is dict/set work.
+cpus: 4
+memory_gb: 24
+time_hours: 4
+
+# =============================================================================
+# Execution Mode  ("local" runs here; "slurm" self-submits as a SLURM job)
+# =============================================================================
+execution_mode: "slurm"
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Parallelism Mode (how per-source tasks dispatch; composes with execution_mode)
+#   "local" - per-source tasks run within this allocation (default)
+#   "slurm" - each per-source task submits as its own SLURM job
+# =============================================================================
+parallelism_mode: "local"
+
+# Resume from cached NextFlow work/ (false = re-run from scratch)
+resume: false

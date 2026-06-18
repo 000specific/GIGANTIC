@@ -1,0 +1,42 @@
+# GIGANTIC upload_manifest.tsv — annogroups / BLOCK_build_annogroups
+# ============================================================================
+# Publishes the Script 002 deliverables (per-source annogroup map + membership,
+# + the dropped-orphan QC audit) and the Script 004 summary tables (per source,
+# per species, per phylum). The Script 001 inputs (proteome universe, sources
+# manifest) and the Script 003 validation reports are intentionally NOT published
+# (include=no) — they are build internals / QC, flip to yes to expose them.
+# Source globs are relative to this manifest's directory
+# (the workflow-RUN_*-build_annogroups/ root).
+#
+# Build with (from the annogroups subproject root):
+#   bash RUN-update_upload_to_server.sh
+# (which calls ../../server/ai/update_upload_to_server.py --subproject-dir .)
+#
+# Published files land at:
+#   ../../upload_to_server/BLOCK_build_annogroups/workflow-RUN_*-build_annogroups/N-output/
+#
+# This is a COPYME template (single source of truth). The discovery helper
+# ignores manifests in workflow-COPYME-* dirs; copy this file into the
+# canonical workflow-RUN_* dir for it to publish (per gigantic_conventions §38/§39).
+#
+# Per-source globs (2-output/*/...) publish every source's tables in one entry.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order	dir_label
+#
+# ----- Headline summary: per source / per species / per phylum -----
+OUTPUT_pipeline/4-output/4_ai-annogroups_summary.tsv	yes		Annogroups summary (per source)	summary	One row per annotation source: validation status, universe / annotated / absent sequence counts and percent, the per-type annogroup breakdown (feature, combination, architecture, absent), total annogroups, and dropped-orphan count.	5	summary
+OUTPUT_pipeline/4-output/4_ai-annogroups_summary-per_species.tsv	yes		Annogroups per species	summary	One row per species (Genus_species, with Phylum); annotation sources are the columns. Each source cell is the species' annotated sequence count (sequences with at least one feature from that source); the universe count column is the denominator.	6	summary
+OUTPUT_pipeline/4-output/4_ai-annogroups_summary-per_phylum.tsv	yes		Annogroups per phylum	summary	One row per phylum; annotation sources are the columns. Each source cell is the phylum's annotated sequence count, with species count and universe count for context.	7	summary
+#
+# ----- Headline deliverables: per-source annogroup map + membership -----
+OUTPUT_pipeline/2-output/*/2_ai-*-annogroup_map.tsv	yes		Annogroup map (per source)	data	One row per annogroup for the source: the four canonical types feature (annogroup_<source>_<accession>), combination (distinct alphabetical feature set), architecture (N to C ordered positional feature pattern), and absent (no feature from the source). Columns give the type, the defining features, and member sequence and species counts.	10	annogroups
+OUTPUT_pipeline/2-output/*/2_ai-*-annogroup_membership.tsv	yes		Annogroup membership (per source)	data	One row per (sequence, annogroup): the full GIGANTIC protein identifier, its Genus_species, the annogroup it belongs to, the annogroup type, and (for architecture rows) the sequence's coordinate-tagged ordered features.	20	annogroups
+#
+# ----- Script 002 QC: dropped-orphan audit -----
+OUTPUT_pipeline/2-output/*/2_ai-*-dropped_orphan_sequences.tsv	yes		Dropped orphan annotations (per source)	qc	Annotation identifiers dropped because they are not in the proteome universe (truncated or orphan identifiers; see ai/ai_FYIs/WARNING-truncated_orphan_annotations.md). Empty on a clean run.	30	annogroups
+#
+# ----- NOT published (build internals / QC) — flip to yes to expose -----
+OUTPUT_pipeline/1-output/1_ai-proteome_universe.tsv	no		Proteome universe	summary	Every sequence identifier across the species-set proteomes (the membership universe used to compute annogroup_<source>_absent), with Genus_species.	40	supporting
+OUTPUT_pipeline/1-output/1_ai-sources_manifest.tsv	no		Sources built	summary	The annotation sources annogroups were built for (one per line); each has a parser plugin and available data.	50	supporting
+OUTPUT_pipeline/3-output/*/3_ai-*-validation_report.txt	no		Validation report (per source)	qc	Fail-fast cross-checks per source (type validity, map-vs-membership counts, combination partition, one-architecture-per-sequence, absent union annotated equals universe). Status PASS means every cross-check held.	60	quality control
