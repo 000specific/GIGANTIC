@@ -54,6 +54,7 @@ refresh_interval_seconds: 300
 
 subproject_order:
   # Alphabetical. Each entry is a real subproject directory under subprojects/.
+  - annogroups
   - annotations_hmms
   - dark_proteomes
   - gene_sizes
