@@ -777,7 +777,7 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
             'Species_Count (total unique species in annogroup)',
             'Species_List (comma delimited list of species in annogroup)',
             'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
-            'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)'
+            'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)'
         ]
 
         # Single-row header

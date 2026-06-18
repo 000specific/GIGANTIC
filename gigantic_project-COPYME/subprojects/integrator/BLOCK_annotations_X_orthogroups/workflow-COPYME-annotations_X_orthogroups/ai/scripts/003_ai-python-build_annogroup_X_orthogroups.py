@@ -71,27 +71,6 @@ def load_protein_to_orthogroup( orthogroups_path: Path ) -> dict:
     return proteins___orthogroups
 
 
-def strip_accession_prefixes( definitions: str ) -> str:
-    """
-    Drop the leading 'ACCESSION=' from each semicolon-delimited definition pair,
-    keeping only the human-readable definition text (the accessions remain in the
-    separate Annotation_Accessions column).
-
-    'PF00001=7 transmembrane receptor (rhodopsin family); PF13927=Immunoglobulin domain'
-      -> '7 transmembrane receptor (rhodopsin family); Immunoglobulin domain'
-    """
-    if not definitions:
-        return definitions
-    cleaned_definitions = []
-    for pair in definitions.split( ';' ):
-        pair = pair.strip()
-        if not pair:
-            continue
-        # split on the FIRST '=' only — definition text may itself contain '='
-        cleaned_definitions.append( pair.split( '=', 1 )[ 1 ] if '=' in pair else pair )
-    return '; '.join( cleaned_definitions )
-
-
 def load_annogroup_annotations( summary_path: Path ) -> dict:
     """
     annogroup_id -> ( subtype, accessions, definitions ) from the all-types OCL
@@ -182,7 +161,7 @@ def main():
         "Annogroup_ID (annogroup identifier format annogroup_pfam_N)",
         "Annogroup_Subtype (single or combo)",
         "Annotation_Accessions (comma delimited pfam accessions for this annogroup)",
-        "Annotation_Definitions (semicolon delimited pfam definition text for this annogroup; accession prefixes removed, accessions are in Annotation_Accessions)",
+        "Annotation_Definitions (semicolon delimited definition ==accession pairs for this annogroup passed through from the upstream annogroup OCL summary)",
         "Annogroup_Species_Count (number of unique species in the annogroup)",
         "Annogroup_Member_Protein_Count (number of member proteins in the annogroup)",
         "Members_With_Orthogroup_Count (count of member proteins that map to an orthogroup)",
@@ -255,9 +234,9 @@ def main():
                 subtype_from_summary, accessions, definitions = annogroups___annotations.get(
                     annogroup_id, ( subtype, "", "" )
                 )
-                # Definitions carry only the human-readable text — the pfam
-                # accessions live in the Annotation_Accessions column.
-                definitions = strip_accession_prefixes( definitions )
+                # Definitions are passed through verbatim from the upstream
+                # annogroup OCL summary, which formats them as 'definition ==accession'
+                # (semicolon delimited); accessions also stand alone in Annotation_Accessions.
 
                 all_ogs = sorted( orthogroup_ids )
                 output = '\t'.join( [

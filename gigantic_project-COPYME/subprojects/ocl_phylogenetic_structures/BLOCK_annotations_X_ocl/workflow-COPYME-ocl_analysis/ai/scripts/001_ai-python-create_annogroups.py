@@ -1,5 +1,5 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Create annotation groups (annogroups) from annotation files and prepare inputs for OCL analysis
-# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Capture per-accession descriptions and emit Annotation_Definitions (acc=def) alongside Annotation_Accessions on annogroup outputs
+# AI: Claude Code | Opus 4.8 | 2026 June 05 | Purpose: Capture per-accession descriptions and emit Annotation_Definitions (def ==acc) alongside Annotation_Accessions on annogroup outputs
 # Human: Eric Edsinger
 
 """
@@ -926,7 +926,7 @@ def write_annogroup_map( annogroup_map_entries ):
         output += 'Annogroup_Subtype (single or combo or zero)\t'
         output += 'Annotation_Database (name of annotation database)\t'
         output += 'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)\t'
-        output += 'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)\t'
+        output += 'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)\t'
         output += 'Species_Count (number of unique species with at least one member sequence)\t'
         output += 'Sequence_Count (total number of member sequences)\t'
         output += 'Species_List (comma delimited list of species names as Genus_species)\t'
@@ -968,7 +968,7 @@ def write_annogroups_standardized( annogroup_map_entries ):
         output += 'Species_Count (number of unique species in annogroup)\t'
         output += 'Species_List (comma delimited list of species names as Genus_species)\t'
         output += 'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)\t'
-        output += 'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)\n'
+        output += 'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)\n'
         output_file.write( output )
 
         for entry in annogroup_map_entries:
@@ -998,7 +998,7 @@ def write_per_subtype_annogroup_files( subtypes___annogroup_data ):
             output += 'Species_List (comma delimited list of species names as Genus_species)\t'
             output += 'Sequence_IDs (comma delimited list of sequence identifiers)\t'
             output += 'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)\t'
-            output += 'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)\n'
+            output += 'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)\n'
             output_file.write( output )
 
             for entry in annogroup_entries:

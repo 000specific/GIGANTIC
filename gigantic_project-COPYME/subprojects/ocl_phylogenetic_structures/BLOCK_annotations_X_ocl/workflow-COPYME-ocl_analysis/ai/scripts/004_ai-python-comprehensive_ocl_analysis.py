@@ -903,7 +903,7 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_
             'Continued_Absence_Events (count of phylogenetic blocks in block-state X where annogroup is absent at both parent and child after an upstream loss)',
             'Species_List (comma delimited list of all species containing this annogroup)',
             'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
-            'Annotation_Definitions (semicolon delimited accession=definition pairs where definition is the InterProScan signature description e.g. PF00069=Protein kinase domain)'
+            'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)'
         ]
 
         csv_writer.writerow( header_columns )

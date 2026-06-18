@@ -139,9 +139,9 @@ def clear_fragments_directory( workflow_directory ):
 # Script 001 writes the authoritative annogroup map with two annotation columns:
 #   Annotation_Accessions  -- comma delimited database accessions (e.g. Pfam PF00069)
 #                             or the unannotated identifier for the zero subtype
-#   Annotation_Definitions -- semicolon delimited accession=definition pairs, where
+#   Annotation_Definitions -- semicolon delimited "definition ==accession" pairs, where
 #                             definition is the InterProScan signature description
-#                             (e.g. "PF00069=Protein kinase domain; PF00400=WD40 repeat")
+#                             (e.g. "Protein kinase domain ==PF00069; WD40 repeat ==PF00400")
 #
 # Downstream scripts (002, 003, 004) carry these two columns onto every output
 # that bears an Annogroup_ID by looking them up here by Annogroup_ID. They are
@@ -155,7 +155,7 @@ def sanitize_annotation_text( text ):
 
     Tabs and newlines would break the column/row structure, so they are
     collapsed to spaces. Commas, semicolons and '=' are left intact (the
-    accession=definition; ... format relies on them and TSV only splits on
+    "definition ==accession" ... format relies on them and TSV only splits on
     tabs). Returns the cleaned string.
     """
     if text is None:
@@ -179,9 +179,12 @@ def format_annotation_definitions( accessions, accessions___descriptions ):
         accessions___descriptions: dict mapping accession -> definition text.
 
     Returns:
-        str: semicolon delimited 'accession=definition' pairs over the UNIQUE
-             accessions, e.g. 'PF00069=Protein kinase domain; PF00400=WD40 repeat'.
-             Missing definitions render as 'accession=' (empty definition).
+        str: semicolon delimited 'definition ==accession' pairs over the UNIQUE
+             accessions, e.g. 'Protein kinase domain ==PF00069; WD40 repeat ==PF00400'.
+             Note the literal ' ==' separator (space + two equals signs); the
+             definition comes first so the column reads as human text with the
+             accession appended for provenance. Missing definitions render as
+             '==accession' (no leading text).
     """
     seen_accessions = set()
     pairs = []
@@ -190,7 +193,7 @@ def format_annotation_definitions( accessions, accessions___descriptions ):
             continue
         seen_accessions.add( accession )
         definition = sanitize_annotation_text( accessions___descriptions.get( accession, '' ) )
-        pairs.append( f"{accession}={definition}" )
+        pairs.append( f"{definition} =={accession}" if definition else f"=={accession}" )
     return '; '.join( pairs )
 
 
