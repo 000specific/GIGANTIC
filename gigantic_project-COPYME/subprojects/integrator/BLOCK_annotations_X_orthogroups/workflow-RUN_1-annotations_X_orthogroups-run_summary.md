@@ -1,6 +1,6 @@
 # Workflow Run Summary: species70_pfam_X_OrthoHMM
 
-**Status**: ✅ **SUCCESS (completed 2026-06-09 22:01:49)**
+**Status**: ✅ **SUCCESS (completed 2026-06-17 20:05:41)**
 
 **Run label**: `species70_pfam_X_OrthoHMM`
 **Species set**: `species70`
