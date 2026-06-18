@@ -42,9 +42,23 @@
 # research_ai/subproject-<X>/. Toolkits ship full content (scripts,
 # configs, main.nf, AI_GUIDEs, INPUT_user template, etc.) — same
 # rigor as a subproject workflow. x_* archives inside still get
-# ignored by the x_* rule at the bottom of this file, and
-# toolkit-RUN_*/ instances stay ignored via the top-level .gitignore.
+# ignored by the x_* rule at the bottom of this file.
 !research_ai/subproject-*/**
+
+# Re-exclude RUN execution artifacts under research_ai/ toolkits. The broad
+# re-inclusion above otherwise tracks NextFlow caches + RUN outputs (e.g. a
+# 100MB toolkit-RUN_*/ tree). The top-level .gitignore's RUN-artifact rules do
+# NOT reach here — this nested .gitignore takes precedence for this subtree, so
+# the carve-outs must live here. Toolkit/workflow SOURCE (COPYME templates,
+# scripts, docs) stays tracked; execution copies + their outputs/caches do not.
+research_ai/subproject-*/**/work/
+research_ai/subproject-*/**/.nextflow/
+research_ai/subproject-*/**/.nextflow.log*
+research_ai/subproject-*/**/.params.json
+research_ai/subproject-*/**/slurm_logs/
+research_ai/subproject-*/**/OUTPUT_pipeline/
+research_ai/subproject-*/**/toolkit-RUN_*/
+research_ai/subproject-*/**/workflow-RUN_*/
 
 # research_user/ is a personal sandbox per §25 — by default ships ONLY
 # the per-subproject .gitkeep placeholders so users have pre-materialized
