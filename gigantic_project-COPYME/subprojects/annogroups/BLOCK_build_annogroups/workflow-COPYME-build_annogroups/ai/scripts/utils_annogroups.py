@@ -142,3 +142,39 @@ def architecture_member_string( ordered_features ) -> str:
     """
     return DELIM.join( f"{feature.accession}_start{feature.start}_stop{feature.stop}"
                        for feature in ordered_features )
+
+
+def sanitize_annotation_text( text: str ) -> str:
+    """
+    Make one annotation description safe to embed in a single TSV column. Tabs
+    and newlines would break the column/row structure, so they collapse to
+    spaces. Commas, semicolons and '=' are left intact (the 'definition ==accession'
+    format relies on them; TSV only splits on tabs).
+    """
+    if text is None:
+        return ''
+    return text.replace( '\t', ' ' ).replace( '\r', ' ' ).replace( '\n', ' ' ).strip()
+
+
+def format_annotation_definitions( accessions, accessions___definitions ) -> str:
+    """
+    Build the Annotation_Definitions string for one annogroup — the canonical
+    GIGANTIC format shared with the OCL / integrator outputs.
+
+    Accessions are DEDUPLICATED (first-occurrence order preserved): an
+    architecture can repeat the same accession, but its definition appears once.
+
+    Returns semicolon-delimited 'definition ==accession' pairs over the UNIQUE
+    accessions, e.g. 'Protein kinase domain ==PF00069; WD40 repeat ==PF00400'.
+    Note the literal ' ==' separator (space + two equals). Missing definitions
+    render as '==accession' (no leading text).
+    """
+    seen_accessions = set()
+    pairs = []
+    for accession in accessions:
+        if accession in seen_accessions:
+            continue
+        seen_accessions.add( accession )
+        definition = sanitize_annotation_text( accessions___definitions.get( accession, '' ) )
+        pairs.append( f"{definition} =={accession}" if definition else f"=={accession}" )
+    return '; '.join( pairs )

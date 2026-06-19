@@ -75,3 +75,38 @@ def parse_source_features( workflow_root: Path, config: dict ) -> dict:
                 )
 
     return proteins___features
+
+
+def parse_source_definitions( workflow_root: Path, config: dict ) -> dict:
+    """
+    accession -> human-readable definition (InterProScan signature description,
+    column 'Description'). First non-empty description seen per accession wins.
+
+    Optional half of the parser contract: a source that exposes this lets the
+    builder attach Annotation_Definitions to the annogroup map. Sources without
+    descriptions can omit this function (the builder then emits empty definitions).
+    """
+    annotations_dir = U.resolve_input_path(
+        workflow_root, config[ "inputs" ][ "annotations_hmms_dir" ]
+    ) / RELATIVE_SUBPATH
+
+    pfam_files = sorted( annotations_dir.glob( "pfam-*.tsv" ) )
+
+    accessions___definitions = {}
+    for pfam_file in pfam_files:
+        with open( pfam_file, 'r' ) as input_pfam:
+            # Protein_Identifier (...)\t...\tAccession (...)\tDescription (...)\t...
+            header_ids___indices = U.build_header_index( input_pfam.readline() )
+            index_accession = header_ids___indices[ "Accession" ]
+            index_description = header_ids___indices[ "Description" ]
+            for line in input_pfam:
+                line = line.rstrip( '\n' )
+                if not line:
+                    continue
+                parts = line.split( '\t' )
+                accession = parts[ index_accession ]
+                description = U.sanitize_annotation_text( parts[ index_description ] ) if index_description < len( parts ) else ''
+                if description and description != '-' and accession not in accessions___definitions:
+                    accessions___definitions[ accession ] = description
+
+    return accessions___definitions
