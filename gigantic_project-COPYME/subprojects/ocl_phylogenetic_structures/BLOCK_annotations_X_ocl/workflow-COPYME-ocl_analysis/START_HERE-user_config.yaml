@@ -26,21 +26,25 @@ run_label: "SET_NAME_HERE_DATABASE_HERE"
 # Replace SET_NAME_HERE with your species set name (e.g., species71)
 species_set_name: "SET_NAME_HERE"
 
-# Annotation database to analyze
-# Valid values: pfam | gene3d | deeploc | signalp | tmbed | metapredict | (other InterProScan databases)
+# Annotation source (annotation tool / database) to analyze.
+# This is the annogroups subproject SOURCE name -- it selects which per-source
+# annogroup set is mapped onto the species tree structures. Annogroups are NOT
+# computed here; they are imported from the annogroups subproject.
+# Valid values: pfam | gene3d | superfamily | tmbed | signalp | deeploc | ...
+#   (any source that has a parser plugin + built annogroups in the annogroups subproject)
 annotation_database: "DATABASE_HERE"
 
-# Annogroup subtypes to generate
-# Domain databases (pfam, gene3d, etc.) support all 3 subtypes:
-#   - single: proteins with exactly 1 annotation from this database
-#   - combo:  proteins with identical multi-annotation architecture
-#   - zero:   proteins with no annotations from this database
-# Simple databases (deeploc, signalp, tmbed, metapredict) typically use only:
-#   - single: the only meaningful subtype (binary annotation)
-annogroup_subtypes:
-  - "single"
-  - "combo"
-  - "zero"
+# Annogroup TYPES to map onto the species tree structures.
+# The annogroups subproject defines four canonical types (feature, combination,
+# architecture, absent). OCL is an ORIGIN engine: origin / conservation / loss
+# only means something for an annogroup that is a coherent evolutionary unit with
+# a single origin. 'absent' (sequences sharing NO feature) has no shared origin --
+# its MRCA would resolve to the root, present everywhere -- so it is EXCLUDED here
+# by design. Keep this list to the origin-bearing types.
+annogroup_types:
+  - "feature"
+  - "combination"
+  - "architecture"
 
 # Input paths (relative to this workflow directory)
 inputs:
@@ -53,11 +57,10 @@ inputs:
   # Points to trees_species output_to_input via relative path
   trees_species_dir: "../../../trees_species/output_to_input/BLOCK_permutations_and_features"
 
-  # InterProScan output directory (raw per-species InterProScan result TSVs)
-  # Points to BLOCK_interproscan combined output (4-output with 15-column TSV per species)
-  # Script 001 filters to the requested annotation_database on the fly --
-  # no pre-built per-database files needed
-  interproscan_dir: "../../../annotations_hmms/BLOCK_interproscan/workflow-RUN_1-run_interproscan/OUTPUT_pipeline/4-output"
+  # annogroups subproject output_to_input ROOT (the BLOCK_build_annogroups dir).
+  # Script 001 reads the per-source annogroup map from:
+  #   <annogroups_dir>/<species_set_name>/<annotation_database>/2_ai-<source>-annogroup_map.tsv
+  annogroups_dir: "../../../annogroups/output_to_input/BLOCK_build_annogroups"
 
 # Output configuration
 output:

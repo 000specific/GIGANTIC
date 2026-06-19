@@ -137,8 +137,8 @@ def clear_fragments_directory( workflow_directory ):
 # ============================================================================
 #
 # Script 001 writes the authoritative annogroup map with two annotation columns:
-#   Annotation_Accessions  -- comma delimited database accessions (e.g. Pfam PF00069)
-#                             or the unannotated identifier for the zero subtype
+#   Annotation_Accessions  -- comma delimited database accessions (e.g. PF00069);
+#                             empty for the absent annogroup type
 #   Annotation_Definitions -- semicolon delimited "definition ==accession" pairs, where
 #                             definition is the InterProScan signature description
 #                             (e.g. "Protein kinase domain ==PF00069; WD40 repeat ==PF00400")
@@ -221,7 +221,7 @@ def load_annogroup_annotation_lookup( annogroup_map_file ):
         return annogroup_ids___annotation_columns
 
     with open( map_path, 'r' ) as input_file:
-        # Annogroup_ID (...)	Annogroup_Subtype (...)	Annotation_Database (...)	Annotation_Accessions (...)	Annotation_Definitions (...)	...
+        # Annogroup_ID (...)	Annogroup_Type (...)	Annotation_Database (...)	Annotation_Accessions (...)	Annotation_Definitions (...)	...
         header_line = input_file.readline().rstrip( '\n' )
         header_parts = header_line.split( '\t' )
 

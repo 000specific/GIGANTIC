@@ -359,7 +359,7 @@ def load_annogroups():
     Returns:
         dict: { annogroup_id: { 'species': [ species_name, ... ],
                                 'species_count': int,
-                                'annogroup_subtype': str } }
+                                'annogroup_type': str } }
     """
     logger.info( f"Loading annogroups from: {input_annogroups_file}" )
 
@@ -371,8 +371,8 @@ def load_annogroups():
     annogroup_ids___annogroup_data = {}
 
     with open( input_annogroups_file, 'r' ) as input_file:
-        # Annogroup_ID (annogroup identifier format annogroup_{db}_N)	Annogroup_Subtype (single or combo or zero)	Species_Count (number of unique species in annogroup)	Species_List (comma delimited list of species names as Genus_species)
-        # annogroup_pfam_1	single	5	Homo_sapiens,Mus_musculus,Drosophila_melanogaster,Caenorhabditis_elegans,Fonticula_alba
+        # Annogroup_ID (annogroup identifier format annogroup_<source>_<accession> e.g. annogroup_pfam_PF00069)	Annogroup_Type (feature or combination or architecture or absent)	Species_Count (number of unique species in annogroup)	Species_List (comma delimited list of species names as Genus_species)
+        # annogroup_pfam_PF00069	feature	5	Homo_sapiens,Mus_musculus,Drosophila_melanogaster,Caenorhabditis_elegans,Fonticula_alba
         header = input_file.readline()
 
         for line in input_file:
@@ -386,7 +386,7 @@ def load_annogroups():
                 continue
 
             annogroup_id = parts[ 0 ]
-            annogroup_subtype = parts[ 1 ]
+            annogroup_type = parts[ 1 ]
             species_count = int( parts[ 2 ] )
             species_list_string = parts[ 3 ]
 
@@ -396,7 +396,7 @@ def load_annogroups():
             annogroup_ids___annogroup_data[ annogroup_id ] = {
                 'species': species,
                 'species_count': species_count,
-                'annogroup_subtype': annogroup_subtype
+                'annogroup_type': annogroup_type
             }
 
     logger.info( f"Loaded {len( annogroup_ids___annogroup_data )} annogroups" )
@@ -699,7 +699,7 @@ def process_annogroups( annogroup_ids___annogroup_data, species_clade_id_names__
                 'shared_clades': shared_clades,
                 'species': annogroup_species,
                 'species_count': 1,
-                'annogroup_subtype': annogroup_data[ 'annogroup_subtype' ]
+                'annogroup_type': annogroup_data[ 'annogroup_type' ]
             }
 
             origins___annogroup_ids[ origin ].append( annogroup_id )
@@ -725,7 +725,7 @@ def process_annogroups( annogroup_ids___annogroup_data, species_clade_id_names__
             'shared_clades': shared_clades,
             'species': annogroup_species,
             'species_count': len( annogroup_species ),
-            'annogroup_subtype': annogroup_data[ 'annogroup_subtype' ]
+            'annogroup_type': annogroup_data[ 'annogroup_type' ]
         }
 
         origins___annogroup_ids[ origin ].append( annogroup_id )
@@ -769,14 +769,14 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
         # Per Rule 7, origin is a phylogenetic transition block (state O).
         header_columns = [
             'Annogroup_ID (annogroup identifier)',
-            'Annogroup_Subtype (single or combo or zero)',
+            'Annogroup_Type (feature or combination or architecture or absent)',
             'Origin_Phylogenetic_Block (phylogenetic block containing the origin transition format Parent_Clade_ID_Name::Child_Clade_ID_Name)',
             'Origin_Phylogenetic_Block_State (phylogenetic transition block for origin in five-state vocabulary format Parent_Clade_ID_Name::Child_Clade_ID_Name-O where the -O suffix marks Origin; five states are A=Inherited Absence O=Origin P=Inherited Presence L=Loss X=Inherited Loss)',
             'Origin_Phylogenetic_Path (phylogenetic path from root to the child endpoint of the origin block comma delimited as clade_id_name values)',
             'Shared_Clade_ID_Names (comma delimited list of shared ancestral clade_id_name values)',
             'Species_Count (total unique species in annogroup)',
             'Species_List (comma delimited list of species in annogroup)',
-            'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
+            'Annotation_Accessions (comma delimited annotation accessions defining this annogroup e.g. PF00069; empty for absent)',
             'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)'
         ]
 
@@ -789,7 +789,7 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
             origin = data[ 'origin' ]  # clade_id_name
             shared_clades_string = ','.join( sorted( data[ 'shared_clades' ] ) )
             species_count = data[ 'species_count' ]
-            annogroup_subtype = data[ 'annogroup_subtype' ]
+            annogroup_type = data[ 'annogroup_type' ]
 
             # Look up phylogenetic block and path for origin clade (both keyed by clade_id_name).
             phylogenetic_block = clade_id_names___phylogenetic_blocks.get( origin, 'NA' )
@@ -804,7 +804,7 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
 
             output_row = [
                 annogroup_id,
-                annogroup_subtype,
+                annogroup_type,
                 phylogenetic_block,
                 phylogenetic_block_state,
                 phylogenetic_path,

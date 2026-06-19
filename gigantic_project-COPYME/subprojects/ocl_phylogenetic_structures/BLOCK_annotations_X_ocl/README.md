@@ -13,19 +13,25 @@ Origin-Conservation-Loss (OCL) analysis of annotation groups (annogroups) across
 
 ## What This BLOCK Does
 
-Integrates per-species annotation data with species tree phylogenetic features to determine:
+**Annogroups are NOT computed here.** They are produced once, structure-independent,
+by the **`annogroups` subproject** (`BLOCK_build_annogroups`). This BLOCK *imports*
+them and **maps them onto each species tree structure** to determine:
 
 1. **Origin**: The most recent common ancestor (MRCA) clade where each annogroup first appeared
 2. **Conservation**: Tracking which phylogenetic blocks retain the annogroup
 3. **Loss**: Distinguishing first-loss events from downstream absences using the five-state block-state vocabulary (A/O/P/L/X)
 
-Annogroups are the annotation analog to orthogroups -- sets of proteins grouped by their annotation pattern from a specific database. Each annogroup has a simple ID (`annogroup_{db}_N`) with full details in a companion map. The three annogroup subtypes are:
+Annogroups are sequences grouped by shared annotation features, per source. The
+annogroups subproject defines four canonical types (`feature`, `combination`,
+`architecture`, `absent`). This BLOCK maps the **origin-bearing** types
+(`feature`, `combination`, `architecture`) onto the structures.
 
-- **single**: proteins with exactly one annotation from the database
-- **combo**: proteins with identical multi-annotation architecture
-- **zero**: proteins with no annotations from the database
+**`absent` is excluded by design**: OCL is an origin engine, and `absent`
+(sequences sharing no feature) has no single evolutionary origin — its MRCA would
+resolve to the root, present everywhere, a meaningless inference. The selected
+types are set in `START_HERE-user_config.yaml` (`annogroup_types`).
 
-Processes all annogroups across user-selected species tree topologies in parallel.
+Processes all selected annogroups across user-selected species tree topologies in parallel.
 
 ## Terminology
 
@@ -75,12 +81,17 @@ Each exploration (database + structure selection) is a separate COPYME copy:
 
 Different explorations coexist in output_to_input via run_label-based subdirectories.
 
-### Database-Specific Subtype Defaults
+### Annogroup Types Mapped Onto Structures
 
-| Database Category | Databases | Subtypes |
+The annogroups subproject produces four canonical types per source; OCL maps the
+origin-bearing types (`absent` excluded — see above). Which types a source has
+depends on its data (positional vs whole-protein), determined in the annogroups
+subproject, not here.
+
+| Source kind | Examples | Origin-bearing types OCL maps |
 |---|---|---|
-| Domain databases | pfam, gene3d, superfamily, smart, cdd, prosite_profiles | single, combo, zero |
-| Simple databases | deeploc, signalp, tmbed, metapredict | single only |
+| Positional (domains/segments) | pfam, gene3d, superfamily, smart, cdd, tmbed, signalp | feature, combination, architecture |
+| Whole-protein label | deeploc | feature, combination |
 
 ## Running the Workflow
 

@@ -9,8 +9,8 @@ Integrates results from Scripts 001-003 into comprehensive summary tables.
 Counts only -- no rates.
 
 Outputs:
-- Per-annogroup complete OCL summary (all subtypes integrated -- primary downstream file)
-- Per-subtype complete OCL summaries (one file per annogroup subtype: single, combo, zero)
+- Per-annogroup complete OCL summary (all types integrated -- primary downstream file)
+- Per-type complete OCL summaries (one file per annogroup type: feature, combination, architecture, absent)
 - Per-clade comprehensive statistics (origins count, annogroups present at
   clade, per-clade-as-parent counts: inherited / conserved / lost)
 - Per-species summaries (total, conserved-from-ancestors, species-specific)
@@ -97,7 +97,9 @@ with open( config_path, 'r' ) as config_file:
 
 # Format structure ID
 TARGET_STRUCTURE = f"structure_{args.structure_id}"
-ANNOGROUP_SUBTYPES = config[ 'annogroup_subtypes' ]
+# Annogroup TYPES are no longer configured -- they are whatever the annogroups
+# subproject produced (feature / combination / architecture / absent). The set of
+# types present is derived from the loaded annogroup summaries (see main()).
 
 # Input directories
 input_directory_001 = Path( args.output_dir ) / TARGET_STRUCTURE / '1-output'
@@ -164,7 +166,7 @@ def load_annogroup_origins():
             'phylogenetic_block': str,
             'phylogenetic_block_state': str,
             'origin_child_clade_id_name': str,
-            'annogroup_subtype': str,
+            'annogroup_type': str,
             'species_count': int
         } }
     """
@@ -180,7 +182,7 @@ def load_annogroup_origins():
     with open( input_origins_file, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Annogroup_Subtype	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Shared_Clade_ID_Names	Species_Count	Species_List
+        # Annogroup_ID	Annogroup_Type	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Shared_Clade_ID_Names	Species_Count	Species_List
         # annogroup_pfam_1	single	C069_Holozoa::C002_Filozoa	C069_Holozoa::C002_Filozoa-O	...	42	Homo_sapiens,...
         header_row = next( csv_reader )  # Skip single-row header
 
@@ -189,7 +191,7 @@ def load_annogroup_origins():
                 continue
 
             annogroup_id = parts[ 0 ]
-            annogroup_subtype = parts[ 1 ]
+            annogroup_type = parts[ 1 ]
             phylogenetic_block = parts[ 2 ]
             phylogenetic_block_state = parts[ 3 ]
             species_count = int( parts[ 6 ] )
@@ -204,7 +206,7 @@ def load_annogroup_origins():
                 'phylogenetic_block': phylogenetic_block,
                 'phylogenetic_block_state': phylogenetic_block_state,
                 'origin_child_clade_id_name': origin_child_clade_id_name,
-                'annogroup_subtype': annogroup_subtype,
+                'annogroup_type': annogroup_type,
                 'species_count': species_count
             }
 
@@ -232,7 +234,7 @@ def load_annogroup_patterns():
     with open( input_annogroup_patterns_file, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Annogroup_Subtype	Species_Count	Total_Scored_Blocks	Conservation_Events	Loss_Events	Continued_Absence_Events	Species_List
+        # Annogroup_ID	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Annogroup_Type	Species_Count	Total_Scored_Blocks	Conservation_Events	Loss_Events	Continued_Absence_Events	Species_List
         header_row = next( csv_reader )
 
         for parts in csv_reader:
@@ -243,7 +245,7 @@ def load_annogroup_patterns():
             phylogenetic_block = parts[ 1 ]
             phylogenetic_block_state = parts[ 2 ]
             phylogenetic_path = parts[ 3 ]
-            annogroup_subtype = parts[ 4 ]
+            annogroup_type = parts[ 4 ]
             species_count = int( parts[ 5 ] )
             total_scored_blocks = int( parts[ 6 ] )
             conservation_events = int( parts[ 7 ] )
@@ -255,7 +257,7 @@ def load_annogroup_patterns():
                 'phylogenetic_block': phylogenetic_block,
                 'phylogenetic_block_state': phylogenetic_block_state,
                 'phylogenetic_path': phylogenetic_path,
-                'annogroup_subtype': annogroup_subtype,
+                'annogroup_type': annogroup_type,
                 'species_count': species_count,
                 'total_scored_blocks': total_scored_blocks,
                 'conservation_events': conservation_events,
@@ -312,7 +314,7 @@ def load_annogroup_species( clade_names___clade_id_names ):
     annogroups___species_clade_id_names = {}
 
     with open( input_annogroups_file, 'r' ) as input_file:
-        # Annogroup_ID	Annogroup_Subtype	Species_Count	Species_List
+        # Annogroup_ID	Annogroup_Type	Species_Count	Species_List
         # annogroup_pfam_1	single	5	Homo_sapiens,Mus_musculus,...
         header_line = input_file.readline()
 
@@ -478,12 +480,12 @@ def generate_annogroup_summaries( annogroups___origins, annogroups___patterns ):
         phylogenetic_block = pattern_info.get( 'phylogenetic_block', 'NA' )
         phylogenetic_block_state = pattern_info.get( 'phylogenetic_block_state', 'NA' )
         phylogenetic_path = pattern_info.get( 'phylogenetic_path', 'NA' )
-        annogroup_subtype = pattern_info.get( 'annogroup_subtype', origin_info.get( 'annogroup_subtype', 'unknown' ) )
+        annogroup_type = pattern_info.get( 'annogroup_type', origin_info.get( 'annogroup_type', 'unknown' ) )
         species_list = pattern_info.get( 'species_list', '' )
 
         summary = {
             'annogroup_id': annogroup_id,
-            'annogroup_subtype': annogroup_subtype,
+            'annogroup_type': annogroup_type,
             'phylogenetic_block': phylogenetic_block,
             'phylogenetic_block_state': phylogenetic_block_state,
             'phylogenetic_path': phylogenetic_path,
@@ -867,7 +869,7 @@ def cross_validate_results( annogroup_summaries, clade_statistics, species_summa
 # SECTION 6: WRITE OUTPUTS
 # ============================================================================
 
-def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_ids___annotation_columns, subtype_filter = None ):
+def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_ids___annotation_columns, type_filter = None ):
     """Write per-annogroup summaries (Rule 7 block-state counts).
 
     Annotation_Accessions + Annotation_Definitions (Pfam IDs + definitions) are
@@ -878,11 +880,11 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_
         annogroup_summaries: List of summary dicts
         output_file_path: Path to write to
         annogroup_ids___annotation_columns: { annogroup_id: { 'accessions', 'definitions' } }
-        subtype_filter: If provided, only write summaries matching this subtype
+        type_filter: If provided, only write summaries matching this annogroup type
     """
-    if subtype_filter:
-        filtered_summaries = [ s for s in annogroup_summaries if s[ 'annogroup_subtype' ] == subtype_filter ]
-        logger.info( f"Writing {subtype_filter} annogroup summaries ({len( filtered_summaries )}) to: {output_file_path}" )
+    if type_filter:
+        filtered_summaries = [ s for s in annogroup_summaries if s[ 'annogroup_type' ] == type_filter ]
+        logger.info( f"Writing {type_filter} annogroup summaries ({len( filtered_summaries )}) to: {output_file_path}" )
     else:
         filtered_summaries = annogroup_summaries
         logger.info( f"Writing all-types annogroup summaries ({len( filtered_summaries )}) to: {output_file_path}" )
@@ -892,7 +894,7 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_
 
         header_columns = [
             'Annogroup_ID (annogroup identifier)',
-            'Annogroup_Subtype (single or combo or zero)',
+            'Annogroup_Type (feature or combination or architecture or absent)',
             'Origin_Phylogenetic_Block (phylogenetic block containing the origin transition format Parent_Clade_ID_Name::Child_Clade_ID_Name)',
             'Origin_Phylogenetic_Block_State (phylogenetic transition block for origin in five-state vocabulary format Parent_Clade_ID_Name::Child_Clade_ID_Name-O where O marks Origin; five states are A=Inherited Absence O=Origin P=Inherited Presence L=Loss X=Inherited Loss)',
             'Origin_Phylogenetic_Path (phylogenetic path from root to the child endpoint of the origin block comma delimited as clade_id_name values)',
@@ -902,7 +904,7 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_
             'Loss_Events (count of phylogenetic blocks in block-state L where annogroup is present at parent and absent at child)',
             'Continued_Absence_Events (count of phylogenetic blocks in block-state X where annogroup is absent at both parent and child after an upstream loss)',
             'Species_List (comma delimited list of all species containing this annogroup)',
-            'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
+            'Annotation_Accessions (comma delimited annotation accessions defining this annogroup e.g. PF00069; empty for absent)',
             'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)'
         ]
 
@@ -915,7 +917,7 @@ def write_annogroup_summaries( annogroup_summaries, output_file_path, annogroup_
 
             output_row = [
                 summary[ 'annogroup_id' ],
-                summary[ 'annogroup_subtype' ],
+                summary[ 'annogroup_type' ],
                 summary[ 'phylogenetic_block' ],
                 summary[ 'phylogenetic_block_state' ],
                 summary[ 'phylogenetic_path' ],
@@ -1039,7 +1041,6 @@ def main():
     logger.info( "=" * 80 )
     logger.info( f"Started: {Path( __file__ ).name}" )
     logger.info( f"Target structure: {TARGET_STRUCTURE}" )
-    logger.info( f"Annogroup subtypes: {ANNOGROUP_SUBTYPES}" )
     logger.info( "" )
 
     # STEP 1: Load all input data (all keyed by clade_id_name)
@@ -1112,10 +1113,12 @@ def main():
     # All-types integrated summary (primary downstream file)
     write_annogroup_summaries( annogroup_summaries, output_annogroup_complete_file, annogroup_ids___annotation_columns )
 
-    # Per-subtype summaries
-    for subtype in ANNOGROUP_SUBTYPES:
-        subtype_output_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{subtype}.tsv'
-        write_annogroup_summaries( annogroup_summaries, subtype_output_file, annogroup_ids___annotation_columns, subtype_filter = subtype )
+    # Per-type summaries (the annogroup types the annogroups subproject produced
+    # and that are present in this run: feature / combination / architecture / absent)
+    annogroup_types = sorted( { summary[ 'annogroup_type' ] for summary in annogroup_summaries } )
+    for annogroup_type in annogroup_types:
+        type_output_file = output_directory / f'4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{annogroup_type}.tsv'
+        write_annogroup_summaries( annogroup_summaries, type_output_file, annogroup_ids___annotation_columns, type_filter = annogroup_type )
 
     write_clade_statistics( clade_statistics )
     write_species_summaries( species_summaries )
@@ -1129,9 +1132,9 @@ def main():
     logger.info( f"All outputs written to: {output_directory}" )
     logger.info( "" )
     logger.info( "Output files:" )
-    logger.info( f"  {output_annogroup_complete_file.name} (primary downstream file -- all subtypes)" )
-    for subtype in ANNOGROUP_SUBTYPES:
-        logger.info( f"  4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{subtype}.tsv" )
+    logger.info( f"  {output_annogroup_complete_file.name} (primary downstream file -- all types)" )
+    for annogroup_type in annogroup_types:
+        logger.info( f"  4_ai-{TARGET_STRUCTURE}_annogroups-complete_ocl_summary-{annogroup_type}.tsv" )
     logger.info( f"  {output_clade_statistics_file.name}" )
     logger.info( f"  {output_species_summaries_file.name}" )
     logger.info( f"  {output_path_states_file.name}" )
@@ -1140,16 +1143,16 @@ def main():
 
     # Emit run summary fragment
     duration_seconds = time.time() - start_time
-    subtype_counts = defaultdict( int )
+    type_counts = defaultdict( int )
     for summary in annogroup_summaries:
-        subtype_counts[ summary[ 'annogroup_subtype' ] ] += 1
+        type_counts[ summary[ 'annogroup_type' ] ] += 1
     emit_run_summary_fragment(
         script_number = 4,
         structure_id = args.structure_id,
         stats = {
             'duration_seconds': round( duration_seconds, 2 ),
             'annogroup_summaries_total': len( annogroup_summaries ),
-            'annogroup_summaries_by_subtype': dict( subtype_counts ),
+            'annogroup_summaries_by_type': dict( type_counts ),
             'clades_analyzed': len( clade_statistics ),
             'species_analyzed': len( species_summaries ),
             'path_state_rows': len( path_state_rows )

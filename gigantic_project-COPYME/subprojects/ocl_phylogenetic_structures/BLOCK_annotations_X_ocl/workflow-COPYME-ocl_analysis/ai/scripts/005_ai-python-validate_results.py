@@ -172,8 +172,8 @@ def load_annogroups():
     with open( INPUT_ANNOGROUPS, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Annogroup_Subtype	Species_Count	Species_List
-        # annogroup_pfam_1	single	5	Homo_sapiens,Mus_musculus,...
+        # Annogroup_ID	Annogroup_Type	Species_Count	Species_List
+        # annogroup_pfam_PF00069	feature	5	Homo_sapiens,Mus_musculus,...
         header = next( csv_reader )
 
         for parts in csv_reader:
@@ -234,8 +234,8 @@ def load_origins():
     with open( INPUT_ORIGINS, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Annogroup_Subtype	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	...
-        # annogroup_pfam_1	single	C069_Holozoa::C082_Metazoa	C069_Holozoa::C082_Metazoa-O	...
+        # Annogroup_ID	Annogroup_Type	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	...
+        # annogroup_pfam_PF00069	feature	C069_Holozoa::C082_Metazoa	C069_Holozoa::C082_Metazoa-O	...
         header = next( csv_reader )
 
         for parts in csv_reader:
@@ -497,7 +497,7 @@ def validate_per_annogroup_counts():
     with open( INPUT_ANNOGROUP_COMPLETE, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Annogroup_Subtype	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Species_Count	Total_Scored_Blocks	Conservation_Events	Loss_Events	Continued_Absence_Events	Species_List
+        # Annogroup_ID	Annogroup_Type	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Species_Count	Total_Scored_Blocks	Conservation_Events	Loss_Events	Continued_Absence_Events	Species_List
         header = next( csv_reader )
 
         annogroup_count = 0

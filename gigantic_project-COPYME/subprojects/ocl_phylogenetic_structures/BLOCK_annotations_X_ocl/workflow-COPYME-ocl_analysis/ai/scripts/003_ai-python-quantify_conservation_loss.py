@@ -385,7 +385,7 @@ def load_annogroup_origins():
             'phylogenetic_block_state': str,
             'phylogenetic_path': str,
             'species_list': str,
-            'annogroup_subtype': str
+            'annogroup_type': str
         } }
     """
     logger.info( f"Loading annogroup origins from: {input_origins_file}" )
@@ -400,8 +400,8 @@ def load_annogroup_origins():
     with open( input_origins_file, 'r', newline = '', encoding = 'utf-8' ) as input_file:
         csv_reader = csv.reader( input_file, delimiter = '\t' )
 
-        # Annogroup_ID	Annogroup_Subtype	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Shared_Clade_ID_Names	Species_Count	Species_List
-        # annogroup_pfam_1	single	C069_Holozoa::C002_Filozoa	C069_Holozoa::C002_Filozoa-O	C068_Basal,C069_Holozoa,C002_Filozoa	C068_Basal,C069_Holozoa,C002_Filozoa	42	Homo_sapiens,...
+        # Annogroup_ID	Annogroup_Type	Origin_Phylogenetic_Block	Origin_Phylogenetic_Block_State	Origin_Phylogenetic_Path	Shared_Clade_ID_Names	Species_Count	Species_List
+        # annogroup_pfam_PF00069	feature	C069_Holozoa::C002_Filozoa	C069_Holozoa::C002_Filozoa-O	C068_Basal,C069_Holozoa,C002_Filozoa	C068_Basal,C069_Holozoa,C002_Filozoa	42	Homo_sapiens,...
         header_row = next( csv_reader )  # Skip single-row header
 
         for parts in csv_reader:
@@ -409,7 +409,7 @@ def load_annogroup_origins():
                 continue
 
             annogroup_id = parts[ 0 ]
-            annogroup_subtype = parts[ 1 ]
+            annogroup_type = parts[ 1 ]
             phylogenetic_block = parts[ 2 ]
             phylogenetic_block_state = parts[ 3 ]
             phylogenetic_path = parts[ 4 ]
@@ -427,7 +427,7 @@ def load_annogroup_origins():
                 'phylogenetic_block_state': phylogenetic_block_state,
                 'phylogenetic_path': phylogenetic_path,
                 'species_list': species_list,
-                'annogroup_subtype': annogroup_subtype
+                'annogroup_type': annogroup_type
             }
 
     logger.info( f"Loaded origin data for {len( annogroups___origin_data )} annogroups" )
@@ -461,8 +461,8 @@ def load_annogroup_species( clade_names___clade_id_names ):
     missing_species_names = set()
 
     with open( input_annogroups_file, 'r' ) as input_file:
-        # Annogroup_ID (annogroup identifier format annogroup_{db}_N)	Annogroup_Subtype (single or combo or zero)	Species_Count (number of unique species in annogroup)	Species_List (comma delimited list of species names as Genus_species)
-        # annogroup_pfam_1	single	5	Homo_sapiens,Mus_musculus,...
+        # Annogroup_ID (annogroup identifier format annogroup_<source>_<accession> e.g. annogroup_pfam_PF00069)	Annogroup_Type (feature or combination or architecture or absent)	Species_Count (number of unique species in annogroup)	Species_List (comma delimited list of species names as Genus_species)
+        # annogroup_pfam_PF00069	feature	5	Homo_sapiens,Mus_musculus,...
         header_line = input_file.readline()  # Skip single-row header
 
         for line in input_file:
@@ -742,7 +742,7 @@ def analyze_annogroup_patterns(
             'phylogenetic_block': origin_data[ 'phylogenetic_block' ],
             'phylogenetic_block_state': origin_data[ 'phylogenetic_block_state' ],
             'phylogenetic_path': origin_data[ 'phylogenetic_path' ],
-            'annogroup_subtype': origin_data[ 'annogroup_subtype' ],
+            'annogroup_type': origin_data[ 'annogroup_type' ],
             'species_count': species_count,
             'total_scored_blocks': total_scored_blocks,
             'conservation_events': conservation_events,
@@ -806,14 +806,14 @@ def write_annogroup_patterns( annogroup_patterns, annogroup_ids___annotation_col
             'Origin_Phylogenetic_Block (phylogenetic block containing the origin transition format Parent_Clade_ID_Name::Child_Clade_ID_Name)',
             'Origin_Phylogenetic_Block_State (phylogenetic transition block for origin in five-state vocabulary format Parent_Clade_ID_Name::Child_Clade_ID_Name-O where O marks Origin; five states are A=Inherited Absence O=Origin P=Inherited Presence L=Loss X=Inherited Loss)',
             'Origin_Phylogenetic_Path (phylogenetic path from root to the child endpoint of the origin block comma delimited as clade_id_name values)',
-            'Annogroup_Subtype (single or combo or zero)',
+            'Annogroup_Type (feature or combination or architecture or absent)',
             'Species_Count (total unique species containing this annogroup across all genomes)',
             'Total_Scored_Blocks (count of phylogenetic blocks classified into block-states P L or X for this annogroup; equals P plus L plus X)',
             'Conservation_Events (count of phylogenetic blocks in block-state P where annogroup is present at both parent and child clades)',
             'Loss_Events (count of phylogenetic blocks in block-state L where annogroup is present at parent and absent at child)',
             'Continued_Absence_Events (count of phylogenetic blocks in block-state X where annogroup is absent at both parent and child after an upstream loss)',
             'Species_List (comma delimited list of all species containing this annogroup)',
-            'Annotation_Accessions (comma delimited annotation accessions from the database e.g. Pfam PF00069 or unannotated identifier for zero subtype)',
+            'Annotation_Accessions (comma delimited annotation accessions defining this annogroup e.g. PF00069; empty for absent)',
             'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)'
         ]
 
@@ -833,7 +833,7 @@ def write_annogroup_patterns( annogroup_patterns, annogroup_ids___annotation_col
                 pattern[ 'phylogenetic_block' ],
                 pattern[ 'phylogenetic_block_state' ],
                 pattern[ 'phylogenetic_path' ],
-                pattern[ 'annogroup_subtype' ],
+                pattern[ 'annogroup_type' ],
                 pattern[ 'species_count' ],
                 pattern[ 'total_scored_blocks' ],
                 pattern[ 'conservation_events' ],

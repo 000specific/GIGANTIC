@@ -158,8 +158,8 @@ def filter_fragments_by_script( fragments, script_number ):
 # ============================================================================
 
 def build_script_001_section( fragments, is_single ):
-    """Build the Script 001 (create annogroups) section."""
-    lines = [ "## Script 001: Create Annogroups" ]
+    """Build the Script 001 (load annogroups) section."""
+    lines = [ "## Script 001: Load Annogroups" ]
 
     if not fragments:
         lines.append( "- **NOT RUN** (no fragments found for this script)" )
@@ -168,32 +168,27 @@ def build_script_001_section( fragments, is_single ):
     lines.append( format_duration_stat( aggregate_numeric_field( fragments, [ 'stats', 'duration_seconds' ] ), is_single ) )
     lines.append( format_aggregate_stat(
         aggregate_numeric_field( fragments, [ 'stats', 'annogroups_total' ] ),
-        'Annogroups created', is_single
+        'Annogroups loaded', is_single
     ) )
 
-    # Per-subtype breakdown
-    subtype_keys = set()
+    # Per-type breakdown (feature / combination / architecture / absent)
+    type_keys = set()
     for fragment in fragments:
-        subtype_counts = fragment.get( 'stats', {} ).get( 'annogroups_by_subtype', {} )
-        subtype_keys.update( subtype_counts.keys() )
+        type_counts = fragment.get( 'stats', {} ).get( 'annogroups_by_type', {} )
+        type_keys.update( type_counts.keys() )
 
-    if subtype_keys:
-        lines.append( "- By subtype:" )
-        for subtype in sorted( subtype_keys ):
-            values = [ f.get( 'stats', {} ).get( 'annogroups_by_subtype', {} ).get( subtype, 0 ) for f in fragments ]
+    if type_keys:
+        lines.append( "- By type:" )
+        for annogroup_type in sorted( type_keys ):
+            values = [ f.get( 'stats', {} ).get( 'annogroups_by_type', {} ).get( annogroup_type, 0 ) for f in fragments ]
             if all( v == values[ 0 ] for v in values ) or is_single:
-                lines.append( f"    - {subtype}: {values[ 0 ]:,}" )
+                lines.append( f"    - {annogroup_type}: {values[ 0 ]:,}" )
             else:
-                lines.append( f"    - {subtype}: {sum( values ):,} total ({min( values ):,}-{max( values ):,} range)" )
+                lines.append( f"    - {annogroup_type}: {sum( values ):,} total ({min( values ):,}-{max( values ):,} range)" )
 
-    lines.append( format_aggregate_stat(
-        aggregate_numeric_field( fragments, [ 'stats', 'species_with_annotations' ] ),
-        'Species with annotations', is_single
-    ) )
-
-    # Show annotation database (same across all structures)
+    # Show annotation source (same across all structures)
     database = fragments[ 0 ].get( 'stats', {} ).get( 'annotation_database', 'unknown' )
-    lines.append( f"- Annotation database: **{database}**" )
+    lines.append( f"- Annotation source: **{database}**" )
 
     return lines
 
@@ -429,7 +424,6 @@ def main():
     run_label = config.get( 'run_label', 'unknown' )
     species_set = config.get( 'species_set_name', 'unknown' )
     annotation_database = config.get( 'annotation_database', 'unknown' )
-    annogroup_subtypes = config.get( 'annogroup_subtypes', [] )
     execution_mode = config.get( 'execution_mode', 'local' )
     parallelism_mode = config.get( 'parallelism_mode', 'local' )
 
@@ -448,8 +442,7 @@ def main():
     lines.append( "" )
     lines.append( f"- Run label: `{run_label}`" )
     lines.append( f"- Species set: `{species_set}`" )
-    lines.append( f"- Annotation database: `{annotation_database}`" )
-    lines.append( f"- Annogroup subtypes: {', '.join( annogroup_subtypes )}" )
+    lines.append( f"- Annotation source: `{annotation_database}`" )
     lines.append( f"- Structures requested: **{expected_structures}** ({', '.join( structure_ids[ :10 ] )}{'...' if len( structure_ids ) > 10 else ''})" )
     lines.append( f"- Execution mode: `{execution_mode}` / parallelism: `{parallelism_mode}`" )
     lines.append( "" )

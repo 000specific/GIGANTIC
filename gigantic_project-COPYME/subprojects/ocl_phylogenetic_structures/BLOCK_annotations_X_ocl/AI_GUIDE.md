@@ -40,13 +40,17 @@ phylogenetic species tree structures. For each annogroup, determines:
 - **Conservation**: How often the annogroup is retained across descendant lineages
 - **Loss**: How and when annogroups are lost, distinguishing first-time loss from continued absence
 
-Annogroups are the annotation analog to orthogroups -- sets of proteins grouped by their
-annotation pattern from a specific database. Three subtypes capture different annotation
-architectures:
+Annogroups are sequences grouped by shared annotation features, produced ONCE
+(structure-independent) by the **`annogroups` subproject** and IMPORTED here — this
+BLOCK does not compute them. The four canonical types (defined in the annogroups
+subproject) are:
 
-- **single**: proteins with exactly one annotation from the database
-- **combo**: proteins with identical multi-annotation architecture (domain databases only)
-- **zero**: proteins with no annotations from the database (domain databases only)
+- **feature**: sequences sharing one feature (e.g. one pfam domain)
+- **combination**: sequences sharing the same distinct set of features
+- **architecture**: sequences sharing the same ordered arrangement of positional features
+- **absent**: sequences with no feature from the source — **excluded from OCL** (no single origin)
+
+OCL maps the origin-bearing types (feature, combination, architecture) onto each structure.
 
 ---
 
@@ -83,7 +87,7 @@ ocl_phylogenetic_structures/                   # parent subproject
             ├── main.nf
             ├── nextflow.config
             └── scripts/
-                ├── 001_ai-python-create_annogroups.py
+                ├── 001_ai-python-load_annogroups.py
                 ├── 002_ai-python-determine_origins.py
                 ├── 003_ai-python-quantify_conservation_loss.py
                 ├── 004_ai-python-comprehensive_ocl_analysis.py
@@ -142,19 +146,23 @@ one path-state per (annogroup, species) pair into
 Path-state letters follow the regular pattern `A* [O [P* [L X*]?]?]?`.
 Script 005 CHECK 8 enforces this invariant across every row.
 
-### Annogroups and Subtypes
+### Annogroups and Types (imported, not computed)
 
-An **annogroup** groups proteins by their annotation pattern from a specific
-database. The annogroup ID format is `annogroup_{database}_{N}` (e.g.
-`annogroup_pfam_1`). The **annogroup map** links each ID to its full details:
-subtype, annotation accessions, species list, and sequence IDs.
+An **annogroup** groups sequences by shared annotation features from a specific
+source. Annogroups are produced by the **`annogroups` subproject** and IMPORTED
+here; Script 001 reads its per-source map
+(`<annogroups_dir>/<species_set>/<source>/2_ai-<source>-annogroup_map.tsv`) and
+writes the OCL-standardized `annogroups-species_identifiers.tsv` + `annogroup_map.tsv`.
 
-Database-specific subtype defaults:
+Canonical IDs come from the annogroups subproject:
+`annogroup_<source>_<accession>` (feature, e.g. `annogroup_pfam_PF00069`),
+`annogroup_<source>_combination<NNNNN>`, `annogroup_<source>_architecture<NNNNN>`.
 
-| Database Category | Databases | Subtypes |
-|---|---|---|
-| Domain databases | pfam, gene3d, superfamily, smart, cdd, prosite_profiles | single, combo, zero |
-| Simple databases | deeploc, signalp, tmbed, metapredict | single only |
+OCL maps the **origin-bearing** types onto the structures; `absent` is excluded
+(no single evolutionary origin). The selected types are set in
+`START_HERE-user_config.yaml` (`annogroup_types`, default feature + combination +
+architecture). Which types a source yields is data-determined in the annogroups
+subproject (whole-protein sources like deeploc have no `architecture`).
 
 ### COPYME Multi-Database Coexistence
 

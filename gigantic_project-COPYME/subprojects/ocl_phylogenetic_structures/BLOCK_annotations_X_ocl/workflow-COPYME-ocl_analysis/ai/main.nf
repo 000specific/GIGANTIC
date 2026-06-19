@@ -80,7 +80,7 @@ Channel
 // PROCESS 001: CREATE ANNOGROUPS
 // ============================================================================
 
-process create_annogroups {
+process load_annogroups {
     tag "structure_${structure_id}"
 
     input:
@@ -91,7 +91,7 @@ process create_annogroups {
 
     script:
     """
-    python3 ${projectDir}/scripts/001_ai-python-create_annogroups.py \\
+    python3 ${projectDir}/scripts/001_ai-python-load_annogroups.py \\
         --structure_id ${structure_id} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
         --output_dir ${projectDir}/../${params.output.base_dir}
@@ -251,8 +251,8 @@ process aggregate_run_summary {
 
 workflow {
     // Run pipeline for each structure (parallel across structures, sequential per structure)
-    create_annogroups( structure_ids_channel )
-    determine_origins( create_annogroups.out.structure_id )
+    load_annogroups( structure_ids_channel )
+    determine_origins( load_annogroups.out.structure_id )
     quantify_conservation_loss( determine_origins.out.structure_id )
     comprehensive_ocl_analysis( quantify_conservation_loss.out.structure_id )
     validate_results( comprehensive_ocl_analysis.out.structure_id )
