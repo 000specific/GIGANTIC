@@ -40,31 +40,32 @@ run_label: "species70_pfam_X_OrthoHMM"
 # Species set identifier (must match the upstream annogroup + orthogroup subprojects)
 species_set_name: "species70"
 
-# Annotation database the annogroups were built from (provenance label only;
-# the actual files are pointed at by inputs.annogroups_dir below).
+# Annotation source the annogroups were built from. This is the annogroups
+# subproject SOURCE name and selects which per-source annogroup set to integrate.
 annotation_database: "pfam"
 
-# Annogroup subtypes to include. 'zero' (unannotated proteins) is intentionally
-# excluded by default. Each listed subtype must have a membership file exposed in
-# inputs.annogroups_dir/<reference_structure>/1_ai-<structure>_annogroups-<subtype>.tsv
-annogroup_subtypes:
-  - "single"
-  - "combo"
+# Annogroup TYPES to include (the annogroups subproject's four-type framework).
+# Unlike OCL (an origin engine, where 'absent' is meaningless), the integrator is
+# a STATE intersection: 'absent' (pfam-dark proteins) is an accurate per-sequence
+# STATE and intersecting it with orthogroups is useful (e.g. qualifying orthogroups
+# made of pfam-dark proteins -- "dark orthogroups"). So 'absent' IS included here.
+# Note: the absent row is a single large row spanning many orthogroups -- a state
+# summary, not a per-origin row.
+annogroup_types:
+  - "feature"
+  - "combination"
+  - "architecture"
+  - "absent"
 
 # Input paths (relative to this workflow directory)
 inputs:
-  # Annogroups (the Table 1 spine). A run_label subdir of the OCL annotations
-  # block's output_to_input. Each structure_NNN/ subdir exposes:
-  #   1_ai-<structure>_annogroups-single.tsv   (member Sequence_IDs; single subtype)
-  #   1_ai-<structure>_annogroups-combo.tsv    (member Sequence_IDs; combo subtype)
-  #   4_ai-<structure>_annogroups-complete_ocl_summary-all_types.tsv
-  #       (pfam Annotation_Accessions + Annotation_Definitions per annogroup)
-  # Annogroup membership is structure-invariant, so reference_structure picks ONE.
-  annogroups_dir: "../../../ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl/species70_pfam"
-
-  # Which structure's annogroup membership/summary to read (membership is
-  # structure-invariant; structure_001 is the user-provided input species tree).
-  reference_structure: "structure_001"
+  # Annogroups (the Table 1 spine) imported DIRECTLY from the annogroups
+  # subproject output_to_input ROOT (BLOCK_build_annogroups). The per-source
+  # files (structure-independent) are read from:
+  #   <annogroups_dir>/<species_set_name>/<annotation_database>/
+  #     2_ai-<source>-annogroup_map.tsv         (type, accessions, definitions)
+  #     2_ai-<source>-annogroup_membership.tsv  (member Sequence_IDs per annogroup)
+  annogroups_dir: "../../../annogroups/output_to_input/BLOCK_build_annogroups"
 
   # Orthogroups (the Table 2 spine). Headerless TSV: OG_ID then tab-delimited
   # member full GIGANTIC IDs. Each member's species comes from its -n_<phyloname>.
@@ -100,7 +101,7 @@ output:
 # the orthogroup protein->orthogroup map dominates memory.
 
 cpus: 3
-memory_gb: 20
+memory_gb: 32
 time_hours: 4
 
 # =============================================================================

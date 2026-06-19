@@ -1,34 +1,37 @@
 #!/usr/bin/env python3
 # AI: Claude Code | Opus 4.8 (1M context) | 2026 June 09 | Purpose: Build Table 1 — annogroups joined to their orthogroups, kept when they touch a qualifying (non-bilaterian-metazoan) orthogroup
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 18 | Purpose: Import-only refactor — read annogroups (members + accessions/definitions) DIRECTLY from the annogroups subproject (4-type framework); drop OCL dependency
 # Human: Eric Edsinger
 
 """
 Script 003 — Table 1: annogroups X orthogroups.
 
-For each pfam annogroup (subtypes from config; default single + combo), map its
-member proteins to the orthogroups they belong to (shared full GIGANTIC IDs),
-then KEEP the annogroup if at least one of its orthogroups is QUALIFYING — class
-non_bilaterian_metazoan (zero bilaterians AND >=1 non-bilaterian metazoan).
-Annogroups with no qualifying orthogroup are dropped (this includes annogroups
-whose orthogroups are only bilaterian-containing and/or only non-metazoan-unicell).
+For each pfam annogroup (types from config; default feature + combination +
+architecture + absent), map its member proteins to the orthogroups they belong to (shared
+full GIGANTIC IDs), then KEEP the annogroup if at least one of its orthogroups is
+QUALIFYING — class non_bilaterian_metazoan (zero bilaterians AND >=1 non-bilaterian
+metazoan). Annogroups with no qualifying orthogroup are dropped.
 
 For each kept annogroup ALL of its orthogroups are reported, grouped by the four
 composition classes, with per-class counts and comma-delimited ID lists.
 
-Inputs:
-  - orthogroups file (headerless)        -> protein -> orthogroup map
-  - 1-output composition table (Script 001) -> orthogroup -> composition class
-  - annogroup membership files (single/combo) -> annogroup -> member Sequence_IDs
-  - annogroup all-types OCL summary       -> annogroup -> pfam accessions/definitions
+Annogroups are imported DIRECTLY from the annogroups subproject (no OCL
+dependency). Per source the subproject exposes, structure-independent:
+  - 2_ai-<source>-annogroup_map.tsv         annogroup -> type, accessions, definitions
+  - 2_ai-<source>-annogroup_membership.tsv  (sequence, annogroup, type) rows
 
-Join key verified against real data: each protein belongs to exactly one
-annogroup (clean partition across single+combo) and at most one orthogroup.
+Inputs:
+  - orthogroups file (headerless)            -> protein -> orthogroup map
+  - 1-output composition table (Script 001)  -> orthogroup -> composition class
+  - annogroups subproject map                -> annogroup -> type / accessions / definitions
+  - annogroups subproject membership         -> annogroup -> member Sequence_IDs (per type)
 
 Fail-fast: exits 1 if any required input is missing.
 """
 
 import argparse
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
@@ -71,50 +74,62 @@ def load_protein_to_orthogroup( orthogroups_path: Path ) -> dict:
     return proteins___orthogroups
 
 
-def load_annogroup_annotations( summary_path: Path ) -> dict:
+def load_annogroup_annotations( map_path: Path ) -> dict:
     """
-    annogroup_id -> ( subtype, accessions, definitions ) from the all-types OCL
-    summary. Used to attach pfam context columns to Table 1.
+    annogroup_id -> ( annogroup_type, accessions, definitions ) from the annogroups
+    subproject map. Defining_Features holds the accessions; Annotation_Definitions
+    the 'definition ==accession' pairs. Used to attach pfam context to Table 1.
     """
     annogroups___annotations = {}
-    with open( summary_path, 'r' ) as input_summary:
-        header_line = input_summary.readline()
+    with open( map_path, 'r' ) as input_map:
+        header_line = input_map.readline()
         header_ids___indices = U.build_header_index( header_line )
         index_annogroup = header_ids___indices[ "Annogroup_ID" ]
-        index_subtype = header_ids___indices[ "Annogroup_Subtype" ]
-        index_accessions = header_ids___indices[ "Annotation_Accessions" ]
+        index_type = header_ids___indices[ "Annogroup_Type" ]
+        index_accessions = header_ids___indices[ "Defining_Features" ]
         index_definitions = header_ids___indices[ "Annotation_Definitions" ]
-        for line in input_summary:
+        for line in input_map:
             line = line.rstrip( '\n' )
             if not line:
                 continue
             parts = line.split( '\t' )
             annogroup_id = parts[ index_annogroup ]
-            subtype = parts[ index_subtype ] if index_subtype < len( parts ) else ""
+            annogroup_type = parts[ index_type ] if index_type < len( parts ) else ""
             accessions = parts[ index_accessions ] if index_accessions < len( parts ) else ""
             definitions = parts[ index_definitions ] if index_definitions < len( parts ) else ""
-            annogroups___annotations[ annogroup_id ] = ( subtype, accessions, definitions )
+            annogroups___annotations[ annogroup_id ] = ( annogroup_type, accessions, definitions )
     return annogroups___annotations
 
 
-def iter_annogroup_membership( membership_path: Path ):
-    """Yield ( annogroup_id, member_protein_ids list ) from a single/combo file."""
+def aggregate_annogroup_membership( membership_path: Path, included_types: set ) -> dict:
+    """
+    Read the annogroups subproject membership ONCE and aggregate, for every
+    annogroup whose type is in included_types:
+        annogroup_id -> { 'members': [ Sequence_Identifier, ... ],
+                          'species': set( Genus_Species, ... ) }
+    Genus_Species comes straight from the membership file (already resolved).
+    """
+    annogroups___members = defaultdict( list )
+    annogroups___species = defaultdict( set )
     with open( membership_path, 'r' ) as input_membership:
-        # Annogroup_ID (...)\tSpecies_Count (...)\tSequence_Count (...)\tSpecies_List (...)\tSequence_IDs (...)
-        # annogroup_pfam_1\t56\t20391\tAcropora_muricata,...\tg_...,g_...
+        # Sequence_Identifier (...)\tGenus_Species (...)\tAnnogroup_ID (...)\tAnnogroup_Type (...)\tMember_Architecture_Coordinates (...)
         header_line = input_membership.readline()
         header_ids___indices = U.build_header_index( header_line )
+        index_sequence = header_ids___indices[ "Sequence_Identifier" ]
+        index_genus_species = header_ids___indices[ "Genus_Species" ]
         index_annogroup = header_ids___indices[ "Annogroup_ID" ]
-        index_sequence_ids = header_ids___indices[ "Sequence_IDs" ]
+        index_type = header_ids___indices[ "Annogroup_Type" ]
         for line in input_membership:
             line = line.rstrip( '\n' )
             if not line:
                 continue
             parts = line.split( '\t' )
+            if parts[ index_type ] not in included_types:
+                continue
             annogroup_id = parts[ index_annogroup ]
-            sequence_ids_cell = parts[ index_sequence_ids ] if index_sequence_ids < len( parts ) else ""
-            members = [ m for m in sequence_ids_cell.split( ',' ) if m ]
-            yield ( annogroup_id, members )
+            annogroups___members[ annogroup_id ].append( parts[ index_sequence ] )
+            annogroups___species[ annogroup_id ].add( parts[ index_genus_species ] )
+    return annogroups___members, annogroups___species
 
 
 def main():
@@ -127,12 +142,17 @@ def main():
     workflow_root = U.workflow_root_from_output_dir( args.output_dir )
 
     input_orthogroups_path = U.resolve_input_path( workflow_root, config[ "inputs" ][ "orthogroups_file" ] )
-    input_annogroups_dir = U.resolve_input_path( workflow_root, config[ "inputs" ][ "annogroups_dir" ] )
-    reference_structure = config[ "inputs" ][ "reference_structure" ]
-    annogroup_subtypes = config[ "annogroup_subtypes" ]
+    species_set_name = config[ "species_set_name" ]
+    annotation_source = config[ "annotation_database" ]
+    annogroup_types = set( config[ "annogroup_types" ] )
+
+    # annogroups subproject per-source directory (structure-independent)
+    input_annogroups_root = U.resolve_input_path( workflow_root, config[ "inputs" ][ "annogroups_dir" ] )
+    input_source_dir = input_annogroups_root / species_set_name / annotation_source
+    input_map_path = input_source_dir / f"2_ai-{annotation_source}-annogroup_map.tsv"
+    input_membership_path = input_source_dir / f"2_ai-{annotation_source}-annogroup_membership.tsv"
 
     input_composition_path = Path( args.output_dir ) / "1-output" / "1_ai-orthogroups-species_composition.tsv"
-    input_summary_path = input_annogroups_dir / reference_structure / f"4_ai-{reference_structure}_annogroups-complete_ocl_summary-all_types.tsv"
 
     if not input_composition_path.is_file():
         print( f"CRITICAL ERROR: composition table not found: {input_composition_path}", file = sys.stderr )
@@ -141,27 +161,31 @@ def main():
     if not input_orthogroups_path.is_file():
         print( f"CRITICAL ERROR: orthogroups file not found: {input_orthogroups_path}", file = sys.stderr )
         sys.exit( 1 )
-    if not input_summary_path.is_file():
-        print( f"CRITICAL ERROR: annogroup all-types summary not found: {input_summary_path}", file = sys.stderr )
-        print( "  Verify inputs.annogroups_dir + reference_structure expose the OCL summary.", file = sys.stderr )
-        sys.exit( 1 )
+    for required in ( input_map_path, input_membership_path ):
+        if not required.is_file():
+            print( f"CRITICAL ERROR: annogroups subproject file not found: {required}", file = sys.stderr )
+            print( f"  Verify inputs.annogroups_dir / species_set / source expose the annogroup map + membership.", file = sys.stderr )
+            print( f"  Run the annogroups subproject (BLOCK_build_annogroups) for source '{annotation_source}' first.", file = sys.stderr )
+            sys.exit( 1 )
 
     orthogroups___classes = load_orthogroup_classes( input_composition_path )
     print( f"[003] loaded {len( orthogroups___classes )} orthogroup composition classes" )
     proteins___orthogroups = load_protein_to_orthogroup( input_orthogroups_path )
     print( f"[003] loaded protein->orthogroup map: {len( proteins___orthogroups )} proteins" )
-    annogroups___annotations = load_annogroup_annotations( input_summary_path )
-    print( f"[003] loaded pfam annotations for {len( annogroups___annotations )} annogroups" )
+    annogroups___annotations = load_annogroup_annotations( input_map_path )
+    print( f"[003] loaded annotations for {len( annogroups___annotations )} annogroups (map)" )
+    annogroups___members, annogroups___species = aggregate_annogroup_membership( input_membership_path, annogroup_types )
+    print( f"[003] aggregated membership for {len( annogroups___members )} annogroups of types {sorted( annogroup_types )}" )
 
     output_dir = Path( args.output_dir ) / "3-output"
     output_dir.mkdir( parents = True, exist_ok = True )
     output_table_path = output_dir / "3_ai-annogroups_X_orthogroups.tsv"
 
     header_columns = [
-        "Annogroup_ID (annogroup identifier format annogroup_pfam_N)",
-        "Annogroup_Subtype (single or combo)",
-        "Annotation_Accessions (comma delimited pfam accessions for this annogroup)",
-        "Annotation_Definitions (semicolon delimited definition ==accession pairs for this annogroup passed through from the upstream annogroup OCL summary)",
+        "Annogroup_ID (canonical annogroup identifier from the annogroups subproject)",
+        "Annogroup_Type (feature or combination or architecture or absent)",
+        "Annotation_Accessions (comma delimited pfam accessions for this annogroup; empty for absent)",
+        "Annotation_Definitions (semicolon delimited definition ==accession pairs for this annogroup passed through from the annogroups subproject map)",
         "Annogroup_Species_Count (number of unique species in the annogroup)",
         "Annogroup_Member_Protein_Count (number of member proteins in the annogroup)",
         "Members_With_Orthogroup_Count (count of member proteins that map to an orthogroup)",
@@ -184,88 +208,75 @@ def main():
     with open( output_table_path, 'w' ) as output_table:
         output_table.write( '\t'.join( header_columns ) + '\n' )
 
-        for subtype in annogroup_subtypes:
-            membership_path = input_annogroups_dir / reference_structure / f"1_ai-{reference_structure}_annogroups-{subtype}.tsv"
-            if not membership_path.is_file():
-                print( f"CRITICAL ERROR: annogroup membership file not found: {membership_path}", file = sys.stderr )
-                print( f"  subtype '{subtype}' is listed in annogroup_subtypes but its membership file is missing.", file = sys.stderr )
-                sys.exit( 1 )
+        for annogroup_id in sorted( annogroups___members ):
+            members = annogroups___members[ annogroup_id ]
+            annogroup_total += 1
 
-            for annogroup_id, members in iter_annogroup_membership( membership_path ):
-                annogroup_total += 1
-
-                members_with_orthogroup = 0
-                members_without_orthogroup = 0
-                orthogroup_ids = set()
-                member_species = set()
-                for member in members:
-                    source_gene_field, phyloname, genus_species = U.parse_full_gigantic_id( member )
-                    if genus_species is not None:
-                        member_species.add( genus_species )
-                    orthogroup_id = proteins___orthogroups.get( member )
-                    if orthogroup_id is None:
-                        members_without_orthogroup += 1
-                        continue
-                    members_with_orthogroup += 1
-                    orthogroup_ids.add( orthogroup_id )
-
-                non_bilaterian_metazoan_ogs = []
-                non_metazoan_only_ogs = []
-                bilaterian_only_ogs = []
-                mixed_with_bilaterian_ogs = []
-                for orthogroup_id in sorted( orthogroup_ids ):
-                    composition_class = orthogroups___classes.get( orthogroup_id )
-                    if composition_class == "non_bilaterian_metazoan":
-                        non_bilaterian_metazoan_ogs.append( orthogroup_id )
-                    elif composition_class == "non_metazoan_only":
-                        non_metazoan_only_ogs.append( orthogroup_id )
-                    elif composition_class == "bilaterian_only":
-                        bilaterian_only_ogs.append( orthogroup_id )
-                    elif composition_class == "mixed_with_bilaterian":
-                        mixed_with_bilaterian_ogs.append( orthogroup_id )
-                    # An orthogroup with no class would be a referential-integrity
-                    # error; Script 004 validates that none slip through.
-
-                # KEEP rule (user-approved): keep iff at least one orthogroup is
-                # qualifying (non_bilaterian_metazoan). Drop everything else.
-                if len( non_bilaterian_metazoan_ogs ) == 0:
+            members_with_orthogroup = 0
+            members_without_orthogroup = 0
+            orthogroup_ids = set()
+            for member in members:
+                orthogroup_id = proteins___orthogroups.get( member )
+                if orthogroup_id is None:
+                    members_without_orthogroup += 1
                     continue
+                members_with_orthogroup += 1
+                orthogroup_ids.add( orthogroup_id )
 
-                subtype_from_summary, accessions, definitions = annogroups___annotations.get(
-                    annogroup_id, ( subtype, "", "" )
-                )
-                # Definitions are passed through verbatim from the upstream
-                # annogroup OCL summary, which formats them as 'definition ==accession'
-                # (semicolon delimited); accessions also stand alone in Annotation_Accessions.
+            non_bilaterian_metazoan_ogs = []
+            non_metazoan_only_ogs = []
+            bilaterian_only_ogs = []
+            mixed_with_bilaterian_ogs = []
+            for orthogroup_id in sorted( orthogroup_ids ):
+                composition_class = orthogroups___classes.get( orthogroup_id )
+                if composition_class == "non_bilaterian_metazoan":
+                    non_bilaterian_metazoan_ogs.append( orthogroup_id )
+                elif composition_class == "non_metazoan_only":
+                    non_metazoan_only_ogs.append( orthogroup_id )
+                elif composition_class == "bilaterian_only":
+                    bilaterian_only_ogs.append( orthogroup_id )
+                elif composition_class == "mixed_with_bilaterian":
+                    mixed_with_bilaterian_ogs.append( orthogroup_id )
+                # An orthogroup with no class would be a referential-integrity
+                # error; Script 004 validates that none slip through.
 
-                all_ogs = sorted( orthogroup_ids )
-                output = '\t'.join( [
-                    annogroup_id,
-                    subtype,
-                    accessions,
-                    definitions,
-                    str( len( member_species ) ),
-                    str( len( members ) ),
-                    str( members_with_orthogroup ),
-                    str( members_without_orthogroup ),
-                    str( len( orthogroup_ids ) ),
-                    str( len( non_bilaterian_metazoan_ogs ) ),
-                    str( len( non_metazoan_only_ogs ) ),
-                    str( len( bilaterian_only_ogs ) ),
-                    str( len( mixed_with_bilaterian_ogs ) ),
-                    U.DELIM.join( non_bilaterian_metazoan_ogs ),
-                    U.DELIM.join( non_metazoan_only_ogs ),
-                    U.DELIM.join( bilaterian_only_ogs ),
-                    U.DELIM.join( mixed_with_bilaterian_ogs ),
-                    U.DELIM.join( all_ogs ),
-                ] ) + '\n'
-                output_table.write( output )
-                annogroup_kept += 1
+            # KEEP rule (user-approved): keep iff at least one orthogroup is
+            # qualifying (non_bilaterian_metazoan). Drop everything else.
+            if len( non_bilaterian_metazoan_ogs ) == 0:
+                continue
+
+            annogroup_type, accessions, definitions = annogroups___annotations.get(
+                annogroup_id, ( "", "", "" )
+            )
+
+            all_ogs = sorted( orthogroup_ids )
+            output = '\t'.join( [
+                annogroup_id,
+                annogroup_type,
+                accessions,
+                definitions,
+                str( len( annogroups___species[ annogroup_id ] ) ),
+                str( len( members ) ),
+                str( members_with_orthogroup ),
+                str( members_without_orthogroup ),
+                str( len( orthogroup_ids ) ),
+                str( len( non_bilaterian_metazoan_ogs ) ),
+                str( len( non_metazoan_only_ogs ) ),
+                str( len( bilaterian_only_ogs ) ),
+                str( len( mixed_with_bilaterian_ogs ) ),
+                U.DELIM.join( non_bilaterian_metazoan_ogs ),
+                U.DELIM.join( non_metazoan_only_ogs ),
+                U.DELIM.join( bilaterian_only_ogs ),
+                U.DELIM.join( mixed_with_bilaterian_ogs ),
+                U.DELIM.join( all_ogs ),
+            ] ) + '\n'
+            output_table.write( output )
+            annogroup_kept += 1
 
     print( f"[003] annogroups kept (>=1 qualifying orthogroup): {annogroup_kept} of {annogroup_total} -> {output_table_path}" )
 
     if annogroup_total == 0:
-        print( "CRITICAL ERROR: zero annogroups read — membership files appear empty", file = sys.stderr )
+        print( "CRITICAL ERROR: zero annogroups read — membership appears empty for the configured types", file = sys.stderr )
         sys.exit( 1 )
 
 

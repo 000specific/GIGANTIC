@@ -15,7 +15,7 @@ Scope:   BLOCK_annotations_X_orthogroups.
 - Workflow template: [`workflow-COPYME-annotations_X_orthogroups/`](workflow-COPYME-annotations_X_orthogroups/)
 - This BLOCK's workflow guide: [`workflow-COPYME-annotations_X_orthogroups/ai/AI_GUIDE.md`](workflow-COPYME-annotations_X_orthogroups/ai/AI_GUIDE.md)
 - Reads FROM:
-  - `../../ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl/<run_label>/<reference_structure>/` — `1_ai-*-annogroups-single.tsv` + `1_ai-*-annogroups-combo.tsv` (annogroup member `Sequence_IDs`) + `4_ai-*-complete_ocl_summary-all_types.tsv` (pfam accessions/definitions)
+  - `../../annogroups/output_to_input/BLOCK_build_annogroups/<species_set>/<source>/` — `2_ai-<source>-annogroup_map.tsv` (annogroup type, accessions, definitions) + `2_ai-<source>-annogroup_membership.tsv` (member `Sequence_IDs` per annogroup). **Imported DIRECTLY from the annogroups subproject — no OCL dependency.** Types included: feature + combination + architecture + **absent** (the pfam-dark state row; see `annogroup_types` in the config).
   - `../../orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv` — orthogroup membership
   - `../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv` — Bilateria (`C103`) + Metazoa (`C082`) species sets
 - Outputs TO: `../output_to_input/BLOCK_annotations_X_orthogroups/<run_label>/`
