@@ -597,12 +597,44 @@ def main():
             continue
         manifests.append( candidate )
 
-    # Also include a subproject-level manifest if it exists (flat / legacy usage)
-    subproject_manifest = upload_dir / MANIFEST_FILENAME
-    # Skip for now — we removed the legacy subproject-level manifest concept.
-    # If needed later, handle here.
+    # Policy (Eric, 2026-06): publish ONLY the most recent RUN of a given block or
+    # step. Group the discovered manifests by the directory that holds the
+    # workflow-RUN_* dirs (the BLOCK_/STEP_/instance dir) and keep only the highest
+    # RUN number in each group. Superseded runs are dropped here; their previously
+    # published files are then pruned by the stale-symlink cleanup pass below
+    # (they are no longer in all_kept_paths). RUN numbers may be zero-padded
+    # (RUN_04) or not (RUN_3) — compared as integers.
+    def run_number_of_manifest( manifest_path: Path ) -> int:
+        run_dir_name = manifest_path.parent.name  # workflow-RUN_<K>-<description>
+        marker = 'RUN_'
+        marker_index = run_dir_name.find( marker )
+        if marker_index == -1:
+            return -1
+        digits = ''
+        for character in run_dir_name[ marker_index + len( marker ): ]:
+            if character.isdigit():
+                digits += character
+            else:
+                break
+        return int( digits ) if digits else -1
 
-    print( f"Found {len( manifests )} manifest(s) in workflow-RUN_* directories" )
+    blocks___manifests = {}
+    for candidate in manifests:
+        block_dir = candidate.parent.parent  # the BLOCK_/STEP_/instance dir
+        blocks___manifests.setdefault( block_dir, [] ).append( candidate )
+
+    newest_manifests = []
+    for block_dir, block_manifests in blocks___manifests.items():
+        newest_manifest = max( block_manifests, key = run_number_of_manifest )
+        newest_manifests.append( newest_manifest )
+        for superseded in block_manifests:
+            if superseded is not newest_manifest:
+                print( f"  SKIP superseded run: {superseded.parent.name} "
+                       f"(newer RUN published for {block_dir.name})" )
+    manifests = newest_manifests
+
+    print( f"Found {len( manifests )} manifest(s) in workflow-RUN_* directories "
+           f"(most recent RUN per block/step)" )
     print()
 
     total_linked = 0
