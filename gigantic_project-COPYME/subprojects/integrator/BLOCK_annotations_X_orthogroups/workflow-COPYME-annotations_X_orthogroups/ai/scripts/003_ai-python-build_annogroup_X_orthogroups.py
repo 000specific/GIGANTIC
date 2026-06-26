@@ -13,7 +13,14 @@ QUALIFYING — class non_bilaterian_metazoan (zero bilaterians AND >=1 non-bilat
 metazoan). Annogroups with no qualifying orthogroup are dropped.
 
 For each kept annogroup ALL of its orthogroups are reported, grouped by the four
-composition classes, with per-class counts and comma-delimited ID lists.
+composition classes, with per-class counts and comma-delimited ID lists, PLUS a
+finer set of named metazoan-phylum-composition classes (Ctenophora_Only,
+Mixed_Ctenophora_Cnidaria_Only, Mixed_With_NonMetazoan, ... — Eric-specified,
+2026-06-23). The named classes come from Script 001's per-orthogroup
+Metazoan_Phylum_Signature + Has_NonMetazoan via U.named_phylum_class(); they are
+disjoint and a curated subset (an orthogroup may match none), so they do NOT
+necessarily sum to Orthogroup_Count — the coarse four-class counts remain the
+reconciling layer.
 
 Annogroups are imported DIRECTLY from the annogroups subproject (no OCL
 dependency). Per source the subproject exposes, structure-independent:
@@ -55,6 +62,30 @@ def load_orthogroup_classes( composition_path: Path ) -> dict:
             parts = line.split( '\t' )
             orthogroups___classes[ parts[ index_og ] ] = parts[ index_class ]
     return orthogroups___classes
+
+
+def load_orthogroup_phylum( composition_path: Path ) -> dict:
+    """
+    orthogroup_id -> ( metazoan_phylum_signature frozenset, has_nonmetazoan bool )
+    from Script 001's 1-output table. Used to resolve each orthogroup's named
+    phylum-composition class via U.named_phylum_class().
+    """
+    orthogroups___phylum = {}
+    with open( composition_path, 'r' ) as input_composition:
+        header_line = input_composition.readline()
+        header_ids___indices = U.build_header_index( header_line )
+        index_og = header_ids___indices[ "Orthogroup_ID" ]
+        index_signature = header_ids___indices[ "Metazoan_Phylum_Signature" ]
+        index_has_nonmeta = header_ids___indices[ "Has_NonMetazoan" ]
+        for line in input_composition:
+            line = line.rstrip( '\n' )
+            if not line:
+                continue
+            parts = line.split( '\t' )
+            signature = U.parse_signature_cell( parts[ index_signature ] if index_signature < len( parts ) else "" )
+            has_nonmetazoan = ( parts[ index_has_nonmeta ] == "yes" ) if index_has_nonmeta < len( parts ) else False
+            orthogroups___phylum[ parts[ index_og ] ] = ( signature, has_nonmetazoan )
+    return orthogroups___phylum
 
 
 def load_protein_to_orthogroup( orthogroups_path: Path ) -> dict:
@@ -170,6 +201,8 @@ def main():
 
     orthogroups___classes = load_orthogroup_classes( input_composition_path )
     print( f"[003] loaded {len( orthogroups___classes )} orthogroup composition classes" )
+    orthogroups___phylum = load_orthogroup_phylum( input_composition_path )
+    print( f"[003] loaded phylum signatures for {len( orthogroups___phylum )} orthogroups" )
     proteins___orthogroups = load_protein_to_orthogroup( input_orthogroups_path )
     print( f"[003] loaded protein->orthogroup map: {len( proteins___orthogroups )} proteins" )
     annogroups___annotations = load_annogroup_annotations( input_map_path )
@@ -202,6 +235,20 @@ def main():
         "All_Orthogroup_IDs (comma delimited list of every distinct orthogroup the member proteins fall into)",
     ]
 
+    # Named phylum-composition columns (Eric-specified, 2026-06-23): for each named
+    # class, a count of this annogroup's orthogroups in that class then a
+    # comma-delimited ID list. Built from the single source of truth in utils so
+    # column order, Script 004 validation, and the resolver never drift apart. These
+    # named classes are DISJOINT (each orthogroup contributes to at most one) and
+    # are a curated SUBSET of all observed signatures — they do NOT necessarily sum
+    # to Orthogroup_Count (unlisted signatures are not named; see Script 001).
+    for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS:
+        description = U.PHYLUM_COMPOSITION_CLASS_DESCRIPTIONS[ class_key ]
+        header_columns.append( f"{class_key}_Orthogroup_Count (count of those orthogroups whose composition is {description})" )
+    for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS:
+        description = U.PHYLUM_COMPOSITION_CLASS_DESCRIPTIONS[ class_key ]
+        header_columns.append( f"{class_key}_Orthogroup_IDs (comma delimited identifiers of those orthogroups whose composition is {description})" )
+
     annogroup_total = 0
     annogroup_kept = 0
 
@@ -227,6 +274,8 @@ def main():
             non_metazoan_only_ogs = []
             bilaterian_only_ogs = []
             mixed_with_bilaterian_ogs = []
+            # Named phylum-composition tally (disjoint; some orthogroups match none).
+            named_class___ogs = { class_key: [] for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS }
             for orthogroup_id in sorted( orthogroup_ids ):
                 composition_class = orthogroups___classes.get( orthogroup_id )
                 if composition_class == "non_bilaterian_metazoan":
@@ -240,6 +289,12 @@ def main():
                 # An orthogroup with no class would be a referential-integrity
                 # error; Script 004 validates that none slip through.
 
+                # Named phylum-composition class (lossless signature -> curated name).
+                signature, has_nonmetazoan = orthogroups___phylum.get( orthogroup_id, ( frozenset(), False ) )
+                named_class = U.named_phylum_class( signature, has_nonmetazoan )
+                if named_class is not None:
+                    named_class___ogs[ named_class ].append( orthogroup_id )
+
             # KEEP rule (user-approved): keep iff at least one orthogroup is
             # qualifying (non_bilaterian_metazoan). Drop everything else.
             if len( non_bilaterian_metazoan_ogs ) == 0:
@@ -250,7 +305,7 @@ def main():
             )
 
             all_ogs = sorted( orthogroup_ids )
-            output = '\t'.join( [
+            row_fields = [
                 annogroup_id,
                 annogroup_type,
                 accessions,
@@ -269,8 +324,14 @@ def main():
                 U.DELIM.join( bilaterian_only_ogs ),
                 U.DELIM.join( mixed_with_bilaterian_ogs ),
                 U.DELIM.join( all_ogs ),
-            ] ) + '\n'
-            output_table.write( output )
+            ]
+            # Named phylum-composition counts then ID lists (same order as header).
+            for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS:
+                row_fields.append( str( len( named_class___ogs[ class_key ] ) ) )
+            for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS:
+                row_fields.append( U.DELIM.join( named_class___ogs[ class_key ] ) )
+
+            output_table.write( '\t'.join( row_fields ) + '\n' )
             annogroup_kept += 1
 
     print( f"[003] annogroups kept (>=1 qualifying orthogroup): {annogroup_kept} of {annogroup_total} -> {output_table_path}" )

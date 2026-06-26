@@ -62,6 +62,21 @@ inputs:
   #   <annogroups_dir>/<species_set_name>/<annotation_database>/2_ai-<source>-annogroup_map.tsv
   annogroups_dir: "../../../annogroups/output_to_input/BLOCK_build_annogroups"
 
+  # Metazoan phylum clade_id_names. Used by Script 002 ONLY to classify each
+  # annogroup's member species into metazoan phylum-composition classes (the same
+  # approved vocabulary as the integrator: Ctenophora_Only, Mixed_*, etc.). With
+  # Bilateria the five phyla PARTITION Metazoa (Script 002 fail-fast verifies).
+  # The clade->species mapping is read from
+  #   <trees_species_dir>/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv
+  # species70 values (structure_001): Ctenophora 5 + Porifera 7 + Placozoa 4
+  # + Cnidaria 5 + Bilateria 35 = 56 = Metazoa.
+  metazoa_clade_id_name: "C082_Metazoa"
+  bilateria_clade_id_name: "C103_Bilateria"
+  ctenophora_clade_id_name: "C086_Ctenophora"
+  porifera_clade_id_name: "C090_Porifera"
+  placozoa_clade_id_name: "C095_Placozoa"
+  cnidaria_clade_id_name: "C102_Cnidaria"
+
 # Output configuration
 output:
   # Main output directory (relative to this workflow directory)

@@ -33,6 +33,27 @@ inputs:
   # Species-set proteomes (the membership universe for `absent`), from genomesDB.
   proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
 
+  # Species-tree clade->species mapping (from trees_species, ALL structures). Used
+  # by the cross-source summary (Script 004) to classify each annogroup into
+  # metazoan phylum-composition classes (the trees_species metazoan-group partition
+  # below). The base annogroups are structure-independent; the reference structure
+  # is read for the phylum clades' species sets (stable across structures, Rule 6).
+  clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
+
+  # Metazoan-group clade_id_names (trees_species). With Bilateria these five
+  # PARTITION Metazoa. Used by Script 004 to classify each annogroup's member
+  # species into phylum-composition classes (Ctenophora_Only, Mixed_*, and the
+  # paired _With_NonMetazoan variants). These metazoan-group clades are stable
+  # across structures (Rule 6); the reference structure below is read for their
+  # species sets. This is NOT the raw NCBI Phylum field used elsewhere.
+  phylum_reference_structure: "structure_001"
+  metazoa_clade_id_name: "C082_Metazoa"
+  bilateria_clade_id_name: "C103_Bilateria"
+  ctenophora_clade_id_name: "C086_Ctenophora"
+  porifera_clade_id_name: "C090_Porifera"
+  placozoa_clade_id_name: "C095_Placozoa"
+  cnidaria_clade_id_name: "C102_Cnidaria"
+
 # Output configuration
 output:
   #   OUTPUT_pipeline/1-output/            sources manifest + proteome universe

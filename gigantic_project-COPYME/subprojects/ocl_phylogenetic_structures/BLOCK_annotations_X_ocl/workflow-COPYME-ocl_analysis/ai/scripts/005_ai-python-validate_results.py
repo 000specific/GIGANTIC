@@ -51,7 +51,12 @@ import yaml
 
 # Add scripts directory to path for utility imports
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
-from utils_run_summary import emit_run_summary_fragment
+from utils_run_summary import (
+    emit_run_summary_fragment,
+    METAZOAN_PHYLA,
+    parse_signature_cell,
+    named_phylum_class,
+)
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -621,6 +626,91 @@ def validate_no_orphans( annogroups___species ):
 
 
 # ============================================================================
+# SECTION 8a2: VALIDATION CHECK - PHYLUM-COMPOSITION CLASS INTEGRITY
+# ============================================================================
+
+def validate_phylum_composition():
+    """
+    Validate the metazoan phylum-composition columns added to the origins file.
+
+    Per origin row:
+      - Metazoan_Phylum_Signature uses only known phyla.
+      - Has_NonMetazoan is yes/no.
+      - Phylum_Composition_Class exactly matches named_phylum_class( signature,
+        has_nonmetazoan ) — i.e. the stored class is the one the signature implies
+        (no misclassification).
+
+    The counts table is a pure derivative of these per-row classes, so verifying
+    the rows verifies the counts.
+    """
+    logger.info( "CHECK 9: Validating phylum-composition class integrity..." )
+
+    errors = []
+    passed = 0
+    failed = 0
+    valid_phyla = set( METAZOAN_PHYLA )
+
+    with open( INPUT_ORIGINS, 'r', newline = '', encoding = 'utf-8' ) as input_file:
+        csv_reader = csv.reader( input_file, delimiter = '\t' )
+        header = next( csv_reader )
+        column_names___indices = {}
+        for index, column_header in enumerate( header ):
+            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
+            column_names___indices[ column_name ] = index
+
+        required = [ 'Annogroup_ID', 'Metazoan_Phylum_Signature', 'Has_NonMetazoan', 'Phylum_Composition_Class' ]
+        for column_name in required:
+            if column_name not in column_names___indices:
+                errors.append( { 'check': 'header', 'error': f"Origins file missing column: {column_name}" } )
+                return { 'name': 'Phylum-Composition Class Integrity', 'passed': 0, 'failed': 1, 'total': 1, 'errors': errors }
+
+        annogroup_index = column_names___indices[ 'Annogroup_ID' ]
+        signature_index = column_names___indices[ 'Metazoan_Phylum_Signature' ]
+        has_nonmeta_index = column_names___indices[ 'Has_NonMetazoan' ]
+        class_index = column_names___indices[ 'Phylum_Composition_Class' ]
+
+        for parts in csv_reader:
+            if not parts or all( field.strip() == '' for field in parts ):
+                continue
+            annogroup_id = parts[ annogroup_index ]
+            signature_cell = parts[ signature_index ]
+            has_nonmeta_cell = parts[ has_nonmeta_index ]
+            stored_class = parts[ class_index ]
+
+            signature = parse_signature_cell( signature_cell )
+            stray = signature - valid_phyla
+            if stray:
+                errors.append( { 'check': 'signature_tokens', 'annogroup_id': annogroup_id,
+                                 'error': f"signature has unknown phyla {sorted( stray )}" } )
+                failed += 1
+                continue
+            if has_nonmeta_cell not in ( 'yes', 'no' ):
+                errors.append( { 'check': 'has_nonmetazoan', 'annogroup_id': annogroup_id,
+                                 'error': f"Has_NonMetazoan='{has_nonmeta_cell}' is not yes/no" } )
+                failed += 1
+                continue
+            expected_class = named_phylum_class( signature, has_nonmeta_cell == 'yes' )
+            if stored_class != expected_class:
+                errors.append( { 'check': 'class_match', 'annogroup_id': annogroup_id,
+                                 'error': f"stored class '{stored_class}' != expected '{expected_class}' for signature '{signature_cell}' (Has_NonMetazoan={has_nonmeta_cell})" } )
+                failed += 1
+                continue
+            passed += 1
+
+    total = passed + failed
+    logger.info( f"  Passed: {passed}/{total} origin rows" )
+    logger.info( f"  Failed: {failed}/{total} origin rows" )
+
+    return {
+        'name': 'Phylum-Composition Class Integrity',
+        'passed': passed,
+        'failed': failed,
+        'total': total,
+        'errors': errors
+    }
+
+
+# ============================================================================
 # SECTION 8b: VALIDATION CHECK 8 - PHYLOGENETIC PATH-STATE INTEGRITY (Rule 7)
 # ============================================================================
 
@@ -966,6 +1056,7 @@ def main():
     validation_results.append( validate_per_annogroup_counts() )
     validation_results.append( validate_origin_in_species_paths( annogroups___origins, annogroups___species, species_clade_id_names___phylogenetic_paths ) )
     validation_results.append( validate_no_orphans( annogroups___species ) )
+    validation_results.append( validate_phylum_composition() )
     validation_results.append( validate_path_states( species_clade_id_names___phylogenetic_paths ) )
 
     logger.info( "" )

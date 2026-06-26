@@ -36,6 +36,96 @@ import yaml
 # In-column multi-value delimiter — bare comma per gigantic_conventions §34.
 DELIM = ','
 
+
+# ============================================================================
+# Metazoan phylum composition (annogroup phylum-composition classes, 2026-06-23)
+# ============================================================================
+# NOTE: this is the trees_species METAZOAN-GROUP partition (Ctenophora, Porifera,
+# Placozoa, Cnidaria, Bilateria — the five groups that partition Metazoa), NOT the
+# raw NCBI Phylum field used by phylum_from_phyloname() elsewhere in this module.
+# Same approved vocabulary as the integrator + OCL blocks. Each named signature
+# splits into a disjoint PAIR by non-metazoan presence: the bare `_Only` name (no
+# non-metazoan members) and `<name>_With_NonMetazoan` (same metazoan phyla plus
+# non-metazoan outgroups). Siblings, NOT nested.
+METAZOAN_PHYLA = [ "Ctenophora", "Porifera", "Placozoa", "Cnidaria", "Bilateria" ]
+NON_BILATERIAN_PHYLA = frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } )
+
+PHYLUM_SIGNATURE___CLASS_KEY = {
+    frozenset( { "Ctenophora" } ):                                      "Ctenophora_Only",
+    frozenset( { "Porifera" } ):                                        "Porifera_Only",
+    frozenset( { "Placozoa" } ):                                        "Placozoa_Only",
+    frozenset( { "Cnidaria" } ):                                        "Cnidaria_Only",
+    frozenset( { "Ctenophora", "Porifera" } ):                         "Mixed_Ctenophora_Porifera_Only",
+    frozenset( { "Ctenophora", "Placozoa" } ):                         "Mixed_Ctenophora_Placozoa_Only",
+    frozenset( { "Ctenophora", "Cnidaria" } ):                         "Mixed_Ctenophora_Cnidaria_Only",
+    frozenset( { "Ctenophora", "Bilateria" } ):                        "Mixed_Ctenophora_Bilateria_Only",
+    frozenset( { "Ctenophora", "Porifera", "Placozoa" } ):             "Mixed_Ctenophora_Porifera_Placozoa_Only",
+    frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } ): "Mixed_Ctenophora_Porifera_Placozoa_Cnidaria_Only",
+    frozenset( { "Porifera", "Placozoa" } ):                           "Mixed_Porifera_Placozoa_Only",
+    frozenset( { "Porifera", "Placozoa", "Cnidaria" } ):               "Mixed_Porifera_Placozoa_Cnidaria_Only",
+    frozenset( { "Placozoa", "Cnidaria" } ):                           "Mixed_Placozoa_Cnidaria_Only",
+    frozenset( { "Placozoa", "Bilateria" } ):                          "Mixed_Placozoa_Bilateria_Only",
+    frozenset( { "Cnidaria", "Bilateria" } ):                          "Mixed_Cnidaria_Bilateria_Only",
+}
+
+PHYLUM_COMPOSITION_CLASS_KEYS = []
+for _base_key in PHYLUM_SIGNATURE___CLASS_KEY.values():
+    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key )
+    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key + "_With_NonMetazoan" )
+
+
+def parse_signature_cell( signature_cell: str ) -> frozenset:
+    """Metazoan_Phylum_Signature cell (comma-delimited, may be empty) -> frozenset."""
+    return frozenset( token for token in signature_cell.split( DELIM ) if token )
+
+
+def phylum_signature_of_species( member_species: set, phyla___species: dict, metazoan_species: set ):
+    """
+    One annogroup's metazoan phylum signature from its member species.
+    Returns ( signature_cell, has_nonmetazoan ): metazoan phyla present comma-joined
+    in fixed METAZOAN_PHYLA order, and whether any member is not in Metazoa.
+    """
+    present = [ phylum for phylum in METAZOAN_PHYLA if member_species & phyla___species[ phylum ] ]
+    has_nonmetazoan = bool( member_species - metazoan_species )
+    return ( DELIM.join( present ), has_nonmetazoan )
+
+
+def named_phylum_class( signature: frozenset, has_nonmetazoan: bool ):
+    """
+    Named phylum-composition class from the EXACT metazoan signature + whether any
+    member is non-metazoan. Returns a class key (or 'unclassified' when the
+    signature is not one of the named signatures). The `_Only` and
+    `<key>_With_NonMetazoan` variants are DISJOINT siblings, not nested.
+    """
+    base_key = PHYLUM_SIGNATURE___CLASS_KEY.get( signature )
+    if base_key is None:
+        return "unclassified"
+    return base_key + "_With_NonMetazoan" if has_nonmetazoan else base_key
+
+
+def load_clade_species( mappings_path: Path, reference_structure: str, clade_id_name: str ) -> set:
+    """
+    Read a clade's descendant-species set (Genus_species) for one structure from
+    the trees_species clade->species mapping. Returns a set; empty if not found
+    (caller should fail-fast on empty for required clades).
+    """
+    clade_species = set()
+    with open( mappings_path, 'r' ) as input_mappings:
+        header_ids___indices = build_header_index( input_mappings.readline() )
+        index_structure = header_ids___indices[ "Structure_ID" ]
+        index_clade = header_ids___indices[ "Clade_ID_Name" ]
+        index_species_list = header_ids___indices[ "Descendant_Species_List" ]
+        for line in input_mappings:
+            line = line.rstrip( '\n' )
+            if not line:
+                continue
+            parts = line.split( '\t' )
+            if parts[ index_structure ] == reference_structure and parts[ index_clade ] == clade_id_name:
+                species_cell = parts[ index_species_list ] if index_species_list < len( parts ) else ""
+                clade_species = { s for s in species_cell.split( ',' ) if s }
+                break
+    return clade_species
+
 # One annotation-feature instance on a sequence.
 #   accession      : the source annotation identifier (e.g. 'PF00001')
 #   start, stop    : residue coordinates (int) for positional features, else None

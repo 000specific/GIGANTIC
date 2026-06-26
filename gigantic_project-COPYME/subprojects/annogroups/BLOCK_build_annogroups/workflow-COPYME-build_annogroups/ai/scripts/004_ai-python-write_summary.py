@@ -172,6 +172,91 @@ def summarize_source_map( map_path: Path ) -> dict:
     return summary
 
 
+def load_phylum_species_sets( config, workflow_root ):
+    """
+    Load the five metazoan-group species sets + Metazoa (trees_species clades) for
+    the reference structure and FAIL-FAST that the five phyla PARTITION Metazoa
+    (pairwise disjoint AND union == Metazoa). Returns ( phyla___species,
+    metazoan_species ). A silent partition error would misclassify annogroups.
+    """
+    mappings_path = U.resolve_input_path( workflow_root, config[ "inputs" ][ "clade_species_mappings" ] )
+    if not mappings_path.is_file():
+        print( f"CRITICAL ERROR: clade-species mapping not found: {mappings_path}", file = sys.stderr )
+        print( "  Needed to classify annogroups into metazoan phylum-composition classes.", file = sys.stderr )
+        sys.exit( 1 )
+    reference_structure = config[ "inputs" ][ "phylum_reference_structure" ]
+    phyla___clade_id_names = {
+        "Ctenophora": config[ "inputs" ][ "ctenophora_clade_id_name" ],
+        "Porifera":   config[ "inputs" ][ "porifera_clade_id_name" ],
+        "Placozoa":   config[ "inputs" ][ "placozoa_clade_id_name" ],
+        "Cnidaria":   config[ "inputs" ][ "cnidaria_clade_id_name" ],
+        "Bilateria":  config[ "inputs" ][ "bilateria_clade_id_name" ],
+    }
+    metazoan_species = U.load_clade_species( mappings_path, reference_structure, config[ "inputs" ][ "metazoa_clade_id_name" ] )
+    phyla___species = {}
+    for phylum, clade_id_name in phyla___clade_id_names.items():
+        phyla___species[ phylum ] = U.load_clade_species( mappings_path, reference_structure, clade_id_name )
+        if not phyla___species[ phylum ]:
+            print( f"CRITICAL ERROR: phylum clade '{clade_id_name}' resolved to zero species for {reference_structure}", file = sys.stderr )
+            sys.exit( 1 )
+    if not metazoan_species:
+        print( f"CRITICAL ERROR: Metazoa clade resolved to zero species for {reference_structure}", file = sys.stderr )
+        sys.exit( 1 )
+
+    union_species = set()
+    for phylum in U.METAZOAN_PHYLA:
+        if union_species & phyla___species[ phylum ]:
+            print( f"CRITICAL ERROR: metazoan phylum clades are NOT disjoint at {phylum}", file = sys.stderr )
+            sys.exit( 1 )
+        union_species |= phyla___species[ phylum ]
+    if union_species != metazoan_species:
+        print( "CRITICAL ERROR: the five metazoan phylum clades do not partition Metazoa", file = sys.stderr )
+        print( f"  Metazoa ({len( metazoan_species )}) != union of phyla ({len( union_species )})", file = sys.stderr )
+        sys.exit( 1 )
+    print( f"[004] phylum partition verified: {len( union_species )} species across {', '.join( U.METAZOAN_PHYLA )} == Metazoa" )
+    return phyla___species, metazoan_species
+
+
+def write_source_phylum_composition_counts( map_path, source, phyla___species, metazoan_species, output_dir ):
+    """
+    Classify every annogroup of one source by its member-species metazoan
+    phylum-composition class (the trees_species metazoan-group partition) and write
+    a counts table: one row per named class (paired _Only / _With_NonMetazoan) plus
+    'unclassified', with the annogroup count and percentage. Reads Species_List from
+    the source's annogroup map.
+    """
+    classes___counts = { class_key: 0 for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS }
+    classes___counts[ "unclassified" ] = 0
+
+    with open( map_path, 'r' ) as input_map:
+        header_ids___indices = U.build_header_index( input_map.readline() )
+        index_species_list = header_ids___indices[ "Species_List" ]
+        for line in input_map:
+            line = line.rstrip( '\n' )
+            if not line:
+                continue
+            parts = line.split( '\t' )
+            species_cell = parts[ index_species_list ] if index_species_list < len( parts ) else ""
+            member_species = { s for s in species_cell.split( ',' ) if s }
+            signature_cell, has_nonmetazoan = U.phylum_signature_of_species( member_species, phyla___species, metazoan_species )
+            phylum_composition_class = U.named_phylum_class( U.parse_signature_cell( signature_cell ), has_nonmetazoan )
+            classes___counts[ phylum_composition_class ] += 1
+
+    total_annogroups = sum( classes___counts.values() )
+    output_path = output_dir / f"4_ai-{source}-annogroup_phylum_composition_counts.tsv"
+    with open( output_path, 'w' ) as output_counts:
+        output = 'Phylum_Composition_Class (metazoan-group phylum-composition class of the annogroup member species using the trees_species partition Ctenophora Porifera Placozoa Cnidaria Bilateria; _With_NonMetazoan = same metazoan phyla plus non-metazoan outgroups; unclassified = signature not one of the named classes; NOT the raw NCBI Phylum field)\t'
+        output += 'Annogroup_Count (count of annogroups of this source in this phylum-composition class)\t'
+        output += 'Percentage (percentage of this source annogroups in this class calculated as count divided by total times 100)\n'
+        output_counts.write( output )
+        for class_key in U.PHYLUM_COMPOSITION_CLASS_KEYS + [ "unclassified" ]:
+            count = classes___counts.get( class_key, 0 )
+            percentage = 100.0 * count / total_annogroups if total_annogroups > 0 else 0.0
+            output_counts.write( f"{class_key}\t{count}\t{percentage:.2f}\n" )
+
+    return output_path, total_annogroups
+
+
 def main():
     parser = argparse.ArgumentParser( description = "Write cross-source annogroups summary tables" )
     parser.add_argument( '--config', required = True )
@@ -202,6 +287,11 @@ def main():
     if not sources:
         print( "CRITICAL ERROR: sources manifest is empty", file = sys.stderr )
         sys.exit( 1 )
+
+    # Metazoan-group phylum species sets (for phylum-composition classification).
+    config = U.load_config( args.config )
+    workflow_root = U.workflow_root_from_output_dir( args.output_dir )
+    phyla___species, metazoan_species = load_phylum_species_sets( config, workflow_root )
 
     # ---- gather per-source rows + per-source absent breakdowns --------------
     source_rows = []
@@ -243,6 +333,17 @@ def main():
 
     output_dir = output_base / "4-output"
     output_dir.mkdir( parents = True, exist_ok = True )
+
+    # ========================================================================
+    # Table 0: per-source metazoan phylum-composition counts
+    # (trees_species metazoan-group partition; one file per source)
+    # ========================================================================
+    for source in sources:
+        map_path = output_base / "2-output" / source / f"2_ai-{source}-annogroup_map.tsv"
+        phylum_counts_path, phylum_total = write_source_phylum_composition_counts(
+            map_path, source, phyla___species, metazoan_species, output_dir
+        )
+        print( f"[004] wrote phylum-composition counts for {source} ({phylum_total} annogroups) -> {phylum_counts_path}" )
 
     # ========================================================================
     # Table 1: per source (with the per-type annogroup breakdown)

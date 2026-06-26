@@ -82,6 +82,16 @@ inputs:
   clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
   bilateria_clade_id_name: "C103_Bilateria"
   metazoa_clade_id_name: "C082_Metazoa"
+  # The four non-bilaterian metazoan phylum clades. With Bilateria these five
+  # PARTITION Metazoa (each metazoan species in exactly one) — Script 001 fails
+  # fast if they do not. They drive the finer named phylum-composition columns in
+  # Table 1 (Ctenophora_Only, Mixed_Ctenophora_Cnidaria_Only, ...). species70
+  # values (structure_001): Ctenophora 5 + Porifera 7 + Placozoa 4 + Cnidaria 5
+  # + Bilateria 35 = 56 = Metazoa.
+  ctenophora_clade_id_name: "C086_Ctenophora"
+  porifera_clade_id_name: "C090_Porifera"
+  placozoa_clade_id_name: "C095_Placozoa"
+  cnidaria_clade_id_name: "C102_Cnidaria"
   clade_reference_structure: "structure_001"
 
 # Output configuration

@@ -25,6 +25,89 @@ from datetime import datetime
 from pathlib import Path
 
 
+# ============================================================================
+# Metazoan phylum composition (annogroup-origin phylum classes, 2026-06-23)
+# ============================================================================
+# Same approved vocabulary as the integrator BLOCK_annotations_X_orthogroups,
+# applied here to each ANNOGROUP's own member species (its phylum spread / origin
+# in phylum terms) — no orthogroups, no invented origin-clade jargon. The five
+# metazoan groups PARTITION Metazoa (each metazoan species in exactly one);
+# Script 002 fail-fast verifies this. Display / signature order is fixed below.
+METAZOAN_PHYLA = [ "Ctenophora", "Porifera", "Placozoa", "Cnidaria", "Bilateria" ]
+NON_BILATERIAN_PHYLA = frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } )
+
+# Named phylum-composition classes. Each key maps to an EXACT metazoan phylum
+# signature (frozenset). A signature class applies ONLY when the annogroup has NO
+# non-metazoan (outgroup) members ("...only" excludes non-metazoans).
+# Mixed_With_NonMetazoan is the SEPARATE non-metazoan-bearing bucket, resolved in
+# named_phylum_class() (not in this dict). No catch-all: signatures not listed
+# here are reported as "unclassified" in the counts table (nothing is hidden —
+# the per-annogroup Metazoan_Phylum_Signature column is exact and complete).
+PHYLUM_SIGNATURE___CLASS_KEY = {
+    frozenset( { "Ctenophora" } ):                                      "Ctenophora_Only",
+    frozenset( { "Porifera" } ):                                        "Porifera_Only",
+    frozenset( { "Placozoa" } ):                                        "Placozoa_Only",
+    frozenset( { "Cnidaria" } ):                                        "Cnidaria_Only",
+    frozenset( { "Ctenophora", "Porifera" } ):                         "Mixed_Ctenophora_Porifera_Only",
+    frozenset( { "Ctenophora", "Placozoa" } ):                         "Mixed_Ctenophora_Placozoa_Only",
+    frozenset( { "Ctenophora", "Cnidaria" } ):                         "Mixed_Ctenophora_Cnidaria_Only",
+    frozenset( { "Ctenophora", "Bilateria" } ):                        "Mixed_Ctenophora_Bilateria_Only",
+    frozenset( { "Ctenophora", "Porifera", "Placozoa" } ):             "Mixed_Ctenophora_Porifera_Placozoa_Only",
+    frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } ): "Mixed_Ctenophora_Porifera_Placozoa_Cnidaria_Only",
+    frozenset( { "Porifera", "Placozoa" } ):                           "Mixed_Porifera_Placozoa_Only",
+    frozenset( { "Porifera", "Placozoa", "Cnidaria" } ):               "Mixed_Porifera_Placozoa_Cnidaria_Only",
+    frozenset( { "Placozoa", "Cnidaria" } ):                           "Mixed_Placozoa_Cnidaria_Only",
+    frozenset( { "Placozoa", "Bilateria" } ):                          "Mixed_Placozoa_Bilateria_Only",
+    frozenset( { "Cnidaria", "Bilateria" } ):                          "Mixed_Cnidaria_Bilateria_Only",
+}
+
+# Ordered list of every named class key — signature classes in dict order, then
+# Mixed_With_NonMetazoan. Single source of truth for the counts-table row order.
+# Each named signature splits into a disjoint PAIR by non-metazoan presence
+# (Eric, 2026-06-23): bare `_Only` (no non-metazoan members) and
+# `<name>_With_NonMetazoan` (same metazoan phyla PLUS non-metazoan outgroups).
+# Siblings, NOT nested.
+PHYLUM_COMPOSITION_CLASS_KEYS = []
+for _base_key in PHYLUM_SIGNATURE___CLASS_KEY.values():
+    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key )
+    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key + "_With_NonMetazoan" )
+
+
+def parse_signature_cell( signature_cell ):
+    """Metazoan_Phylum_Signature cell (comma-delimited, may be empty) -> frozenset."""
+    return frozenset( token for token in signature_cell.split( ',' ) if token )
+
+
+def phylum_signature_of_species( member_species, phyla___species, metazoan_species ):
+    """
+    Compute one annogroup's metazoan phylum signature from its member species.
+
+    Returns ( signature_cell, has_nonmetazoan ):
+      - signature_cell  : metazoan phyla present among members, comma-joined in
+                          fixed METAZOAN_PHYLA order (empty if no metazoan members)
+      - has_nonmetazoan : True if any member species is not in Metazoa
+    """
+    present = [ phylum for phylum in METAZOAN_PHYLA if member_species & phyla___species[ phylum ] ]
+    has_nonmetazoan = bool( member_species - metazoan_species )
+    return ( ','.join( present ), has_nonmetazoan )
+
+
+def named_phylum_class( signature, has_nonmetazoan ):
+    """
+    Resolve one annogroup's named phylum-composition class from its EXACT metazoan
+    phylum signature + whether it has any non-metazoan member.
+
+    Returns a class key from PHYLUM_COMPOSITION_CLASS_KEYS, or 'unclassified' when
+    the signature is not one of the named classes. Disjoint by construction:
+    has_nonmetazoan True can only yield Mixed_With_NonMetazoan; False can only
+    yield a signature class (or 'unclassified').
+    """
+    base_key = PHYLUM_SIGNATURE___CLASS_KEY.get( signature )
+    if base_key is None:
+        return "unclassified"
+    return base_key + "_With_NonMetazoan" if has_nonmetazoan else base_key
+
+
 def get_fragments_directory( workflow_directory ):
     """
     Get the fragments directory for this workflow run.

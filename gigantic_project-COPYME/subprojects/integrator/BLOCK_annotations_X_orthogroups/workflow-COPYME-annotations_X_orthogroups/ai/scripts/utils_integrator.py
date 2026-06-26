@@ -23,6 +23,93 @@ import yaml
 DELIM = ','
 
 
+# ---------------------------------------------------------------------------
+# Metazoan phylum composition (BLOCK_annotations_X_orthogroups, 2026-06-23)
+# ---------------------------------------------------------------------------
+# The five metazoan groups PARTITION Metazoa (each metazoan species falls in
+# exactly one), verified fail-fast in Script 001. Display / signature order is
+# fixed below: the first four are the non-bilaterian metazoan phyla; Bilateria is
+# the fifth.
+METAZOAN_PHYLA = [ "Ctenophora", "Porifera", "Placozoa", "Cnidaria", "Bilateria" ]
+NON_BILATERIAN_PHYLA = frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } )
+
+# Named phylum-composition classes (Eric-specified, 2026-06-23). Each key maps to
+# an EXACT metazoan phylum signature (frozenset of the names above). A signature
+# class applies ONLY when the orthogroup has NO non-metazoan (outgroup) members —
+# "...only" excludes non-metazoans (Eric, 2026-06-23). Mixed_With_NonMetazoan is
+# the SEPARATE non-metazoan-bearing bucket and is resolved in named_phylum_class()
+# (not in this dict). There is deliberately NO catch-all: signatures not listed
+# here are simply not tallied in the named columns. This loses nothing because
+# Script 001 records every orthogroup's exact Metazoan_Phylum_Signature, so any
+# unlisted combination is always recoverable from the 1-output table.
+PHYLUM_SIGNATURE___CLASS_KEY = {
+    frozenset( { "Ctenophora" } ):                                          "Ctenophora_Only",
+    frozenset( { "Porifera" } ):                                            "Porifera_Only",
+    frozenset( { "Placozoa" } ):                                            "Placozoa_Only",
+    frozenset( { "Cnidaria" } ):                                            "Cnidaria_Only",
+    frozenset( { "Ctenophora", "Porifera" } ):                             "Mixed_Ctenophora_Porifera_Only",
+    frozenset( { "Ctenophora", "Placozoa" } ):                             "Mixed_Ctenophora_Placozoa_Only",
+    frozenset( { "Ctenophora", "Cnidaria" } ):                             "Mixed_Ctenophora_Cnidaria_Only",
+    frozenset( { "Ctenophora", "Bilateria" } ):                            "Mixed_Ctenophora_Bilateria_Only",
+    frozenset( { "Ctenophora", "Porifera", "Placozoa" } ):                 "Mixed_Ctenophora_Porifera_Placozoa_Only",
+    frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } ):     "Mixed_Ctenophora_Porifera_Placozoa_Cnidaria_Only",
+    frozenset( { "Porifera", "Placozoa" } ):                               "Mixed_Porifera_Placozoa_Only",
+    frozenset( { "Porifera", "Placozoa", "Cnidaria" } ):                   "Mixed_Porifera_Placozoa_Cnidaria_Only",
+    frozenset( { "Placozoa", "Cnidaria" } ):                               "Mixed_Placozoa_Cnidaria_Only",
+    frozenset( { "Placozoa", "Bilateria" } ):                              "Mixed_Placozoa_Bilateria_Only",
+    frozenset( { "Cnidaria", "Bilateria" } ):                              "Mixed_Cnidaria_Bilateria_Only",
+}
+
+# Ordered list of every named phylum-composition column key — the signature
+# classes in the dict's insertion order above, then Mixed_With_NonMetazoan last.
+# Single source of truth for Table 1 column order (Script 003) and validation
+# (Script 004).
+PHYLUM_COMPOSITION_CLASS_KEYS = []
+for _base_key in PHYLUM_SIGNATURE___CLASS_KEY.values():
+    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key )
+    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key + "_With_NonMetazoan" )
+
+
+def _signature_in_order( signature: frozenset ) -> list:
+    """Phyla present in `signature`, returned in the fixed METAZOAN_PHYLA order."""
+    return [ phylum for phylum in METAZOAN_PHYLA if phylum in signature ]
+
+
+# Human-readable phrase per class key, for self-documenting headers (§34).
+PHYLUM_COMPOSITION_CLASS_DESCRIPTIONS = {}
+for _signature, _base_key in PHYLUM_SIGNATURE___CLASS_KEY.items():
+    _ordered = _signature_in_order( _signature )
+    if len( _ordered ) == 1:
+        _phyla_phrase = f"only { _ordered[ 0 ] } among metazoan phyla"
+    else:
+        _phyla_phrase = f"exactly { ' plus '.join( _ordered ) } among metazoan phyla"
+    PHYLUM_COMPOSITION_CLASS_DESCRIPTIONS[ _base_key ] = f"{_phyla_phrase} and no non-metazoan members"
+    PHYLUM_COMPOSITION_CLASS_DESCRIPTIONS[ _base_key + "_With_NonMetazoan" ] = f"{_phyla_phrase} plus one or more non-metazoan outgroup members"
+
+
+def parse_signature_cell( signature_cell: str ) -> frozenset:
+    """Metazoan_Phylum_Signature cell (comma-delimited, may be empty) -> frozenset."""
+    return frozenset( token for token in signature_cell.split( DELIM ) if token )
+
+
+def named_phylum_class( signature: frozenset, has_nonmetazoan: bool ):
+    """
+    Resolve one orthogroup's named phylum-composition class from its EXACT
+    metazoan phylum signature plus whether it has any non-metazoan member.
+
+    Returns the column key (one of PHYLUM_COMPOSITION_CLASS_KEYS) or None when the
+    orthogroup matches no named class (deliberately uncounted — see note above).
+
+    Disjoint by construction: has_nonmetazoan True can only yield
+    Mixed_With_NonMetazoan; has_nonmetazoan False can only yield a signature class.
+    So each orthogroup contributes to at most one named class.
+    """
+    base_key = PHYLUM_SIGNATURE___CLASS_KEY.get( signature )
+    if base_key is None:
+        return None
+    return base_key + "_With_NonMetazoan" if has_nonmetazoan else base_key
+
+
 def load_config( config_path: str ) -> dict:
     """Load the START_HERE-user_config.yaml into a nested dict."""
     with open( config_path, 'r' ) as input_config:

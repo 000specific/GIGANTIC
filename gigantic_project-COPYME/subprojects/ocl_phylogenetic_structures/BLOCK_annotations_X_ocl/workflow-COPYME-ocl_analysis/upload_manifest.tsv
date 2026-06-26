@@ -40,6 +40,7 @@ OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_loss-per_bloc
 OUTPUT_pipeline/structure_*/3-output/3_ai-structure_*_conservation_loss-summary.tsv	yes		Conservation/loss summary	summary	Aggregated conservation/loss metrics.	52	conservation and loss
 OUTPUT_pipeline/structure_*/2-output/2_ai-structure_*_annogroup_origins.tsv	yes		Annogroup origins	data	Inferred origin clade for each annogroup.	60	annogroup origins
 OUTPUT_pipeline/structure_*/2-output/2_ai-structure_*_origins_summary-annogroups_per_clade.tsv	yes		Origins summary (annogroups per clade)	summary	Count of annogroups originating at each clade.	62	annogroup origins
+OUTPUT_pipeline/structure_*/2-output/2_ai-structure_*_annogroup_phylum_composition_counts.tsv	yes		Annogroup phylum composition counts	summary	Count of annogroups in each metazoan phylum-composition class (the trees_species metazoan-group partition Ctenophora/Porifera/Placozoa/Cnidaria/Bilateria). Each named class is a disjoint pair: <phyla>_Only (no non-metazoan members) and <phyla>_Only_With_NonMetazoan (same metazoan phyla plus non-metazoan outgroups); unlisted signatures fall in unclassified. Structure-independent (member-species based); classifies the annogroups themselves.	63	annogroup origins
 OUTPUT_pipeline/structure_*/4-output/4_ai-structure_*_validation_report.txt	yes		Validation report	qc	Integrity checks for the OCL analysis.	70	OCL summaries
 OUTPUT_pipeline/structure_*/5-output/5_ai-structure_*_qc_metrics.tsv	yes		QC metrics	qc	Final QC metrics for this structure's OCL analysis.	72	QC metrics
 #
