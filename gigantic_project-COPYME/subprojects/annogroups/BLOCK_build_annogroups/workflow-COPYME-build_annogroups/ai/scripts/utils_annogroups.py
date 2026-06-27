@@ -29,6 +29,7 @@ Each source has a parser module at `parsers/<source>.py` exposing:
 Adding a source = drop a new `parsers/<source>.py` in; nothing else changes.
 """
 
+import sys
 from collections import namedtuple
 from pathlib import Path
 import yaml
@@ -38,69 +39,139 @@ DELIM = ','
 
 
 # ============================================================================
-# Metazoan phylum composition (annogroup phylum-composition classes, 2026-06-23)
+# Composite Clades (configurable species-tree clade groupings, 2026-06-27)
 # ============================================================================
-# NOTE: this is the trees_species METAZOAN-GROUP partition (Ctenophora, Porifera,
-# Placozoa, Cnidaria, Bilateria — the five groups that partition Metazoa), NOT the
-# raw NCBI Phylum field used by phylum_from_phyloname() elsewhere in this module.
-# Same approved vocabulary as the integrator + OCL blocks. Each named signature
-# splits into a disjoint PAIR by non-metazoan presence: the bare `_Only` name (no
-# non-metazoan members) and `<name>_With_NonMetazoan` (same metazoan phyla plus
-# non-metazoan outgroups). Siblings, NOT nested.
-METAZOAN_PHYLA = [ "Ctenophora", "Porifera", "Placozoa", "Cnidaria", "Bilateria" ]
-NON_BILATERIAN_PHYLA = frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } )
-
-PHYLUM_SIGNATURE___CLASS_KEY = {
-    frozenset( { "Ctenophora" } ):                                      "Ctenophora_Only",
-    frozenset( { "Porifera" } ):                                        "Porifera_Only",
-    frozenset( { "Placozoa" } ):                                        "Placozoa_Only",
-    frozenset( { "Cnidaria" } ):                                        "Cnidaria_Only",
-    frozenset( { "Ctenophora", "Porifera" } ):                         "Mixed_Ctenophora_Porifera_Only",
-    frozenset( { "Ctenophora", "Placozoa" } ):                         "Mixed_Ctenophora_Placozoa_Only",
-    frozenset( { "Ctenophora", "Cnidaria" } ):                         "Mixed_Ctenophora_Cnidaria_Only",
-    frozenset( { "Ctenophora", "Bilateria" } ):                        "Mixed_Ctenophora_Bilateria_Only",
-    frozenset( { "Ctenophora", "Porifera", "Placozoa" } ):             "Mixed_Ctenophora_Porifera_Placozoa_Only",
-    frozenset( { "Ctenophora", "Porifera", "Placozoa", "Cnidaria" } ): "Mixed_Ctenophora_Porifera_Placozoa_Cnidaria_Only",
-    frozenset( { "Porifera", "Placozoa" } ):                           "Mixed_Porifera_Placozoa_Only",
-    frozenset( { "Porifera", "Placozoa", "Cnidaria" } ):               "Mixed_Porifera_Placozoa_Cnidaria_Only",
-    frozenset( { "Placozoa", "Cnidaria" } ):                           "Mixed_Placozoa_Cnidaria_Only",
-    frozenset( { "Placozoa", "Bilateria" } ):                          "Mixed_Placozoa_Bilateria_Only",
-    frozenset( { "Cnidaria", "Bilateria" } ):                          "Mixed_Cnidaria_Bilateria_Only",
-}
-
-PHYLUM_COMPOSITION_CLASS_KEYS = []
-for _base_key in PHYLUM_SIGNATURE___CLASS_KEY.values():
-    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key )
-    PHYLUM_COMPOSITION_CLASS_KEYS.append( _base_key + "_With_NonMetazoan" )
+# A "composite clade" is a user-defined named group of one or more species-tree
+# clades (clade_id_names), treated as a single unit for composition analysis. The
+# set of composite clades to analyze is defined in START_HERE-user_config.yaml
+# under `composite_clades` (see load_composite_clades). The DEFAULT set is the five
+# metazoan phylum groups (Ctenophora, Porifera, Placozoa, Cnidaria, Bilateria)
+# within the Metazoa scope (members outside the scope -> the "outside" label, e.g.
+# NonMetazoan), but ANY grouping of clades can be configured when biologically
+# appropriate. This GENERALIZES the earlier "phylum-composition" analysis, which
+# hardcoded the five metazoan phyla.
+#
+# A feature unit's COMPOSITE SIGNATURE is the set of composite clades it occupies
+# (>=1 member species in the composite's species set), listed in config order. Its
+# COMPOSITE CLASS is the signature plus an outside flag, as a disjoint sibling pair:
+#   <G1>_<G2>_Only                  (no members outside the scope clade)
+#   <G1>_<G2>_With_<OutsideLabel>   (same composites plus outside-scope members)
+# NOTE: this composition is over the trees_species clade groupings, NOT the raw
+# NCBI Phylum field used by phylum_from_phyloname() elsewhere in this module.
 
 
-def parse_signature_cell( signature_cell: str ) -> frozenset:
-    """Metazoan_Phylum_Signature cell (comma-delimited, may be empty) -> frozenset."""
-    return frozenset( token for token in signature_cell.split( DELIM ) if token )
-
-
-def phylum_signature_of_species( member_species: set, phyla___species: dict, metazoan_species: set ):
+def load_composite_clades( config: dict, mappings_path: Path ) -> dict:
     """
-    One annogroup's metazoan phylum signature from its member species.
-    Returns ( signature_cell, has_nonmetazoan ): metazoan phyla present comma-joined
-    in fixed METAZOAN_PHYLA order, and whether any member is not in Metazoa.
+    Load composite-clade definitions from config['composite_clades'] and resolve
+    each group + the scope to species sets (from the trees_species clade->species
+    mapping at the configured reference structure; Rule 6 => stable across trees).
+
+    config['composite_clades'] schema:
+        reference_structure : str       (structure whose clade->species to read)
+        scope_clade_id_name : str       (ancestor the groups ideally partition)
+        outside_label       : str       (name for members outside the scope)
+        groups : [ { name: str, clade_id_names: [ clade_id_name, ... ] }, ... ]
+
+    Returns dict { names, names___species, scope_species, outside_label } where
+    `names` preserves config order (the signature order).
+
+    Fail-fast: exits 1 if the block, a group's clades, or the scope resolve to zero
+    species (a typo must not silently mis-classify every feature).
     """
-    present = [ phylum for phylum in METAZOAN_PHYLA if member_species & phyla___species[ phylum ] ]
-    has_nonmetazoan = bool( member_species - metazoan_species )
-    return ( DELIM.join( present ), has_nonmetazoan )
+    block = config.get( "composite_clades" )
+    if not block:
+        print( "CRITICAL ERROR: config is missing the 'composite_clades' block", file = sys.stderr )
+        sys.exit( 1 )
+    reference_structure = block[ "reference_structure" ]
+    scope_clade_id_name = block[ "scope_clade_id_name" ]
+    outside_label = block[ "outside_label" ]
+
+    scope_species = load_clade_species( mappings_path, reference_structure, scope_clade_id_name )
+    if not scope_species:
+        print( f"CRITICAL ERROR: scope clade '{scope_clade_id_name}' resolved to zero species for {reference_structure}", file = sys.stderr )
+        sys.exit( 1 )
+
+    names = []
+    names___species = {}
+    for group in block[ "groups" ]:
+        group_name = group[ "name" ]
+        group_species = set()
+        for clade_id_name in group[ "clade_id_names" ]:
+            group_species |= load_clade_species( mappings_path, reference_structure, clade_id_name )
+        if not group_species:
+            print( f"CRITICAL ERROR: composite clade '{group_name}' resolved to zero species "
+                   f"(clades {group[ 'clade_id_names' ]}, {reference_structure})", file = sys.stderr )
+            sys.exit( 1 )
+        names.append( group_name )
+        names___species[ group_name ] = group_species
+
+    return { "names": names, "names___species": names___species,
+             "scope_species": scope_species, "outside_label": outside_label }
 
 
-def named_phylum_class( signature: frozenset, has_nonmetazoan: bool ):
+def exact_components_of_species( member_species: set, composites: dict ) -> list:
     """
-    Named phylum-composition class from the EXACT metazoan signature + whether any
-    member is non-metazoan. Returns a class key (or 'unclassified' when the
-    signature is not one of the named signatures). The `_Only` and
-    `<key>_With_NonMetazoan` variants are DISJOINT siblings, not nested.
+    The EXACT set of composite-clade components a feature unit occupies, from its
+    member species, as an ordered list: the configured groups it has >=1 member
+    species in (in config order), then the outside label when it has any member
+    species outside the scope clade. This ordered list canonically names the
+    feature's composite clade (see composite_clade_id).
     """
-    base_key = PHYLUM_SIGNATURE___CLASS_KEY.get( signature )
-    if base_key is None:
-        return "unclassified"
-    return base_key + "_With_NonMetazoan" if has_nonmetazoan else base_key
+    components = [ name for name in composites[ "names" ]
+                  if member_species & composites[ "names___species" ][ name ] ]
+    if member_species - composites[ "scope_species" ]:
+        components.append( composites[ "outside_label" ] )
+    return components
+
+
+def composite_clade_id( ordered_components: list ) -> str:
+    """
+    Canonical composite-clade identifier for an exact component list:
+        cc_<component1>_<component2>_..._-exact   (components already in canonical order)
+    e.g. [ 'Porifera', 'Cnidaria', 'NonMetazoa' ] -> 'cc_Porifera_Cnidaria_NonMetazoa-exact'.
+    """
+    return "cc_" + "_".join( ordered_components ) + "-exact"
+
+
+def load_composite_clades_manifest( manifest_path: Path, composites: dict ) -> list:
+    """
+    Read the curated composite-clades manifest (the user's list of composite clades
+    to report; one composite clade per row, each a comma-delimited list of component
+    names; blank and '#'-comment lines skipped). Each component must be a configured
+    group name or the outside label. Components are re-sorted into the canonical
+    config order, so the user may list them in any order.
+
+    Returns a list of { 'components': [ordered names], 'frozenset': frozenset,
+    'cc_id': str }. Fail-fast on unknown components or an empty manifest.
+    """
+    valid_components = list( composites[ "names" ] ) + [ composites[ "outside_label" ] ]
+    canonical_order = { name: index for index, name in enumerate( valid_components ) }
+
+    manifest = []
+    seen = set()
+    with open( manifest_path, 'r' ) as input_manifest:
+        for line in input_manifest:
+            line = line.strip()
+            if not line or line.startswith( '#' ):
+                continue
+            requested = [ token.strip() for token in line.split( ',' ) if token.strip() ]
+            unknown = [ token for token in requested if token not in canonical_order ]
+            if unknown:
+                print( f"CRITICAL ERROR: composite_clades manifest row '{line}' has unknown component(s) {unknown}; "
+                       f"valid components are {valid_components}", file = sys.stderr )
+                sys.exit( 1 )
+            ordered = sorted( set( requested ), key = lambda name: canonical_order[ name ] )
+            components_frozenset = frozenset( ordered )
+            if components_frozenset in seen:
+                continue
+            seen.add( components_frozenset )
+            manifest.append( { "components": ordered, "frozenset": components_frozenset,
+                               "cc_id": composite_clade_id( ordered ) } )
+
+    if not manifest:
+        print( f"CRITICAL ERROR: composite_clades manifest has no entries: {manifest_path}", file = sys.stderr )
+        sys.exit( 1 )
+    return manifest
 
 
 def load_clade_species( mappings_path: Path, reference_structure: str, clade_id_name: str ) -> set:

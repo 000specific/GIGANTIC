@@ -117,7 +117,55 @@ process validate_results {
 }
 
 // ============================================================================
-// PROCESS 004: WRITE CROSS-SOURCE SUMMARY (once, after all sources validated)
+// PROCESS 004: SPECIES TREE DECONVOLUTION (per source)
+// ============================================================================
+// Per-annogroup member-protein count within EVERY species-tree clade (node or
+// tip): the non-redundant union across all structures + one file per structure.
+
+process species_tree_deconvolution {
+    label 'local'
+
+    input:
+        val source
+
+    output:
+        val source, emit: deconvolved
+
+    script:
+    """
+    python3 ${projectDir}/scripts/004_ai-python-species_tree_deconvolution.py \\
+        --source ${source} \\
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
+    """
+}
+
+// ============================================================================
+// PROCESS 005: COMPOSITE CLADES (per source)
+// ============================================================================
+// Each annogroup's EXACT composite clade (cc_<components>-exact), plus the curated
+// manifest's summary counts and per-composite-clade detail tables.
+
+process composite_clades {
+    label 'local'
+
+    input:
+        val source
+
+    output:
+        val source, emit: composited
+
+    script:
+    """
+    python3 ${projectDir}/scripts/005_ai-python-composite_clades.py \\
+        --source ${source} \\
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
+    """
+}
+
+// ============================================================================
+// PROCESS 006: WRITE CROSS-SOURCE SUMMARY (once, after all sources validated)
 // ============================================================================
 // Per-source per-type annogroup breakdown + per-species and per-phylum matrices
 // (annotation sources as columns).
@@ -133,7 +181,7 @@ process write_summary {
 
     script:
     """
-    python3 ${projectDir}/scripts/004_ai-python-write_summary.py \\
+    python3 ${projectDir}/scripts/006_ai-python-write_summary.py \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
         --output_dir ${projectDir}/../${params.output.base_dir}
     """
@@ -154,7 +202,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/005_ai-python-write_run_log.py \\
+    python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \\
         --workflow-name "build_annogroups" \\
         --subproject-name "annogroups-BLOCK_build_annogroups" \\
         --project-name "${params.species_set_name}" \\
@@ -178,12 +226,15 @@ workflow {
         .splitCsv( header: true )
         .map { row -> row.source }
 
-    // 002 build per source -> 003 validate per source (pipelined per source).
+    // 002 build -> 003 validate -> 004 species_tree_deconvolution -> 005
+    // composite_clades, pipelined per source.
     built = build_annogroups( sources_ch )
     validated = validate_results( built.built )
+    deconvolved = species_tree_deconvolution( validated.validated )
+    composited = composite_clades( deconvolved.deconvolved )
 
-    // Barrier: write the cross-source summary only after ALL sources validate.
-    write_summary( validated.validated.collect() )
+    // Barrier: write the cross-source summary only after ALL sources are processed.
+    write_summary( composited.composited.collect() )
 
     // Write the run log after the summary completes.
     write_run_log( write_summary.out.done )

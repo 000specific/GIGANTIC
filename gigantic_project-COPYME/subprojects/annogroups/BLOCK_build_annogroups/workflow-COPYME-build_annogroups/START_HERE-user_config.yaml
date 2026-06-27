@@ -33,26 +33,40 @@ inputs:
   # Species-set proteomes (the membership universe for `absent`), from genomesDB.
   proteomes_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_proteomes"
 
-  # Species-tree clade->species mapping (from trees_species, ALL structures). Used
-  # by the cross-source summary (Script 004) to classify each annogroup into
-  # metazoan phylum-composition classes (the trees_species metazoan-group partition
-  # below). The base annogroups are structure-independent; the reference structure
-  # is read for the phylum clades' species sets (stable across structures, Rule 6).
+  # Species-tree clade->species mapping (from trees_species, ALL structures). Read
+  # by Script 004 (species_tree_deconvolution — per-clade member-protein counts for
+  # every clade) and Script 005 (composite_clades — see the composite_clades block
+  # below). Clade species sets are stable across structures (Rule 6).
   clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
 
-  # Metazoan-group clade_id_names (trees_species). With Bilateria these five
-  # PARTITION Metazoa. Used by Script 004 to classify each annogroup's member
-  # species into phylum-composition classes (Ctenophora_Only, Mixed_*, and the
-  # paired _With_NonMetazoan variants). These metazoan-group clades are stable
-  # across structures (Rule 6); the reference structure below is read for their
-  # species sets. This is NOT the raw NCBI Phylum field used elsewhere.
-  phylum_reference_structure: "structure_001"
-  metazoa_clade_id_name: "C082_Metazoa"
-  bilateria_clade_id_name: "C103_Bilateria"
-  ctenophora_clade_id_name: "C086_Ctenophora"
-  porifera_clade_id_name: "C090_Porifera"
-  placozoa_clade_id_name: "C095_Placozoa"
-  cnidaria_clade_id_name: "C102_Cnidaria"
+  # Curated composite-clades manifest (Script 005) — the user's list of composite
+  # clades to report (one per row; see the file's header). Relative to the workflow dir.
+  composite_clades_manifest: "INPUT_user/composite_clades_manifest.tsv"
+
+# =============================================================================
+# Composite Clades (Script 005)
+# =============================================================================
+# A "composite clade" is a NAMED GROUP of one or more species-tree clades, treated
+# as a unit. Script 005 classifies each annogroup by which composite clades its
+# member species occupy (its composite signature) and counts annogroups per class.
+# Generalizes the earlier hardcoded metazoan-phylum-composition. Edit `groups` to
+# analyze ANY clade grouping; the default is the five metazoan phyla within Metazoa.
+#   - reference_structure : structure whose clade->species sets to use (Rule 6 stable)
+#   - scope_clade_id_name : ancestor the groups ideally partition; members outside
+#                           it are flagged (the "_With_<outside_label>" sibling class)
+#   - outside_label       : name for outside-scope members (drives the class suffix)
+#   - groups              : each composite clade = a name + the clade_id_names whose
+#                           species it unions
+composite_clades:
+  reference_structure: "structure_001"
+  scope_clade_id_name: "C082_Metazoa"
+  outside_label: "NonMetazoa"
+  groups:
+    - { name: "Ctenophora", clade_id_names: [ "C086_Ctenophora" ] }
+    - { name: "Porifera",   clade_id_names: [ "C090_Porifera" ] }
+    - { name: "Placozoa",   clade_id_names: [ "C095_Placozoa" ] }
+    - { name: "Cnidaria",   clade_id_names: [ "C102_Cnidaria" ] }
+    - { name: "Bilateria",  clade_id_names: [ "C103_Bilateria" ] }
 
 # Output configuration
 output:

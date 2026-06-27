@@ -1,0 +1,56 @@
+# GIGANTIC composite_clades manifest — annogroups / BLOCK_build_annogroups
+# ============================================================================
+# The CURATED list of composite clades to report (Script 005, composite_clades).
+# A "composite clade" is an EXACT combination of component clades: an annogroup
+# belongs to it when its member sequences come from BOTH/ALL and ONLY those
+# components. One composite clade per row, written as a comma-delimited list of
+# component names. Valid components are the group names defined in the
+# `composite_clades` block of START_HERE-user_config.yaml (Ctenophora, Porifera,
+# Placozoa, Cnidaria, Bilateria) plus the outside label NonMetazoa. Order does not
+# matter (the script re-sorts into config order); blank and '#' lines are ignored.
+#
+# Each row becomes a composite clade identifier  cc_<components>-exact  and drives:
+#   - the Composite_Clade-exact column in 5-output's per-annogroup table
+#   - one row in the Composite Clade Annogroup Summary Counts table
+#   - one Composite Clade All Annogroup Identifiers and Definitions detail table
+#
+# This default set reproduces the earlier metazoan phylum-composition groups (the
+# four non-bilaterian phyla, eleven mixed combinations, and their NonMetazoa
+# pairs). Edit freely — add any combination of components you are curious about.
+# ============================================================================
+
+# ---- single non-bilaterian phyla ----
+Ctenophora
+Porifera
+Placozoa
+Cnidaria
+
+# ---- mixed combinations ----
+Ctenophora,Porifera
+Ctenophora,Placozoa
+Ctenophora,Cnidaria
+Ctenophora,Bilateria
+Ctenophora,Porifera,Placozoa
+Ctenophora,Porifera,Placozoa,Cnidaria
+Porifera,Placozoa
+Porifera,Placozoa,Cnidaria
+Placozoa,Cnidaria
+Placozoa,Bilateria
+Cnidaria,Bilateria
+
+# ---- the same fifteen, plus non-metazoan outgroup members ----
+Ctenophora,NonMetazoa
+Porifera,NonMetazoa
+Placozoa,NonMetazoa
+Cnidaria,NonMetazoa
+Ctenophora,Porifera,NonMetazoa
+Ctenophora,Placozoa,NonMetazoa
+Ctenophora,Cnidaria,NonMetazoa
+Ctenophora,Bilateria,NonMetazoa
+Ctenophora,Porifera,Placozoa,NonMetazoa
+Ctenophora,Porifera,Placozoa,Cnidaria,NonMetazoa
+Porifera,Placozoa,NonMetazoa
+Porifera,Placozoa,Cnidaria,NonMetazoa
+Placozoa,Cnidaria,NonMetazoa
+Placozoa,Bilateria,NonMetazoa
+Cnidaria,Bilateria,NonMetazoa
