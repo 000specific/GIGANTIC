@@ -37,6 +37,14 @@ import time
 import re
 import html as htmllib
 
+# Local stdlib-only TSV/CSV -> .xlsx converter (sits next to this file).
+# Ensure this script's directory is importable whether the server is launched
+# as `python3 ai/gigantic_server.py` or imported as a module.
+_THIS_DIRECTORY = Path( __file__ ).resolve().parent
+if str( _THIS_DIRECTORY ) not in sys.path:
+    sys.path.insert( 0, str( _THIS_DIRECTORY ) )
+import tsv_to_xlsx
+
 
 # ============================================================================
 # Configuration Parser (hand-rolled; stdlib-only, preserved from v1)
@@ -975,6 +983,11 @@ class GIGANTICServer:
                 desc_html = ''
                 if f.description:
                     desc_html = f'<div class="file-description">{htmllib.escape( f.description )}</div>'
+                # Offer an on-the-fly Excel (.xlsx) conversion for tabular files.
+                excel_action = ''
+                if f.real_path.suffix.lower() in ( '.tsv', '.csv' ):
+                    excel_url = '/excel/' + '/'.join( urllib.parse.quote( s ) for s in segments + [ f.name ] )
+                    excel_action = f'<a href="{excel_url}">EXCEL</a>'
                 out.append( f"""
                 <div class="file-row">
                     <div class="file-name">
@@ -983,6 +996,7 @@ class GIGANTICServer:
                     </div>
                     <div class="file-size">{size}</div>
                     <div class="file-actions">
+                        {excel_action}
                         <a href="{download_url}">DOWNLOAD</a>
                     </div>
                 </div>
@@ -993,6 +1007,11 @@ class GIGANTICServer:
     def generate_file_stub_page( self, segments: List[ str ], node: TreeNode ) -> str:
         """If user hits a file URL (not /download/), show a mini page with a download button."""
         parent_segments = segments[ :-1 ]
+        download_href = '/download/' + '/'.join( urllib.parse.quote( s ) for s in segments )
+        excel_action = ''
+        if node.real_path.suffix.lower() in ( '.tsv', '.csv' ):
+            excel_href = '/excel/' + '/'.join( urllib.parse.quote( s ) for s in segments )
+            excel_action = f'<a href="{excel_href}">EXCEL</a> '
         body = [
             self._home_link_html( 'top' ),
             self._breadcrumb_html( segments ),
@@ -1000,11 +1019,28 @@ class GIGANTICServer:
             '<div class="file-group">',
             f'<div class="file-row"><div class="file-name">{htmllib.escape( node.name )}</div>',
             f'<div class="file-size">{self._format_size( node.size_bytes )}</div>',
-            f'<div class="file-actions"><a href="/download/' + '/'.join( urllib.parse.quote( s ) for s in segments ) + '">DOWNLOAD</a></div></div>',
+            f'<div class="file-actions">{excel_action}<a href="{download_href}">DOWNLOAD</a></div></div>',
             '</div>',
             self._home_link_html( 'bottom' ),
         ]
         return self._page_shell( node.name, '\n'.join( body ) )
+
+    def generate_excel_error_page( self, segments: List[ str ], filename: str, problems: List[ str ] ) -> str:
+        """Shown when an .xlsx conversion is REFUSED so no data is lost or
+        corrupted. Lists exactly what blocked it and links the original TSV."""
+        download_url = '/download/' + '/'.join( urllib.parse.quote( s ) for s in segments )
+        problem_items = '\n'.join( f'<li>{htmllib.escape( p )}</li>' for p in problems )
+        body = [
+            self._home_link_html( 'top' ),
+            self._breadcrumb_html( segments ),
+            '<h1>EXCEL &mdash; <span class="pink">REFUSED</span></h1>',
+            '<div class="no-data-banner">THIS TABLE WAS NOT CONVERTED TO EXCEL BECAUSE DOING SO WOULD LOSE OR CORRUPT DATA. DOWNLOAD THE ORIGINAL TSV INSTEAD.</div>',
+            f'<div class="file-group"><div class="file-row"><div class="file-name">{htmllib.escape( filename )}'
+            f'<div class="file-description"><ul>{problem_items}</ul></div></div>'
+            f'<div class="file-actions"><a href="{download_url}">DOWNLOAD ORIGINAL TSV</a></div></div></div>',
+            self._home_link_html( 'bottom' ),
+        ]
+        return self._page_shell( 'Excel Refused', '\n'.join( body ) )
 
     def generate_404_page( self ) -> str:
         body = [
@@ -1091,6 +1127,52 @@ def make_request_handler( server_instance: GIGANTICServer ):
                         self.wfile.write( f.read() )
                     return
                 self._write_html( server_instance.generate_404_page(), 404 )
+                return
+
+            # Excel conversion (on-the-fly TSV/CSV -> .xlsx, strict refuse-and-report)
+            if path.startswith( '/excel/' ):
+                raw_segments = [ p for p in path[ len( '/excel/' ): ].split( '/' ) if p ]
+                segments = [ urllib.parse.unquote( s ) for s in raw_segments ]
+                node = server_instance.resolve_download_target( segments )
+                if node is None:
+                    self._write_html( server_instance.generate_404_page(), 404 )
+                    return
+
+                file_path = node.real_path
+                if file_path.suffix.lower() not in ( '.tsv', '.csv' ):
+                    self._write_html(
+                        server_instance.generate_excel_error_page(
+                            segments, file_path.name,
+                            [ 'Only .tsv and .csv files can be converted to Excel.' ] ),
+                        400 )
+                    return
+
+                try:
+                    ok, report, xlsx_bytes = tsv_to_xlsx.convert_path_to_bytes( file_path )
+                except Exception as conversion_error:
+                    self._write_html(
+                        server_instance.generate_excel_error_page(
+                            segments, file_path.name,
+                            [ f'Unexpected error during conversion: {conversion_error}' ] ),
+                        500 )
+                    return
+
+                if not ok:
+                    self._write_html(
+                        server_instance.generate_excel_error_page( segments, file_path.name, report ),
+                        422 )
+                    return
+
+                xlsx_name = file_path.stem + '.xlsx'
+                self.send_response( 200 )
+                self.send_header( 'Content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' )
+                self.send_header( 'Content-Length', str( len( xlsx_bytes ) ) )
+                self.send_header( 'Content-Disposition', f'attachment; filename="{xlsx_name}"' )
+                self.end_headers()
+                try:
+                    self.wfile.write( xlsx_bytes )
+                except ( BrokenPipeError, ConnectionResetError ):
+                    return
                 return
 
             # Download
