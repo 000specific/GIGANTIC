@@ -1,0 +1,22 @@
+# GIGANTIC some_structures_manifest — integrator / BLOCK_ambiguous_nodes_X_annogroups
+# ============================================================================
+# Defines the SOME structure scope: the subset of species-tree structures whose
+# ambiguous nodes the "some" projection should cover. Read by Script 001/002 via
+# structure_scopes.some.selected_structures_file in START_HERE-user_config.yaml.
+#
+# Two accepted forms (this file uses the TSV-with-header form):
+#   1. TSV with a Structure_ID column (this template). Extra columns are ignored.
+#   2. A bare list — one structure_id per line, no header.
+# Blank lines and lines starting with '#' are ignored. The resolved SOME set is
+# the UNION of this file and the inline structure_scopes.some.structure_ids list.
+#
+# A natural source for this file is a trees_species/BLOCK_user_requests run: its
+# selected-structures output (which resolves a topological hypothesis to the
+# matching structure ids) can be pointed at directly, or its ids pasted below.
+#
+# Structure ids are structure_001 .. structure_NNN (zero-padded to 3 digits).
+# ============================================================================
+Structure_ID	Note (optional free-text; ignored by the pipeline)
+# structure_001	example: the input species tree's first resolution
+# structure_050	example
+# structure_105	example

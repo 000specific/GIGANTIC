@@ -1,0 +1,32 @@
+# GIGANTIC upload_manifest.tsv — integrator / BLOCK_ambiguous_nodes_X_annogroups
+# ============================================================================
+# Publishes the ambiguous_nodes_X_annogroups deliverables: per annotation source,
+# the annogroup x ambiguous-node projections in three structure scopes (one /
+# some / all), plus the ambiguous-node registry and the validation report.
+# Source globs are relative to this manifest's directory (the
+# workflow-RUN_*-ambiguous_nodes_X_annogroups/ root).
+#
+# Build with (from the integrator subproject root):
+#   bash RUN-update_upload_to_server.sh
+# (which calls ../../server/ai/update_upload_to_server.py --subproject-dir .)
+#
+# Published files land at:
+#   ../../upload_to_server/BLOCK_ambiguous_nodes_X_annogroups/workflow-RUN_*-ambiguous_nodes_X_annogroups/N-output/
+#
+# This is a COPYME template (single source of truth). The discovery helper
+# ignores manifests in workflow-COPYME-* dirs; copy this file into the canonical
+# workflow-RUN_* dir for it to publish (per gigantic_conventions §38/§39).
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order	dir_label
+#
+# ----- Headline deliverables: the three scoped projections (per source) -----
+OUTPUT_pipeline/2-output/*/all/2_ai-*-ambiguous_nodes_X_annogroups-all_structures.tsv	yes		ALL scope — annogroups x ambiguous nodes (all structures)	data	Per annotation source: each annogroup's member-protein count at every AMBIGUOUS NODE (a clade present in some but not all species-tree structures — the unresolved basal-metazoan groupings) across ALL structures. Fixed backbone clades are dropped; the leading columns carry the annogroup identity (id, type, defining features, definitions, sequence/species counts, species list).	10	projections by scope
+OUTPUT_pipeline/2-output/*/one/2_ai-*-ambiguous_nodes_X_annogroups-*.tsv	yes		ONE scope — annogroups x ambiguous nodes (one structure)	data	Per annotation source: the same projection restricted to the ambiguous nodes of ONE chosen species-tree structure (its particular resolution of the basal-metazoan branching order).	20	projections by scope
+OUTPUT_pipeline/2-output/*/some/2_ai-*-ambiguous_nodes_X_annogroups-some_structures.tsv	yes		SOME scope — annogroups x ambiguous nodes (subset of structures)	data	Per annotation source: the projection restricted to the ambiguous nodes appearing across a user-chosen SUBSET of species-tree structures.	30	projections by scope
+#
+# ----- Supporting: ambiguous-node registry (per source) -----
+OUTPUT_pipeline/1-output/*/1_ai-*-ambiguous_node_registry.tsv	yes		Ambiguous-node registry	summary	Per annotation source: one row per ambiguous node (clade present in fewer than all structures) with its descendant-species count, how many structures it appears in, and membership flags for the one / some / all scopes. The map of which contested nodes exist and which scopes include them.	40	supporting
+#
+# ----- QC: validation report -----
+OUTPUT_pipeline/3-output/3_ai-validation_report.txt	yes		Validation report	qc	Fail-fast validation cross-checks (identity-column match, every projected column is an ambiguous node, one/some/all clade-set correctness, row-count preservation, registry consistency). Status PASS means every cross-check held.	50	quality control

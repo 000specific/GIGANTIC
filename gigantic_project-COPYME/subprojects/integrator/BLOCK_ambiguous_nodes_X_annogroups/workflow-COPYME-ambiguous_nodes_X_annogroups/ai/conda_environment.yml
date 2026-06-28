@@ -1,0 +1,35 @@
+# GIGANTIC integrator - BLOCK_ambiguous_nodes_X_annogroups environment
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 27
+# Human: Eric Edsinger
+# ====================================================================
+#
+# Per-BLOCK conda env scoped to BLOCK_ambiguous_nodes_X_annogroups.
+# Created on-demand by RUN-workflow.sh via mamba (conda fallback).
+#
+# Pure-Python projection BLOCK (no external aligners/search tools) — it streams
+# the annogroups deconvolution tables and selects the ambiguous-node columns.
+# Dependencies are intentionally minimal.
+#
+# INSTALLATION:
+#   The env is created automatically on first run via RUN-workflow.sh.
+#   Manual creation:
+#     mamba env create -f ai/conda_environment.yml
+#
+# ACTIVATION:
+#   module load conda  # (HiPerGator/HPC only)
+#   conda activate aiG-integrator-ambiguous_nodes_X_annogroups
+
+name: aiG-integrator-ambiguous_nodes_X_annogroups
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core requirements
+  - python>=3.11
+  - nextflow>=23.0,<26.0  # PIN: NF 26.x strict-DSL retroactively breaks these workflows (see reference_nextflow_version_pin)
+
+  # Configuration parsing
+  - pyyaml

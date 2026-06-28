@@ -1,0 +1,126 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+#
+# GIGANTIC integrator - BLOCK_ambiguous_nodes_X_annogroups
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 27
+# Human: Eric Edsinger
+#
+# Collapses the annogroups species-tree DECONVOLUTION (per-clade member-protein
+# counts) down to ONLY the AMBIGUOUS NODES — the clades that exist in some but
+# not all species-tree structures (the unresolved basal-metazoan groupings). The
+# fixed backbone clades (present in every structure) are dropped; what remains is
+# each annogroup's member-protein count at each contested node.
+#
+# Three parallel structure SCOPES (one / some / all), per the ambiguous_nodes
+# series design:
+#   - all  : every ambiguous node across all species-tree structures
+#   - one  : the ambiguous nodes of a single user-chosen structure
+#   - some : the ambiguous nodes across a user-chosen subset of structures
+#
+# This is a PURE PROJECTION of the annogroups deconvolution: no counts are
+# recomputed (Rule 6 — a clade_id_name has the same species set, hence the same
+# count, in every structure it appears in). The block introduces NO new biology;
+# it selects columns. composite_clades (a different annogroups lens) is OUT of
+# scope here by design.
+
+# Run identification.
+# run_label names the output_to_input subdirectory for this run.
+run_label: "species70_annogroups_ambiguous_nodes"
+
+# Species set identifier (must match the upstream annogroups subproject).
+species_set_name: "species70"
+
+# ============================================================================
+# Annotation sources (the dial)
+# ============================================================================
+# Which annogroups annotation SOURCES to collapse. Each source is processed
+# independently and gets its own per-source outputs.
+#   "all"            - every source the annogroups subproject exposed for this
+#                      species set that carries a deconvolution tree-counts file
+#                      (currently: pfam, go, panther)
+#   [ pfam ]         - an explicit subset (each must be present in output_to_input)
+annotation_sources: "all"
+
+# ============================================================================
+# Input paths (relative to this workflow directory, via output_to_input §2)
+# ============================================================================
+inputs:
+  # annogroups subproject output_to_input ROOT (BLOCK_build_annogroups). For each
+  # source the deconvolution tree-counts are read from:
+  #   <annogroups_dir>/<species_set_name>/<source>/
+  #     4_ai-<source>-annogroup_tree_counts-all_structures.tsv        (ALL scope source + value table)
+  #     annogroup_tree_counts_per_structure/
+  #       4_ai-<source>-annogroup_tree_counts-structure_NNN.tsv       (per-structure clade membership for ONE / SOME)
+  # Each clade column header self-documents "... present in N of M structures";
+  # an AMBIGUOUS node is any clade column with N < M (fixed nodes have N == M).
+  annogroups_dir: "../../../annogroups/output_to_input/BLOCK_build_annogroups"
+
+# ============================================================================
+# Structure scopes (three parallel outputs: one / some / all)
+# ============================================================================
+structure_scopes:
+  # ALL: project every ambiguous node across all structures. Always produced.
+  all:
+    enabled: true
+
+  # ONE: a single user-chosen structure. Its ambiguous nodes are exactly that
+  # structure's particular resolution of the basal-metazoan branching order.
+  one:
+    enabled: true
+    structure_id: "structure_001"
+
+  # SOME: a user-chosen subset of structures. The "some" set may be given BOTH
+  # ways (the two are unioned):
+  #   - structure_ids        : an explicit inline list
+  #   - selected_structures_file : a file of structure ids — one structure_id per
+  #       line, OR a TSV carrying a Structure_ID column (e.g. the selection a
+  #       trees_species/BLOCK_user_requests query_manifest run produces). Blank
+  #       lines and '#' comments are ignored. Set to "" to use only the inline list.
+  some:
+    enabled: true
+    structure_ids: [ ]
+    selected_structures_file: "INPUT_user/some_structures_manifest.tsv"
+
+# ============================================================================
+# Output configuration
+# ============================================================================
+output:
+  #   OUTPUT_pipeline/1-output/<source>/   ambiguous-node registry + resolved structure sets
+  #   OUTPUT_pipeline/2-output/<source>/{all,one,some}/   projected annogroup x ambiguous-node tables
+  #   OUTPUT_pipeline/3-output/            validation report
+  base_dir: "OUTPUT_pipeline"
+
+# ============================================================================
+# Computational Resources
+# ============================================================================
+# Used by SLURM (job resources) when execution_mode is "slurm". Light, mostly
+# streaming column-projection over the deconvolution tables (one pass per source
+# x scope); the all_structures table (~137k rows x ~250 cols) dominates I/O.
+cpus: 2
+memory_gb: 16
+time_hours: 2
+
+# ============================================================================
+# Execution Mode  ("local" runs here; "slurm" self-submits as a SLURM job)
+# ============================================================================
+execution_mode: "slurm"
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# ============================================================================
+# Parallelism Mode (how NextFlow dispatches processes; composes with execution_mode)
+#   "local" - processes run within this allocation (default; this BLOCK is light)
+#   "slurm" - each process submits as its own SLURM job
+# ============================================================================
+parallelism_mode: "local"
+
+# Resume from cached NextFlow work/ (false = re-run from scratch).
+resume: false
