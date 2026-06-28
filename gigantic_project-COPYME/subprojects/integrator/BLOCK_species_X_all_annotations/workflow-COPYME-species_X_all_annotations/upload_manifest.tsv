@@ -1,7 +1,10 @@
 # GIGANTIC upload_manifest.tsv — integrator / BLOCK_species_X_all_annotations
 # ============================================================================
-# Publishes the species_X_all_annotations deliverables. Source globs are
-# relative to this manifest's directory (the workflow-RUN_*-species_X_all_annotations/ root).
+# Publishes the species_X_all_annotations deliverables: the per-species proteome
+# annotation tables (one row per protein, every per-gene feature joined), the
+# per-structure variants with OCL columns, the coverage summary, and the
+# validation report. Source globs are relative to this manifest's directory
+# (the workflow-RUN_*-species_X_all_annotations/ root).
 #
 # Build with (from the integrator subproject root):
 #   bash RUN-update_upload_to_server.sh
@@ -10,20 +13,24 @@
 # Published files land at:
 #   ../../upload_to_server/BLOCK_species_X_all_annotations/workflow-RUN_*-species_X_all_annotations/N-output/
 #
+# The publisher creates SYMLINKS (follow-the-symlink at HTTP request time, §38),
+# so the large per-protein tables cost no extra disk to publish.
+#
 # This is a COPYME template (single source of truth). The discovery helper
 # ignores manifests in workflow-COPYME-* dirs; copy this file into the canonical
 # workflow-RUN_* dir for it to publish (per gigantic_conventions §38/§39).
-#
-# NOTE: the per-species base tables (1-output/_shared/) and per-structure wide
-# tables (2-output/<structure>/) embed full amino-acid sequences and are large
-# (tens of files, up to GBs). They are NOT published by default. To publish them,
-# add explicit rows (or globs) below after a first-run size review.
 # ============================================================================
 
 source_path	include	dest_name	display_label	file_category	description	order	dir_label
 #
+# ----- Headline deliverable: per-species proteome annotation tables (invariant) -----
+OUTPUT_pipeline/1-output/_shared/*-proteome_annotations-base.tsv	yes		Per-species proteome annotation table	data	One row per protein in each species proteome, with every structure-invariant per-gene feature joined: gene/CDS/protein sizes, hotspot membership, top-3 NCBI nr DIAMOND hits, Pfam / InterPro-GO / PANTHER-GO / PANTHER, pfam/go/panther annogroup membership, orthogroup identifier and size, secretome SignalP call and DeepLoc localization, trees_gene_groups and trees_gene_families AGS membership, and dark-proteome status. One file per species. Coverage differs by source (NA plus an availability flag where a source does not cover a species or protein).	10	per-species annotation tables
+#
+# ----- Per-structure variants: base columns plus species-tree-structure OCL -----
+OUTPUT_pipeline/2-output/structure_*/*-proteome_all_annotations.tsv	yes		Per-species proteome annotation table with per-structure OCL	data	The per-species base table PLUS the orthogroup and pfam-annogroup Origin-Conservation-Loss (OCL) columns for one species-tree structure: per-protein origin phylogenetic block, block-state, and path, and conservation, loss, and continued-absence event counts. One file per species per structure, organized into per-structure subdirectories (structure_NNN).	20	per-structure annotation tables
+#
 # ----- Coverage summary -----
-OUTPUT_pipeline/1-output/_shared/feature_availability_summary.tsv	yes		Feature availability per species	summary	One row per species: protein count and per-axis availability flags (gene_sizes, hotspots, nr hits, annotations_hmms, secretome, dark proteome). Documents where each source covers the 70-species set (gene_sizes/hotspots = 64/70).	10	summary
+OUTPUT_pipeline/1-output/_shared/feature_availability_summary.tsv	yes		Feature availability per species	summary	One row per species: protein count and per-axis availability flags (gene_sizes, hotspots, nr hits, annotations_hmms, secretome, dark proteome). Documents where each source covers the 70-species set (gene_sizes/hotspots = 64/70).	30	per-species annotation tables
 #
 # ----- QC: validation report -----
-OUTPUT_pipeline/3-output/3_ai-validation_report.txt	yes		Validation report	qc	Fail-fast validation cross-checks (base-table headers, Sequence_Identifier uniqueness and species containment, availability-flag/NA consistency, per-structure row counts, and orthogroup-OCL referential integrity). Status PASS means every cross-check held.	20	quality control
+OUTPUT_pipeline/3-output/3_ai-validation_report.txt	yes		Validation report	qc	Fail-fast validation cross-checks (base-table headers, Sequence_Identifier uniqueness and species containment, availability-flag/NA consistency, per-structure row counts, and orthogroup-OCL referential integrity). Status PASS means every cross-check held.	40	quality control
