@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # AI: Claude Code | Opus 4.7 (1M context) | 2026 May 25 | Purpose: On-demand "Save Chat!" raw-copy of every Claude Code session JSONL for this project into research_notebook/research_ai/sessions/ as lossless gzipped permanent archives
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 28 | Fix: auto-detect Claude's session dir when sessions were launched at an ANCESTOR of the gigantic_project-* root (e.g. the GIGANTIC platform root); add --source-root override; fix invalid f-string format specs ({x:.1f }) that crashed capture on Python 3.9
 # Human: Eric Edsinger
 
 """
@@ -18,13 +19,20 @@ each context compaction. 003 (this script) catches:
     recent capture
 
 Usage:
-    python3 ai/ai_scripts/003_ai-python-copy_session_jsonls.py [--dry-run]
+    python3 ai/ai_scripts/003_ai-python-copy_session_jsonls.py [--dry-run] [--source-root DIR]
 
-    --dry-run    Print what would be captured without writing anything.
+    --dry-run         Print what would be captured without writing anything.
+    --source-root DIR The directory Claude Code was LAUNCHED from (used only to
+                      locate ~/.claude/projects/<encoded>). Override auto-detection
+                      when the launch root differs from the gigantic_project-* root.
 
 The script:
-  1. Locates Claude's per-project JSONL directory based on this project's path
-     (~/.claude/projects/<encoded-path>/)
+  1. Locates Claude's per-project JSONL directory. Claude keys it on the directory
+     Claude Code was LAUNCHED from, which may be the gigantic_project-* root
+     (outside-user fork) OR an ancestor such as the GIGANTIC platform root (Eric's
+     layout). Auto-detected by walking up from the project root to the deepest
+     ancestor whose ~/.claude/projects/<encoded> directory exists; override with
+     --source-root.
   2. Scans every *.jsonl session file
   3. For each session: reads session_id, model, and last-message timestamp
   4. Constructs destination filename matching the hook's format:
@@ -79,6 +87,43 @@ def get_claude_project_jsonl_directory( project_root: Path ) -> Path:
     if not encoded_path.startswith( '-' ):
         encoded_path = '-' + encoded_path
     return Path.home() / '.claude' / 'projects' / encoded_path
+
+
+def find_claude_jsonl_directory( project_root: Path, source_root_override=None ) -> Path:
+    """
+    Locate Claude Code's per-project JSONL directory (~/.claude/projects/<encoded>).
+
+    Claude keys this directory on the path Claude Code was LAUNCHED from, which is
+    not always the gigantic_project-* root:
+      - Outside-user fork ("Pattern B"): launched inside the gigantic_project-*
+        directory -> encoded( project_root ) matches.
+      - GIGANTIC platform layout ("Pattern A", Eric): launched at the GIGANTIC
+        parent (an ANCESTOR of gigantic_project-*) -> encoded( project_root ) does
+        NOT exist; the real directory is keyed to the ancestor.
+
+    If source_root_override is given, use encoded( that path ) directly. Otherwise
+    walk up from project_root and return the DEEPEST ancestor whose encoded
+    ~/.claude/projects directory exists (the launch root for this project). Falls
+    back to encoded( project_root ) if none exists (caller handles 'not found').
+    """
+
+    if source_root_override is not None:
+        override_directory = get_claude_project_jsonl_directory( Path( source_root_override ).resolve() )
+        if not override_directory.exists():
+            raise RuntimeError(
+                f"--source-root { source_root_override }: no Claude session directory at "
+                f"{ override_directory }. Pass the directory Claude Code was launched from."
+            )
+        return override_directory
+
+    candidate = project_root.resolve()
+    while True:
+        candidate_directory = get_claude_project_jsonl_directory( candidate )
+        if candidate_directory.exists():
+            return candidate_directory
+        if candidate == candidate.parent:
+            return get_claude_project_jsonl_directory( project_root )
+        candidate = candidate.parent
 
 
 def read_session_metadata( jsonl_path: Path ) -> dict:
@@ -170,18 +215,29 @@ def append_to_capture_log( log_path: Path, captured: list ):
                 f"| { capture[ 'session_short_id' ] }... "
                 f"| { capture[ 'model' ] } "
                 f"| save_chat "
-                f"| { capture[ 'source_size_mb' ]:.1f } MB "
+                f"| { capture[ 'source_size_mb' ]:.1f} MB "
                 f"| { capture[ 'filename' ] } |\n"
             )
             log_file.write( output )
 
 
+def parse_source_root_argument( argv ) -> str:
+    """Read the optional --source-root VALUE (or --source-root=VALUE) from argv."""
+    for index, token in enumerate( argv ):
+        if token == '--source-root' and index + 1 < len( argv ):
+            return argv[ index + 1 ]
+        if token.startswith( '--source-root=' ):
+            return token.split( '=', 1 )[ 1 ]
+    return None
+
+
 def main():
     dry_run = '--dry-run' in sys.argv
+    source_root_override = parse_source_root_argument( sys.argv )
 
     script_directory = Path( __file__ ).resolve().parent
     project_root = find_gigantic_project_root( script_directory )
-    claude_jsonl_directory = get_claude_project_jsonl_directory( project_root )
+    claude_jsonl_directory = find_claude_jsonl_directory( project_root, source_root_override )
 
     print( f"\n=== Save Chat!{ '  (DRY RUN — no files written)' if dry_run else '' } ===" )
     print( f"  Project root:  { project_root }" )
@@ -193,6 +249,8 @@ def main():
         print( f"  or if the AI session is rooted somewhere other than this project's root." )
         print( f"  Claude Code stores transcripts continuously once a session is active;" )
         print( f"  if you just opened the session, send a few messages first then re-run." )
+        print( f"  If the session was launched from a different directory, pass it with" )
+        print( f"  --source-root <launch directory>." )
         sys.exit( 0 )
 
     session_jsonls = sorted( claude_jsonl_directory.glob( '*.jsonl' ) )
@@ -229,7 +287,7 @@ def main():
             source_size_mb = jsonl_path.stat().st_size / ( 1024 * 1024 )
 
             if dry_run:
-                print( f"  ~ would write: { output_filename } ({ source_size_mb:.1f } MB source)" )
+                print( f"  ~ would write: { output_filename } ({ source_size_mb:.1f} MB source)" )
                 captured.append( {
                     'filename': output_filename,
                     'session_short_id': metadata[ 'session_id' ][ :8 ],
@@ -254,7 +312,7 @@ def main():
                 'source_size_mb': source_size_mb,
                 'destination_size_mb': destination_size_mb,
             } )
-            print( f"  + { output_filename } ({ source_size_mb:.1f } MB -> { destination_size_mb:.1f } MB gzipped)" )
+            print( f"  + { output_filename } ({ source_size_mb:.1f} MB -> { destination_size_mb:.1f} MB gzipped)" )
         except Exception as exception:
             print( f"  ! Error processing { jsonl_path.name }: { exception }" )
             error_count += 1
@@ -269,7 +327,7 @@ def main():
         print( f"  Errors:           { error_count }" )
     if captured and not dry_run:
         total_destination_mb = sum( c[ 'destination_size_mb' ] for c in captured )
-        print( f"  Total written:    { total_destination_mb:.1f } MB (gzipped)" )
+        print( f"  Total written:    { total_destination_mb:.1f} MB (gzipped)" )
     print( f"\nDone. Captures are lossless gzipped JSONL — never edit or delete." )
 
 
