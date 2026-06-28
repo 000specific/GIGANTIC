@@ -35,28 +35,37 @@ inputs:
 
   # Species-tree clade->species mapping (from trees_species, ALL structures). Read
   # by Script 004 (species_tree_deconvolution — per-clade member-protein counts for
-  # every clade) and Script 005 (composite_clades — see the composite_clades block
+  # every clade) and Script 006 (composite_clades — see the composite_clades block
   # below). Clade species sets are stable across structures (Rule 6).
   clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
 
-  # Curated composite-clades manifest (Script 005) — the user's list of composite
+  # Curated composite-clades manifest (Script 006) — the user's list of composite
   # clades to report (one per row; see the file's header). Relative to the workflow dir.
   composite_clades_manifest: "INPUT_user/composite_clades_manifest.tsv"
 
 # =============================================================================
-# Composite Clades (Script 005)
+# Composite Clades (Script 006)
 # =============================================================================
-# A "composite clade" is a NAMED GROUP of one or more species-tree clades, treated
-# as a unit. Script 005 classifies each annogroup by which composite clades its
-# member species occupy (its composite signature) and counts annogroups per class.
+# A "composite clade" is a user-defined question about where an annogroup's member
+# species fall on the species tree. This block defines the building-block GROUPS and
+# the scope; the composite clades to REPORT are curated in
+# INPUT_user/composite_clades_manifest.tsv, where each row picks one ALGORITHM:
+#   - exact            : members come from EXACTLY the listed component groups
+#   - absent           : members are ABSENT from ALL listed clades
+#   - core_urclade     : members in >=1 outgroup of a target clade AND >=1 ingroup
+#                        (the target's Ur = last-common-ancestor core)
+#   - core_early_clade : members in >=2 ingroups (the target's "Early" window = its
+#                        early descendant branches / the species tree's ambiguous nodes)
 # Generalizes the earlier hardcoded metazoan-phylum-composition. Edit `groups` to
 # analyze ANY clade grouping; the default is the five metazoan phyla within Metazoa.
 #   - reference_structure : structure whose clade->species sets to use (Rule 6 stable)
-#   - scope_clade_id_name : ancestor the groups ideally partition; members outside
-#                           it are flagged (the "_With_<outside_label>" sibling class)
-#   - outside_label       : name for outside-scope members (drives the class suffix)
-#   - groups              : each composite clade = a name + the clade_id_names whose
-#                           species it unions
+#   - scope_clade_id_name : the scope clade; its display name (e.g. Metazoa) is
+#                           usable as a Target_Clade in the manifest, and members
+#                           outside it map to the outside_label
+#   - outside_label       : name for outside-scope members (a valid exact component)
+#   - groups              : each building-block group = a name + the clade_id_names
+#                           whose species it unions (group names + the scope name +
+#                           any clade_id_name are resolvable in the manifest)
 composite_clades:
   reference_structure: "structure_001"
   scope_clade_id_name: "C082_Metazoa"

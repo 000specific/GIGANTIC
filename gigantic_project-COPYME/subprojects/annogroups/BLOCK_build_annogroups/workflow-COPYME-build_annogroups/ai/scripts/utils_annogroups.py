@@ -42,22 +42,29 @@ DELIM = ','
 # Composite Clades (configurable species-tree clade groupings, 2026-06-27)
 # ============================================================================
 # A "composite clade" is a user-defined named group of one or more species-tree
-# clades (clade_id_names), treated as a single unit for composition analysis. The
-# set of composite clades to analyze is defined in START_HERE-user_config.yaml
-# under `composite_clades` (see load_composite_clades). The DEFAULT set is the five
-# metazoan phylum groups (Ctenophora, Porifera, Placozoa, Cnidaria, Bilateria)
-# within the Metazoa scope (members outside the scope -> the "outside" label, e.g.
-# NonMetazoan), but ANY grouping of clades can be configured when biologically
-# appropriate. This GENERALIZES the earlier "phylum-composition" analysis, which
-# hardcoded the five metazoan phyla.
+# clades, used to ask a focused question about where a feature unit's member
+# species fall on the species tree. The building-block GROUPS are defined in
+# START_HERE-user_config.yaml under `composite_clades` (default: the five metazoan
+# phyla Ctenophora, Porifera, Placozoa, Cnidaria, Bilateria within the Metazoa
+# scope; members outside the scope carry the outside label, e.g. NonMetazoa). The
+# composite clades to REPORT are curated in INPUT_user/composite_clades_manifest.tsv.
+# This GENERALIZES the earlier hardcoded "phylum-composition" analysis.
 #
-# A feature unit's COMPOSITE SIGNATURE is the set of composite clades it occupies
-# (>=1 member species in the composite's species set), listed in config order. Its
-# COMPOSITE CLASS is the signature plus an outside flag, as a disjoint sibling pair:
-#   <G1>_<G2>_Only                  (no members outside the scope clade)
-#   <G1>_<G2>_With_<OutsideLabel>   (same composites plus outside-scope members)
-# NOTE: this composition is over the trees_species clade groupings, NOT the raw
-# NCBI Phylum field used by phylum_from_phyloname() elsewhere in this module.
+# Each manifest row names an ALGORITHM that tests an annogroup's member species:
+#   - exact            : members come from EXACTLY the listed component clades
+#                        (one-per-annogroup; auto-named cc_<components>-exact)
+#   - absent           : members are ABSENT from ALL listed clades
+#   - core_urclade     : members in >=1 OUTGROUP of the target clade AND >=1 listed
+#                        ingroup -> the target's Ur (last-common-ancestor) core
+#   - core_early_clade : members in >=2 listed ingroups, where the ingroups are the
+#                        ambiguous (unresolved) nodes defining the target's "Early"
+#                        window (its early descendant branches)
+# `Ur` = last common ancestor of a clade; `Early` = the early descendants of a
+# clade (the phylogenetic window spanned by the species tree's ambiguous nodes).
+# absent / core_urclade / core_early_clade are independent membership tests, so one
+# annogroup may match several composite clades of those algorithms at once.
+# NOTE: composition is over the trees_species clade groupings, NOT the raw NCBI
+# Phylum field used by phylum_from_phyloname() elsewhere in this module.
 
 
 def load_composite_clades( config: dict, mappings_path: Path ) -> dict:
@@ -105,8 +112,14 @@ def load_composite_clades( config: dict, mappings_path: Path ) -> dict:
         names.append( group_name )
         names___species[ group_name ] = group_species
 
+    # Display name for the scope clade (e.g. "Metazoa" from "C082_Metazoa"), so the
+    # manifest can name the scope as a target without the clade_id prefix.
+    scope_name = scope_clade_id_name.split( '_', 1 )[ 1 ] if '_' in scope_clade_id_name else scope_clade_id_name
+
     return { "names": names, "names___species": names___species,
-             "scope_species": scope_species, "outside_label": outside_label }
+             "scope_species": scope_species, "outside_label": outside_label,
+             "scope_clade_id_name": scope_clade_id_name, "scope_name": scope_name,
+             "reference_structure": reference_structure, "mappings_path": mappings_path }
 
 
 def exact_components_of_species( member_species: set, composites: dict ) -> list:
@@ -124,54 +137,237 @@ def exact_components_of_species( member_species: set, composites: dict ) -> list
     return components
 
 
+def composite_clade_id_auto( ordered_tokens: list, algorithm: str ) -> str:
+    """
+    Auto-derived identifier for the DETERMINISTIC algorithms (exact, absent), which
+    do not vary for a given clade set and therefore need no user name or number:
+        cc_<token1>_<token2>_..._-<algorithm>
+    e.g. composite_clade_id_auto( [ 'NonMetazoa' ], 'absent' ) -> 'cc_NonMetazoa-absent';
+         composite_clade_id_auto( [ 'Porifera', 'Cnidaria' ], 'exact' ) -> 'cc_Porifera_Cnidaria-exact'.
+    """
+    return "cc_" + "_".join( ordered_tokens ) + "-" + algorithm
+
+
 def composite_clade_id( ordered_components: list ) -> str:
+    """Exact composite-clade identifier: cc_<components>-exact (see composite_clade_id_auto)."""
+    return composite_clade_id_auto( ordered_components, "exact" )
+
+
+# The four composite-clade algorithms (see the module header for definitions).
+COMPOSITE_CLADE_ALGORITHMS = ( "exact", "absent", "core_urclade", "core_early_clade" )
+
+
+def composite_clade_id_named( name: str, algorithm: str ) -> str:
     """
-    Canonical composite-clade identifier for an exact component list:
-        cc_<component1>_<component2>_..._-exact   (components already in canonical order)
-    e.g. [ 'Porifera', 'Cnidaria', 'NonMetazoa' ] -> 'cc_Porifera_Cnidaria_NonMetazoa-exact'.
+    Canonical identifier for a user-named composite clade (absent / core_urclade /
+    core_early_clade):  cc_<Name>-<algorithm>
+    e.g. composite_clade_id_named( 'Urmetazoa_001', 'core_urclade' )
+         -> 'cc_Urmetazoa_001-core_urclade'.
+    (`exact` composite clades are auto-named from their components by composite_clade_id.)
     """
-    return "cc_" + "_".join( ordered_components ) + "-exact"
+    return f"cc_{name}-{algorithm}"
+
+
+def resolve_clade_species( name: str, composites: dict ) -> set:
+    """
+    Resolve a composite-clades manifest clade NAME to its species set. A name may be
+    a config group name (e.g. Ctenophora), the scope clade's display name or its
+    clade_id_name (Metazoa / C082_Metazoa), or any raw clade_id_name present in the
+    trees_species mapping at the reference structure. Fail-fast on an unresolvable
+    name (a typo must not silently mis-classify every annogroup).
+    """
+    if name in composites[ "names___species" ]:
+        return composites[ "names___species" ][ name ]
+    if name == composites[ "scope_name" ] or name == composites[ "scope_clade_id_name" ]:
+        return composites[ "scope_species" ]
+    species = load_clade_species( composites[ "mappings_path" ], composites[ "reference_structure" ], name )
+    if not species:
+        print( f"CRITICAL ERROR: composite_clades manifest clade '{name}' is not a config group, "
+               f"the scope ({composites[ 'scope_name' ]}), or a known clade_id_name for "
+               f"{composites[ 'reference_structure' ]}", file = sys.stderr )
+        sys.exit( 1 )
+    return species
+
+
+def _component_detail_column( component: str, composites: dict ) -> tuple:
+    """
+    Build one detail-table column spec ( label, kind, species_set ) for a building-
+    block component. The outside label is a complement column ('out' = species NOT
+    in the scope); a group is an 'in' column (species in that group).
+    """
+    if component == composites[ "outside_label" ]:
+        return ( component, "out", composites[ "scope_species" ] )
+    return ( component, "in", composites[ "names___species" ][ component ] )
+
+
+def _order_absent_clades( clades: list, composites: dict ) -> list:
+    """
+    Canonical order for an absent composite clade's clade list (so its auto-derived
+    cc_id is deterministic regardless of how the user listed them): building-block
+    groups + the outside label in config order, then the scope name, then any other
+    names alphabetically.
+    """
+    valid_components = list( composites[ "names" ] ) + [ composites[ "outside_label" ] ]
+    component_order = { component: index for index, component in enumerate( valid_components ) }
+
+    def order_key( name ):
+        if name in component_order:
+            return ( 0, component_order[ name ], name )
+        if name == composites[ "scope_name" ] or name == composites[ "scope_clade_id_name" ]:
+            return ( 1, 0, name )
+        return ( 2, 0, name )
+
+    return sorted( set( clades ), key = order_key )
 
 
 def load_composite_clades_manifest( manifest_path: Path, composites: dict ) -> list:
     """
-    Read the curated composite-clades manifest (the user's list of composite clades
-    to report; one composite clade per row, each a comma-delimited list of component
-    names; blank and '#'-comment lines skipped). Each component must be a configured
-    group name or the outside label. Components are re-sorted into the canonical
-    config order, so the user may list them in any order.
+    Read the curated composite-clades manifest — a columnar TSV, one composite clade
+    per row, with columns:
 
-    Returns a list of { 'components': [ordered names], 'frozenset': frozenset,
-    'cc_id': str }. Fail-fast on unknown components or an empty manifest.
+        Algorithm <TAB> Name <TAB> Target_Clade <TAB> Clades
+
+      - Algorithm    : exact | absent | core_urclade | core_early_clade
+      - Name         : the composite clade's short name (blank for exact, which
+                       auto-names from its components); required for the others
+      - Target_Clade : the focal clade (core_urclade / core_early_clade); blank for
+                       exact and absent
+      - Clades       : comma-delimited clade names — the COMPONENTS (exact), the
+                       clades the members must be ABSENT from (absent), or the
+                       INGROUPS (core_urclade / core_early_clade)
+
+    Blank lines, '#'-comment lines, and a header row (column 0 == 'Algorithm') are
+    skipped. Each clade name resolves via resolve_clade_species. Returns a list of
+    entry dicts (config/manifest order), each carrying its algorithm, cc_id, a human-
+    readable definition, the resolved species sets the matching test needs, and the
+    detail-table column specs. Fail-fast on unknown algorithm, missing fields, an
+    unknown clade, or an empty manifest.
     """
-    valid_components = list( composites[ "names" ] ) + [ composites[ "outside_label" ] ]
-    canonical_order = { name: index for index, name in enumerate( valid_components ) }
-
-    manifest = []
-    seen = set()
+    entries = []
+    seen_ids = set()
     with open( manifest_path, 'r' ) as input_manifest:
         for line in input_manifest:
-            line = line.strip()
-            if not line or line.startswith( '#' ):
+            line = line.rstrip( '\n' )
+            if not line.strip() or line.lstrip().startswith( '#' ):
                 continue
-            requested = [ token.strip() for token in line.split( ',' ) if token.strip() ]
-            unknown = [ token for token in requested if token not in canonical_order ]
-            if unknown:
-                print( f"CRITICAL ERROR: composite_clades manifest row '{line}' has unknown component(s) {unknown}; "
-                       f"valid components are {valid_components}", file = sys.stderr )
-                sys.exit( 1 )
-            ordered = sorted( set( requested ), key = lambda name: canonical_order[ name ] )
-            components_frozenset = frozenset( ordered )
-            if components_frozenset in seen:
-                continue
-            seen.add( components_frozenset )
-            manifest.append( { "components": ordered, "frozenset": components_frozenset,
-                               "cc_id": composite_clade_id( ordered ) } )
+            parts = line.split( '\t' )
+            while len( parts ) < 4:
+                parts.append( '' )
+            algorithm = parts[ 0 ].strip()
+            name = parts[ 1 ].strip()
+            target_name = parts[ 2 ].strip()
+            clades = [ token.strip() for token in parts[ 3 ].split( ',' ) if token.strip() ]
 
-    if not manifest:
+            if algorithm.lower() == "algorithm":           # header row
+                continue
+            if algorithm not in COMPOSITE_CLADE_ALGORITHMS:
+                print( f"CRITICAL ERROR: composite_clades manifest row '{line}' has unknown algorithm "
+                       f"'{algorithm}'; valid: {', '.join( COMPOSITE_CLADE_ALGORITHMS )}", file = sys.stderr )
+                sys.exit( 1 )
+            if not clades:
+                print( f"CRITICAL ERROR: composite_clades manifest row '{line}' lists no clades (column 4)", file = sys.stderr )
+                sys.exit( 1 )
+
+            entry = _build_composite_clade_entry( algorithm, name, target_name, clades, composites, line )
+            if entry[ "cc_id" ] in seen_ids:
+                continue
+            seen_ids.add( entry[ "cc_id" ] )
+            entries.append( entry )
+
+    if not entries:
         print( f"CRITICAL ERROR: composite_clades manifest has no entries: {manifest_path}", file = sys.stderr )
         sys.exit( 1 )
-    return manifest
+    return entries
+
+
+def _build_composite_clade_entry( algorithm, name, target_name, clades, composites, raw_line ):
+    """Validate one manifest row and build its composite-clade entry (per algorithm)."""
+    valid_components = list( composites[ "names" ] ) + [ composites[ "outside_label" ] ]
+    component_order = { component: index for index, component in enumerate( valid_components ) }
+
+    if algorithm == "exact":
+        unknown = [ token for token in clades if token not in component_order ]
+        if unknown:
+            print( f"CRITICAL ERROR: composite_clades exact row '{raw_line}' has unknown component(s) {unknown}; "
+                   f"valid components are {valid_components}", file = sys.stderr )
+            sys.exit( 1 )
+        ordered = sorted( set( clades ), key = lambda token: component_order[ token ] )
+        return { "algorithm": "exact", "name": "", "cc_id": composite_clade_id( ordered ),
+                 "components": ordered, "components_frozenset": frozenset( ordered ),
+                 "definition": ','.join( ordered ),
+                 "detail_columns": [ _component_detail_column( component, composites ) for component in ordered ] }
+
+    if algorithm == "absent":
+        # exact / absent do not vary for a given clade set -> auto-named, no user Name.
+        # The outside label (e.g. NonMetazoa) is allowed: "absent from <outside>" means
+        # no members fall outside the scope clade.
+        absent_from_outside = composites[ "outside_label" ] in clades
+        union_species = set()
+        for clade in ( clade for clade in clades if clade != composites[ "outside_label" ] ):
+            union_species |= resolve_clade_species( clade, composites )
+        ordered_clades = _order_absent_clades( clades, composites )
+        # Detail columns show where the members ARE (the building-block groups +
+        # outside) -- by definition none fall in the absent-from clades.
+        detail_columns = [ _component_detail_column( group, composites ) for group in composites[ "names" ] ]
+        detail_columns.append( ( composites[ "outside_label" ], "out", composites[ "scope_species" ] ) )
+        return { "algorithm": "absent", "name": "", "cc_id": composite_clade_id_auto( ordered_clades, "absent" ),
+                 "clades": ordered_clades, "union_species": union_species, "absent_from_outside": absent_from_outside,
+                 "definition": "absent from " + ','.join( ordered_clades ),
+                 "detail_columns": detail_columns }
+
+    # core_urclade / core_early_clade -- need a user Name + a target clade + ingroups
+    if not name:
+        print( f"CRITICAL ERROR: composite_clades {algorithm} row '{raw_line}' needs a Name (column 2)", file = sys.stderr )
+        sys.exit( 1 )
+    if not target_name:
+        print( f"CRITICAL ERROR: composite_clades {algorithm} row '{raw_line}' needs a Target_Clade (column 3)", file = sys.stderr )
+        sys.exit( 1 )
+    target_species = resolve_clade_species( target_name, composites )
+    ingroups___species = { ingroup: resolve_clade_species( ingroup, composites ) for ingroup in clades }
+    ingroup_union = set().union( *ingroups___species.values() )
+
+    if algorithm == "core_urclade":
+        detail_columns = [ ( ingroup, "in", ingroups___species[ ingroup ] ) for ingroup in clades ]
+        detail_columns.append( ( f"Outside_{target_name}", "out", target_species ) )
+        return { "algorithm": "core_urclade", "name": name, "cc_id": composite_clade_id_named( name, "core_urclade" ),
+                 "target_name": target_name, "target_species": target_species,
+                 "ingroups": clades, "ingroups___species": ingroups___species, "ingroup_union": ingroup_union,
+                 "definition": f"target {target_name}; ingroups " + ','.join( clades ),
+                 "detail_columns": detail_columns }
+
+    # core_early_clade
+    detail_columns = [ ( ingroup, "in", ingroups___species[ ingroup ] ) for ingroup in clades ]
+    return { "algorithm": "core_early_clade", "name": name, "cc_id": composite_clade_id_named( name, "core_early_clade" ),
+             "target_name": target_name, "target_species": target_species,
+             "ingroups": clades, "ingroups___species": ingroups___species, "ingroup_union": ingroup_union,
+             "definition": f"target {target_name}; ingroups " + ','.join( clades ) + " (present in >=2)",
+             "detail_columns": detail_columns }
+
+
+def annogroup_matches_composite_clade( entry: dict, member_species: set, composites: dict ) -> bool:
+    """
+    True if an annogroup (its set of member Genus_species) matches one composite-clade
+    manifest entry, per that entry's algorithm:
+      - exact            : the annogroup's exact component set equals the entry's
+      - absent           : no member species in ANY of the entry's clades
+      - core_urclade     : >=1 member outside the target AND >=1 member in an ingroup
+      - core_early_clade : members in >=2 of the entry's ingroups
+    """
+    algorithm = entry[ "algorithm" ]
+    if algorithm == "exact":
+        return frozenset( exact_components_of_species( member_species, composites ) ) == entry[ "components_frozenset" ]
+    if algorithm == "absent":
+        if member_species & entry[ "union_species" ]:
+            return False
+        if entry[ "absent_from_outside" ] and ( member_species - composites[ "scope_species" ] ):
+            return False
+        return True
+    if algorithm == "core_urclade":
+        return bool( member_species - entry[ "target_species" ] ) and bool( member_species & entry[ "ingroup_union" ] )
+    if algorithm == "core_early_clade":
+        present = sum( 1 for ingroup_species in entry[ "ingroups___species" ].values() if member_species & ingroup_species )
+        return present >= 2
+    return False
 
 
 def load_clade_species( mappings_path: Path, reference_structure: str, clade_id_name: str ) -> set:

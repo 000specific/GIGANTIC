@@ -121,6 +121,30 @@ canonical definition.
 (See `README.md` Terminology section for the canonical Structure vs Topology
 definitions and the Resolved vs Unresolved input species tree distinction.)
 
+### Ur and Early: Ancestral and Early-Descendant Windows of a Clade
+
+Two phylogenetic windows of any clade `X`, defined by the species tree and
+consumed by downstream `composite_clades` analyses (`annogroups`,
+`annotations_X_ocl`, `annotations_X_orthogroups`):
+
+- **Ur** — the **last common ancestor (LCA / MRCA) of a clade** (standard
+  phylogenetics term; the prefix means "original, earliest"). The Ur of `X` is
+  `X`'s own internal node; *Urmetazoa* = the `C082_Metazoa` node. A feature is
+  in a clade's **Ur core** when present both **outside** the clade (predates
+  it) **and inside** it (inherited) — the `core_urclade` algorithm.
+- **Early** (GIGANTIC term) — **all early descendants of a clade**. A clade's
+  **Early window = the species tree's ambiguous (unresolved) nodes** (the
+  `unresolved_clades` enumerated across the (2N-3)!! structures). For
+  species70, *Early Metazoa* = Ctenophora, Porifera, Placozoa, Cnidaria,
+  Bilateria. A feature is in a clade's **Early core** when shared across **≥2**
+  of those branches, so its clade-of-origin is the same in every structure —
+  the `core_early_clade` algorithm.
+
+Ur = where a clade came from (one ancestral node); Early = how it first
+diversified (a set of early branches). Neither is the species tree's **root**
+nor a hierarchy **origin**. See `README.md` Terminology section ("Ur and
+Early") for the canonical definition and worked examples.
+
 ---
 
 ## Directory Structure

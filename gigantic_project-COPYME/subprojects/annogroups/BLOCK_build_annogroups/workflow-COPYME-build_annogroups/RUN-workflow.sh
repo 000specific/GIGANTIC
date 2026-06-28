@@ -233,9 +233,13 @@ fi
 # ============================================================================
 # Create symlinks for output_to_input (downstream consumers)
 # ============================================================================
-# Real files live in OUTPUT_pipeline/2-output/<source>/. Expose each source's
-# annogroup map + membership (+ dropped-orphan audit) under a
-# <species_set>/<source>/ subdir so downstream paths are stable.
+# Real files live in OUTPUT_pipeline/<N>-output/<source>/. Expose each source's
+# downstream-facing deliverables under a <species_set>/<source>/ subdir so
+# downstream paths are stable:
+#   2-output : annogroup map + membership (+ dropped-orphan audit)
+#   4-output : species-tree deconvolution tree-counts (the cross-structure union
+#              table + the per-structure subdir; downstream OCL reads the
+#              per-structure protein-count table for the structure it analyzes)
 echo ""
 echo "Creating symlinks for downstream consumers..."
 
@@ -248,7 +252,9 @@ for source_out in OUTPUT_pipeline/2-output/*/; do
     source_name="$(basename "${source_out}")"
     source_shared="${SHARED_ROOT}/${source_name}"
     mkdir -p "${source_shared}"
-    # Remove stale symlinks from previous runs
+
+    # --- 2-output: annogroup map + membership (+ dropped-orphan audit) ---
+    # Remove stale top-level symlinks from previous runs
     for old in "${source_shared}"/*.tsv; do
         [ -L "$old" ] && rm -f "$old"
     done
@@ -259,6 +265,52 @@ for source_out in OUTPUT_pipeline/2-output/*/; do
             "${source_shared}/${fname}"
         SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
     done
+
+    # --- 4-output: species-tree deconvolution tree-counts ---
+    # Cross-structure union table (flat) + the per-structure tree-counts subdir
+    # (one file per structure). Downstream OCL reads the per-structure table for
+    # the structure it is analyzing (member-protein counts per clade).
+    deconvolution_out="OUTPUT_pipeline/4-output/${source_name}"
+    if [ -d "${deconvolution_out}" ]; then
+        for real in "${deconvolution_out}"/*.tsv; do
+            [ -f "$real" ] || continue
+            fname="$(basename "$real")"
+            ln -sf "../../../../BLOCK_build_annogroups/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/${source_name}/${fname}" \
+                "${source_shared}/${fname}"
+            SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
+        done
+
+        per_structure_real="${deconvolution_out}/annogroup_tree_counts_per_structure"
+        if [ -d "${per_structure_real}" ]; then
+            per_structure_shared="${source_shared}/annogroup_tree_counts_per_structure"
+            mkdir -p "${per_structure_shared}"
+            # Remove stale per-structure symlinks from previous runs
+            for old in "${per_structure_shared}"/*.tsv; do
+                [ -L "$old" ] && rm -f "$old"
+            done
+            for real in "${per_structure_real}"/*.tsv; do
+                [ -f "$real" ] || continue
+                fname="$(basename "$real")"
+                ln -sf "../../../../../BLOCK_build_annogroups/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/4-output/${source_name}/annogroup_tree_counts_per_structure/${fname}" \
+                    "${per_structure_shared}/${fname}"
+                SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
+            done
+        fi
+    fi
+
+    # --- 5-output: per-species sequence map ---
+    # annogroup x species -> member sequence identifiers; exposed downstream too
+    # (feature/combination/architecture; absent excluded).
+    per_species_out="OUTPUT_pipeline/5-output/${source_name}"
+    if [ -d "${per_species_out}" ]; then
+        for real in "${per_species_out}"/*.tsv; do
+            [ -f "$real" ] || continue
+            fname="$(basename "$real")"
+            ln -sf "../../../../BLOCK_build_annogroups/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/5-output/${source_name}/${fname}" \
+                "${source_shared}/${fname}"
+            SYMLINK_COUNT=$((SYMLINK_COUNT + 1))
+        done
+    fi
 done
 
 echo "  output_to_input/BLOCK_build_annogroups/${SPECIES_SET}/ -> ${SYMLINK_COUNT} symlinks created"
@@ -279,7 +331,10 @@ cat > "${SUMMARY_FILE}" <<EOF
 - \`OUTPUT_pipeline/1-output/\`            sources manifest + proteome universe
 - \`OUTPUT_pipeline/2-output/<source>/\`   annogroup map + membership (+ dropped audit)
 - \`OUTPUT_pipeline/3-output/<source>/\`   validation report
-- \`OUTPUT_pipeline/4-output/\`            summary (per source / per species / per phylum)
+- \`OUTPUT_pipeline/4-output/<source>/\`   species-tree deconvolution tree-counts (union + per-structure)
+- \`OUTPUT_pipeline/5-output/<source>/\`   per-species sequence map (annogroup x species -> sequence IDs)
+- \`OUTPUT_pipeline/6-output/<source>/\`   composite clades (per-annogroup + summary counts + detail tables)
+- \`OUTPUT_pipeline/7-output/\`            summary (per source / per species / per phylum)
 EOF
 cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 

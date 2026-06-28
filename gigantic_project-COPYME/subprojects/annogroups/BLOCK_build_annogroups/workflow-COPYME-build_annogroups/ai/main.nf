@@ -18,11 +18,14 @@
  * - All paths resolved from START_HERE-user_config.yaml (relative to workflow dir).
  *
  * Pipeline:
- *   001 resolve_sources_and_universe -> 1-output (sources manifest + universe)
- *   002 build_annogroups   (per source) -> 2-output/<source>/ (map + membership)
- *   003 validate_results   (per source) -> 3-output/<source>/ (fail-fast, §36)
- *   004 write_summary      (once)        -> 4-output (per source / species / phylum)
- *   005 write_run_log      (once)        -> ai/logs (§45)
+ *   001 resolve_sources_and_universe     -> 1-output (sources manifest + universe)
+ *   002 build_annogroups       (per source) -> 2-output/<source>/ (map + membership)
+ *   003 validate_results       (per source) -> 3-output/<source>/ (fail-fast, §36)
+ *   004 species_tree_deconvolution (per source) -> 4-output/<source>/ (per-clade member-protein counts)
+ *   005 per_species_sequence_map   (per source) -> 5-output/<source>/ (member sequence IDs per species)
+ *   006 composite_clades       (per source) -> 6-output/<source>/ (exact/absent/core_urclade/core_early_clade)
+ *   007 write_summary          (once)        -> 7-output (per source / species / phylum)
+ *   008 write_run_log          (once)        -> ai/logs (§45)
  *
  * AI: Claude Code | Opus 4.8 (1M context) | 2026 June 18
  * Human: Eric Edsinger
@@ -141,10 +144,36 @@ process species_tree_deconvolution {
 }
 
 // ============================================================================
-// PROCESS 005: COMPOSITE CLADES (per source)
+// PROCESS 005: PER-SPECIES SEQUENCE MAP (per source)
 // ============================================================================
-// Each annogroup's EXACT composite clade (cc_<components>-exact), plus the curated
-// manifest's summary counts and per-composite-clade detail tables.
+// The wide per-species companion to the deconvolution: per annogroup (feature /
+// combination / architecture; absent excluded), the member sequence identifiers
+// in each species, carrying annotation definitions.
+
+process per_species_sequence_map {
+    label 'local'
+
+    input:
+        val source
+
+    output:
+        val source, emit: mapped
+
+    script:
+    """
+    python3 ${projectDir}/scripts/005_ai-python-per_species_sequence_map.py \\
+        --source ${source} \\
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}
+    """
+}
+
+// ============================================================================
+// PROCESS 006: COMPOSITE CLADES (per source)
+// ============================================================================
+// Each annogroup classified by four algorithms (exact, absent, core_urclade,
+// core_early_clade), plus the curated manifest's summary counts and per-composite-
+// clade detail tables.
 
 process composite_clades {
     label 'local'
@@ -157,7 +186,7 @@ process composite_clades {
 
     script:
     """
-    python3 ${projectDir}/scripts/005_ai-python-composite_clades.py \\
+    python3 ${projectDir}/scripts/006_ai-python-composite_clades.py \\
         --source ${source} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
         --output_dir ${projectDir}/../${params.output.base_dir}
@@ -165,7 +194,7 @@ process composite_clades {
 }
 
 // ============================================================================
-// PROCESS 006: WRITE CROSS-SOURCE SUMMARY (once, after all sources validated)
+// PROCESS 007: WRITE CROSS-SOURCE SUMMARY (once, after all sources validated)
 // ============================================================================
 // Per-source per-type annogroup breakdown + per-species and per-phylum matrices
 // (annotation sources as columns).
@@ -181,14 +210,14 @@ process write_summary {
 
     script:
     """
-    python3 ${projectDir}/scripts/006_ai-python-write_summary.py \\
+    python3 ${projectDir}/scripts/007_ai-python-write_summary.py \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
         --output_dir ${projectDir}/../${params.output.base_dir}
     """
 }
 
 // ============================================================================
-// PROCESS 005: WRITE RUN LOG (per §45)
+// PROCESS 008: WRITE RUN LOG (per §45)
 // ============================================================================
 
 process write_run_log {
@@ -202,7 +231,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/007_ai-python-write_run_log.py \\
+    python3 ${projectDir}/scripts/008_ai-python-write_run_log.py \\
         --workflow-name "build_annogroups" \\
         --subproject-name "annogroups-BLOCK_build_annogroups" \\
         --project-name "${params.species_set_name}" \\
@@ -227,11 +256,12 @@ workflow {
         .map { row -> row.source }
 
     // 002 build -> 003 validate -> 004 species_tree_deconvolution -> 005
-    // composite_clades, pipelined per source.
+    // per_species_sequence_map -> 006 composite_clades, pipelined per source.
     built = build_annogroups( sources_ch )
     validated = validate_results( built.built )
     deconvolved = species_tree_deconvolution( validated.validated )
-    composited = composite_clades( deconvolved.deconvolved )
+    mapped = per_species_sequence_map( deconvolved.deconvolved )
+    composited = composite_clades( mapped.mapped )
 
     // Barrier: write the cross-source summary only after ALL sources are processed.
     write_summary( composited.composited.collect() )

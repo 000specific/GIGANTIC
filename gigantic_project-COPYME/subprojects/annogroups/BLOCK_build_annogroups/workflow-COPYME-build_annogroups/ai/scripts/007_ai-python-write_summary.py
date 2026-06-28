@@ -3,25 +3,25 @@
 # Human: Eric Edsinger
 
 """
-Script 006 — Cross-source annogroups summary.
+Script 007 — Cross-source annogroups summary.
 
 Aggregates every built source into summary tables. Runs ONCE, after all sources
 have been built + validated.
 
-Three output tables (OUTPUT_pipeline/6-output/):
+Three output tables (OUTPUT_pipeline/7-output/):
 
-  6_ai-annogroups_summary.tsv
+  7_ai-annogroups_summary.tsv
       One row per SOURCE: the per-type annogroup breakdown
       (feature / combination / architecture / absent) that the per-source
       validation report (Script 003) does NOT carry, plus universe / annotated /
       absent sequence counts, the dropped-orphan count, and validation status.
 
-  6_ai-annogroups_summary-per_species.tsv
+  7_ai-annogroups_summary-per_species.tsv
       One row per SPECIES (Genus_species); annotation SOURCES are the columns.
       Each source cell = the species' annotated sequence count for that source
       (sequences with >=1 feature). Universe count is the leading context column.
 
-  6_ai-annogroups_summary-per_phylum.tsv
+  7_ai-annogroups_summary-per_phylum.tsv
       One row per PHYLUM; annotation SOURCES are the columns (same cell meaning).
 
 Reads, per source:
@@ -241,13 +241,13 @@ def main():
         sources___genus_species_absent[ source ] = absent_breakdown[ "genus_species___absent_count" ]
         sources___phylum_absent[ source ] = absent_breakdown[ "phylum___absent_count" ]
 
-    output_dir = output_base / "6-output"
+    output_dir = output_base / "7-output"
     output_dir.mkdir( parents = True, exist_ok = True )
 
     # ========================================================================
     # Table 1: per source (with the per-type annogroup breakdown)
     # ========================================================================
-    output_summary_path = output_dir / "6_ai-annogroups_summary.tsv"
+    output_summary_path = output_dir / "7_ai-annogroups_summary.tsv"
     summary_header = [
         "Source (annotation source database)",
         "Validation_Status (PASS or FAIL from the Script 003 per source validation report)",
@@ -278,7 +278,7 @@ def main():
     # ========================================================================
     # Each source column cell = the species' annotated sequence count for that
     # source (universe count for the species minus its absent count).
-    output_per_species_path = output_dir / "6_ai-annogroups_summary-per_species.tsv"
+    output_per_species_path = output_dir / "7_ai-annogroups_summary-per_species.tsv"
     per_species_header = [
         "Phylum (Phylum field of the species phyloname)",
         "Genus_Species (Genus_species of the species)",
@@ -305,7 +305,7 @@ def main():
     # ========================================================================
     # Table 3: per phylum (annotation SOURCES are the columns)
     # ========================================================================
-    output_per_phylum_path = output_dir / "6_ai-annogroups_summary-per_phylum.tsv"
+    output_per_phylum_path = output_dir / "7_ai-annogroups_summary-per_phylum.tsv"
     per_phylum_header = [
         "Phylum (Phylum field of the species phyloname)",
         "Species_Count (number of distinct species in this phylum)",

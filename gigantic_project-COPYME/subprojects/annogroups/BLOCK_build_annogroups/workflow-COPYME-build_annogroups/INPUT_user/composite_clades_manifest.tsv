@@ -1,56 +1,92 @@
 # GIGANTIC composite_clades manifest — annogroups / BLOCK_build_annogroups
 # ============================================================================
 # The CURATED list of composite clades to report (Script 005, composite_clades).
-# A "composite clade" is an EXACT combination of component clades: an annogroup
-# belongs to it when its member sequences come from BOTH/ALL and ONLY those
-# components. One composite clade per row, written as a comma-delimited list of
-# component names. Valid components are the group names defined in the
-# `composite_clades` block of START_HERE-user_config.yaml (Ctenophora, Porifera,
-# Placozoa, Cnidaria, Bilateria) plus the outside label NonMetazoa. Order does not
-# matter (the script re-sorts into config order); blank and '#' lines are ignored.
+# A composite clade is a focused question about where an annogroup's member species
+# fall on the species tree. One composite clade per row; four columns (tab-separated):
 #
-# Each row becomes a composite clade identifier  cc_<components>-exact  and drives:
-#   - the Composite_Clade-exact column in 5-output's per-annogroup table
-#   - one row in the Composite Clade Annogroup Summary Counts table
-#   - one Composite Clade All Annogroup Identifiers and Definitions detail table
+#   Algorithm    Name    Target_Clade    Clades
 #
-# This default set reproduces the earlier metazoan phylum-composition groups (the
-# four non-bilaterian phyla, eleven mixed combinations, and their NonMetazoa
-# pairs). Edit freely — add any combination of components you are curious about.
+#   Algorithm    : exact | absent | core_urclade | core_early_clade
+#   Name         : short name for this composite clade. LEAVE BLANK for exact and
+#                  absent (they do not vary for a given clade set, so they are
+#                  auto-named from their clades); REQUIRED for core_urclade /
+#                  core_early_clade (which vary by target and threshold).
+#   Target_Clade : the focal clade for core_urclade / core_early_clade. BLANK for
+#                  exact and absent.
+#   Clades       : comma-delimited clade names — the COMPONENTS (exact), the clades
+#                  the members must be ABSENT from (absent), or the INGROUPS
+#                  (core_urclade / core_early_clade).
+#
+# Clade names resolve to species sets via the `composite_clades` block of
+# START_HERE-user_config.yaml: a building-block group name (Ctenophora, Porifera,
+# Placozoa, Cnidaria, Bilateria), the outside label (NonMetazoa, exact only), the
+# scope name (Metazoa), or any raw clade_id_name (e.g. C082_Metazoa).
+#
+# The algorithms (member species = the species an annogroup's sequences come from):
+#   exact            : members come from BOTH/ALL and ONLY the listed components.
+#                      One-per-annogroup. Identifier cc_<components>-exact.
+#   absent           : members are ABSENT from ALL listed clades. Auto-named
+#                      cc_<clades>-absent; the outside label (NonMetazoa) is allowed
+#                      (e.g. cc_NonMetazoa-absent = no members outside Metazoa).
+#   core_urclade     : members in >=1 OUTGROUP of the target AND >=1 listed ingroup
+#                      -> the target's Ur (last-common-ancestor) core. cc_<Name>-core_urclade.
+#   core_early_clade : members in >=2 listed ingroups, the ingroups being the
+#                      ambiguous (unresolved) nodes that define the target's "Early"
+#                      window (its early descendant branches). cc_<Name>-core_early_clade.
+#
+# absent / core_urclade / core_early_clade are independent tests, so one annogroup
+# can match several. Blank and '#' lines are ignored; component order does not matter
+# (exact re-sorts into config order). Edit freely.
 # ============================================================================
+Algorithm	Name	Target_Clade	Clades
 
-# ---- single non-bilaterian phyla ----
-Ctenophora
-Porifera
-Placozoa
-Cnidaria
+# ---- exact: single non-bilaterian phyla ----
+exact			Ctenophora
+exact			Porifera
+exact			Placozoa
+exact			Cnidaria
 
-# ---- mixed combinations ----
-Ctenophora,Porifera
-Ctenophora,Placozoa
-Ctenophora,Cnidaria
-Ctenophora,Bilateria
-Ctenophora,Porifera,Placozoa
-Ctenophora,Porifera,Placozoa,Cnidaria
-Porifera,Placozoa
-Porifera,Placozoa,Cnidaria
-Placozoa,Cnidaria
-Placozoa,Bilateria
-Cnidaria,Bilateria
+# ---- exact: Bilateria, and the Porifera+Bilateria pair ----
+exact			Bilateria
+exact			Porifera,Bilateria
 
-# ---- the same fifteen, plus non-metazoan outgroup members ----
-Ctenophora,NonMetazoa
-Porifera,NonMetazoa
-Placozoa,NonMetazoa
-Cnidaria,NonMetazoa
-Ctenophora,Porifera,NonMetazoa
-Ctenophora,Placozoa,NonMetazoa
-Ctenophora,Cnidaria,NonMetazoa
-Ctenophora,Bilateria,NonMetazoa
-Ctenophora,Porifera,Placozoa,NonMetazoa
-Ctenophora,Porifera,Placozoa,Cnidaria,NonMetazoa
-Porifera,Placozoa,NonMetazoa
-Porifera,Placozoa,Cnidaria,NonMetazoa
-Placozoa,Cnidaria,NonMetazoa
-Placozoa,Bilateria,NonMetazoa
-Cnidaria,Bilateria,NonMetazoa
+# ---- exact: mixed combinations ----
+exact			Ctenophora,Porifera
+exact			Ctenophora,Placozoa
+exact			Ctenophora,Cnidaria
+exact			Ctenophora,Bilateria
+exact			Ctenophora,Porifera,Placozoa
+exact			Ctenophora,Porifera,Placozoa,Cnidaria
+exact			Porifera,Placozoa
+exact			Porifera,Placozoa,Cnidaria
+exact			Placozoa,Cnidaria
+exact			Placozoa,Bilateria
+exact			Cnidaria,Bilateria
+
+# ---- exact: the same combinations, plus non-metazoan outgroup members ----
+exact			Ctenophora,NonMetazoa
+exact			Porifera,NonMetazoa
+exact			Placozoa,NonMetazoa
+exact			Cnidaria,NonMetazoa
+exact			Ctenophora,Porifera,NonMetazoa
+exact			Ctenophora,Placozoa,NonMetazoa
+exact			Ctenophora,Cnidaria,NonMetazoa
+exact			Ctenophora,Bilateria,NonMetazoa
+exact			Ctenophora,Porifera,Placozoa,NonMetazoa
+exact			Ctenophora,Porifera,Placozoa,Cnidaria,NonMetazoa
+exact			Porifera,Placozoa,NonMetazoa
+exact			Porifera,Placozoa,Cnidaria,NonMetazoa
+exact			Placozoa,Cnidaria,NonMetazoa
+exact			Placozoa,Bilateria,NonMetazoa
+exact			Cnidaria,Bilateria,NonMetazoa
+
+# ---- absent: members absent from all listed clades (auto-named cc_<clades>-absent) ----
+absent			NonMetazoa
+absent			Metazoa
+absent			Bilateria
+
+# ---- core_urclade: target's Ur (LCA) core (in an outgroup AND an ingroup) ----
+core_urclade	Urmetazoa_001	Metazoa	Ctenophora,Porifera,Placozoa,Cnidaria,Bilateria
+
+# ---- core_early_clade: shared across >=2 early (ambiguous-node) branches ----
+core_early_clade	Early_Metazoa_001	Metazoa	Ctenophora,Porifera,Placozoa,Cnidaria,Bilateria

@@ -181,6 +181,54 @@ def manifest_to_dest_prefix( manifest_dir: Path, subproject_dir: Path ) -> Path:
 
 
 # ============================================================================
+# Disambiguate identical link names within a section
+# ============================================================================
+
+def disambiguate_display_labels( rows_by_filename: Dict[ str, Dict[ str, str ] ] ) -> None:
+    """
+    When several files in one section share the same display_label, the server
+    would show identical link names with no way to tell them apart. This appends
+    each file's distinguishing token to its display_label in place.
+
+    The distinguisher is the filename stem with the group's longest common prefix
+    removed (the prefix is trimmed back to the last '-' so it starts at a clean
+    token) — e.g. 'Annogroup tree counts — per structure' becomes
+    '... — structure_017', and a composite detail label becomes
+    '... — cc_Bilateria-exact'. Labels that are already unique (including manifests
+    that disambiguate explicitly via {structure}/{stem} placeholders) are left
+    untouched.
+    """
+    label___rows: Dict[ str, List[ Dict[ str, str ] ] ] = {}
+    for filename, row in rows_by_filename.items():
+        if filename == DIR_LABEL_KEY:
+            continue
+        label = row.get( 'display_label', '' )
+        if not label:
+            continue
+        label___rows.setdefault( label, [] ).append( row )
+
+    for label, group in label___rows.items():
+        if len( group ) < 2:
+            continue
+        stems = [ Path( row[ 'filename' ] ).stem for row in group ]
+        common_prefix = stems[ 0 ]
+        for stem in stems[ 1: ]:
+            limit = min( len( common_prefix ), len( stem ) )
+            cut = 0
+            while cut < limit and common_prefix[ cut ] == stem[ cut ]:
+                cut += 1
+            common_prefix = common_prefix[ :cut ]
+        # Trim the common prefix back to the last '-' so the disambiguator starts
+        # at a clean token (keep 'structure_001', 'cc_Bilateria-exact', etc.).
+        last_dash = common_prefix.rfind( '-' )
+        if last_dash >= 0:
+            common_prefix = common_prefix[ :last_dash + 1 ]
+        for row, stem in zip( group, stems ):
+            disambiguator = stem[ len( common_prefix ): ] or stem
+            row[ 'display_label' ] = f"{label} — {disambiguator}"
+
+
+# ============================================================================
 # Apply a single manifest
 # ============================================================================
 
@@ -368,6 +416,10 @@ def apply_manifest( manifest_path: Path,
                     'description': dir_to_label[ target_dir ],
                     'order': '0',
                 }
+
+            # Disambiguate identical link names within this section (e.g. the 105
+            # per-structure files, or the per-composite-clade detail tables).
+            disambiguate_display_labels( existing )
 
             header_cols = [ 'filename', 'display_label', 'file_category', 'description', 'order' ]
             with open( sidecar_path, 'w' ) as f:

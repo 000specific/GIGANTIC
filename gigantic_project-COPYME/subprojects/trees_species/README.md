@@ -294,6 +294,50 @@ bipartition sets and is out of scope for GIGANTIC species tree analyses.
 consume `clade_id_name` for lookups to avoid the ambiguity of mixing
 identifier representations.
 
+### Ur and Early: the Ancestral and Early-Descendant Windows of a Clade
+
+GIGANTIC names two phylogenetic windows of any clade `X` on a species tree —
+one at its origin, one at its earliest radiation. Both are defined here (the
+species tree is what gives them meaning) and consumed by downstream
+composite-clade analyses (`composite_clades` in `annogroups`,
+`annotations_X_ocl`, and `annotations_X_orthogroups`).
+
+- **Ur** (a standard term in phylogenetics; the prefix means "original,
+  earliest") is the **last common ancestor (LCA / MRCA) of a clade** — the
+  single ancestral node from which the entire clade descends. On a species
+  tree the Ur of clade `X` is `X`'s own internal node (its deepest point).
+  *Urmetazoa* is the last common ancestor of Metazoa, the `C082_Metazoa`
+  node. A feature belongs to a clade's **Ur core** when it was already
+  present in that last common ancestor — detected as presence both **outside**
+  the clade (so the feature predates the clade's origin) **and inside** it (so
+  it was inherited into the clade). This is the `core_urclade` algorithm.
+
+- **Early** (a GIGANTIC term) is **all early descendants of a clade** — its
+  earliest-diverging major lineages. In the context of species tree
+  structures, a clade's **Early window is the phylogenetic window encapsulated
+  by the species tree's ambiguous (unresolved) nodes**: the `unresolved_clades`
+  whose branching order is not resolved, and which the permutation pipeline
+  therefore enumerates across the `(2N-3)!!` structures. For species70,
+  *Early Metazoa* is the window spanned by the five early-branching metazoan
+  clades — Ctenophora, Porifera, Placozoa, Cnidaria, Bilateria (the
+  `unresolved_clades`). A feature belongs to a clade's **Early core** when it
+  is shared across **two or more** of these early branches, so its origin maps
+  to the clade's early radiation **regardless of which structure** resolves the
+  ambiguous branching. This is the `core_early_clade` algorithm.
+
+**Key distinction**: the **Ur** is a single ancestral node (where a clade
+*came from*); the **Early** window is a set of early descendant lineages (how
+a clade *first diversified*). Neither is the **root** (the topmost node of the
+whole species tree) nor an **origin** (a hierarchy term — see "Hierarchies vs
+Trees: Origin vs Root").
+
+**Why the Early window is the ambiguous zone**: uncertainty in a clade's early
+branching order is exactly what the `unresolved_clades` encode and what
+generates the (2N-3)!! structures. A feature present in ≥2 of those branches
+sits *below* the ambiguity — its clade-of-origin is the same in every
+structure — which is what makes "Early" a structure-independent statement
+about a clade's deep radiation.
+
 ## Directory Structure
 
 ```
