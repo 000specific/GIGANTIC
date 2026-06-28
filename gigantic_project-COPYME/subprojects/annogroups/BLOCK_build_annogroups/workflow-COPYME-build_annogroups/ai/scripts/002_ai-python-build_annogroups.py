@@ -88,6 +88,25 @@ def main():
     accessions___definitions = parse_definitions( workflow_root, config ) if parse_definitions else {}
     print( f"[002 {source}] loaded definitions for {len( accessions___definitions )} accessions" )
 
+    # Optional: per-category (aspect) split columns. A source that declares
+    # CATEGORIES + parse_source_categories (e.g. go's three GO aspects) gets two
+    # extra map columns per category (<label>_Identifiers, <label>_Definitions),
+    # inserted after Annotation_Definitions. Other sources are unaffected.
+    category_specs = getattr( parser_module, "CATEGORIES", None )
+    parse_categories = getattr( parser_module, "parse_source_categories", None )
+    accessions___categories = parse_categories( workflow_root, config ) if ( category_specs and parse_categories ) else {}
+    aspect_enabled = bool( category_specs and accessions___categories )
+    if aspect_enabled:
+        print( f"[002 {source}] category split enabled: "
+               f"{', '.join( label for ( category_key, label ) in category_specs )} "
+               f"({len( accessions___categories )} accession categories)" )
+
+    def aspect_cells( accession_list ):
+        # The 2-per-category split cells for one annogroup row (empty list when the
+        # source declares no categories, so the row shape is unchanged).
+        return U.category_aspect_values( accession_list, accessions___definitions,
+                                         accessions___categories, category_specs ) if aspect_enabled else []
+
     # ---- load the proteome universe (for absent + species labels) -----------
     universe_path = Path( args.output_dir ) / "1-output" / "1_ai-proteome_universe.tsv"
     if not universe_path.is_file():
@@ -195,16 +214,21 @@ def main():
         # set downstream OCL maps onto each species-tree structure.
         return U.DELIM.join( sorted( { sequences___genus_species.get( member, '' ) for member in members } ) )
 
-    map_header = [
-        "Annogroup_ID (canonical annogroup identifier)",
-        "Source (annotation source database)",
-        "Annogroup_Type (one of feature, combination, architecture, absent)",
-        "Defining_Features (the feature(s) that define this annogroup: the accession for feature, the alphabetical distinct set for combination, the N to C ordered accession pattern for architecture, empty for absent; comma delimited)",
-        "Annotation_Definitions (semicolon delimited definition ==accession pairs over the unique defining accessions, where definition is the source signature description e.g. Protein kinase domain ==PF00069; empty for absent or when the source carries no descriptions)",
-        "Sequence_Count (number of member sequences)",
-        "Species_Count (number of distinct Genus_species among member sequences)",
-        "Species_List (comma delimited sorted Genus_species of all member sequences; the structure-independent species set downstream OCL maps onto each species tree structure)",
-    ]
+    map_header = (
+        [
+            "Annogroup_ID (canonical annogroup identifier)",
+            "Source (annotation source database)",
+            "Annogroup_Type (one of feature, combination, architecture, absent)",
+            "Defining_Features (the feature(s) that define this annogroup: the accession for feature, the alphabetical distinct set for combination, the N to C ordered accession pattern for architecture, empty for absent; comma delimited)",
+            "Annotation_Definitions (semicolon delimited definition ==accession pairs over the unique defining accessions, where definition is the source signature description e.g. Protein kinase domain ==PF00069; empty for absent or when the source carries no descriptions)",
+        ]
+        + ( U.category_aspect_headers( category_specs ) if aspect_enabled else [] )
+        + [
+            "Sequence_Count (number of member sequences)",
+            "Species_Count (number of distinct Genus_species among member sequences)",
+            "Species_List (comma delimited sorted Genus_species of all member sequences; the structure-independent species set downstream OCL maps onto each species tree structure)",
+        ]
+    )
     membership_header = [
         "Sequence_Identifier (full GIGANTIC protein identifier)",
         "Genus_Species (Genus_species of the sequence)",
@@ -225,8 +249,9 @@ def main():
             members = accessions___members[ accession ]
             annogroup_id = U.annogroup_feature_id( source, accession )
             definitions = U.format_annotation_definitions( [ accession ], accessions___definitions )
-            output_map.write( '\t'.join( [ annogroup_id, source, "feature", accession, definitions,
-                                           str( len( members ) ), str( species_count( members ) ), species_list( members ) ] ) + '\n' )
+            output_map.write( '\t'.join( [ annogroup_id, source, "feature", accession, definitions ]
+                                         + aspect_cells( [ accession ] )
+                                         + [ str( len( members ) ), str( species_count( members ) ), species_list( members ) ] ) + '\n' )
             map_rows += 1
             for member in sorted( members ):
                 output_membership.write( '\t'.join( [ member, sequences___genus_species.get( member, '' ),
@@ -238,8 +263,9 @@ def main():
             members = combination_keys___members[ key ]
             annogroup_id = combination_keys___ids[ key ]
             definitions = U.format_annotation_definitions( list( key ), accessions___definitions )
-            output_map.write( '\t'.join( [ annogroup_id, source, "combination", U.DELIM.join( key ), definitions,
-                                           str( len( members ) ), str( species_count( members ) ), species_list( members ) ] ) + '\n' )
+            output_map.write( '\t'.join( [ annogroup_id, source, "combination", U.DELIM.join( key ), definitions ]
+                                         + aspect_cells( list( key ) )
+                                         + [ str( len( members ) ), str( species_count( members ) ), species_list( members ) ] ) + '\n' )
             map_rows += 1
             for member in sorted( members ):
                 output_membership.write( '\t'.join( [ member, sequences___genus_species.get( member, '' ),
@@ -251,8 +277,9 @@ def main():
             members = architecture_keys___members[ key ]
             annogroup_id = architecture_keys___ids[ key ]
             definitions = U.format_annotation_definitions( list( key ), accessions___definitions )
-            output_map.write( '\t'.join( [ annogroup_id, source, "architecture", U.DELIM.join( key ), definitions,
-                                           str( len( members ) ), str( species_count( members ) ), species_list( members ) ] ) + '\n' )
+            output_map.write( '\t'.join( [ annogroup_id, source, "architecture", U.DELIM.join( key ), definitions ]
+                                         + aspect_cells( list( key ) )
+                                         + [ str( len( members ) ), str( species_count( members ) ), species_list( members ) ] ) + '\n' )
             map_rows += 1
             for member in sorted( members ):
                 output_membership.write( '\t'.join( [ member, sequences___genus_species.get( member, '' ),
@@ -262,9 +289,10 @@ def main():
 
         # absent
         absent_id = U.annogroup_absent_id( source )
-        output_map.write( '\t'.join( [ absent_id, source, "absent", "", "",
-                                       str( len( absent_sequences ) ), str( species_count( absent_sequences ) ),
-                                       species_list( absent_sequences ) ] ) + '\n' )
+        output_map.write( '\t'.join( [ absent_id, source, "absent", "", "" ]
+                                     + aspect_cells( [] )
+                                     + [ str( len( absent_sequences ) ), str( species_count( absent_sequences ) ),
+                                         species_list( absent_sequences ) ] ) + '\n' )
         map_rows += 1
         for member in sorted( absent_sequences ):
             output_membership.write( '\t'.join( [ member, sequences___genus_species.get( member, '' ),

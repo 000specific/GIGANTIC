@@ -106,13 +106,18 @@ def main():
     annogroup_order = []
     annogroups___type = {}
     annogroups___definition = {}
+    annogroups___extra_cells = {}   # source-specific extra map columns (e.g. GO aspect split), carried forward
     # per-annogroup matches, keyed by algorithm -> list of cc_ids (exact yields <=1)
     annogroups___matches = defaultdict( lambda: defaultdict( list ) )
     # per-composite-clade -> the annogroups that match it (for summary + detail)
     cc_id___annogroups = defaultdict( list )
 
     with open( map_path, 'r' ) as input_map:
-        header_ids___indices = U.build_header_index( input_map.readline() )
+        map_header_line = input_map.readline()
+        header_ids___indices = U.build_header_index( map_header_line )
+        # Carry forward any source-specific columns the map builder inserted between
+        # Annotation_Definitions and Sequence_Count (e.g. go's GO-aspect split columns).
+        extra_headers, extra_indices = U.carry_forward_map_columns( map_header_line )
         index_annogroup = header_ids___indices[ "Annogroup_ID" ]
         index_type = header_ids___indices[ "Annogroup_Type" ]
         index_definitions = header_ids___indices[ "Annotation_Definitions" ]
@@ -128,6 +133,7 @@ def main():
             annogroup_order.append( annogroup_id )
             annogroups___type[ annogroup_id ] = parts[ index_type ] if index_type < len( parts ) else ""
             annogroups___definition[ annogroup_id ] = parts[ index_definitions ] if index_definitions < len( parts ) else ""
+            annogroups___extra_cells[ annogroup_id ] = [ parts[ i ] if i < len( parts ) else "" for i in extra_indices ]
 
             # exact: the annogroup's own exact composite clade (shown only if curated)
             own_exact_id = U.composite_clade_id( U.exact_components_of_species( member_species, composites ) )
@@ -150,6 +156,7 @@ def main():
         "Annogroup_ID (annogroup identifier from the annogroups subproject)",
         "Annogroup_Type (feature or combination or architecture or absent)",
         "Annotation_Definitions (semicolon delimited definition ==accession pairs for this annogroup)",
+    ] + extra_headers + [
         "Composite_Clade-exact (the annogroup's exact composite clade cc_<components>-exact when that composite clade is curated in the manifest, else None; one per annogroup)",
         "Composite_Clades-absent (comma delimited absent composite clades this annogroup matches i.e. its members are absent from all the clades of that composite clade, else None)",
         "Composite_Clades-core_urclade (comma delimited core_urclade composite clades this annogroup matches i.e. members in an outgroup of the target and in an ingroup, else None)",
@@ -164,7 +171,8 @@ def main():
                 matched = matches.get( algorithm, [] )
                 cells.append( U.DELIM.join( matched ) if matched else "None" )
             output_per_annogroup.write( '\t'.join(
-                [ annogroup_id, annogroups___type[ annogroup_id ], annogroups___definition[ annogroup_id ] ] + cells ) + '\n' )
+                [ annogroup_id, annogroups___type[ annogroup_id ], annogroups___definition[ annogroup_id ] ]
+                + annogroups___extra_cells.get( annogroup_id, [] ) + cells ) + '\n' )
 
     # ---- Deliverable 2: Composite Clade Annogroup Summary Counts ---------------------
     summary_path = output_dir / f"6_ai-{source}-composite_clades-summary_counts.tsv"
@@ -211,7 +219,7 @@ def main():
         detail_header = [
             "Annogroup_ID (annogroup identifier; this annogroup matches the composite clade)",
             "Annotation_Definitions (semicolon delimited definition ==accession pairs for this annogroup)",
-        ] + [ detail_column_header( label, kind ) for ( label, kind, species_set ) in detail_columns ]
+        ] + extra_headers + [ detail_column_header( label, kind ) for ( label, kind, species_set ) in detail_columns ]
         with open( detail_path, 'w' ) as output_detail:
             output_detail.write( '\t'.join( detail_header ) + '\n' )
             for annogroup_id in annogroups:
@@ -221,7 +229,8 @@ def main():
                     sequence_ids = [ sequence_id for ( sequence_id, genus_species ) in sequences
                                      if sequence_in_detail_column( genus_species, kind, species_set ) ]
                     column_cells.append( U.DELIM.join( sorted( sequence_ids ) ) )
-                output_detail.write( '\t'.join( [ annogroup_id, annogroups___definition[ annogroup_id ] ] + column_cells ) + '\n' )
+                output_detail.write( '\t'.join( [ annogroup_id, annogroups___definition[ annogroup_id ] ]
+                                                + annogroups___extra_cells.get( annogroup_id, [] ) + column_cells ) + '\n' )
         detail_tables_written += 1
 
     matched_total = len( matching_annogroups )

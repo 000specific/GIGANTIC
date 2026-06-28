@@ -45,10 +45,12 @@ DELIM = ','
 # clades, used to ask a focused question about where a feature unit's member
 # species fall on the species tree. The building-block GROUPS are defined in
 # START_HERE-user_config.yaml under `composite_clades` (default: the five metazoan
-# phyla Ctenophora, Porifera, Placozoa, Cnidaria, Bilateria within the Metazoa
-# scope; members outside the scope carry the outside label, e.g. NonMetazoa). The
-# composite clades to REPORT are curated in INPUT_user/composite_clades_manifest.tsv.
-# This GENERALIZES the earlier hardcoded "phylum-composition" analysis.
+# clades Ctenophora, Porifera, Placozoa, Cnidaria, Bilateria within the Metazoa
+# scope; members outside the scope carry the outside label, e.g. NonMetazoa).
+# These are CLADES, not phyla — Bilateria is a clade (not a phylum); the machinery
+# operates on ANY species-tree clades. The composite clades to REPORT are curated in
+# INPUT_user/composite_clades_manifest.tsv. This GENERALIZES the earlier hardcoded
+# analysis that fixed those five metazoan clades.
 #
 # Each manifest row names an ALGORITHM that tests an annogroup's member species:
 #   - exact            : members come from EXACTLY the listed component clades
@@ -535,3 +537,72 @@ def format_annotation_definitions( accessions, accessions___definitions ) -> str
         definition = sanitize_annotation_text( accessions___definitions.get( accession, '' ) )
         pairs.append( f"{definition} =={accession}" if definition else f"=={accession}" )
     return '; '.join( pairs )
+
+
+# ============================================================================
+# Category (aspect) split columns — generic, parser-driven (2026-06-28)
+# ============================================================================
+# A source whose annotations fall into a small fixed set of CATEGORIES (e.g. GO's
+# three aspects: molecular_function, biological_process, cellular_component) can
+# split each annogroup's defining accessions into per-category identifier +
+# definition columns. The parser declares this via:
+#     CATEGORIES = [ ( category_key, column_label ), ... ]   (module attribute)
+#     parse_source_categories( workflow_root, config ) -> { accession: category_key }
+# The map builder (Script 002) then emits two columns per category
+# (<label>_Identifiers, <label>_Definitions) right after Annotation_Definitions.
+# Sources without CATEGORIES are unaffected. Downstream scripts carry these extra
+# columns forward generically via carry_forward_map_columns() — they need no
+# per-source knowledge.
+
+
+def category_aspect_headers( category_specs: list ) -> list:
+    """
+    The self-documenting header strings for the per-category split columns: two per
+    category — <label>_Identifiers then <label>_Definitions — in category_specs order.
+    category_specs is the parser's CATEGORIES: list of ( category_key, column_label ).
+    """
+    headers = []
+    for ( category_key, label ) in category_specs:
+        headers.append( f"{label}_Identifiers (comma delimited accessions of this annogroup whose category is {category_key})" )
+        headers.append( f"{label}_Definitions (comma delimited definitions for {label}_Identifiers, in the same order)" )
+    return headers
+
+
+def category_aspect_values( accessions, accessions___definitions, accessions___categories, category_specs ) -> list:
+    """
+    The per-category split cell values for one annogroup: for each category (in
+    category_specs order) the comma-delimited accessions whose category matches
+    (in the given accession order), then their comma-delimited definitions in the
+    same order. Returns a flat list of 2 * len( category_specs ) strings. Accessions
+    with no known category fall into no column (they remain in Defining_Features /
+    Annotation_Definitions).
+    """
+    cells = []
+    for ( category_key, label ) in category_specs:
+        category_accessions = [ accession for accession in accessions
+                                if accessions___categories.get( accession ) == category_key ]
+        category_definitions = [ sanitize_annotation_text( accessions___definitions.get( accession, '' ) )
+                                 for accession in category_accessions ]
+        cells.append( DELIM.join( category_accessions ) )
+        cells.append( DELIM.join( category_definitions ) )
+    return cells
+
+
+def carry_forward_map_columns( map_header_line: str,
+                               start_header_id: str = "Annotation_Definitions",
+                               end_header_id: str = "Sequence_Count" ) -> tuple:
+    """
+    The map columns strictly BETWEEN two anchor columns (default: the source-specific
+    category-split columns inserted by Script 002 between Annotation_Definitions and
+    Sequence_Count). Lets downstream scripts (005, 006) carry these extra columns
+    forward generically — no per-source knowledge. Returns
+    ( [ header_strings ], [ column_indices ] ); ( [], [] ) when there are none.
+    """
+    parts_header_line = map_header_line.rstrip( '\n' ).split( '\t' )
+    header_ids___indices = build_header_index( map_header_line )
+    start_index = header_ids___indices.get( start_header_id )
+    end_index = header_ids___indices.get( end_header_id )
+    if start_index is None or end_index is None or end_index <= start_index + 1:
+        return ( [], [] )
+    indices = list( range( start_index + 1, end_index ) )
+    return ( [ parts_header_line[ index ] for index in indices ], indices )

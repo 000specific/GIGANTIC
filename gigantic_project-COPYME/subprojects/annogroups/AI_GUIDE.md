@@ -40,6 +40,21 @@ the same scheme extends across every annotation source without collision.
 | `annogroup_architecture` | sequences sharing the same **ordered arrangement** of positional features (N→C by `(start, stop)`) | `annogroup_<source>_architecture<NNNNN>` | yes |
 | `annogroup_absent` | sequences in the proteome universe with **no** feature from the source | `annogroup_<source>_absent` | no (one per source) |
 
+### Whole-protein vs sub-protein (combination vs architecture)
+
+- `combination` is a **whole-protein** annotation grouping: the *set* of features a
+  protein carries, independent of position.
+- `architecture` is a **sub-protein** annotation grouping: the N→C *ordered
+  arrangement* of features along the sequence. It requires per-feature residue
+  coordinates.
+
+A source whose annotations carry **no sub-protein coordinates cannot form an
+architecture**, so it yields only feature + combination + absent (3 types). This is
+the `is_positional=False` case in the parser contract. **GO** (function/process/
+location labels) and **DeepLoc** (subcellular localization) are such whole-protein
+sources. Positional sources (pfam, panther) yield all four. How many types a source
+yields (3 or 4) is therefore **data-determined, not a knob**.
+
 ## Locked design decisions (do NOT re-litigate — user-approved 2026-06-18)
 
 1. **Architecture grouping key is coord-FREE** (the ordered accession pattern),
@@ -74,7 +89,17 @@ BLOCK guide.
 ## Status
 
 Built 2026-06-18. **pfam validated end-to-end** (137,762 annogroups across the
-four types; validation PASS; full NextFlow DAG run). One known, user-accepted
-data caveat: a handful of truncated multi-locus annotation IDs are dropped — see
+four types; validation PASS; full NextFlow DAG run).
+
+2026-06-28: two more parsers added and validated (scripts 001–003, PASS):
+- **panther** — positional PTHR families (4 types): feature 11,033 / combination
+  11,033 / architecture 11,051 / absent 418,016.
+- **go** — whole-protein Gene Ontology terms from the **raw** InterProScan results
+  (3 types, no architecture by design): feature 8,994 / combination 27,974 / absent
+  539,984. GO origin selection (InterPro / PANTHER union, default both) is a
+  documented config knob (`go_term_origins`).
+
+One known, user-accepted data caveat: a handful of truncated multi-locus annotation
+IDs are dropped — see
 `BLOCK_build_annogroups/workflow-COPYME-build_annogroups/ai/ai_FYIs/WARNING-truncated_orphan_annotations.md`.
-Additional source parsers and downstream restructuring are later phases.
+Downstream restructuring to *consume* annogroups is a later phase.

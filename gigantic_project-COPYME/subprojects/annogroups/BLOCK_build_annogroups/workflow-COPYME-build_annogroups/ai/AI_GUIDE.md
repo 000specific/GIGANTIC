@@ -32,16 +32,26 @@ guide focuses on **running** the workflow.
 
 ```
 resolve_sources_and_universe (once)
-        │  writes 1_ai-sources_manifest.tsv
+        │  writes 1_ai-sources_manifest.tsv  (parsers: pfam, panther, go)
         ▼  .splitCsv(header:true).map{ row -> row.source }   ← per-source fan-out
-build_annogroups (per source)  ──►  validate_results (per source)
+build_annogroups (per source)            → 2-output/<source>/
+        ▼
+validate_results (per source)            → 3-output/<source>/   (fail-fast, §36)
+        ▼
+species_tree_deconvolution (per source)  → 4-output/<source>/   (per-clade counts)
+        ▼
+per_species_sequence_map (per source)    → 5-output/<source>/
+        ▼
+composite_clades (per source)            → 6-output/<source>/
         │
         ▼  .collect()  (barrier)
-write_summary (once)   → 4-output (per source / per species / per phylum)
+write_summary (once)   → 7-output (per source / per species / per phylum)
         │
         ▼
 write_run_log (once)
 ```
+
+(002→006 are pipelined per source; 007 + 008 run once after the barrier.)
 
 Scripts own the data: they read/write directly under `OUTPUT_pipeline/` (paths
 resolved from the config relative to the workflow dir). NextFlow only manages
@@ -63,6 +73,9 @@ universal GIGANTIC YAML→params pattern — do not flatten the YAML.
 | `CRITICAL ERROR: no proteome (*.aa) files` | `inputs.proteomes_dir` wrong / genomesDB STEP_4 not populated | point at the species-set proteomes under genomesDB `output_to_input/STEP_4-…` |
 | `CRITICAL ERROR: <source> annotation directory not found` | annotations_hmms hasn't exposed that source's `output_to_input/` | run/parse that source upstream, or drop it from `sources:` |
 | `requested source 'X' has no parser` | `sources:` lists a source with no `parsers/X.py` | add the parser plugin or correct `sources:` |
+| `CRITICAL ERROR: raw InterProScan results directory not found` (go) | the `go` parser reads raw `BLOCK_interproscan/*_interproscan_results.tsv` (NOT the parsed `<db>/` views) | ensure annotations_hmms exposed `BLOCK_interproscan/` in `output_to_input` |
+| `CRITICAL ERROR: 'go_term_origins' resolved to an empty set` | go's origin knob is empty | set `go_term_origins` to a non-empty subset of `[ "InterPro", "PANTHER" ]` (or remove it for the default union) |
+| `CRITICAL ERROR: malformed GO token` (go) | a raw GO cell isn't `GO:NNNNNNN(ORIGIN)` — upstream format change | inspect the cited raw results line; do not silently skip |
 | validation FAIL: `outside-universe` / membership rows not in universe | annotation IDs don't match proteome headers (truncated/orphan) | small count → accepted drop (see WARNING note); large count → systematic mismatch, investigate the parser |
 | stale results after editing a script | NextFlow `work/` cache | `rm -rf work .nextflow .nextflow.log*` and re-run without `-resume` (or set `resume: false`) |
 

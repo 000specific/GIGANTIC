@@ -62,8 +62,13 @@ def main():
     included_annogroups = set()
     annogroups___type = {}
     annogroups___definition = {}
+    annogroups___extra_cells = {}   # source-specific extra map columns (e.g. GO aspect split), carried forward
     with open( map_path, 'r' ) as input_map:
-        header_ids___indices = U.build_header_index( input_map.readline() )
+        map_header_line = input_map.readline()
+        header_ids___indices = U.build_header_index( map_header_line )
+        # Carry forward any source-specific columns the map builder inserted between
+        # Annotation_Definitions and Sequence_Count (e.g. go's GO-aspect split columns).
+        extra_headers, extra_indices = U.carry_forward_map_columns( map_header_line )
         index_annogroup = header_ids___indices[ "Annogroup_ID" ]
         index_type = header_ids___indices[ "Annogroup_Type" ]
         index_definitions = header_ids___indices[ "Annotation_Definitions" ]
@@ -82,6 +87,7 @@ def main():
             included_annogroups.add( annogroup_id )
             annogroups___type[ annogroup_id ] = annogroup_type
             annogroups___definition[ annogroup_id ] = parts[ index_definitions ] if index_definitions < len( parts ) else ""
+            annogroups___extra_cells[ annogroup_id ] = [ parts[ i ] if i < len( parts ) else "" for i in extra_indices ]
 
     # ---- Pass 2: annogroup -> species -> [sequence identifiers] (from membership) -----
     # Sequence_Identifier (...)\tGenus_Species (...)\tAnnogroup_ID (...)\tAnnogroup_Type (...)\t...
@@ -114,7 +120,7 @@ def main():
         "Annogroup_ID (annogroup identifier from the annogroups subproject)",
         "Annogroup_Type (feature or combination or architecture or absent)",
         "Annotation_Definitions (semicolon delimited definition ==accession pairs for this annogroup)",
-    ] + [ f"{species} (comma delimited member sequence identifiers of this annogroup whose species is {species})"
+    ] + extra_headers + [ f"{species} (comma delimited member sequence identifiers of this annogroup whose species is {species})"
           for species in species_columns ]
 
     with open( output_path, 'w' ) as output_file:
@@ -122,7 +128,8 @@ def main():
         for annogroup_id in annogroup_order:
             species___sequences = annogroups___species___sequences.get( annogroup_id, {} )
             cells = [ U.DELIM.join( sorted( species___sequences.get( species, [] ) ) ) for species in species_columns ]
-            output_file.write( '\t'.join( [ annogroup_id, annogroups___type[ annogroup_id ], annogroups___definition[ annogroup_id ] ] + cells ) + '\n' )
+            output_file.write( '\t'.join( [ annogroup_id, annogroups___type[ annogroup_id ], annogroups___definition[ annogroup_id ] ]
+                                          + annogroups___extra_cells.get( annogroup_id, [] ) + cells ) + '\n' )
 
     print( f"[005 {source}] wrote {len( annogroup_order )} annogroups x {len( species_columns )} species "
            f"sequence map -> {output_path.name}" )

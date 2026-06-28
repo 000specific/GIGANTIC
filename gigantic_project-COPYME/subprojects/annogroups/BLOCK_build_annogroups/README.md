@@ -40,12 +40,21 @@ feature set), and `architecture` (the N→C ordered positional-feature pattern,
 grouped coord-free); every proteome sequence with no feature from the source
 goes to `annogroup_<source>_absent`.
 
+**`combination` is whole-protein** (the feature *set*, position-independent);
+**`architecture` is sub-protein** (the *ordered* arrangement along the sequence,
+which needs residue coordinates). A source whose annotations have no sub-protein
+coordinates cannot form an architecture and yields only 3 types (feature +
+combination + absent) — e.g. **GO** and **DeepLoc**. Positional sources (pfam,
+panther) yield all four.
+
 ## How sources are added
 
 One parser plugin per source: `ai/scripts/parsers/<source>.py` exposing
 `SOURCE` and `parse_source_features(workflow_root, config) -> {sequence_id:
 [Feature]}`. The four-type construction (Script 002) is shared and never changes.
-The first parser is `pfam`. See [`AI_GUIDE.md`](AI_GUIDE.md) for the contract.
+Parsers implemented: **pfam** and **panther** (positional → 4 types) and **go**
+(whole-protein → 3 types; reads the raw InterProScan results, origin selectable via
+the `go_term_origins` config knob). See [`AI_GUIDE.md`](AI_GUIDE.md) for the contract.
 
 ## Quick start
 
@@ -66,5 +75,15 @@ for the execution detail.
 Built 2026-06-18 — scaffold, scripts, docs, and the NextFlow workflow complete.
 **pfam validated end-to-end** against real species70 data (137,762 annogroups:
 10,635 feature + 46,846 combination + 80,280 architecture + 1 absent; validation
-PASS). One known, user-accepted caveat: truncated multi-locus annotation IDs are
+PASS).
+
+**2026-06-28: panther + go parsers added and validated** (build + validate,
+scripts 001–003, species70, validation PASS):
+- **panther** (positional, 4 types): 11,033 feature + 11,033 combination + 11,051
+  architecture + 1 absent (418,016 absent sequences).
+- **go** (whole-protein, 3 types — no architecture): 8,994 feature + 27,974
+  combination + 1 absent (539,984 absent sequences); GO origins = InterPro + PANTHER
+  union (default `go_term_origins`).
+
+One known, user-accepted caveat: truncated multi-locus annotation IDs are
 dropped — see [`workflow-COPYME-build_annogroups/ai/ai_FYIs/WARNING-truncated_orphan_annotations.md`](workflow-COPYME-build_annogroups/ai/ai_FYIs/WARNING-truncated_orphan_annotations.md).

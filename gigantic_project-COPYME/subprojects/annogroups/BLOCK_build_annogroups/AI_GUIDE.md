@@ -26,24 +26,27 @@ All scripts live in `workflow-COPYME-build_annogroups/ai/scripts/`.
 | Script | Runs | Does |
 |--------|------|------|
 | `001_ai-python-resolve_sources_and_universe.py` | once | discovers parser plugins, intersects with the config `sources:` request → `1_ai-sources_manifest.tsv`; builds the **proteome universe** (every sequence ID across the species-set proteomes) → `1_ai-proteome_universe.tsv` |
-| `002_ai-python-build_annogroups.py` | per source | imports `parsers/<source>`, calls `parse_source_features`, builds the four types, writes the map + membership (+ dropped-orphan audit) |
-| `003_ai-python-validate_results.py` | per source | fail-fast cross-checks (§36) |
-| `004_ai-python-write_summary.py` | once | cross-source summary: per source (per-type breakdown), per species, and per phylum (sources as columns) → `4-output/` |
-| `005_ai-python-write_run_log.py` | once | §45 run log |
+| `002_ai-python-build_annogroups.py` | per source | imports `parsers/<source>`, calls `parse_source_features`, builds the four types, writes the map + membership (+ dropped-orphan audit) → `2-output/<source>/` |
+| `003_ai-python-validate_results.py` | per source | fail-fast cross-checks (§36) → `3-output/<source>/` |
+| `004_ai-python-species_tree_deconvolution.py` | per source | per-clade member-protein counts for every species-tree clade (union across structures + one file per structure) → `4-output/<source>/` |
+| `005_ai-python-per_species_sequence_map.py` | per source | wide annogroup × species → member sequence IDs (absent excluded) → `5-output/<source>/` |
+| `006_ai-python-composite_clades.py` | per source | classify each annogroup by the four composite-clade algorithms + curated summary + per-composite-clade detail tables → `6-output/<source>/` |
+| `007_ai-python-write_summary.py` | once | cross-source summary: per source (per-type breakdown), per species, and per phylum (sources as columns) → `7-output/` |
+| `008_ai-python-write_run_log.py` | once | §45 run log |
 
-`main.nf` reads the sources manifest with `splitCsv(header:true)` and fans
-002+003 out **per source**; 004 (summary) and 005 (run log) run once after all
-sources validate. Adding sources never touches the NextFlow wiring.
+`main.nf` reads the sources manifest with `splitCsv(header:true)` and pipelines
+002→003→004→005→006 **per source**; 007 (summary) and 008 (run log) run once after
+all sources are processed. Adding sources never touches the NextFlow wiring.
 
-### Summary tables (Script 004)
+### Summary tables (Script 007)
 
-- `4_ai-annogroups_summary.tsv` — one row per source: validation status,
+- `7_ai-annogroups_summary.tsv` — one row per source: validation status,
   universe / annotated / absent counts + percent, the per-type annogroup
   breakdown (feature / combination / architecture / absent), total, dropped count.
-- `4_ai-annogroups_summary-per_species.tsv` — one row per species; **annotation
+- `7_ai-annogroups_summary-per_species.tsv` — one row per species; **annotation
   sources are the columns**; each cell = the species' annotated sequence count
   for that source (universe count is the leading context column).
-- `4_ai-annogroups_summary-per_phylum.tsv` — one row per phylum; same source-as-
+- `7_ai-annogroups_summary-per_phylum.tsv` — one row per phylum; same source-as-
   column layout, with species count + universe count for context.
 
 ## The four types — construction (Script 002, source-agnostic)
@@ -61,6 +64,13 @@ Given `{sequence_id: [Feature(accession, start, stop, is_positional)]}`:
   `architecture_member_string`. One architecture per sequence that has ≥1
   positional feature.
 - **absent**: `universe − annotated` → one `annogroup_<source>_absent`.
+
+**Whole-protein vs sub-protein.** `combination` is the **whole-protein** grouping
+(the set of features, position-independent); `architecture` is the **sub-protein**
+grouping (their N→C ordered arrangement, which needs residue coordinates). A source
+whose features are **non-positional** (`is_positional=False`) therefore produces
+**no architecture** — only feature + combination + absent (3 types). GO and DeepLoc
+are such whole-protein sources; pfam and panther are positional (4 types).
 
 Counter IDs (combination/architecture) are assigned by sorting the canonical
 keys then numbering (`annogroup_counter_id`), so they are deterministic.
@@ -99,18 +109,49 @@ Conventions a parser must follow:
   WARNING note).
 
 `parsers/pfam.py` is the reference implementation (positional domains, all four
-types). Per-source input locations for future parsers:
-`pfam/gene3d/cdd/smart/superfamily/funfam` → `BLOCK_interproscan_parsed/<db>/`;
+types). **Implemented parsers**: `pfam` + `panther` (both
+`BLOCK_interproscan_parsed/<db>/`, positional, 4 types) and `go` (see below).
+Per-source input locations for further parsers:
+`gene3d/cdd/smart/superfamily/funfam` → `BLOCK_interproscan_parsed/<db>/`;
 `tmbed` → `BLOCK_tmbed/`; `signalp` → `BLOCK_signalp/`; `deeploc` →
 `BLOCK_deeploc/`; `metapredict` → `BLOCK_metapredict/`.
 
-## Source feature-type behaviour (planned)
+**`parsers/go.py` (special).** GO is not a standalone parsed database. The go
+parser reads the **raw** per-species results (`BLOCK_interproscan/*_interproscan_results.tsv`,
+which have **no header** → fixed InterProScan column order, GO in column 14) and
+unions distinct GO IDs per protein. GO terms are tagged with the contributing tool
+(`(InterPro)` = curated InterPro2GO; `(PANTHER)` = PANTHER-direct, largely
+inferred); which origins to include is the explicit config knob `go_term_origins`
+(default = both). GO is **whole-protein / non-positional** → 3 types (no
+architecture). GO term **names** come from `inputs.go_names_map` — a GO_ID→name
+mapping annotations_hmms generates from the canonical `go-basic.obo`
+(`annotations_hmms/reference_go/`, exposed at
+`output_to_input/GO_reference/go_id_to_name.tsv`) — so definitions read e.g.
+`DNA binding ==GO:0003677`.
+
+**GO aspect split (the 3 major GO categories).** The go parser also declares
+`CATEGORIES` (the three GO aspects: molecular_function, biological_process,
+cellular_component) + `parse_source_categories` (GO_ID→aspect, from the same
+mapping's `GO_Namespace`). When a source declares categories, the shared map
+builder (Script 002) emits **two columns per category** —
+`GO_<Aspect>_Identifiers` + `GO_<Aspect>_Definitions` — right after
+`Annotation_Definitions`, splitting each annogroup's GO terms by aspect. These
+extra columns are carried forward generically (`U.carry_forward_map_columns`) into
+4-output (deconvolution forwards the whole map row), 5-output (per-species map),
+and 6-output (composite-clade per-annogroup + detail tables). Sources without
+`CATEGORIES` (pfam, panther) are unaffected — no extra columns.
+
+## Source feature-type behaviour
+
+`combination` = whole-protein (the feature *set*); `architecture` = sub-protein
+(the N→C *ordered* arrangement, needs coordinates). Non-positional sources yield
+no architecture (3 types).
 
 | Source kind | Example | is_positional | Types |
 |-------------|---------|---------------|-------|
-| positional domains | pfam, gene3d, cdd, smart, superfamily, funfam | True | feature + combination + architecture + absent |
+| positional domains/families | **pfam**, **panther** (implemented); gene3d, cdd, smart, superfamily, funfam | True | feature + combination + architecture + absent |
 | positional segments/regions | tmbed (TM segments), metapredict (IDRs), signalp (cleavage region) | True | all four (architecture = segment order) |
-| whole-protein label | deeploc (localization) | False | feature + combination + absent (no architecture) |
+| whole-protein label | **go** (Gene Ontology terms, implemented); deeploc (localization) | False | feature + combination + absent (no architecture) |
 
 ## Validation (Script 003, fail-fast)
 

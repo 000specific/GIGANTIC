@@ -28,9 +28,15 @@ Computed **per source database** (pfam, gene3d, tmbed, signalp, deeploc, …).
 | `annogroup_architecture` | sequences sharing the same **ordered** arrangement of positional features (N→C by start, stop) | `annogroup_<source>_architecture<NNNNN>` + map |
 | `annogroup_absent` | sequences (in the proteome universe) with **no** feature from the source | `annogroup_<source>_absent` |
 
-How many types a source yields (3 or 4) is **data-determined**: whole-protein
-sources (e.g. deeploc localization) have no positional features, so they yield
-feature + combination + absent, but no architecture.
+**Whole-protein vs sub-protein.** `combination` is a **whole-protein** grouping —
+the set of features a protein carries, independent of where they sit. `architecture`
+is a **sub-protein** grouping — the N→C ordered arrangement of features along the
+sequence, which requires residue coordinates. So how many types a source yields
+(3 or 4) is **data-determined**: a source whose annotations have **no sub-protein
+coordinates** cannot form an architecture and yields only feature + combination +
+absent (3 types). Examples of such whole-protein sources are **GO** (Gene Ontology
+function/process/location labels) and **DeepLoc** (subcellular localization).
+Positional sources (pfam, panther, …) yield all four.
 
 ## Where this fits
 
@@ -47,7 +53,11 @@ annotations from `annotations_hmms` and the species-set proteomes from
 
 | BLOCK | Builds | Status |
 |-------|--------|--------|
-| [`BLOCK_build_annogroups`](BLOCK_build_annogroups/) | the four canonical annogroup types per annotation source (one parser plugin per source) | Built 2026-06-18 — pfam validated end-to-end (137,762 annogroups, validation PASS) |
+| [`BLOCK_build_annogroups`](BLOCK_build_annogroups/) | the four canonical annogroup types per annotation source (one parser plugin per source) | Built 2026-06-18 — pfam validated end-to-end (137,762 annogroups, validation PASS). 2026-06-28: **panther** (positional, 4 types) and **go** (whole-protein, 3 types) parsers added and validated (PASS). |
+
+Parser plugins available: **pfam**, **panther** (both positional → 4 types) and
+**go** (whole-protein → 3 types). Adding a source is one file (`parsers/<source>.py`);
+`sources: "all"` auto-includes every parser.
 
 ## Conventions
 
