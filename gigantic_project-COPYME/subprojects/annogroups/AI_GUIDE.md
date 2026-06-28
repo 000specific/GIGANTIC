@@ -91,13 +91,19 @@ BLOCK guide.
 Built 2026-06-18. **pfam validated end-to-end** (137,762 annogroups across the
 four types; validation PASS; full NextFlow DAG run).
 
-2026-06-28: two more parsers added and validated (scripts 001–003, PASS):
-- **panther** — positional PTHR families (4 types): feature 11,033 / combination
-  11,033 / architecture 11,051 / absent 418,016.
-- **go** — whole-protein Gene Ontology terms from the **raw** InterProScan results
-  (3 types, no architecture by design): feature 8,994 / combination 27,974 / absent
-  539,984. GO origin selection (InterPro / PANTHER union, default both) is a
-  documented config knob (`go_term_origins`).
+2026-06-28: expanded to **12 sources**, all validated end-to-end (full DAG,
+species70, validation PASS):
+- positional (4 types): **pfam, panther, gene3d, cdd, smart, superfamily, funfam**
+  (InterProScan domains/families), **tmbed** (membrane topology — architecture is
+  the TM/barrel/signal segment order), **metapredict** (IDRs — one accession `IDR`,
+  so architecture groups by IDR count).
+- whole-protein (3 types, no architecture): **go** (GO terms; names from the
+  go-basic.obo mapping; origins via the `go_term_origins` knob, default InterPro +
+  PANTHER union; plus 6 GO-aspect split columns), **deeploc** (subcellular
+  localization), **signalp** (signal-peptide type, SLOW model).
+- The per-protein tools (tmbed/signalp/deeploc/metapredict) carry one caveat:
+  proteins not scored by the tool fall into `annogroup_<source>_absent` (absent =
+  "no feature in the available output").
 
 One known, user-accepted data caveat: a handful of truncated multi-locus annotation
 IDs are dropped — see

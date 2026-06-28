@@ -53,11 +53,13 @@ annotations from `annotations_hmms` and the species-set proteomes from
 
 | BLOCK | Builds | Status |
 |-------|--------|--------|
-| [`BLOCK_build_annogroups`](BLOCK_build_annogroups/) | the four canonical annogroup types per annotation source (one parser plugin per source) | Built 2026-06-18 — pfam validated end-to-end (137,762 annogroups, validation PASS). 2026-06-28: **panther** (positional, 4 types) and **go** (whole-protein, 3 types) parsers added and validated (PASS). |
+| [`BLOCK_build_annogroups`](BLOCK_build_annogroups/) | the four canonical annogroup types per annotation source (one parser plugin per source) | Built 2026-06-18. 2026-06-28: **12 sources** validated end-to-end (full DAG, species70, all PASS) — pfam, panther, gene3d, cdd, smart, superfamily, funfam, go, deeploc, signalp, tmbed, metapredict. |
 
-Parser plugins available: **pfam**, **panther** (both positional → 4 types) and
-**go** (whole-protein → 3 types). Adding a source is one file (`parsers/<source>.py`);
-`sources: "all"` auto-includes every parser.
+Parser plugins available (**12**): positional → 4 types — **pfam, panther, gene3d,
+cdd, smart, superfamily, funfam** (InterProScan domains/families), **tmbed**
+(membrane topology), **metapredict** (IDRs); whole-protein → 3 types — **go** (GO
+terms), **deeploc** (localization), **signalp** (signal-peptide type). Adding a
+source is one file (`parsers/<source>.py`); `sources: "all"` auto-includes every parser.
 
 ## Conventions
 

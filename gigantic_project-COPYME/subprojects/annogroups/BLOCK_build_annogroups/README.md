@@ -77,13 +77,29 @@ Built 2026-06-18 — scaffold, scripts, docs, and the NextFlow workflow complete
 10,635 feature + 46,846 combination + 80,280 architecture + 1 absent; validation
 PASS).
 
-**2026-06-28: panther + go parsers added and validated** (build + validate,
-scripts 001–003, species70, validation PASS):
-- **panther** (positional, 4 types): 11,033 feature + 11,033 combination + 11,051
-  architecture + 1 absent (418,016 absent sequences).
-- **go** (whole-protein, 3 types — no architecture): 8,994 feature + 27,974
-  combination + 1 absent (539,984 absent sequences); GO origins = InterPro + PANTHER
-  union (default `go_term_origins`).
+**2026-06-28: expanded to 12 sources, all validated end-to-end** (full DAG,
+species70, validation PASS — universe 1,375,926 sequences). Total annogroups per
+source (feature / combination / architecture):
+
+| Source | annot% | feature | combination | architecture |
+|--------|-------:|--------:|------------:|-------------:|
+| pfam | 67.0 | 10,635 | 46,846 | 80,280 |
+| panther | 69.6 | 11,033 | 11,033 | 11,051 |
+| gene3d | 61.1 | 3,289 | 25,748 | 50,886 |
+| cdd | 28.5 | 11,239 | 18,657 | 26,037 |
+| smart | 31.4 | 1,171 | 10,974 | 35,042 |
+| superfamily | 58.4 | 1,412 | 18,386 | 37,579 |
+| funfam | 23.1 | 36,784 | 51,917 | 56,422 |
+| go | 60.8 | 8,994 | 27,974 | — |
+| deeploc | 100.0 | 10 | 177 | — |
+| signalp | 12.0 | 1 | 1 | — |
+| tmbed | 29.4 | 3 | 7 | 122 |
+| metapredict | 78.7 | 1 | 1 | 85 |
+
+(`—` = whole-protein source, no architecture. signalp/metapredict feature counts are
+small by nature: one signal-peptide type called in species70, one generic `IDR`
+accession; tmbed's 3 = TM_helix / beta_barrel / signal_peptide. go carries 6
+GO-aspect split columns.)
 
 One known, user-accepted caveat: truncated multi-locus annotation IDs are
 dropped — see [`workflow-COPYME-build_annogroups/ai/ai_FYIs/WARNING-truncated_orphan_annotations.md`](workflow-COPYME-build_annogroups/ai/ai_FYIs/WARNING-truncated_orphan_annotations.md).

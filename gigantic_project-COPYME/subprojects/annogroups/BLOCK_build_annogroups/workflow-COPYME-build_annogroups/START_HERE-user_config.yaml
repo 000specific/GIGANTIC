@@ -22,9 +22,10 @@ species_set_name: "species70"
 # Which annotation sources to build annogroups for.
 #   "all"            - every source that has a parser plugin AND data available
 #   [ pfam, gene3d ] - an explicit subset (each must have parsers/<source>.py)
-# Parser plugins present: pfam, panther (positional -> 4 types) and go (whole-
-# protein -> 3 types). "all" auto-includes every parser, so new parsers need no
-# edit here.
+# Parser plugins present (12): positional (4 types) pfam, panther, gene3d, cdd,
+# smart, superfamily, funfam, tmbed, metapredict; whole-protein (3 types) go,
+# deeploc, signalp. "all" auto-includes every parser, so new parsers need no edit
+# here. A subset is a list, e.g. [ pfam, go, tmbed ].
 sources: "all"
 
 # =============================================================================

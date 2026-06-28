@@ -109,12 +109,21 @@ Conventions a parser must follow:
   WARNING note).
 
 `parsers/pfam.py` is the reference implementation (positional domains, all four
-types). **Implemented parsers**: `pfam` + `panther` (both
-`BLOCK_interproscan_parsed/<db>/`, positional, 4 types) and `go` (see below).
-Per-source input locations for further parsers:
-`gene3d/cdd/smart/superfamily/funfam` → `BLOCK_interproscan_parsed/<db>/`;
-`tmbed` → `BLOCK_tmbed/`; `signalp` → `BLOCK_signalp/`; `deeploc` →
-`BLOCK_deeploc/`; `metapredict` → `BLOCK_metapredict/`.
+types). **All 12 sources are implemented.** Input locations (all under the config
+`annotations_hmms_dir` root):
+
+- `pfam, panther, gene3d, cdd, smart, superfamily, funfam` → `BLOCK_interproscan_parsed/<db>/<db>-*.tsv` (15-col schema; positional clones)
+- `go` → raw `BLOCK_interproscan/*_interproscan_results.tsv` (see below)
+- `tmbed` → `BLOCK_tmbed/*_tmbed_predictions.tsv` (3 positional segment classes)
+- `signalp` → `BLOCK_signalp/*_signalp_SLOW_predictions.tsv` (whole-protein SP type; SLOW model)
+- `deeploc` → `BLOCK_deeploc/*_deeploc_predictions.csv` (whole-protein localization labels; CSV)
+- `metapredict` → `BLOCK_metapredict/*_metapredict_predictions.tsv` (generic positional IDRs)
+
+The per-protein tools (tmbed/signalp/deeploc/metapredict) share one caveat: a
+protein not scored by the tool (e.g. dropped upstream by the long-header filter)
+has no feature and so falls into `annogroup_<source>_absent` — i.e. `absent` means
+"no feature in the available output", which can include a few not-evaluated
+proteins (analogous to the dropped-orphan caveat).
 
 **`parsers/go.py` (special).** GO is not a standalone parsed database. The go
 parser reads the **raw** per-species results (`BLOCK_interproscan/*_interproscan_results.tsv`,
@@ -147,11 +156,14 @@ and 6-output (composite-clade per-annogroup + detail tables). Sources without
 (the N→C *ordered* arrangement, needs coordinates). Non-positional sources yield
 no architecture (3 types).
 
-| Source kind | Example | is_positional | Types |
+All 12 sources below are **implemented** (one parser plugin each; `sources: "all"`
+builds them all).
+
+| Source kind | Sources | is_positional | Types |
 |-------------|---------|---------------|-------|
-| positional domains/families | **pfam**, **panther** (implemented); gene3d, cdd, smart, superfamily, funfam | True | feature + combination + architecture + absent |
-| positional segments/regions | tmbed (TM segments), metapredict (IDRs), signalp (cleavage region) | True | all four (architecture = segment order) |
-| whole-protein label | **go** (Gene Ontology terms, implemented); deeploc (localization) | False | feature + combination + absent (no architecture) |
+| positional domains/families | pfam, panther, gene3d, cdd, smart, superfamily, funfam | True | feature + combination + architecture + absent |
+| positional segments/regions | tmbed (TM_helix / beta_barrel / signal_peptide; architecture = membrane topology), metapredict (IDRs; one accession `IDR`, so architecture = IDR count) | True | all four |
+| whole-protein label | go (GO terms), deeploc (subcellular localization), signalp (signal-peptide type, SLOW model) | False | feature + combination + absent (no architecture) |
 
 ## Validation (Script 003, fail-fast)
 

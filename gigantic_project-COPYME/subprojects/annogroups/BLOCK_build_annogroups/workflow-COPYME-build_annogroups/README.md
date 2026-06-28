@@ -74,13 +74,15 @@ pfam-annotated = 922,233; **137,762 annogroups** (10,635 feature + 46,846
 combination + 80,280 architecture + 1 absent holding 453,693 sequences); validation
 **PASS**; 7 truncated orphan IDs dropped (audited).
 
-**panther + go** (2026-06-28, build + validate, scripts 001–003): same universe.
-- panther (positional, 4 types): 11,033 feature + 11,033 combination + 11,051
-  architecture + 1 absent (418,016 seqs); validation **PASS**; 7 orphans dropped.
-- go (whole-protein, 3 types — no architecture): 8,994 feature + 27,974 combination
-  + 1 absent (539,984 seqs); validation **PASS**; 6 orphans dropped; GO origins =
-  InterPro + PANTHER (default union, `go_term_origins`). GO build ≈ 45 s (reads the
-  raw per-species InterProScan results).
+**12 sources** (2026-06-28, full DAG, SLURM, ~11 min): same universe; all 12
+validated **PASS** — pfam, panther, gene3d, cdd, smart, superfamily, funfam (IPS
+positional → 4 types), tmbed + metapredict (positional segments → 4 types), go,
+deeploc, signalp (whole-protein → 3 types). See the per-source annogroup-count
+table in [`../README.md`](../README.md). New since the pfam-only run:
+- `go` GO term names + 6 GO-aspect (MF/BP/CC) split columns; origins via `go_term_origins`.
+- `tmbed` architecture = membrane topology; `deeploc` = subcellular localization
+  (100% annotated); `signalp` = signal-peptide type (SLOW model); `metapredict`
+  architecture = IDR count.
 
 See [`ai/AI_GUIDE.md`](ai/AI_GUIDE.md) for execution detail and troubleshooting,
 and [`../AI_GUIDE.md`](../AI_GUIDE.md) for the parser contract.
