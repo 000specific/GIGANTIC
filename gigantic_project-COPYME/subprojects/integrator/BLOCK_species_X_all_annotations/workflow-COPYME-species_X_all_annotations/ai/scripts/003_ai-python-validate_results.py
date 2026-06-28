@@ -1,0 +1,230 @@
+#!/usr/bin/env python3
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 28 | Purpose: Validate the species_X_all_annotations base + per-structure tables (strict fail-fast, §36)
+# Human: Eric Edsinger
+
+"""
+Script 003 — Validation (strict fail-fast per gigantic_conventions §36).
+
+Cross-checks the per-species base tables and the per-structure wide tables for
+internal consistency and join integrity. ANY failure writes a FAIL report and
+exits 1 (a silent join artifact in a published per-protein table is a research
+integrity failure, per AI_BEHAVIOR.md).
+
+Base-table checks (1-output/_shared/):
+  B1. >= 1 base table present; each has the full required header; each non-empty.
+  B2. Sequence_Identifier unique within each species file.
+  B3. Every row's Sequence_Identifier resolves to the file's own phyloname — no
+      cross-species join contamination.
+  B4. Availability-flag consistency: when a source flag is 'no', the columns fed
+      by that source are NA on every row (a non-NA value would be a leak).
+
+Per-structure checks (2-output/<structure>/):
+  S1. Each structure dir has exactly one wide table per base table; each wide
+      table's row count equals its base table's row count.
+  S2. Each wide table has the OCL header columns; Structure_ID equals the dir.
+  S3. Referential integrity: every non-NA Orthogroup_ID has a non-NA
+      Orthogroup_OCL_Origin_Phylogenetic_Block (a non-NA OG with NA OCL would be
+      a silent join miss).
+"""
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert( 0, str( Path( __file__ ).parent ) )
+import utils_species_X_all_annotations as U
+
+REQUIRED_BASE_HEADER_IDS = [
+    "Sequence_Identifier", "Phyloname", "Genus_Species", "Sequence_Length", "Protein_Sequence",
+    "Gene_Size_BP", "CDS_Size_BP", "Protein_Size_AA", "Gene_Sizes_Available",
+    "In_Hotspot", "Hotspot_IDs", "Hotspot_Paralog_Counts", "Hotspots_Available",
+    "Top_3_NR_Hits", "Pfam_Annotations", "InterPro_GO_Terms", "PANTHER_GO_Terms",
+    "PANTHER_Families", "Annotations_HMMs_Available",
+    "Annogroups_Pfam", "Annogroups_GO", "Annogroups_PANTHER",
+    "Orthogroup_ID", "Orthogroup_Member_Protein_Count", "Orthogroup_Species_Count",
+    "Secretome_SignalP_Call", "Secretome_SignalP_Probability", "Secretome_DeepLoc_Localization",
+    "Secretome_Available", "Gene_Group_AGS_Memberships", "Gene_Family_AGS_Memberships",
+    "Dark_Status", "Dark_Proteome_Available",
+]
+
+REQUIRED_OCL_HEADER_IDS = [
+    "Structure_ID",
+    "Orthogroup_OCL_Origin_Phylogenetic_Block", "Orthogroup_OCL_Origin_Phylogenetic_Block_State",
+    "Orthogroup_OCL_Origin_Phylogenetic_Path", "Orthogroup_OCL_Conservation_Events",
+    "Orthogroup_OCL_Loss_Events", "Orthogroup_OCL_Continued_Absence_Events",
+    "Annogroup_Pfam_OCL_IDs", "Annogroup_Pfam_OCL_Origin_Phylogenetic_Blocks",
+    "Annogroup_Pfam_OCL_Origin_Phylogenetic_Paths", "Annogroup_Pfam_OCL_Conservation_Events",
+    "Annogroup_Pfam_OCL_Loss_Events", "Annogroup_Pfam_OCL_Continued_Absence_Events",
+]
+
+# ( availability flag header, [ columns that must be NA when flag == 'no' ] )
+AVAILABILITY_CONSISTENCY = [
+    ( "Gene_Sizes_Available", [ "Gene_Size_BP", "CDS_Size_BP", "Protein_Size_AA" ] ),
+    ( "Hotspots_Available", [ "In_Hotspot", "Hotspot_IDs", "Hotspot_Paralog_Counts" ] ),
+    ( "Annotations_HMMs_Available", [ "Pfam_Annotations", "InterPro_GO_Terms", "PANTHER_GO_Terms", "PANTHER_Families" ] ),
+    ( "Secretome_Available", [ "Secretome_SignalP_Call", "Secretome_SignalP_Probability", "Secretome_DeepLoc_Localization" ] ),
+    ( "Dark_Proteome_Available", [ "Dark_Status" ] ),
+]
+
+
+def main():
+    parser = argparse.ArgumentParser( description = "Validate species_X_all_annotations results (fail-fast)" )
+    parser.add_argument( '--config', required = True )
+    parser.add_argument( '--output_dir', required = True )
+    args = parser.parse_args()
+
+    output_base = Path( args.output_dir )
+    shared_dir = output_base / "1-output" / "_shared"
+    structures_root = output_base / "2-output"
+
+    failures = []
+
+    base_files = sorted( shared_dir.glob( "*-proteome_annotations-base.tsv" ) )
+    if not base_files:
+        print( f"CRITICAL ERROR: no base tables found in {shared_dir}", file = sys.stderr )
+        sys.exit( 1 )
+
+    phylonames___row_counts = {}
+    total_proteins = 0
+
+    # ---- BASE checks ------------------------------------------------------
+    for base_file in base_files:
+        phyloname = U.phyloname_from_spine_filename(
+            base_file.name.replace( "-proteome_annotations-base.tsv", "-T1-proteome-sequence_table.tsv" )
+        )
+        with open( base_file, 'r' ) as input_base:
+            header_ids___indices = U.build_header_index( input_base.readline() )
+
+            missing_headers = [ header_id for header_id in REQUIRED_BASE_HEADER_IDS if header_id not in header_ids___indices ]
+            if missing_headers:
+                failures.append( f"B1: {base_file.name} missing header(s): {missing_headers}" )
+                phylonames___row_counts[ phyloname ] = 0
+                continue
+
+            index_sequence = header_ids___indices[ "Sequence_Identifier" ]
+            consistency_indices = [
+                ( header_ids___indices[ flag_id ], [ header_ids___indices[ col ] for col in cols ] )
+                for ( flag_id, cols ) in AVAILABILITY_CONSISTENCY
+            ]
+
+            seen_sequences = set()
+            row_count = 0
+            for line in input_base:
+                line = line.rstrip( '\n' )
+                if not line:
+                    continue
+                parts = line.split( '\t' )
+                row_count += 1
+                sequence_identifier = parts[ index_sequence ]
+
+                # B2 uniqueness
+                if sequence_identifier in seen_sequences:
+                    failures.append( f"B2: {base_file.name} duplicate Sequence_Identifier {sequence_identifier}" )
+                else:
+                    seen_sequences.add( sequence_identifier )
+
+                # B3 species containment
+                ( _gene, row_phyloname, _genus ) = U.parse_full_gigantic_id( sequence_identifier )
+                if row_phyloname != phyloname:
+                    failures.append(
+                        f"B3: {base_file.name} row Sequence_Identifier resolves to phyloname "
+                        f"'{row_phyloname}' but file is '{phyloname}'"
+                    )
+
+                # B4 availability-flag consistency
+                for ( flag_index, column_indices ) in consistency_indices:
+                    if parts[ flag_index ] == "no":
+                        for column_index in column_indices:
+                            if parts[ column_index ] != U.NA:
+                                failures.append(
+                                    f"B4: {base_file.name} availability flag 'no' but column index "
+                                    f"{column_index} is '{parts[ column_index ]}' (expected NA)"
+                                )
+                                break
+
+            phylonames___row_counts[ phyloname ] = row_count
+            total_proteins += row_count
+            if row_count == 0:
+                failures.append( f"B1: {base_file.name} has zero data rows" )
+
+    # ---- PER-STRUCTURE checks --------------------------------------------
+    structure_dirs = sorted( path for path in structures_root.glob( "structure_*" ) if path.is_dir() ) if structures_root.is_dir() else []
+    structures_validated = []
+    for structure_dir in structure_dirs:
+        structure = structure_dir.name
+        structures_validated.append( structure )
+        wide_files = sorted( structure_dir.glob( "*-proteome_all_annotations.tsv" ) )
+
+        if len( wide_files ) != len( base_files ):
+            failures.append( f"S1: {structure} has {len( wide_files )} wide tables but {len( base_files )} base tables exist" )
+
+        for wide_file in wide_files:
+            phyloname = wide_file.name.replace( "-proteome_all_annotations.tsv", "" )
+            expected_rows = phylonames___row_counts.get( phyloname )
+            with open( wide_file, 'r' ) as input_wide:
+                header_ids___indices = U.build_header_index( input_wide.readline() )
+                missing_ocl = [ header_id for header_id in REQUIRED_OCL_HEADER_IDS if header_id not in header_ids___indices ]
+                if missing_ocl:
+                    failures.append( f"S2: {structure}/{wide_file.name} missing OCL header(s): {missing_ocl}" )
+                    continue
+                index_structure = header_ids___indices[ "Structure_ID" ]
+                index_orthogroup = header_ids___indices[ "Orthogroup_ID" ]
+                index_og_block = header_ids___indices[ "Orthogroup_OCL_Origin_Phylogenetic_Block" ]
+
+                row_count = 0
+                for line in input_wide:
+                    line = line.rstrip( '\n' )
+                    if not line:
+                        continue
+                    parts = line.split( '\t' )
+                    row_count += 1
+                    if parts[ index_structure ] != structure:
+                        failures.append( f"S2: {structure}/{wide_file.name} Structure_ID '{parts[ index_structure ]}' != '{structure}'" )
+                    # S3 referential integrity
+                    if parts[ index_orthogroup ] != U.NA and parts[ index_og_block ] == U.NA:
+                        failures.append(
+                            f"S3: {structure}/{wide_file.name} orthogroup {parts[ index_orthogroup ]} has NA OCL origin block (join miss)"
+                        )
+
+                if expected_rows is not None and row_count != expected_rows:
+                    failures.append(
+                        f"S1: {structure}/{wide_file.name} row count {row_count} != base row count {expected_rows}"
+                    )
+
+    # ---- report -----------------------------------------------------------
+    output_dir = output_base / "3-output"
+    output_dir.mkdir( parents = True, exist_ok = True )
+    output_report_path = output_dir / "3_ai-validation_report.txt"
+
+    status = "PASS" if not failures else "FAIL"
+    report_lines = [
+        "=" * 78,
+        "GIGANTIC integrator - species_X_all_annotations - VALIDATION REPORT",
+        "=" * 78,
+        "",
+        f"Status: {status}",
+        "",
+        f"Species base tables:        {len( base_files )}",
+        f"Total proteins (all base):  {total_proteins}",
+        f"Structures materialized:    {len( structures_validated )} ({', '.join( structures_validated ) if structures_validated else 'none'})",
+        "",
+        f"Failures: {len( failures )}",
+    ]
+    for failure in failures[ :200 ]:
+        report_lines.append( f"  - {failure}" )
+    if len( failures ) > 200:
+        report_lines.append( f"  ... and {len( failures ) - 200} more" )
+    report_lines.extend( [ "", "=" * 78 ] )
+
+    with open( output_report_path, 'w' ) as output_report:
+        output_report.write( '\n'.join( report_lines ) + '\n' )
+
+    print( f"[003] validation {status} -> {output_report_path}" )
+
+    if failures:
+        print( f"CRITICAL ERROR: validation FAILED with {len( failures )} issue(s). See {output_report_path}", file = sys.stderr )
+        sys.exit( 1 )
+
+
+if __name__ == '__main__':
+    main()

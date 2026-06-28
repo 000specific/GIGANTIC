@@ -20,7 +20,9 @@ subprojects' outputs into integrated tables.
 - Subproject README: [`README.md`](README.md)
 - BLOCKs:
   - [`BLOCK_orthogroups_ocl_X_features/AI_GUIDE.md`](BLOCK_orthogroups_ocl_X_features/AI_GUIDE.md) — OCL orthogroups × dark/hotspot/secretome (per structure)
-  - [`BLOCK_annotations_X_orthogroups/AI_GUIDE.md`](BLOCK_annotations_X_orthogroups/AI_GUIDE.md) — pfam annogroups × orthogroups, non-bilaterian-metazoan focus (structure-independent)
+  - [`BLOCK_annotations_X_orthogroups/AI_GUIDE.md`](BLOCK_annotations_X_orthogroups/AI_GUIDE.md) — pfam annogroups × orthogroups, non-bilaterian-metazoan focus (structure-independent; reads annogroup map + membership directly from the `annogroups` subproject)
+  - [`BLOCK_species_X_all_annotations/AI_GUIDE.md`](BLOCK_species_X_all_annotations/AI_GUIDE.md) — per-species proteome (spine = one row per protein) × every per-gene annotation + per-structure orthogroup/annogroup OCL columns
+  - [`BLOCK_ambiguous_nodes_X_annogroups/AI_GUIDE.md`](BLOCK_ambiguous_nodes_X_annogroups/AI_GUIDE.md) — annogroups species-tree deconvolution collapsed to ONLY the ambiguous nodes (clades present in some but not all structures), in one/some/all structure scopes, per source (pfam, go, panther); pure column projection of the annogroups deconvolution (`ambiguous_nodes_X_*` series, first member)
 - Reads FROM (per `BLOCK_orthogroups_ocl_X_features`):
   - `../ocl_phylogenetic_structures/output_to_input/BLOCK_orthogroups_X_ocl/<run_label>/` (OCL orthogroup summary + path_states, per structure)
   - `../dark_proteomes/output_to_input/BLOCK_classify_dark_proteome/dark_proteome/`
@@ -39,6 +41,8 @@ subprojects' outputs into integrated tables.
 | Subproject concepts (this file) | This file |
 | OCL-features BLOCK concepts | `BLOCK_orthogroups_ocl_X_features/AI_GUIDE.md` |
 | annogroups×orthogroups BLOCK concepts | `BLOCK_annotations_X_orthogroups/AI_GUIDE.md` |
+| per-species all-annotations BLOCK concepts | `BLOCK_species_X_all_annotations/AI_GUIDE.md` |
+| ambiguous-nodes × annogroups BLOCK concepts | `BLOCK_ambiguous_nodes_X_annogroups/AI_GUIDE.md` |
 | Running a BLOCK | `BLOCK_<name>/workflow-COPYME-*/ai/AI_GUIDE.md` |
 
 ## What integrator does

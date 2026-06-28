@@ -1,0 +1,29 @@
+# GIGANTIC upload_manifest.tsv — integrator / BLOCK_species_X_all_annotations
+# ============================================================================
+# Publishes the species_X_all_annotations deliverables. Source globs are
+# relative to this manifest's directory (the workflow-RUN_*-species_X_all_annotations/ root).
+#
+# Build with (from the integrator subproject root):
+#   bash RUN-update_upload_to_server.sh
+# (which calls ../../server/ai/update_upload_to_server.py --subproject-dir .)
+#
+# Published files land at:
+#   ../../upload_to_server/BLOCK_species_X_all_annotations/workflow-RUN_*-species_X_all_annotations/N-output/
+#
+# This is a COPYME template (single source of truth). The discovery helper
+# ignores manifests in workflow-COPYME-* dirs; copy this file into the canonical
+# workflow-RUN_* dir for it to publish (per gigantic_conventions §38/§39).
+#
+# NOTE: the per-species base tables (1-output/_shared/) and per-structure wide
+# tables (2-output/<structure>/) embed full amino-acid sequences and are large
+# (tens of files, up to GBs). They are NOT published by default. To publish them,
+# add explicit rows (or globs) below after a first-run size review.
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order	dir_label
+#
+# ----- Coverage summary -----
+OUTPUT_pipeline/1-output/_shared/feature_availability_summary.tsv	yes		Feature availability per species	summary	One row per species: protein count and per-axis availability flags (gene_sizes, hotspots, nr hits, annotations_hmms, secretome, dark proteome). Documents where each source covers the 70-species set (gene_sizes/hotspots = 64/70).	10	summary
+#
+# ----- QC: validation report -----
+OUTPUT_pipeline/3-output/3_ai-validation_report.txt	yes		Validation report	qc	Fail-fast validation cross-checks (base-table headers, Sequence_Identifier uniqueness and species containment, availability-flag/NA consistency, per-structure row counts, and orthogroup-OCL referential integrity). Status PASS means every cross-check held.	20	quality control

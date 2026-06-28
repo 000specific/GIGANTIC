@@ -1,0 +1,167 @@
+# ============================================================================
+# WORKFLOW CONFIGURATION - Edit this file before running
+# ============================================================================
+#
+# This is the main configuration file for this workflow.
+# Review and update the settings below for your project, then run:
+#
+#     bash RUN-workflow.sh
+#
+# ============================================================================
+#
+# GIGANTIC integrator - BLOCK_species_X_all_annotations
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 28
+# Human: Eric Edsinger
+#
+# Builds, per species, a proteome annotation table: ONE ROW PER PROTEIN
+# SEQUENCE, with every per-gene feature GIGANTIC produces joined onto the
+# genomesDB proteome spine. Structure-invariant features (gene sizes, hotspots,
+# nr hits, annotations_hmms, annogroup membership, orthogroup membership,
+# secretome, AGS membership, dark proteome) are joined ONCE into per-species
+# base tables. The orthogroup + annogroup OCL (Origin-Conservation-Loss)
+# columns are structure-DEPENDENT, so a full wide table is produced PER
+# species-tree structure listed in `structures` below.
+
+# Run identification
+# run_label names the output_to_input subdirectory for this integration run.
+run_label: "species70_all_annotations"
+
+# Species set identifier (must match the upstream subprojects' per-species files)
+species_set_name: "species70"
+
+# ============================================================================
+# Species-tree structures to materialize
+# ============================================================================
+# The OCL columns (orthogroup + annogroup Origin/Conservation/Loss) depend on
+# the species-tree structure. Choose which structures to build full wide tables
+# for. Either:
+#   structures: "all"          -> every structure produced by the orthogroups
+#                                 OCL run (currently 105) — LARGE (105 x 70 tables)
+#   structures: [ list ]       -> only the listed structures (recommended)
+# Script 000 fail-fast verifies each requested structure has BOTH OCL summaries
+# (orthogroup OCL and annogroup OCL) before anything is materialized.
+structures:
+  - "structure_001"
+  - "structure_003"
+  - "structure_032"
+  - "structure_033"
+
+# Number of top NCBI nr DIAMOND hits to record per protein (Top_N_NR_Hits cell).
+nr_top_n: 3
+
+# Annogroup membership sources to include (annogroups subproject SOURCE names).
+# Each contributes an Annogroups_<source> membership column. All three are
+# currently built; drop any whose membership has not been produced.
+annogroup_sources:
+  - "pfam"
+  - "go"
+  - "panther"
+
+# OCL run labels (the per-structure OCL inference to read).
+#   orthogroups_ocl_run_label : orthogroups_X_ocl run (has all 105 structures)
+#   annogroup_ocl_run_label   : annotations_X_ocl run; currently pfam only, so
+#                               annogroup x OCL columns are pfam-only (go/panther
+#                               annogroup OCL is not run -> those would be NA).
+orthogroups_ocl_run_label: "species70_X_OrthoHMM"
+annogroup_ocl_run_label: "species70_pfam"
+
+# ============================================================================
+# Input paths (relative to this workflow directory)
+# ============================================================================
+inputs:
+  # SPINE: genomesDB STEP_4 per-species sequence tables, read from the canonical
+  # output_to_input/ exposure (<phyloname>-T1-proteome-sequence_table.tsv:
+  # sequence id + amino acid sequence). Exposed as a flat named resource dir by
+  # STEP_4's RUN-workflow.sh (per conventions §2).
+  spine_dir: "../../../genomesDB/output_to_input/STEP_4-create_final_species_set/species70_gigantic_T1_sequence_tables"
+
+  # gene_sizes (64 of 70 species). Per-species: 3_ai-ranked_gene_metrics-<Genus_species>.tsv
+  # Join key: bare g_ gene field (Source_Gene_ID) within the species.
+  gene_sizes_dir: "../../../gene_sizes/output_to_input/BLOCK_analyze_gene_sizes/gene_vs_protein/species64_gigantic_gene_metrics"
+
+  # hotspots (64 of 70 species). Per-species: 3_ai-hotspots-<Genus_species>.tsv
+  # Join key: bare g_ gene field, expanded from Member_Source_Gene_IDs.
+  hotspots_dir: "../../../hotspots/output_to_input/BLOCK_identify_hotspots/hotspots"
+
+  # one_direction_homologs nr DIAMOND hits. Per-species: <phyloname>_top_hits.tsv
+  nr_hits_dir: "../../../one_direction_homologs/output_to_input/BLOCK_diamond_ncbi_nr/ncbi_nr_top_hits"
+
+  # annotations_hmms consolidated databases (pfam / go / panther read here).
+  # Per-species: <db>/gigantic_annotations-database_<db>-<phyloname>.tsv
+  hmms_databases_dir: "../../../annotations_hmms/output_to_input/BLOCK_build_annotation_database/annotation_databases"
+
+  # annogroups membership root. Per source: <species_set>/<source>/2_ai-<source>-annogroup_membership.tsv
+  annogroups_dir: "../../../annogroups/output_to_input/BLOCK_build_annogroups"
+
+  # orthogroups (headerless: OG_ID then tab-delimited member full GIGANTIC IDs).
+  orthogroups_file: "../../../orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv"
+
+  # secretome evidence tables. Per-species: <phyloname>_evidence_table.tsv
+  secretome_dir: "../../../secretome/output_to_input/BLOCK_secretome_evidence_table"
+
+  # dark proteome classification. Per-species: 3_ai-dark_proteome-<Genus_species>.tsv
+  dark_dir: "../../../dark_proteomes/output_to_input/BLOCK_classify_dark_proteome/dark_proteome"
+
+  # trees_gene_groups AGS root (one AGS FASTA per gene group under <name>/16_ai-ags-*.aa).
+  gene_groups_ags_root: "../../../trees_gene_groups/output_to_input/gene_groups-hugo_hgnc/STEP_1-homolog_discovery"
+
+  # trees_gene_families AGS root (one AGS FASTA per family under <family>/STEP_1-homolog_discovery/16_ai-ags-*.aa).
+  gene_families_ags_root: "../../../trees_gene_families/output_to_input"
+
+  # orthogroups OCL (per structure): <run_label>/<structure>/4_ai-orthogroups-complete_ocl_summary.tsv
+  orthogroups_ocl_dir: "../../../ocl_phylogenetic_structures/output_to_input/BLOCK_orthogroups_X_ocl"
+
+  # annogroup OCL (per structure): <run_label>/<structure>/4_ai-structure_<NNN>_annogroups-complete_ocl_summary-all_types.tsv
+  annogroup_ocl_dir: "../../../ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl"
+
+# Output configuration
+output:
+  # Main output directory (relative to this workflow directory).
+  #   OUTPUT_pipeline/1-output/_shared/      per-species invariant base tables
+  #   OUTPUT_pipeline/2-output/<structure>/  full wide per-species tables per structure
+  #   OUTPUT_pipeline/3-output/              validation report
+  base_dir: "OUTPUT_pipeline"
+
+# =============================================================================
+# Computational Resources
+# =============================================================================
+# Used by SLURM (job resources) when execution_mode is "slurm", and as the
+# local-executor pool when parallelism_mode is "local". Script 001 loads the
+# orthogroups table + per-source annogroup membership (pfam+go+panther) + AGS
+# membership globally, so it is memory-bound; memory_gb must be >= the heaviest
+# process (build_invariant_base = 48 GB in ai/nextflow.config).
+
+cpus: 8
+memory_gb: 64
+time_hours: 12
+
+# =============================================================================
+# Execution Mode
+# =============================================================================
+# Controls where RUN-workflow.sh itself runs (the NextFlow driver).
+#   "local" - Run directly on this machine
+#   "slurm" - Self-submit as a SLURM job (driver runs on a compute node)
+
+execution_mode: "slurm"
+
+# SLURM settings (only used when execution_mode is "slurm")
+slurm_account: "your_account"
+slurm_qos: "your_qos"
+
+# =============================================================================
+# Parallelism Mode
+# =============================================================================
+# How NextFlow dispatches processes (composes with execution_mode).
+#   "local" - processes run within this allocation/machine (good for a few
+#             structures; the per-structure tasks share the allocation)
+#   "slurm" - each process submits as its own SLURM job (good for "all" 105)
+
+parallelism_mode: "local"
+
+# =============================================================================
+# Resume from cached NextFlow work directory
+# =============================================================================
+# false (default) re-runs every task from scratch — safer for reproducibility.
+# true re-uses cached results for unchanged tasks (partial-failure recovery).
+
+resume: false
