@@ -99,10 +99,12 @@ process copy_selected_files {
  * Calls: scripts/003_ai-python-build_per_species_sequence_tables.py
  *
  * For every <phyloname>-T1-proteome.aa in the proteomes dir produced by
- * Process 2, emits <phyloname>-T1-proteome-sequence_table.tsv with four
- * columns: Phyloname | Gigantic_Protein_Identifier | Sequence_Length |
- * Protein_Sequence. Self-documenting headers. Also emits a per-species
- * protein-count summary and a build log.
+ * Process 2, emits <phyloname>-T1-proteome-sequence_table.tsv (columns:
+ * Phyloname | Gigantic_Protein_Identifier | Sequence_Length | Protein_Sequence)
+ * into a clean named resource subdir 3-output/<species_set>_gigantic_T1_sequence_tables/
+ * (mirrors the sibling proteomes resource dir; exposed via output_to_input by
+ * RUN-workflow.sh, per conventions §2). Also emits a per-species protein-count
+ * summary and a build log at the 3-output root.
  */
 process build_per_species_sequence_tables {
     label 'local'
@@ -113,7 +115,7 @@ process build_per_species_sequence_tables {
         path proteomes_dir
 
     output:
-        path "3-output/*-T1-proteome-sequence_table.tsv", emit: sequence_tables
+        path "3-output/*_gigantic_T1_sequence_tables", emit: sequence_tables
         path "3-output/3_ai-summary.tsv", emit: summary
         path "3-output/3_ai-log-build_per_species_sequence_tables.log", emit: log
 

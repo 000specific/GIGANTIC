@@ -58,6 +58,7 @@ script 001.
 | Final proteomes | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` | `orthogroups`, `annotations_hmms`, `gene_sizes`, `secretome`, `hotspots`, `one_direction_homologs`, `dark_proteomes`, etc. |
 | Final BLAST databases | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` | `trees_gene_families` STEP_1, `trees_gene_groups` STEP_1 (homolog discovery) |
 | Final genome annotations | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/` | `gene_sizes`, anything reasoning about gene coordinates / introns |
+| Per-species sequence tables | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_sequence_tables/` | `integrator/BLOCK_species_X_all_annotations` (per-protein spine), and anything needing id + amino acid sequence in one TSV |
 | Copy manifest | `workflow-*/OUTPUT_pipeline/2-output/2_ai-copy_manifest.tsv` | Reproducibility audit |
 
 ## Downstream consumers (per §40)
@@ -82,12 +83,14 @@ patterns.
 
 ```
 STEP_2 (cleaned proteomes)  ──┐
-                               ├──> STEP_4 (select + copy) ──> output_to_input/
-STEP_3 (BLAST databases)   ──┘                                   ├── speciesN_gigantic_T1_proteomes/
-                                                                  └── speciesN_gigantic_T1_blastp/
+                               ├──> STEP_4 (select + copy ──> output_to_input/
+STEP_3 (BLAST databases)   ──┘       + build seq tables)        ├── speciesN_gigantic_T1_proteomes/
+                                                                  ├── speciesN_gigantic_T1_blastp/
+                                                                  ├── speciesN_gigantic_genome_annotations/
+                                                                  └── speciesN_gigantic_T1_sequence_tables/
                                                                          │
                                                                          └──> downstream subprojects
-                                                                              (orthogroups, gene_trees, etc.)
+                                                                              (orthogroups, gene_trees, integrator, etc.)
 ```
 
 ---
@@ -101,7 +104,8 @@ STEP_3 (BLAST databases)   ──┘                                   ├──
 | `workflow-*/RUN-workflow.sh` | Local execution script (unified driver §29) | No |
 | `workflow-*/ai/scripts/001_ai-python-validate_species_selection.py` | Validates species selection against STEP_2 + STEP_3 | No (AI-generated) |
 | `workflow-*/ai/scripts/002_ai-python-copy_selected_files.py` | Copies selected proteomes + BLAST DBs + annotations | No (AI-generated) |
-| `workflow-*/ai/scripts/003_ai-python-write_run_log.py` | Per-run audit log | No (AI-generated) |
+| `workflow-*/ai/scripts/003_ai-python-build_per_species_sequence_tables.py` | Builds per-species (id + sequence) TSV tables into `3-output/speciesN_gigantic_T1_sequence_tables/` | No (AI-generated) |
+| `workflow-*/ai/scripts/004_ai-python-write_run_log.py` | Per-run audit log (§45 canonical final) | No (AI-generated) |
 | `output_to_input/STEP_4-create_final_species_set/` | Final species set for downstream subprojects | No (auto-populated) |
 | `../RUN-update_upload_to_server.sh` (subproject-level) | Manage upload_to_server/ symlinks | No |
 
@@ -168,8 +172,10 @@ STEP_4-create_final_species_set/
 ├── AI_GUIDE.md   # THIS FILE
 ├── RUN-update_upload_to_server.sh         # Manage upload_to_server/ symlinks
 ├── output_to_input/                       # Final species set for downstream
-│   ├── speciesN_gigantic_T1_proteomes/    # Created by workflow
-│   └── speciesN_gigantic_T1_blastp/       # Created by workflow
+│   ├── speciesN_gigantic_T1_proteomes/        # Created by workflow (2-output)
+│   ├── speciesN_gigantic_T1_blastp/           # Created by workflow (2-output)
+│   ├── speciesN_gigantic_genome_annotations/  # Created by workflow (2-output, subset)
+│   └── speciesN_gigantic_T1_sequence_tables/  # Created by workflow (3-output)
 ├── upload_to_server/                      # Curated data for GIGANTIC server
 └── workflow-COPYME-create_final_species_set/
     ├── README.md
@@ -179,15 +185,17 @@ STEP_4-create_final_species_set/
     │   └── selected_species.txt           # User species selection (optional)
     ├── OUTPUT_pipeline/
     │   ├── 1-output/                      # Validated species list
-    │   └── 2-output/                      # Copied species files
+    │   ├── 2-output/                      # Copied species files (proteomes, blastp, annotations)
+    │   └── 3-output/                      # Per-species sequence tables + summary
     └── ai/
         ├── AI_GUIDE.md
         ├── main.nf
         ├── nextflow.config
         ├── conda_environment.yml          # env: aiG-genomesDB (shared across all 4 STEPs)
-        ├── logs/                          # Per-run audit logs from script 003
+        ├── logs/                          # Per-run audit logs from script 004
         └── scripts/
             ├── 001_ai-python-validate_species_selection.py
             ├── 002_ai-python-copy_selected_files.py
-            └── 003_ai-python-write_run_log.py
+            ├── 003_ai-python-build_per_species_sequence_tables.py
+            └── 004_ai-python-write_run_log.py
 ```

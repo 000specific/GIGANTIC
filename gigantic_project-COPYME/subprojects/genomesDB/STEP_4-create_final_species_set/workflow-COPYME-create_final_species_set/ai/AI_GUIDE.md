@@ -77,15 +77,16 @@ See verification commands below.
 
 ---
 
-## Script Pipeline (3 scripts)
+## Script Pipeline (4 scripts)
 
 | Order | Script | Purpose | Input | Output |
 |---|---|---|---|---|
 | 1 | `001_ai-python-validate_species_selection.py` | Validates species exist in STEP_2 and STEP_3 | Config paths + optional `INPUT_user/selected_species.txt` | `1-output/1_ai-validated_species_list.txt`, `1-output/1_ai-species_count.txt`, `1-output/1_ai-species_with_genome_annotations.txt` |
 | 2 | `002_ai-python-copy_selected_files.py` | Copies proteomes, BLAST DBs, and genome annotations for selected species | Validated species list + STEP_2/STEP_3 paths | `2-output/speciesN_gigantic_T1_proteomes/`, `2-output/speciesN_gigantic_T1_blastp/`, `2-output/speciesN_gigantic_genome_annotations/`, `2-output/2_ai-copy_manifest.tsv` |
-| 3 | `003_ai-python-write_run_log.py` | Per-run audit log | n/a | `ai/logs/run_*.log` |
+| 3 | `003_ai-python-build_per_species_sequence_tables.py` | Builds per-species (id + sequence) TSV tables from the proteomes | `2-output/speciesN_gigantic_T1_proteomes/` | `3-output/speciesN_gigantic_T1_sequence_tables/<phyloname>-T1-proteome-sequence_table.tsv`, `3-output/3_ai-summary.tsv`, `3-output/3_ai-log-*.log` |
+| 4 | `004_ai-python-write_run_log.py` | Per-run audit log (§45 canonical final) | n/a | `ai/logs/run_*.log` |
 
-**Pipeline flow**: Script 001 produces the validated species list, count, and annotations-availability list → Script 002 reads those + STEP_2/STEP_3 paths to copy the correct files into `speciesN_*` directories → Script 003 writes the audit log.
+**Pipeline flow**: Script 001 produces the validated species list, count, and annotations-availability list → Script 002 copies the correct files into `2-output/speciesN_*` directories → Script 003 builds per-species sequence tables into `3-output/speciesN_gigantic_T1_sequence_tables/` → Script 004 writes the audit log. RUN-workflow.sh then symlinks every `speciesN_gigantic_*` resource dir from `2-output/` and `3-output/` into `../../output_to_input/STEP_4-create_final_species_set/`.
 
 ---
 
@@ -114,6 +115,9 @@ ls OUTPUT_pipeline/2-output/species*_gigantic_T1_blastp/ | wc -l
 
 # View copy manifest
 head OUTPUT_pipeline/2-output/2_ai-copy_manifest.tsv
+
+# Count per-species sequence tables (Script 003)
+ls OUTPUT_pipeline/3-output/species*_gigantic_T1_sequence_tables/*-sequence_table.tsv | wc -l
 ```
 
 ### Check output_to_input (for downstream subprojects)
@@ -124,6 +128,9 @@ ls ../../output_to_input/STEP_4-create_final_species_set/species*_gigantic_T1_pr
 
 # Final BLAST DBs for downstream
 ls ../../output_to_input/STEP_4-create_final_species_set/species*_gigantic_T1_blastp/ | head
+
+# Per-species sequence tables for downstream
+ls ../../output_to_input/STEP_4-create_final_species_set/species*_gigantic_T1_sequence_tables/ | head
 ```
 
 ### Check logs
@@ -173,11 +180,13 @@ Once STEP_4 completes, downstream subprojects access the final species set at:
 
 ```
 genomesDB/output_to_input/STEP_4-create_final_species_set/
-├── speciesN_gigantic_T1_proteomes/    # Proteome files
-└── speciesN_gigantic_T1_blastp/       # BLAST database files
+├── speciesN_gigantic_T1_proteomes/        # Proteome files
+├── speciesN_gigantic_T1_blastp/           # BLAST database files
+├── speciesN_gigantic_genome_annotations/  # GFF/GTF files (subset)
+└── speciesN_gigantic_T1_sequence_tables/  # Per-species (id + sequence) TSV tables
 ```
 
-These are also accessible from the genomesDB root `output_to_input/` directory, depending on how the workflow publishes outputs.
+These are symlinks into the canonical RUN's `OUTPUT_pipeline/` (`2-output/` for proteomes/blastp/annotations, `3-output/` for sequence tables), created by `RUN-workflow.sh` per conventions §2.
 
 Downstream subprojects that use this data:
 - **orthogroups** (orthohmm, broccoli, orthofinder)

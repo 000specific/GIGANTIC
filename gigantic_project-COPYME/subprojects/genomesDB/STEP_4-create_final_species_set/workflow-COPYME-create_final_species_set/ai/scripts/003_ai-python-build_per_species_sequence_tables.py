@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # AI: Claude Code | Opus 4.7 | 2026 June 27 | Purpose: Build per-species (GIGANTIC ID, sequence) TSV tables from T1 proteome FASTAs
+# AI: Claude Code | Opus 4.8 (1M context) | 2026 June 28 | Purpose: Write the per-species TSVs into a clean <species_set>_gigantic_T1_sequence_tables/ subdir of 3-output so RUN-workflow.sh exposes it via output_to_input as a named resource dir (per conventions §2, §31)
 # Human: Eric Edsinger
 
 """
@@ -10,11 +11,19 @@ For each '<phyloname>-T1-proteome.aa' file in the input proteomes directory,
 emits a companion TSV with 4 columns:
     Phyloname | Gigantic_Protein_Identifier | Sequence_Length | Protein_Sequence
 
+The TSVs are written into a CLEAN NAMED SUBDIR of the output dir,
+'<species_set>_gigantic_T1_sequence_tables/', mirroring the sibling resource
+dir '<species_set>_gigantic_T1_proteomes/' produced by Script 002. This lets
+RUN-workflow.sh expose the sequence tables under output_to_input/ the same way
+it exposes proteomes/blastp/genome_annotations (a flat named resource dir
+under STEP_4-create_final_species_set/, per conventions §2). The subdir name is
+derived from the input proteomes dir name (…_proteomes -> …_sequence_tables).
+
 Self-documenting headers, tabs between columns. Sequences are single-letter
 amino acid codes with no internal whitespace, so no within-column delimiter
 is needed.
 
-Also emits:
+Also emits (at the 3-output root, alongside the subdir):
     3_ai-summary.tsv                                 — per-species protein count
     3_ai-log-build_per_species_sequence_tables.log   — main log file
 
@@ -189,6 +198,19 @@ def main():
 
     logger.info( f'Found {len( fasta_paths )} per-species FASTA files' )
 
+    # Per-species TSVs go into a clean named resource subdir, derived from the
+    # proteomes dir name (…_proteomes -> …_sequence_tables) so it mirrors the
+    # sibling '<species_set>_gigantic_T1_proteomes/' and is exposed by
+    # RUN-workflow.sh under output_to_input/ as a flat named resource dir (§2).
+    proteomes_dir_name = input_proteomes_dir.name
+    if proteomes_dir_name.endswith( '_proteomes' ):
+        sequence_tables_dir_name = proteomes_dir_name[ :-len( '_proteomes' ) ] + '_sequence_tables'
+    else:
+        sequence_tables_dir_name = proteomes_dir_name + '_sequence_tables'
+    output_sequence_tables_dir = output_dir / sequence_tables_dir_name
+    output_sequence_tables_dir.mkdir( parents = True, exist_ok = True )
+    logger.info( f'Writing per-species sequence tables into: {output_sequence_tables_dir}' )
+
     phylonames___protein_counts = {}
     for input_fasta_path in fasta_paths:
         phyloname = extract_phyloname_from_filename(
@@ -203,7 +225,7 @@ def main():
             sys.exit( 1 )
 
         output_tsv_filename = phyloname + args.output_file_suffix
-        output_tsv_path = output_dir / output_tsv_filename
+        output_tsv_path = output_sequence_tables_dir / output_tsv_filename
 
         protein_count = build_per_species_tsv(
             input_fasta_path, phyloname, output_tsv_path, logger

@@ -33,10 +33,12 @@
 # 6. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
 # 7. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/
 # 8. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/
+# 9. Creates ../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_sequence_tables/
 #
 # OUTPUT:
-# Results in OUTPUT_pipeline/1-output and 2-output/
-# Final species set copied to ../../output_to_input/STEP_4-create_final_species_set/
+# Results in OUTPUT_pipeline/1-output, 2-output/ (proteomes, blastp, annotations)
+# and 3-output/ (per-species sequence tables).
+# Final species set exposed via ../../output_to_input/STEP_4-create_final_species_set/
 # NOTE: Genome annotations are optional - not all species have GFF/GTF files.
 #
 ################################################################################
@@ -246,14 +248,18 @@ for old_link in "${SUBPROJECT_SHARED_DIR}"/species*_gigantic_T1_* "${SUBPROJECT_
     fi
 done
 
-# Create symlinks for each species directory in 2-output/
-# This catches T1_proteomes, T1_blastp, and genome_annotations
-for species_dir in OUTPUT_pipeline/2-output/species*_gigantic_*; do
-    if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
-        dir_name=$(basename "$species_dir")
-        ln -sf "../../STEP_4-create_final_species_set/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/2-output/${dir_name}" \
-            "${SUBPROJECT_SHARED_DIR}/${dir_name}"
-    fi
+# Create symlinks for each species resource directory in 2-output/ and 3-output/.
+# 2-output catches T1_proteomes, T1_blastp, and genome_annotations (Script 002);
+# 3-output catches T1_sequence_tables (Script 003). Each is exposed flat under
+# output_to_input/STEP_4-create_final_species_set/ (per conventions §2).
+for output_subdir in 2-output 3-output; do
+    for species_dir in OUTPUT_pipeline/${output_subdir}/species*_gigantic_*; do
+        if [ -d "$species_dir" ] || [ -L "$species_dir" ]; then
+            dir_name=$(basename "$species_dir")
+            ln -sf "../../STEP_4-create_final_species_set/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${output_subdir}/${dir_name}" \
+                "${SUBPROJECT_SHARED_DIR}/${dir_name}"
+        fi
+    done
 done
 
 echo "  output_to_input/STEP_4-create_final_species_set/ -> symlinks created"
@@ -264,15 +270,17 @@ echo "SUCCESS! STEP_4 pipeline complete."
 echo ""
 echo "Research outputs (real files):"
 echo "  OUTPUT_pipeline/1-output/  Validated species list, count, and annotation availability"
-echo "  OUTPUT_pipeline/2-output/  Final species set directories"
+echo "  OUTPUT_pipeline/2-output/  Final species set directories (proteomes, blastp, annotations)"
+echo "  OUTPUT_pipeline/3-output/  Per-species sequence tables + summary"
 echo ""
 echo "Downstream symlinks:"
 echo "  ../../output_to_input/STEP_4-create_final_species_set/  (for downstream subprojects)"
 echo ""
 echo "Published directories:"
-echo "  speciesN_gigantic_T1_proteomes/       Proteome files"
-echo "  speciesN_gigantic_T1_blastp/          BLAST databases"
+echo "  speciesN_gigantic_T1_proteomes/         Proteome files"
+echo "  speciesN_gigantic_T1_blastp/            BLAST databases"
 echo "  speciesN_gigantic_genome_annotations/   GFF/GTF files (subset with annotations)"
+echo "  speciesN_gigantic_T1_sequence_tables/   Per-species (id + sequence) TSV tables"
 echo "========================================================================"
 echo "Completed: $(date)"
 

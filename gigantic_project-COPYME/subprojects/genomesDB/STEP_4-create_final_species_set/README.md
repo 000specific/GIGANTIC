@@ -37,8 +37,10 @@ STEP_4 is a **copy/filter** step, not a processing step:
 1. User reviews STEP_2 quality metrics and decides which species to keep
 2. User configures species selection in `INPUT_user/selected_species.txt` (or uses all species by default)
 3. Script 001 validates the selection against STEP_2 and STEP_3 outputs
-4. Script 002 copies selected proteomes and BLAST databases
-5. Final outputs go to `output_to_input/` with `speciesN_` naming convention
+4. Script 002 copies selected proteomes and BLAST databases (→ `2-output/`)
+5. Script 003 builds per-species (id + sequence) TSV tables from the proteomes (→ `3-output/speciesN_gigantic_T1_sequence_tables/`)
+6. Script 004 writes the run log
+7. Final outputs are exposed via `output_to_input/` with `speciesN_` naming convention
 
 ---
 
@@ -78,6 +80,7 @@ bash RUN-workflow.sh
 | Final proteomes | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/` | For downstream subprojects |
 | Final BLAST DBs | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/` | For BLAST searches |
 | Genome annotations | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/` | GFF/GTF files (subset) |
+| Sequence tables | `../../output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_sequence_tables/` | Per-species TSV: Phyloname, Gigantic_Protein_Identifier, Sequence_Length, Protein_Sequence |
 
 Where N = count of selected species (e.g., species71).
 
@@ -118,5 +121,7 @@ STEP_4-create_final_species_set/
         ├── nextflow.config
         └── scripts/
             ├── 001_ai-python-validate_species_selection.py
-            └── 002_ai-python-copy_selected_files.py
+            ├── 002_ai-python-copy_selected_files.py
+            ├── 003_ai-python-build_per_species_sequence_tables.py
+            └── 004_ai-python-write_run_log.py
 ```

@@ -41,9 +41,14 @@ STEP_4 is a **COPY/FILTER** step, not a processing step:
    - Copies proteomes from STEP_2 for selected species
    - Copies BLAST databases from STEP_3 for selected species
    - Copies genome annotations from STEP_2 (subset — only species with GFFs)
-   - Creates directories with `speciesN_` naming convention; writes copy manifest
+   - Creates directories with `speciesN_` naming convention (`2-output/`); writes copy manifest
 
-3. **Per-Run Audit Log** (Script 003)
+3. **Builds Per-Species Sequence Tables** (Script 003)
+   - Reads each `<phyloname>-T1-proteome.aa` and emits a per-species TSV
+     (Phyloname, Gigantic_Protein_Identifier, Sequence_Length, Protein_Sequence)
+   - Writes them into `3-output/speciesN_gigantic_T1_sequence_tables/` + a summary
+
+4. **Per-Run Audit Log** (Script 004)
    - Writes a timestamped log to `ai/logs/` documenting the run
 
 ---
@@ -96,16 +101,18 @@ workflow-COPYME-create_final_species_set/
 │   └── selected_species.txt               # Species selection (optional)
 ├── OUTPUT_pipeline/                       # Workflow outputs
 │   ├── 1-output/                          # Validated species list
-│   └── 2-output/                          # Final species directories
+│   ├── 2-output/                          # Final species directories (proteomes, blastp, annotations)
+│   └── 3-output/                          # Per-species sequence tables + summary
 └── ai/
     ├── main.nf                            # NextFlow pipeline definition
     ├── nextflow.config                    # NextFlow settings
     ├── conda_environment.yml              # env: aiG-genomesDB (shared across all 4 STEPs)
-    ├── logs/                              # Per-run audit logs from script 003
+    ├── logs/                              # Per-run audit logs from script 004
     └── scripts/
         ├── 001_ai-python-validate_species_selection.py
         ├── 002_ai-python-copy_selected_files.py
-        └── 003_ai-python-write_run_log.py
+        ├── 003_ai-python-build_per_species_sequence_tables.py
+        └── 004_ai-python-write_run_log.py
 ```
 
 ---
@@ -121,6 +128,8 @@ workflow-COPYME-create_final_species_set/
 | Final BLAST DBs | `2-output/speciesN_gigantic_T1_blastp/` | Copied BLAST database files |
 | Genome annotations | `2-output/speciesN_gigantic_genome_annotations/` | Copied GFF/GTF files (subset) |
 | Copy manifest | `2-output/2_ai-copy_manifest.tsv` | Record of all copied files |
+| Sequence tables | `3-output/speciesN_gigantic_T1_sequence_tables/` | Per-species TSV: id + length + amino acid sequence |
+| Sequence-table summary | `3-output/3_ai-summary.tsv` | Per-species protein count |
 
 ---
 
@@ -130,6 +139,7 @@ The workflow automatically creates symlinks in `../../output_to_input/STEP_4-cre
 - `speciesN_gigantic_T1_proteomes/` - For downstream subprojects (orthohmm, etc.)
 - `speciesN_gigantic_T1_blastp/` - For BLAST searches
 - `speciesN_gigantic_genome_annotations/` - GFF/GTF files (subset with annotations)
+- `speciesN_gigantic_T1_sequence_tables/` - Per-species (id + sequence) TSV tables
 
 Where N = count of selected species (e.g., species71)
 
@@ -142,4 +152,5 @@ After this workflow completes, downstream subprojects can access:
 genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_proteomes/
 genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_blastp/
 genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_genome_annotations/
+genomesDB/output_to_input/STEP_4-create_final_species_set/speciesN_gigantic_T1_sequence_tables/
 ```
