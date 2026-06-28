@@ -26,7 +26,7 @@
 #           submits it. Best for HPC clusters where a long-lived process
 #           needs to outlive your shell session.
 
-execution_mode: "slurm"
+execution_mode: "local"
 
 # ============================================================================
 # Server Settings
@@ -63,6 +63,7 @@ subproject_order:
   - hotspots
   - integrator
   - leonid_requests
+  - moroz_innovations
   - ocl_phylogenetic_structures
   - orthogroups
   - secretome

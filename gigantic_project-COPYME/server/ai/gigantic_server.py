@@ -510,6 +510,13 @@ class GIGANTICServer:
         }
         h1 .pink { color: #FF007F; }
 
+        .last-updated {
+            color: #B0B0B0;
+            font-size: 14px;
+            margin-top: 0.25em;
+            margin-bottom: 1.5em;
+        }
+
         h2 {
             font-size: 28px;
             font-weight: 900;
@@ -773,6 +780,7 @@ class GIGANTICServer:
 
         cards_html = []
         with self._cache_lock:
+            built_at = self._cache_built_at
             for subproject_name in self.config.subproject_order:
                 node = self._cache.get( subproject_name )
                 display = htmllib.escape( self._clean_display_name( subproject_name ) )
@@ -797,8 +805,17 @@ class GIGANTICServer:
             </a>
 """ )
 
+        if built_at is not None:
+            last_updated_html = (
+                f'<p class="last-updated">Last updated: '
+                f'{htmllib.escape( built_at.strftime( "%Y-%m-%d %H:%M:%S" ) )} (server local time)</p>'
+            )
+        else:
+            last_updated_html = ''
+
         body = f"""
         <h1>{title_html}</h1>
+        {last_updated_html}
 
         <h2>SUBPROJECTS</h2>
         <div class="card-grid">
@@ -1151,8 +1168,12 @@ def main():
 
     handler_cls = make_request_handler( server )
 
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer( ( '', server.port ), handler_cls ) as httpd:
+    # Threaded server: each request runs in its own thread so one slow
+    # request (or a stuck client mid-read) can't freeze the whole server.
+    # Daemon threads die when the main process exits.
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    socketserver.ThreadingTCPServer.daemon_threads = True
+    with socketserver.ThreadingTCPServer( ( '', server.port ), handler_cls ) as httpd:
         hostname = server.get_hostname()
         refresh = config.refresh_interval_seconds
 
