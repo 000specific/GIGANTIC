@@ -58,6 +58,7 @@ subproject_order:
   - annotations_hmms
   - dark_proteomes
   - gene_sizes
+  - genomesDB
   - homolog_counts
   - hotspots
   - integrator

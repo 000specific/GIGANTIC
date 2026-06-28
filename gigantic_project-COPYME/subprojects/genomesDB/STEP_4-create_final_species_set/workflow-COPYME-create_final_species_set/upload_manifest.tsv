@@ -15,7 +15,9 @@
 # ============================================================================
 
 source_path	include	dest_name	display_label	file_category	description	order
-OUTPUT_pipeline/1-output/*_selected_species_manifest.tsv	yes		Final species manifest	summary	Authoritative list of species selected for the project (e.g., species70).	10
-OUTPUT_pipeline/1-output/*_selection_decisions.tsv	yes		Species selection decisions	summary	Per-species decision: included | excluded | reason. Useful for transparency about QC cutoffs.	20
-OUTPUT_pipeline/2-output/*_species_files_inventory.tsv	yes		Inventory of files per selected species	summary	What files (proteome, genome, annotation) are present for each selected species.	30
-OUTPUT_pipeline/3-output/3_ai-run_log.txt	no		STEP_4 run log	log	Per-run audit log.	90
+OUTPUT_pipeline/1-output/1_ai-validated_species_list.txt	yes		Final species list (one Genus_species per line)	summary	Authoritative list of species in the final set (e.g., species70). Plain text, one Genus_species per line.	10
+OUTPUT_pipeline/1-output/1_ai-species_with_genome_annotations.txt	yes		Species with genome annotations (GFF/GTF available)	summary	Subset of the final species set for which a genome annotation file was available in STEP_2. Plain text, one Genus_species per line.	20
+OUTPUT_pipeline/2-output/2_ai-copy_manifest.tsv	yes		File copy manifest (per-species source-to-destination paths)	summary	Provenance: which files (proteome, BLAST DB, genome annotation) were copied from STEP_2/STEP_3 into STEP_4 final outputs, per species. Tab-delimited.	30
+OUTPUT_pipeline/3-output/*-T1-proteome-sequence_table.tsv	yes		Per-species sequence tables (Phyloname, GIGANTIC ID, Length, Sequence)	data	One TSV per species. Each row is one protein with its phyloname, GIGANTIC protein identifier, residue count, and amino acid sequence. Built from the T1 proteome FASTAs.	40
+OUTPUT_pipeline/3-output/3_ai-summary.tsv	yes		Per-species protein counts (sequence tables)	summary	Count of proteins in each per-species sequence table TSV.	50
+OUTPUT_pipeline/3-output/3_ai-log-build_per_species_sequence_tables.log	no		Sequence tables build log	log	Log of the script that built the per-species sequence tables from FASTAs.	95

@@ -10,6 +10,9 @@
  * Scripts:
  *   001: Validate species selection against STEP_2 and STEP_3 outputs
  *   002: Copy selected proteomes and blastp databases with speciesN naming
+ *   003: Build per-species (Phyloname, GIGANTIC ID, Length, Sequence) TSV
+ *        tables from the T1 proteome FASTAs (added 2026 June 27)
+ *   004: Write workflow run log to ai/logs/
  */
 
 nextflow.enable.dsl = 2
@@ -92,8 +95,41 @@ process copy_selected_files {
 }
 
 /*
- * Process 3: Write Run Log
- * Calls: scripts/003_ai-python-write_run_log.py
+ * Process 3: Build Per-Species Sequence Tables
+ * Calls: scripts/003_ai-python-build_per_species_sequence_tables.py
+ *
+ * For every <phyloname>-T1-proteome.aa in the proteomes dir produced by
+ * Process 2, emits <phyloname>-T1-proteome-sequence_table.tsv with four
+ * columns: Phyloname | Gigantic_Protein_Identifier | Sequence_Length |
+ * Protein_Sequence. Self-documenting headers. Also emits a per-species
+ * protein-count summary and a build log.
+ */
+process build_per_species_sequence_tables {
+    label 'local'
+
+    publishDir "${projectDir}/../${params.output.base_dir}", mode: 'copy', overwrite: true
+
+    input:
+        path proteomes_dir
+
+    output:
+        path "3-output/*-T1-proteome-sequence_table.tsv", emit: sequence_tables
+        path "3-output/3_ai-summary.tsv", emit: summary
+        path "3-output/3_ai-log-build_per_species_sequence_tables.log", emit: log
+
+    script:
+    """
+    mkdir -p 3-output
+
+    python3 ${projectDir}/scripts/003_ai-python-build_per_species_sequence_tables.py \\
+        --proteomes-dir ${proteomes_dir} \\
+        --output-dir 3-output
+    """
+}
+
+/*
+ * Process 4: Write Run Log
+ * Calls: scripts/004_ai-python-write_run_log.py
  *
  * Creates a timestamped log in ai/logs/ within this workflow directory
  * for transparency and reproducibility.
@@ -109,7 +145,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/003_ai-python-write_run_log.py \
+    python3 ${projectDir}/scripts/004_ai-python-write_run_log.py \
         --workflow-name "create_final_species_set" \
         --subproject-name "genomesDB" \
         --project-name "${params.project.name}" \
@@ -132,8 +168,11 @@ workflow {
         validate_species_selection.out.species_with_annotations
     )
 
-    // Write run log (FINAL STEP)
-    write_run_log( copy_selected_files.out.manifest )
+    // Step 3: Build per-species (Phyloname, ID, Length, Sequence) TSV tables
+    build_per_species_sequence_tables( copy_selected_files.out.proteomes_dir )
+
+    // Write run log (FINAL STEP) — triggered by sequence-tables summary
+    write_run_log( build_per_species_sequence_tables.out.summary )
 }
 
 // Completion summary handled by RUN-workflow.sh wrap script (orchestrator-level).
