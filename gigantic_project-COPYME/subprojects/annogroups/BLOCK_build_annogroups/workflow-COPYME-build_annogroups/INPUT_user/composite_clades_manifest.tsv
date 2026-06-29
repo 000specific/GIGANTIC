@@ -40,7 +40,7 @@
 # ============================================================================
 Algorithm	Name	Target_Clade	Clades
 
-# ---- exact: single non-bilaterian phyla ----
+# ---- exact: single non-bilaterian clades ----
 exact			Ctenophora
 exact			Porifera
 exact			Placozoa
