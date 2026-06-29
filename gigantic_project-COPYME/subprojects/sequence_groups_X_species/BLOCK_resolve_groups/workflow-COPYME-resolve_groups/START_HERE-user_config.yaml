@@ -26,7 +26,8 @@ group_set_label: "species70_X_OrthoHMM"
 species_set_name: "species70"
 
 # Which producer's native output to adapt into the standard membership (Script 001).
-# Supported: orthogroups | (more added as small reader branches in Script 001).
+# Supported: orthogroups | annogroups | gene_families
+#   (more added as small reader branches in Script 001's PRODUCER_READERS).
 producer: "orthogroups"
 
 # Optional: also emit the per-structure deconvolution re-layout (2 x 105 files).
@@ -37,9 +38,15 @@ emit_per_structure: false
 
 # Input paths (relative to this workflow directory)
 inputs:
-  # The producer's native group membership.
-  #   orthogroups : orthogroups_gigantic_ids.tsv (one orthogroup per line; members
-  #                 tab-delimited; Genus_species parsed from each member's -n_<phyloname>)
+  # The producer's native group membership (a FILE for orthogroups/annogroups, a
+  # DIRECTORY tree for gene_families):
+  #   orthogroups   : orthogroups_gigantic_ids.tsv (one orthogroup per line; members
+  #                   tab-delimited; Genus_species parsed from each member's -n_<phyloname>)
+  #   annogroups    : <species_set>/<source>/2_ai-<source>-annogroup_membership.tsv
+  #                   (one row per (sequence, annogroup); Genus_Species is a column)
+  #   gene_families : the trees_gene_families output_to_input root (one AGS FASTA per
+  #                   family, **/16_ai-ags-*.aa; RGS reference seeds without a phyloname
+  #                   are skipped -- only species homologs become members)
   producer_membership: "../../../orthogroups/output_to_input/BLOCK_orthohmm/orthogroups_gigantic_ids.tsv"
 
   # Species-tree clade->species mapping (trees_species, ALL structures). Read by

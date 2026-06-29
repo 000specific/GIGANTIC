@@ -55,8 +55,57 @@ def read_orthogroups( producer_membership_path: Path ):
                 yield ( sequence_group_id, sequence_identifier, genus_species )
 
 
+def read_annogroups( producer_membership_path: Path ):
+    """
+    Yield ( sequence_group_id, sequence_identifier, genus_species ) from an annogroups
+    membership table (2_ai-<source>-annogroup_membership.tsv): one row per (sequence,
+    annogroup), with Genus_Species already a column. The annogroup id is the
+    SequenceGroup_ID. All annogroup types pass through (including the single 'absent'
+    annogroup); filter downstream if a particular analysis wants only origin-bearing types.
+    """
+    # Sequence_Identifier (...)	Genus_Species (...)	Annogroup_ID (...)	Annogroup_Type (...)	...
+    with open( producer_membership_path, 'r' ) as input_membership:
+        header_ids___indices = U.build_header_index( input_membership.readline() )
+        index_sequence = header_ids___indices[ "Sequence_Identifier" ]
+        index_genus_species = header_ids___indices[ "Genus_Species" ]
+        index_annogroup = header_ids___indices[ "Annogroup_ID" ]
+        for line in input_membership:
+            line = line.rstrip( '\n' )
+            if not line:
+                continue
+            parts = line.split( '\t' )
+            yield ( parts[ index_annogroup ], parts[ index_sequence ], parts[ index_genus_species ] )
+
+
+def read_gene_families( producer_membership_path: Path ):
+    """
+    Yield ( sequence_group_id, sequence_identifier, genus_species ) from a directory of
+    per-family AGS (All Gene Set) FASTAs. producer_membership_path is the root holding
+    one AGS FASTA per gene family; the family name is the SequenceGroup_ID and each
+    FASTA header (a full GIGANTIC id) is a member (Genus_species parsed from its
+    '-n_<phyloname>'). AGS files are matched as '<family>/**/16_ai-ags-*.aa'.
+    """
+    root = Path( producer_membership_path )
+    ags_files = sorted( root.glob( "**/16_ai-ags-*.aa" ) )
+    for ags_file in ags_files:
+        # Family name: the FASTA's own descriptor (16_ai-ags-<family>.aa) or its top dir.
+        family_token = ags_file.stem.replace( "16_ai-ags-", "" )
+        sequence_group_id = family_token if family_token else ags_file.parent.name
+        with open( ags_file, 'r' ) as input_fasta:
+            for line in input_fasta:
+                if not line.startswith( '>' ):
+                    continue
+                sequence_identifier = line[ 1: ].strip().split()[ 0 ]
+                genus_species = U.genus_species_from_full_id( sequence_identifier )
+                if not genus_species:
+                    continue   # RGS reference seed (no -n_<phyloname>) -- not a species-tree member
+                yield ( sequence_group_id, sequence_identifier, genus_species )
+
+
 PRODUCER_READERS = {
     "orthogroups": read_orthogroups,
+    "annogroups": read_annogroups,
+    "gene_families": read_gene_families,
 }
 
 
@@ -75,8 +124,10 @@ def main():
         print( f"CRITICAL ERROR: unknown producer '{producer}'; known producers: {sorted( PRODUCER_READERS )}", file = sys.stderr )
         sys.exit( 1 )
 
+    # producer_membership is a FILE for most producers (orthogroups, annogroups) and a
+    # DIRECTORY for gene_families (a tree of per-family AGS FASTAs).
     producer_membership_path = U.resolve_input_path( workflow_root, config[ "inputs" ][ "producer_membership" ] )
-    if not producer_membership_path.is_file():
+    if not producer_membership_path.exists():
         print( f"CRITICAL ERROR: producer membership not found: {producer_membership_path}", file = sys.stderr )
         sys.exit( 1 )
 
