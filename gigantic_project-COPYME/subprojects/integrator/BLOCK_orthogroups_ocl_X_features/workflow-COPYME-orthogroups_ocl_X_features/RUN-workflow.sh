@@ -72,39 +72,15 @@ EXECUTION_MODE=$(read_config "execution_mode" "local")
 RUN_LABEL=$(read_config "run_label" "")
 SPECIES_SET=$(read_config "species_set_name" "")
 
-# ============================================================================
-# RUN_SUMMARY.md placeholder (so status is visible immediately on submit)
-# ============================================================================
+# Structure count (used in the final console summary) and workflow directory
+# name (used below to build output_to_input symlink targets).
 MANIFEST="INPUT_user/structure_manifest.tsv"
 STRUCTURE_COUNT=0
 if [ -f "${MANIFEST}" ]; then
     STRUCTURE_COUNT=$(tail -n +2 "${MANIFEST}" | grep -v '^$' | wc -l)
 fi
 
-SUMMARY_FILE="RUN_SUMMARY.md"
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    STATUS_EMOJI="⏳"; STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="Waiting for SLURM to schedule the job. This file updates to IN PROGRESS when it starts and to a final summary on completion."
-else
-    STATUS_EMOJI="🔄"; STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="This run is currently executing. On success the final block below is replaced with a SUCCESS summary."
-fi
-
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL}
-
-**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
-
-**Run label**: \`${RUN_LABEL}\`
-**Species set**: \`${SPECIES_SET}\`
-**Structures requested**: ${STRUCTURE_COUNT}
-**Execution mode**: ${EXECUTION_MODE}
-
-${STATUS_NOTE}
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 # ============================================================================
 # SLURM self-submission (if execution_mode=slurm and not already in a job)
@@ -290,28 +266,6 @@ done
 
 SYMLINK_COUNT=$(find "${SHARED_DIR}" -name "*.tsv" -type l 2>/dev/null | wc -l)
 echo "  output_to_input/BLOCK_orthogroups_ocl_X_features/${RUN_LABEL}/ -> ${SYMLINK_COUNT} symlinks created"
-
-# ============================================================================
-# Final RUN_SUMMARY.md (SUCCESS)
-# ============================================================================
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL}
-
-**Status**: ✅ **SUCCESS (completed $(date '+%Y-%m-%d %H:%M:%S'))**
-
-**Run label**: \`${RUN_LABEL}\`
-**Species set**: \`${SPECIES_SET}\`
-**Structures processed**: ${STRUCTURE_COUNT}
-**Downstream symlinks**: ${SYMLINK_COUNT} (in ../../output_to_input/BLOCK_orthogroups_ocl_X_features/${RUN_LABEL}/)
-
-## Outputs (real files)
-- \`OUTPUT_pipeline/_shared/1-output/\`            gene->feature lookup
-- \`OUTPUT_pipeline/structure_NNN/2-output/\`      Table 1 (integrated orthogroup summary)
-- \`OUTPUT_pipeline/structure_NNN/3-output/\`      Table 2 (block-state expanded)
-- \`OUTPUT_pipeline/structure_NNN/4-output/\`      Table 3 (gene-level drill-down)
-- \`OUTPUT_pipeline/structure_NNN/5-output/\`      validation report
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 echo ""
 echo "========================================================================"

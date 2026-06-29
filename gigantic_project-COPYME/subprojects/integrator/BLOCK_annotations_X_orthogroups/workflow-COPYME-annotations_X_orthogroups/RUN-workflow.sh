@@ -19,14 +19,13 @@
 # 1. Edit START_HERE-user_config.yaml:
 #    - run_label (e.g. "species70_pfam_X_OrthoHMM")
 #    - species_set_name (e.g. "species70")
-#    - annogroup_subtypes (default: single, combo — 'zero' excluded)
+#    - annogroup_types (default: feature, combination, architecture, absent)
 #    - execution_mode ("local" or "slurm"); if slurm, slurm_account + slurm_qos
 #    - input paths (annogroups_dir, orthogroups_file, bilateria clade mapping)
 # 2. Verify upstream output_to_input/ are populated:
-#    - ocl_phylogenetic_structures/output_to_input/BLOCK_annotations_X_ocl/<run_label>/<structure>/
-#         (must expose 1_ai-<structure>_annogroups-single.tsv,
-#          1_ai-<structure>_annogroups-combo.tsv,
-#          4_ai-<structure>_annogroups-complete_ocl_summary-all_types.tsv)
+#    - annogroups/output_to_input/BLOCK_build_annogroups/<species_set>/<source>/
+#         (must expose 2_ai-<source>-annogroup_map.tsv,
+#          2_ai-<source>-annogroup_membership.tsv)
 #    - orthogroups/output_to_input/BLOCK_orthohmm_GIGANTIC/orthogroups_gigantic_ids.tsv
 #    - trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/
 #
@@ -70,32 +69,8 @@ EXECUTION_MODE=$(read_config "execution_mode" "local")
 RUN_LABEL=$(read_config "run_label" "")
 SPECIES_SET=$(read_config "species_set_name" "")
 
-# ============================================================================
-# RUN_SUMMARY.md placeholder (so status is visible immediately on submit)
-# ============================================================================
-SUMMARY_FILE="RUN_SUMMARY.md"
+# Workflow directory name (used below to build output_to_input symlink targets).
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    STATUS_EMOJI="⏳"; STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="Waiting for SLURM to schedule the job. This file updates to IN PROGRESS when it starts and to a final summary on completion."
-else
-    STATUS_EMOJI="🔄"; STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="This run is currently executing. On success the final block below is replaced with a SUCCESS summary."
-fi
-
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL}
-
-**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
-
-**Run label**: \`${RUN_LABEL}\`
-**Species set**: \`${SPECIES_SET}\`
-**Execution mode**: ${EXECUTION_MODE}
-
-${STATUS_NOTE}
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 # ============================================================================
 # SLURM self-submission (if execution_mode=slurm and not already in a job)
@@ -267,26 +242,6 @@ done
 
 SYMLINK_COUNT=$(find "${SHARED_DIR}" -name "*.tsv" -type l 2>/dev/null | wc -l)
 echo "  output_to_input/BLOCK_annotations_X_orthogroups/${RUN_LABEL}/ -> ${SYMLINK_COUNT} symlinks created"
-
-# ============================================================================
-# Final RUN_SUMMARY.md (SUCCESS)
-# ============================================================================
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL}
-
-**Status**: ✅ **SUCCESS (completed $(date '+%Y-%m-%d %H:%M:%S'))**
-
-**Run label**: \`${RUN_LABEL}\`
-**Species set**: \`${SPECIES_SET}\`
-**Downstream symlinks**: ${SYMLINK_COUNT} (in ../../output_to_input/BLOCK_annotations_X_orthogroups/${RUN_LABEL}/)
-
-## Outputs (real files)
-- \`OUTPUT_pipeline/1-output/\`   orthogroup species-composition classification
-- \`OUTPUT_pipeline/2-output/\`   Table 2 (qualifying non-bilaterian-metazoan orthogroups)
-- \`OUTPUT_pipeline/3-output/\`   Table 1 (annogroups X orthogroups)
-- \`OUTPUT_pipeline/4-output/\`   validation report
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 echo ""
 echo "========================================================================"

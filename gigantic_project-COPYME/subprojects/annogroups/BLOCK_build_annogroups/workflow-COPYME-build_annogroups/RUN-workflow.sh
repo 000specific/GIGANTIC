@@ -65,32 +65,8 @@ EXECUTION_MODE=$(read_config "execution_mode" "local")
 SPECIES_SET=$(read_config "species_set_name" "")
 SOURCES=$(read_config "sources" "all")
 
-# ============================================================================
-# RUN_SUMMARY.md placeholder (so status is visible immediately on submit)
-# ============================================================================
-SUMMARY_FILE="RUN_SUMMARY.md"
+# Workflow directory name (used below to build output_to_input symlink targets).
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    STATUS_EMOJI="⏳"; STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="Waiting for SLURM to schedule the job. This file updates to IN PROGRESS when it starts and to a final summary on completion."
-else
-    STATUS_EMOJI="🔄"; STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="This run is currently executing. On success the final block below is replaced with a SUCCESS summary."
-fi
-
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: build_annogroups (${SPECIES_SET})
-
-**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
-
-**Species set**: \`${SPECIES_SET}\`
-**Sources**: \`${SOURCES}\`
-**Execution mode**: ${EXECUTION_MODE}
-
-${STATUS_NOTE}
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 # ============================================================================
 # SLURM self-submission (if execution_mode=slurm and not already in a job)
@@ -314,29 +290,6 @@ for source_out in OUTPUT_pipeline/2-output/*/; do
 done
 
 echo "  output_to_input/BLOCK_build_annogroups/${SPECIES_SET}/ -> ${SYMLINK_COUNT} symlinks created"
-
-# ============================================================================
-# Final RUN_SUMMARY.md (SUCCESS)
-# ============================================================================
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: build_annogroups (${SPECIES_SET})
-
-**Status**: ✅ **SUCCESS (completed $(date '+%Y-%m-%d %H:%M:%S'))**
-
-**Species set**: \`${SPECIES_SET}\`
-**Sources**: \`${SOURCES}\`
-**Downstream symlinks**: ${SYMLINK_COUNT} (in ../../output_to_input/BLOCK_build_annogroups/${SPECIES_SET}/)
-
-## Outputs (real files)
-- \`OUTPUT_pipeline/1-output/\`            sources manifest + proteome universe
-- \`OUTPUT_pipeline/2-output/<source>/\`   annogroup map + membership (+ dropped audit)
-- \`OUTPUT_pipeline/3-output/<source>/\`   validation report
-- \`OUTPUT_pipeline/4-output/<source>/\`   species-tree deconvolution tree-counts (union + per-structure)
-- \`OUTPUT_pipeline/5-output/<source>/\`   per-species sequence map (annogroup x species -> sequence IDs)
-- \`OUTPUT_pipeline/6-output/<source>/\`   composite clades (per-annogroup + summary counts + detail tables)
-- \`OUTPUT_pipeline/7-output/\`            summary (per source / per species / per phylum)
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 echo ""
 echo "========================================================================"

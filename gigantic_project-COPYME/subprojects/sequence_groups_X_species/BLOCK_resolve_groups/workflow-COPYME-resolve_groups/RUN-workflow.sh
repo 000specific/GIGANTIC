@@ -45,28 +45,8 @@ GROUP_SET_LABEL=$(read_config "group_set_label" "")
 PRODUCER=$(read_config "producer" "")
 SPECIES_SET=$(read_config "species_set_name" "")
 
-# ---- RUN_SUMMARY placeholder ----------------------------------------------
-SUMMARY_FILE="RUN_SUMMARY.md"
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    STATUS_EMOJI="⏳"; STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
-else
-    STATUS_EMOJI="🔄"; STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-fi
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${GROUP_SET_LABEL}
-
-**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
-
-**Group set**: \`${GROUP_SET_LABEL}\`
-**Producer**: \`${PRODUCER}\`
-**Species set**: \`${SPECIES_SET}\`
-**Execution mode**: ${EXECUTION_MODE}
-
-Resolving the sequence-group set onto the species-tree clades (deconvolution,
-per-species map, composite clades). This file is replaced on completion.
-EOF
+# Workflow directory name (used below to build output_to_input symlink targets).
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 # ---- SLURM self-submit -----------------------------------------------------
 if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
@@ -171,20 +151,4 @@ echo "  output_to_input/${GROUP_SET_LABEL}/"
 echo "Completed: $(date)"
 echo "========================================================================"
 
-# ---- finalize RUN_SUMMARY billboard ---------------------------------------
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${GROUP_SET_LABEL}
-
-**Status**: ✅ **SUCCESS** ($(date '+%Y-%m-%d %H:%M:%S'))
-
-**Group set**: \`${GROUP_SET_LABEL}\`  **Producer**: \`${PRODUCER}\`  **Species set**: \`${SPECIES_SET}\`
-
-Resolved onto the species-tree clades:
-- 2-output: deconvolution (sequence + species counts per clade; ${SYMLINK_COUNT} output_to_input symlinks total)
-- 3-output: per-species sequence map
-- 4-output: composite clades (per-group + summary + detail tables)
-
-Downstream: \`../../output_to_input/${GROUP_SET_LABEL}/\`
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 conda deactivate 2>/dev/null || true

@@ -65,32 +65,8 @@ EXECUTION_MODE=$(read_config "execution_mode" "local")
 RUN_LABEL=$(read_config "run_label" "")
 SPECIES_SET=$(read_config "species_set_name" "")
 
-# ============================================================================
-# RUN_SUMMARY.md placeholder (so status is visible immediately on submit)
-# ============================================================================
-SUMMARY_FILE="RUN_SUMMARY.md"
+# Workflow directory name (used below to build output_to_input symlink targets).
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    STATUS_EMOJI="⏳"; STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="Waiting for SLURM to schedule the job. This file updates to IN PROGRESS when it starts and to a final summary on completion."
-else
-    STATUS_EMOJI="🔄"; STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="This run is currently executing. On success the final block below is replaced with a SUCCESS summary."
-fi
-
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL}
-
-**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
-
-**Run label**: \`${RUN_LABEL}\`
-**Species set**: \`${SPECIES_SET}\`
-**Execution mode**: ${EXECUTION_MODE}
-
-${STATUS_NOTE}
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 # ============================================================================
 # SLURM self-submission (if execution_mode=slurm and not already in a job)
@@ -260,25 +236,6 @@ done
 
 SYMLINK_COUNT=$(find "${SHARED_DIR}" -maxdepth 1 -type l 2>/dev/null | wc -l)
 echo "  output_to_input/BLOCK_species_X_all_annotations/${RUN_LABEL}/ -> ${SYMLINK_COUNT} directory symlinks created"
-
-# ============================================================================
-# Final RUN_SUMMARY.md (SUCCESS)
-# ============================================================================
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL}
-
-**Status**: ✅ **SUCCESS (completed $(date '+%Y-%m-%d %H:%M:%S'))**
-
-**Run label**: \`${RUN_LABEL}\`
-**Species set**: \`${SPECIES_SET}\`
-**Downstream symlinks**: ${SYMLINK_COUNT} (in ../../output_to_input/BLOCK_species_X_all_annotations/${RUN_LABEL}/)
-
-## Outputs (real files)
-- \`OUTPUT_pipeline/1-output/_shared/\`   per-species invariant base tables + availability summary
-- \`OUTPUT_pipeline/2-output/<structure>/\`  full wide per-species tables (base + OCL) per structure
-- \`OUTPUT_pipeline/3-output/\`           validation report
-EOF
-cp "${SUMMARY_FILE}" "../${WORKFLOW_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 echo ""
 echo "========================================================================"

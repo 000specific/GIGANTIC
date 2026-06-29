@@ -25,8 +25,7 @@ guide focuses on **running** the workflow.
    `nextflow>=23,<26` — see the pin below.
 4. Runs `nextflow run ai/main.nf -params-file START_HERE-user_config.yaml`
    with `-profile local` or `-profile standard` (per `parallelism_mode`).
-5. After success, creates `output_to_input/` symlinks for downstream consumers
-   and writes `RUN_SUMMARY.md`.
+5. After success, creates `output_to_input/` symlinks for downstream consumers.
 
 ## The NextFlow DAG (`ai/main.nf`)
 
