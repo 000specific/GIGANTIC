@@ -25,8 +25,13 @@
 #           generates an sbatch wrapper from the slurm.* settings below and
 #           submits it. Best for HPC clusters where a long-lived process
 #           needs to outlive your shell session.
+#
+# CANONICAL DEFAULT = "slurm". The live shared deployment runs in LOCAL mode on
+# login7, but is launched with an explicit `--execution local` override per
+# server/Login-node-server-GUIDE.md. This YAML stays "slurm" as the
+# version-controlled canonical configuration — do NOT flip it to "local".
 
-execution_mode: "local"
+execution_mode: "slurm"
 
 # ============================================================================
 # Server Settings
@@ -63,7 +68,9 @@ subproject_order:
   - hotspots
   - integrator
   - ocl_phylogenetic_structures
+  - one_direction_homologs
   - orthogroups
+  - phylonames
   - secretome
   - trees_gene_families
   - trees_gene_groups

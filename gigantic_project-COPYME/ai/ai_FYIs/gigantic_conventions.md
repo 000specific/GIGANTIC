@@ -1780,6 +1780,31 @@ restarting it (hit 2026-06-28).
 
 ---
 
+## 64. No invented acronyms or abbreviations in user-facing communication
+
+§32 governs abbreviations in **code** (full words — `sequence_count` not
+`seq_cnt`; established scientific abbreviations like GO / Pfam / BLAST kept
+as-is). This section extends the same discipline to **prose**: chat
+messages, commit messages, READMEs, AI_GUIDEs, and any text a human reads.
+
+**Rule**: never coin an acronym or abbreviation for a name (subproject,
+BLOCK, STEP, file, concept). Write every name out in full, every time —
+`one_direction_homologs`, not "ODH"; `annogroups`, not "AG";
+`trees_gene_families`, not "TGF".
+
+The only abbreviations allowed in prose are:
+
+- ones the **user introduced first** (mirror their shorthand), and
+- established scientific abbreviations per §32 (GO, Pfam, BLAST, NCBI nr, …).
+
+**Why**: the user reads these messages directly and manages the project
+from them. A made-up acronym forces them to decode it, and a single
+ambiguous token (e.g. "ODH" for `one_direction_homologs`) can derail a
+conversation. The cost of writing the full name is trivial; the cost of a
+misread name is not.
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
