@@ -11,7 +11,7 @@ its work with a dict of key stats. The fragment is written as JSON to:
     {workflow_dir}/ai/logs/run_summary_fragments/{script_number:03d}_{structure_id}.json
 
 Script 007 (the aggregator) reads all fragments, aggregates across structures,
-and builds RUN_SUMMARY.md at the workflow root. See Script 007 for the
+and builds the consolidated run summary under OUTPUT_pipeline/. See Script 007 for the
 aggregation rules and output format.
 
 This fragment-first design solves the concurrent-write problem when 105

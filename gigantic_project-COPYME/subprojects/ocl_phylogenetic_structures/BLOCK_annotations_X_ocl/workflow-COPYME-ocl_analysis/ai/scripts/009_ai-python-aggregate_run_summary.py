@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Aggregate run summary fragments into RUN_SUMMARY.md
+# AI: Claude Code | Opus 4.6 | 2026 April 18 | Purpose: Aggregate run summary fragments into OUTPUT_pipeline/9-output/9_ai-run_summary.md
 # Human: Eric Edsinger
 
 """
@@ -7,15 +7,16 @@ OCL Pipeline Script 009: Aggregate Run Summary
 
 Reads all run summary fragments written by the per-structure scripts (001 load,
 002 origins, 003 conservation/loss, 004 comprehensive, 006 validation) across all
-structures and builds a single RUN_SUMMARY.md at the workflow root. Script 005
-(species-tree deconvolution) and Script 007 (composite clades) are data producers
-that do not emit fragments, so they are not summarized here.
+structures and builds a single consolidated run summary under
+OUTPUT_pipeline/9-output/. Script 005 (species-tree deconvolution) and Script 007
+(composite clades) are data producers that do not emit fragments, so they are not
+summarized here.
 
 Fragment location (per-structure per-script JSON):
     {workflow_dir}/ai/logs/run_summary_fragments/{NNN}_{structure_id}.json
 
 Output:
-    {workflow_dir}/RUN_SUMMARY.md
+    {workflow_dir}/OUTPUT_pipeline/9-output/9_ai-run_summary.md
 
 This is the final step of the pipeline. It runs after validate_results and
 aggregates everything into a human-readable summary showing:
@@ -54,7 +55,7 @@ from utils_run_summary import read_all_fragments
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description = 'OCL Pipeline Script 009: Aggregate run summary fragments into RUN_SUMMARY.md',
+        description = 'OCL Pipeline Script 009: Aggregate run summary fragments into OUTPUT_pipeline/9-output/9_ai-run_summary.md',
         formatter_class = argparse.RawDescriptionHelpFormatter
     )
 
@@ -501,12 +502,16 @@ def main():
         lines.append( f"Downstream symlinks: `../../output_to_input/BLOCK_annotations_X_ocl/{species_set}_{source_label}/`" )
         lines.append( "" )
 
-    # Write the summary
-    summary_path = workflow_directory / 'RUN_SUMMARY.md'
+    # Write the consolidated run summary into the workflow outputs
+    # (gigantic_conventions Section 31): the final summary script lands in
+    # OUTPUT_pipeline/9-output/, not at the workflow root.
+    output_directory = workflow_directory / 'OUTPUT_pipeline' / '9-output'
+    output_directory.mkdir( parents = True, exist_ok = True )
+    summary_path = output_directory / '9_ai-run_summary.md'
     with open( summary_path, 'w' ) as output_file:
         output_file.write( '\n'.join( lines ) + '\n' )
 
-    print( f"Wrote RUN_SUMMARY.md to: {summary_path}" )
+    print( f"Wrote run summary to: {summary_path}" )
     print( f"Overall status: {status}" )
 
     return 0

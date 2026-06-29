@@ -221,8 +221,8 @@ process write_run_log {
  * Calls: scripts/007_ai-python-aggregate_run_summary.py
  *
  * Reads per-structure JSON fragments emitted by Scripts 001-005 and builds
- * RUN_SUMMARY.md at the workflow root. This is the final step -- gives users
- * a glanceable success/failure + key stats view without entering OUTPUT_pipeline/.
+ * the consolidated run summary at OUTPUT_pipeline/7-output/7_ai-run_summary.md.
+ * This is the final step -- a glanceable success/failure + key stats view.
  */
 process aggregate_run_summary {
     label 'local'
@@ -268,7 +268,7 @@ workflow {
     // Write run log
     write_run_log( validate_results.out.structure_id.collect() )
 
-    // Aggregate run summary into RUN_SUMMARY.md at workflow root (FINAL STEP)
+    // Aggregate run summary into OUTPUT_pipeline/7-output/ (FINAL STEP)
     aggregate_run_summary( write_run_log.out.log_complete )
 }
 

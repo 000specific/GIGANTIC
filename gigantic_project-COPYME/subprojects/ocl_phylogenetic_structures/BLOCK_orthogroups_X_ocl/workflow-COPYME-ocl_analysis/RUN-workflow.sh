@@ -67,28 +67,12 @@ read_config() {
 EXECUTION_MODE=$(read_config "execution_mode" "local")
 
 # ============================================================================
-# Initialize RUN_SUMMARY.md placeholder (before SLURM submit)
+# Clear stale run-summary fragments (before SLURM submit)
 # ============================================================================
-# Write an initial placeholder RUN_SUMMARY.md so the user immediately sees
-# that a run has been requested, even before SLURM schedules the job. The
-# placeholder is overwritten later:
-#   - on compute-node start: "IN PROGRESS" (below, inside actual work block)
-#   - on pipeline completion: full aggregated summary (Script 007)
-#
-# Also clear stale fragments from any previous run so the aggregator sees
-# only this run's data.
-
-RUN_LABEL_FOR_SUMMARY=$(read_config "run_label" "")
-ORTHOGROUP_TOOL_FOR_SUMMARY=$(read_config "orthogroup_tool" "")
-SPECIES_SET_FOR_SUMMARY=$(read_config "species_set_name" "")
-PARALLELISM_MODE_FOR_SUMMARY=$(read_config "parallelism_mode" "local")
-MANIFEST_FOR_SUMMARY="INPUT_user/structure_manifest.tsv"
-STRUCTURE_COUNT_FOR_SUMMARY=0
-if [ -f "${MANIFEST_FOR_SUMMARY}" ]; then
-    STRUCTURE_COUNT_FOR_SUMMARY=$(tail -n +2 "${MANIFEST_FOR_SUMMARY}" | grep -v '^$' | wc -l)
-fi
-
-SUMMARY_FILE="RUN_SUMMARY.md"
+# Each pipeline script emits a JSON fragment to ai/logs/run_summary_fragments/;
+# the final aggregator (Script 007) reads them and writes the consolidated run
+# summary into OUTPUT_pipeline/7-output/. Clear any previous run's fragments so
+# the aggregator sees only this run's data.
 FRAGMENTS_DIR="ai/logs/run_summary_fragments"
 
 # Clear fragments only on login-node entry (not when inside SLURM job).
@@ -100,36 +84,6 @@ if [ -z "${SLURM_JOB_ID}" ]; then
     fi
     mkdir -p "${FRAGMENTS_DIR}"
 fi
-
-# Status for the placeholder: QUEUED before submit, IN PROGRESS when running
-if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
-    STATUS_EMOJI="⏳"
-    STATUS_TEXT="QUEUED (submitted $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="Waiting for SLURM to schedule the job. Once it starts, this file will update to IN PROGRESS, then to the final aggregated summary when the pipeline completes."
-else
-    STATUS_EMOJI="🔄"
-    STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="This run is currently executing. Script 007 will replace this placeholder with aggregate per-script stats and a final success/failure verdict when the pipeline completes. If this file still shows IN PROGRESS after the pipeline has finished, something may have gone wrong -- check slurm_logs/ or the NextFlow execution trace for errors."
-fi
-
-cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL_FOR_SUMMARY}
-
-**Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
-
-**Run label**: \`${RUN_LABEL_FOR_SUMMARY}\`
-**Orthogroup tool**: \`${ORTHOGROUP_TOOL_FOR_SUMMARY}\`
-**Species set**: \`${SPECIES_SET_FOR_SUMMARY}\`
-**Structures requested**: ${STRUCTURE_COUNT_FOR_SUMMARY}
-**Execution mode**: ${EXECUTION_MODE} / parallelism: ${PARALLELISM_MODE_FOR_SUMMARY}
-
-${STATUS_NOTE}
-EOF
-
-# Also copy the placeholder to the external billboard so the BLOCK-level
-# view is updated immediately on submission
-SCRIPT_DIR_NAME="$(basename "${SCRIPT_DIR}")"
-cp "${SUMMARY_FILE}" "../${SCRIPT_DIR_NAME}-run_summary.md" 2>/dev/null || true
 
 # ============================================================================
 # SLURM submission (if execution_mode is "slurm" and not already inside a job)
@@ -459,20 +413,6 @@ echo "Run Label: ${RUN_LABEL}"
 echo "Structures processed: ${STRUCTURE_COUNT}"
 echo "========================================================================"
 echo "Completed: $(date)"
-
-# ============================================================================
-# Copy RUN_SUMMARY.md to external billboard at BLOCK level
-# ============================================================================
-# Inside the workflow dir: RUN_SUMMARY.md (built by Script 007)
-# Sibling at BLOCK level:  workflow-RUN_XX-run_summary.md (copy for at-a-glance status)
-# The copy gives users visibility into run status without cd'ing into the workflow dir.
-
-if [ -f "${SUMMARY_FILE}" ]; then
-    EXTERNAL_BILLBOARD="../${WORKFLOW_DIR_NAME}-run_summary.md"
-    cp "${SUMMARY_FILE}" "${EXTERNAL_BILLBOARD}"
-    echo ""
-    echo "Run summary copied to BLOCK level: ${EXTERNAL_BILLBOARD}"
-fi
 
 # ============================================================================
 # Deactivate Conda Environment

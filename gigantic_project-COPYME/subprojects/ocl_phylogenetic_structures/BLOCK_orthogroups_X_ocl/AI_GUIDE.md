@@ -373,7 +373,7 @@ during the OCL reorg) is created on-demand from
 | 004 | Generate comprehensive summaries joining origins, states, and counts | Complete OCL summary with block/block-state columns, per-clade stats, per-species stats |
 | 005 | Validate all results (fail-fast per §36) | Validation report, error log, QC metrics |
 | 006 | Write run log (per §45) | Timestamped log of this run |
-| 007 | Aggregate run summary across structures | Per-RUN aggregate `RUN_SUMMARY.md` |
+| 007 | Aggregate run summary across structures | `OUTPUT_pipeline/7-output/7_ai-run_summary.md` |
 
 Scripts are sequential per structure but parallel across structures
 (NextFlow manages this).

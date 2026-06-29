@@ -309,8 +309,8 @@ process write_run_log {
  * Calls: scripts/009_ai-python-aggregate_run_summary.py
  *
  * Reads per-structure JSON fragments emitted by Scripts 001-004 + 006 and builds
- * RUN_SUMMARY.md at the workflow root. This is the final step -- gives users
- * a glanceable success/failure + key stats view without entering OUTPUT_pipeline/.
+ * the consolidated run summary at OUTPUT_pipeline/9-output/9_ai-run_summary.md.
+ * This is the final step -- a glanceable success/failure + key stats view.
  */
 process aggregate_run_summary {
     label 'local'
