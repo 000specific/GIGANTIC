@@ -109,9 +109,22 @@ squeue -u $USER -n gigantic
 for n in 7 8 9 10 11; do
     HOST="login${n}.ufhpc"
     ssh -o BatchMode=yes -o ConnectTimeout=3 "$HOST" \
-        "pkill -f gigantic_server.py 2>/dev/null; echo \$HOSTNAME done" 2>/dev/null
+        "pkill -f '[g]igantic_server.py' 2>/dev/null; echo \$HOSTNAME done" 2>/dev/null
 done
 ```
+
+> **⚠️ Use the `[g]` bracket trick, not a plain `pkill -f gigantic_server.py`.**
+> `pkill -f` matches against each process's *full command line*. The remote
+> shell that ssh spawns to run this command has the literal string
+> `gigantic_server.py` in its own arguments, so a plain
+> `pkill -f gigantic_server.py` matches — and **kills — that very shell**,
+> usually right after it kills the old server but *before* the start step in
+> Step 2 / the quick-restart one-liner runs. The result is silent: the old
+> server is gone, no new one starts, and no logfile is even created. Writing
+> the pattern as `'[g]igantic_server.py'` makes the regex still match the real
+> server process (`gigantic_server.py`) while the killing shell's command line
+> now contains `[g]igantic_server.py`, which the regex does not match. (Bug
+> hit and diagnosed 2026-06-28.)
 
 ### Step 2 — Start the server on login7 detached via nohup
 
@@ -227,7 +240,7 @@ For repeated restarts after the threading fix is in place:
 ```bash
 SERVER=/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC/gigantic_project-COPYME/server
 TS=$( date +%Y%m%d_%H%M%S )
-ssh login7.ufhpc "pkill -f gigantic_server.py; sleep 2; cd '$SERVER' && nohup bash RUN-start_server.sh --execution local > '${SERVER}/logs/local_login7_${TS}.log' 2>&1 & disown; echo started"
+ssh login7.ufhpc "pkill -f '[g]igantic_server.py'; sleep 2; cd '$SERVER' && nohup bash RUN-start_server.sh --execution local > '${SERVER}/logs/local_login7_${TS}.log' 2>&1 & disown; echo started"
 ```
 
 Then wait ~30–90 seconds and verify with the `until ... curl ...` poll loop

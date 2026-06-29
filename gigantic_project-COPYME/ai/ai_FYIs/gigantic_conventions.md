@@ -1755,6 +1755,31 @@ and `zoo/BLOCK_moroz_innovations`, and removed from `subprojects/` root.
 
 ---
 
+## 63. `pkill -f` self-match footgun — use the `[g]` bracket trick
+
+When stopping a process by command-line pattern with `pkill -f <name>` from a
+**scripted or remote (ssh) shell**, the killing shell's *own* command line
+contains `<name>` (it appears in the `pkill` argument), so `pkill -f` matches
+and kills that shell too — often mid-script, before later commands run. The
+classic symptom: the target is killed, the restart step never executes, and
+no error or logfile appears. Silent.
+
+Fix: wrap the first character in a character class so the regex still matches
+the target but not the literal pattern in the killing shell's argv:
+
+```bash
+pkill -f '[g]igantic_server.py'   # matches the server; the killing shell's
+                                  # argv has "[g]igantic_server.py", which the
+                                  # regex does not match
+```
+
+Canonical instance: the GIGANTIC data-server restart commands in
+`server/Login-node-server-GUIDE.md` (Step 1 and the quick-restart one-liner).
+A plain `pkill -f gigantic_server.py` there took the server down without
+restarting it (hit 2026-06-28).
+
+---
+
 <!-- Add new conventions below as they surface during per-directory review. -->
 <!-- User shorthand "gcon" = "please add this to gigantic_conventions.md". -->
 
