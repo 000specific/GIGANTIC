@@ -20,9 +20,12 @@ input_secretome_upload_directory = Path(
 )
 output_base_directory = Path(
     "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC"
-    "/gigantic_project-COPYME/subprojects/leonid_requests/upload_to_server/june_4"
+    "/gigantic_project-COPYME/subprojects/zoo/upload_to_server/BLOCK_leonid_requests/june_4"
 )
-missing_identifiers_report_path = output_base_directory.parent.parent / "build" / "missing_identifiers_report.tsv"
+missing_identifiers_report_path = Path(
+    "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC"
+    "/gigantic_project-COPYME/subprojects/zoo/BLOCK_leonid_requests/build/missing_identifiers_report.tsv"
+)
 
 # Block -> ( relative output key, workflow directory under upload_to_server ).
 ocl_blocks = [

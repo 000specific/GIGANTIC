@@ -6,7 +6,7 @@ Columns: filename  display_label  file_category  description  order
 A reserved __DIR__ row's `description` becomes the short folder subtitle
 ( the 3-5 word "what's inside" line requested ).
 
-This walks leonid_requests/upload_to_server/june_4/ and writes a sidecar into
+This walks zoo/upload_to_server/BLOCK_leonid_requests/june_4/ and writes a sidecar into
 every directory that contains output tables, keyed by the descriptive part of
 each filename.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 
 june_4 = Path(
     "/blue/moroz/share/edsinger/projects/ai_ctenophores/github-gigantic_1/GIGANTIC"
-    "/gigantic_project-COPYME/subprojects/leonid_requests/upload_to_server/june_4"
+    "/gigantic_project-COPYME/subprojects/zoo/upload_to_server/BLOCK_leonid_requests/june_4"
 )
 
 HEADER = "# GIGANTIC server section metadata — auto-generated; do not edit\n" \

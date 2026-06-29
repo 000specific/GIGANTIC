@@ -1482,6 +1482,7 @@ Common occurrences:
 | Past-canonical code being kept temporarily for reference, then deleted | `x_` |
 | Brand-new code under development, not yet ready for general use | `z_` |
 | Deprecated but might come back / unclear which direction | Default to `x_` (deprecation is the active framing) and rename to `z_` only if it does come back into active development |
+| Work that is outside GIGANTIC and on neither track (permanent, not coming in, not going out) | neither — house it in the `zoo` subproject (§62) |
 
 The two prefixes are NOT interchangeable — they signal opposite trajectories
 in the lifecycle. `x_` says "going away," `z_` says "coming up."
@@ -1707,6 +1708,50 @@ For productive project work:
 - §9 — chat-as-research-notebook lossless captures
 - §16 — framework-development sessions are a separate scope (rooted
   at `GIGANTIC/`, distinct from project sessions)
+
+---
+
+## 62. `zoo` subproject — permanent holding pen for non-GIGANTIC work
+
+`zoo` is a single subproject (`subprojects/zoo/`) that houses work which is
+intentionally **outside GIGANTIC conventions** and is on **neither lifecycle
+track** — not being incorporated in, not being phased out. It is the third
+member of a three-way distinction with the §49 `z_*` and §58 `x_*` prefixes:
+
+| Marker | Meaning | Trajectory |
+|--------|---------|------------|
+| `z_*`  | On track to eventually be **incorporated INTO** GIGANTIC | Coming up (future-canonical) |
+| `x_*`  | Being **phased OUT of** GIGANTIC | Going away (archive) |
+| `zoo`  | **Outside** GIGANTIC, on **neither** track — permanent holding pen ("where the wild things are") | Stays put |
+
+Key properties:
+
+- **Not a gitignore prefix.** Unlike `z_*`/`x_*`, `zoo` is an ordinary
+  subproject directory: its non-data content (READMEs, scripts, configs) is
+  tracked normally; only the usual per-subproject data is gitignored
+  (`upload_to_server/*`, `OUTPUT_pipeline/`, etc.) exactly as for any
+  subproject.
+- **Sorts last** on both the command line and the data server — `zoo` sorts
+  after even the `z_*` entries (`_` < `o`). Intentional.
+- **One BLOCK per folded-in unit.** Each former standalone non-GIGANTIC
+  subproject becomes one `BLOCK_<name>/`, moved **verbatim** (the analysis is
+  unchanged — only its location). The shared `upload_to_server/` at the `zoo`
+  root mirrors the blocks (`upload_to_server/BLOCK_<name>/...`), so the data
+  server serves it via the single `zoo` allowlist entry.
+- **Conventions caveat.** Contents may not follow GIGANTIC naming, vocabulary,
+  manifest, or reproducibility conventions — that is the point. Do NOT flag
+  `zoo` blocks as convention violations or propose migrating them onto
+  templates (cf. §47 frozen-artifact rule).
+
+First instance (2026-06-28): the former standalone `leonid_requests` and
+`moroz_innovations` subprojects (ad-hoc Leonid Moroz delivery + an
+innovation-vocabulary test run) were folded in as `zoo/BLOCK_leonid_requests`
+and `zoo/BLOCK_moroz_innovations`, and removed from `subprojects/` root.
+
+### See also
+
+- §49 — `z_*` early-development ("coming up") counterpart
+- §58 — `x_*` archive-for-later-deletion ("going away") counterpart
 
 ---
 

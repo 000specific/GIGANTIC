@@ -62,14 +62,16 @@ subproject_order:
   - homolog_counts
   - hotspots
   - integrator
-  - leonid_requests
-  - moroz_innovations
   - ocl_phylogenetic_structures
   - orthogroups
   - secretome
   - trees_gene_families
   - trees_gene_groups
   - trees_species
+  - zoo
+  # 'zoo' is the holding subproject for work outside GIGANTIC conventions
+  # (former leonid_requests + moroz_innovations, now folded in as BLOCKs).
+  # It sorts last by design. See subprojects/zoo/README.md.
   # OCL note: ocl_phylogenetic_structures is a parent subproject. Its
   # functional BLOCKs (BLOCK_orthogroups_X_ocl, BLOCK_annotations_X_ocl)
   # surface through that single landing-page card via the parent's
