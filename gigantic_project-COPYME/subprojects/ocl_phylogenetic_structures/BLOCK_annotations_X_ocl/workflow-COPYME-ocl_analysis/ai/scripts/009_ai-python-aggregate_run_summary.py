@@ -3,10 +3,13 @@
 # Human: Eric Edsinger
 
 """
-OCL Pipeline Script 007: Aggregate Run Summary
+OCL Pipeline Script 009: Aggregate Run Summary
 
-Reads all run summary fragments written by Scripts 001-005 across all
-structures and builds a single RUN_SUMMARY.md at the workflow root.
+Reads all run summary fragments written by the per-structure scripts (001 load,
+002 origins, 003 conservation/loss, 004 comprehensive, 006 validation) across all
+structures and builds a single RUN_SUMMARY.md at the workflow root. Script 005
+(species-tree deconvolution) and Script 007 (composite clades) are data producers
+that do not emit fragments, so they are not summarized here.
 
 Fragment location (per-structure per-script JSON):
     {workflow_dir}/ai/logs/run_summary_fragments/{NNN}_{structure_id}.json
@@ -28,7 +31,7 @@ some structures failed upstream -- the whole point of RUN_SUMMARY.md is to
 tell the user what happened, including partial failures.
 
 Usage:
-    python 007_ai-python-aggregate_run_summary.py --config ../../START_HERE-user_config.yaml
+    python 009_ai-python-aggregate_run_summary.py --config ../../START_HERE-user_config.yaml
 """
 
 import sys
@@ -51,7 +54,7 @@ from utils_run_summary import read_all_fragments
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description = 'OCL Pipeline Script 007: Aggregate run summary fragments into RUN_SUMMARY.md',
+        description = 'OCL Pipeline Script 009: Aggregate run summary fragments into RUN_SUMMARY.md',
         formatter_class = argparse.RawDescriptionHelpFormatter
     )
 
@@ -293,9 +296,9 @@ def build_script_004_section( fragments, is_single ):
     return lines
 
 
-def build_script_005_section( fragments, is_single ):
-    """Build the Script 005 (validation) section."""
-    lines = [ "## Script 005: Validation (Rule 7 fail-fast)" ]
+def build_script_006_section( fragments, is_single ):
+    """Build the Script 006 (validation) section."""
+    lines = [ "## Script 006: Validation (Rule 7 fail-fast)" ]
 
     if not fragments:
         lines.append( "- **NOT RUN**" )
@@ -342,36 +345,45 @@ def build_script_005_section( fragments, is_single ):
     return lines
 
 
-def determine_overall_status( fragments, expected_structures ):
+def determine_overall_status( fragments, expected_structures, num_sources ):
     """
-    Determine overall run status.
+    Determine overall run status across all (source, structure) pairs.
 
     Returns:
         tuple: (status_string, status_detail)
             status_string: "SUCCESS" / "FAILED" / "PARTIAL"
             status_detail: human-readable explanation
     """
-    # Count fragments per script
+    # Per-structure scripts that emit run-summary fragments: 001 load, 002 origins,
+    # 003 conservation/loss, 004 comprehensive, 006 validation. Script 005 (deconvolution)
+    # and Script 007 (composite clades) are data producers and emit no fragments.
+    emitting_scripts = ( 1, 2, 3, 4, 6 )
+    validation_script = 6
+
+    # Each emitting script should run for every (source x structure) pair.
+    expected_per_script = expected_structures * num_sources
+
+    # Count fragments per emitting script
     script_counts = {}
-    for script_num in range( 1, 6 ):
+    for script_num in emitting_scripts:
         script_counts[ script_num ] = len( filter_fragments_by_script( fragments, script_num ) )
 
-    # Check Script 005 validation status
-    validation_fragments = filter_fragments_by_script( fragments, 5 )
+    # Check validation status (Script 006)
+    validation_fragments = filter_fragments_by_script( fragments, validation_script )
     failed_validations = [ f for f in validation_fragments if f.get( 'stats', {} ).get( 'validation_status' ) != 'PASS' ]
 
-    # Did every script run for every structure?
-    all_complete = all( script_counts[ n ] == expected_structures for n in range( 1, 6 ) )
+    # Did every emitting script run for every (source, structure) pair?
+    all_complete = all( script_counts[ n ] == expected_per_script for n in emitting_scripts )
 
     if all_complete and not failed_validations:
-        return ( "SUCCESS", f"All 5 scripts completed for {expected_structures} structure(s). All validation checks passed." )
+        return ( "SUCCESS", f"All per-structure scripts completed for {num_sources} source(s) x {expected_structures} structure(s). All validation checks passed." )
     elif all_complete and failed_validations:
-        return ( "FAILED", f"All scripts ran but {len( failed_validations )} structure(s) had validation failures." )
+        return ( "FAILED", f"All scripts ran but {len( failed_validations )} (source, structure) pair(s) had validation failures." )
     else:
         missing = []
-        for n in range( 1, 6 ):
-            if script_counts[ n ] < expected_structures:
-                missing.append( f"Script {n:03d}: {script_counts[ n ]}/{expected_structures}" )
+        for n in emitting_scripts:
+            if script_counts[ n ] < expected_per_script:
+                missing.append( f"Script {n:03d}: {script_counts[ n ]}/{expected_per_script}" )
         return ( "PARTIAL", f"Incomplete run. Missing fragments: {', '.join( missing )}" )
 
 
@@ -417,20 +429,25 @@ def main():
 
     is_single = ( expected_structures == 1 )
 
-    # Determine overall status
-    status, status_detail = determine_overall_status( fragments, expected_structures )
+    # Distinct sources present in the fragments (the run fans out over sources x structures)
+    sources = sorted( { f.get( 'source' ) for f in fragments if f.get( 'source' ) } )
+    if not sources:
+        sources = [ None ]   # legacy single-source fragments with no source tag
+    num_sources = len( [ s for s in sources if s is not None ] ) or 1
+
+    # Determine overall status across all (source, structure) pairs
+    status, status_detail = determine_overall_status( fragments, expected_structures, num_sources )
 
     # Build the Markdown document
-    run_label = config.get( 'run_label', 'unknown' )
     species_set = config.get( 'species_set_name', 'unknown' )
-    annotation_database = config.get( 'annotation_database', 'unknown' )
+    sources_label = ', '.join( s for s in sources if s ) or 'unknown'
     execution_mode = config.get( 'execution_mode', 'local' )
     parallelism_mode = config.get( 'parallelism_mode', 'local' )
 
     status_emoji = { 'SUCCESS': '✅', 'FAILED': '❌', 'PARTIAL': '⚠️' }.get( status, '?' )
 
     lines = []
-    lines.append( f"# Workflow Run Summary: {run_label}" )
+    lines.append( f"# Workflow Run Summary: {species_set} annogroup OCL ({sources_label})" )
     lines.append( "" )
     lines.append( f"**Status**: {status_emoji} **{status}** -- {status_detail}" )
     lines.append( "" )
@@ -440,42 +457,49 @@ def main():
     # Configuration block
     lines.append( "## Configuration" )
     lines.append( "" )
-    lines.append( f"- Run label: `{run_label}`" )
     lines.append( f"- Species set: `{species_set}`" )
-    lines.append( f"- Annotation source: `{annotation_database}`" )
+    lines.append( f"- Annotation sources: {', '.join( f'`{s}`' for s in sources if s ) or '`unknown`'} ({num_sources} source(s))" )
     lines.append( f"- Structures requested: **{expected_structures}** ({', '.join( structure_ids[ :10 ] )}{'...' if len( structure_ids ) > 10 else ''})" )
     lines.append( f"- Execution mode: `{execution_mode}` / parallelism: `{parallelism_mode}`" )
     lines.append( "" )
 
-    # Script sections
-    lines.append( "---" )
-    lines.append( "" )
-    lines.extend( build_script_001_section( filter_fragments_by_script( fragments, 1 ), is_single ) )
-    lines.append( "" )
-    lines.extend( build_script_002_section( filter_fragments_by_script( fragments, 2 ), is_single ) )
-    lines.append( "" )
-    lines.extend( build_script_003_section( filter_fragments_by_script( fragments, 3 ), is_single ) )
-    lines.append( "" )
-    lines.extend( build_script_004_section( filter_fragments_by_script( fragments, 4 ), is_single ) )
-    lines.append( "" )
-    lines.extend( build_script_005_section( filter_fragments_by_script( fragments, 5 ), is_single ) )
-    lines.append( "" )
+    # Per-source script sections (each source's per-script stats across its structures)
+    for source in sources:
+        source_fragments = [ f for f in fragments if f.get( 'source' ) == source ]
+        source_label = source if source else 'all'
+        lines.append( "---" )
+        lines.append( "" )
+        lines.append( f"# Source: {source_label}" )
+        lines.append( "" )
+        lines.extend( build_script_001_section( filter_fragments_by_script( source_fragments, 1 ), is_single ) )
+        lines.append( "" )
+        lines.extend( build_script_002_section( filter_fragments_by_script( source_fragments, 2 ), is_single ) )
+        lines.append( "" )
+        lines.extend( build_script_003_section( filter_fragments_by_script( source_fragments, 3 ), is_single ) )
+        lines.append( "" )
+        lines.extend( build_script_004_section( filter_fragments_by_script( source_fragments, 4 ), is_single ) )
+        lines.append( "" )
+        lines.extend( build_script_006_section( filter_fragments_by_script( source_fragments, 6 ), is_single ) )
+        lines.append( "" )
 
-    # Primary output files
+    # Primary output files (per source)
     lines.append( "---" )
     lines.append( "" )
-    lines.append( "## Primary Output Files" )
+    lines.append( "## Primary Output Files (per source)" )
     lines.append( "" )
-    lines.append( "Per-structure all-subtypes summary (primary downstream file):" )
-    lines.append( "```" )
-    for structure_id in structure_ids[ :5 ]:
-        lines.append( f"OUTPUT_pipeline/structure_{structure_id}/4-output/4_ai-structure_{structure_id}_annogroups-complete_ocl_summary-all_types.tsv" )
-    if len( structure_ids ) > 5:
-        lines.append( f"... plus {len( structure_ids ) - 5} more" )
-    lines.append( "```" )
-    lines.append( "" )
-    lines.append( f"Downstream symlinks: `../../output_to_input/BLOCK_annotations_X_ocl/{run_label}/`" )
-    lines.append( "" )
+    for source in sources:
+        source_label = source if source else '<source>'
+        lines.append( f"**{source_label}**:" )
+        lines.append( "```" )
+        for structure_id in structure_ids[ :3 ]:
+            lines.append( f"OUTPUT_pipeline/{source_label}/structure_{structure_id}/4-output/4_ai-structure_{structure_id}_annogroups-complete_ocl_summary-all_types.tsv" )
+        if len( structure_ids ) > 3:
+            lines.append( f"... plus {len( structure_ids ) - 3} more structures" )
+        lines.append( f"OUTPUT_pipeline/{source_label}/structure_NNN/5-output/5_ai-structure_NNN_annogroup_tree_counts-{{species,proteins}}.tsv   (deconvolution)" )
+        lines.append( f"OUTPUT_pipeline/{source_label}/composite_clades/7_ai-{source_label}-composite_clades-{{per_annogroup,summary_counts}}.tsv" )
+        lines.append( "```" )
+        lines.append( f"Downstream symlinks: `../../output_to_input/BLOCK_annotations_X_ocl/{species_set}_{source_label}/`" )
+        lines.append( "" )
 
     # Write the summary
     summary_path = workflow_directory / 'RUN_SUMMARY.md'

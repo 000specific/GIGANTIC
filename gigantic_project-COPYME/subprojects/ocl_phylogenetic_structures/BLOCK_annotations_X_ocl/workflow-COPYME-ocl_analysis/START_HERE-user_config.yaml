@@ -14,25 +14,24 @@
 # AI: Claude Code | Opus 4.6 | 2026 April 18
 # Human: Eric Edsinger
 
-# Run identification
-# run_label names the output_to_input subdirectory for this exploration
-# Different COPYME copies can coexist by using different run_labels
-# Replace SET_NAME_HERE with your species set name (e.g., species71)
-# Replace DATABASE_HERE with the annotation database (e.g., pfam, gene3d, deeploc)
-# Example labels: "species71_pfam", "species71_gene3d", "species71_deeploc"
-run_label: "SET_NAME_HERE_DATABASE_HERE"
-
-# Species set identifier (e.g., "species71", "speciesN")
-# Replace SET_NAME_HERE with your species set name (e.g., species71)
+# Species set identifier (e.g., "species70", "speciesN")
+# Replace SET_NAME_HERE with your species set name (e.g., species70)
 species_set_name: "SET_NAME_HERE"
 
-# Annotation source (annotation tool / database) to analyze.
-# This is the annogroups subproject SOURCE name -- it selects which per-source
-# annogroup set is mapped onto the species tree structures. Annogroups are NOT
-# computed here; they are imported from the annogroups subproject.
-# Valid values: pfam | gene3d | superfamily | tmbed | signalp | deeploc | ...
-#   (any source that has a parser plugin + built annogroups in the annogroups subproject)
-annotation_database: "DATABASE_HERE"
+# Annotation sources (annotation tools / databases) to analyze, IN PARALLEL.
+# These are annogroups subproject SOURCE names -- each selects a per-source annogroup
+# set that is mapped onto the species tree structures. Annogroups are NOT computed
+# here; they are imported from the annogroups subproject.
+#
+# This ONE run fans out over every listed source x every structure. Each source
+# writes to its own output subtree (OUTPUT_pipeline/<source>/structure_NNN/...) and
+# publishes as output_to_input/BLOCK_annotations_X_ocl/<species_set>_<source>/ -- so
+# pfam, go, panther all coexist from a single run. They are NOT separate RUN versions
+# (per the GIGANTIC convention, the latest RUN of this block supersedes earlier ones).
+#   "all"            - every source with built annogroups in the annogroups output_to_input
+#                      (<annogroups_dir>/<species_set>/<source>/)
+#   [ pfam, go ]     - an explicit subset
+annotation_databases: "all"
 
 # Annogroup TYPES to map onto the species tree structures.
 # The annogroups subproject defines four canonical types (feature, combination,
@@ -58,29 +57,55 @@ inputs:
   trees_species_dir: "../../../trees_species/output_to_input/BLOCK_permutations_and_features"
 
   # annogroups subproject output_to_input ROOT (the BLOCK_build_annogroups dir).
-  # Script 001 reads the per-source annogroup map from:
-  #   <annogroups_dir>/<species_set_name>/<annotation_database>/2_ai-<source>-annogroup_map.tsv
+  # Script 001 reads each source's annogroup map from:
+  #   <annogroups_dir>/<species_set_name>/<source>/2_ai-<source>-annogroup_map.tsv
+  # Script 005 (species_tree_deconvolution) also reads each source's per-structure
+  # annogroup tree-counts from
+  #   <annogroups_dir>/<species_set>/<source>/annogroup_tree_counts_per_structure/.
   annogroups_dir: "../../../annogroups/output_to_input/BLOCK_build_annogroups"
 
-  # Metazoan phylum clade_id_names. Used by Script 002 ONLY to classify each
-  # annogroup's member species into metazoan phylum-composition classes (the same
-  # approved vocabulary as the integrator: Ctenophora_Only, Mixed_*, etc.). With
-  # Bilateria the five phyla PARTITION Metazoa (Script 002 fail-fast verifies).
-  # The clade->species mapping is read from
-  #   <trees_species_dir>/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv
-  # species70 values (structure_001): Ctenophora 5 + Porifera 7 + Placozoa 4
-  # + Cnidaria 5 + Bilateria 35 = 56 = Metazoa.
-  metazoa_clade_id_name: "C082_Metazoa"
-  bilateria_clade_id_name: "C103_Bilateria"
-  ctenophora_clade_id_name: "C086_Ctenophora"
-  porifera_clade_id_name: "C090_Porifera"
-  placozoa_clade_id_name: "C095_Placozoa"
-  cnidaria_clade_id_name: "C102_Cnidaria"
+  # Species-tree clade->species mapping (trees_species, ALL structures). Read by
+  # Script 005 (species_tree_deconvolution — member-species counts per clade) and
+  # Script 007 (composite_clades). Clade species sets are stable across structures (Rule 6).
+  clade_species_mappings: "../../../trees_species/output_to_input/BLOCK_permutations_and_features/Species_Clade_Species_Mappings/9_ai-clade_species_mappings-all_structures.tsv"
+
+  # Curated composite-clades manifest (Script 007) — the user's list of composite
+  # clades to report (one per row; see the file's header). Relative to the workflow dir.
+  composite_clades_manifest: "INPUT_user/composite_clades_manifest.tsv"
+
+# =============================================================================
+# Composite Clades (Script 007)
+# =============================================================================
+# A "composite clade" is a user-defined question about where an annogroup's member
+# species fall on the species tree. This block defines the building-block GROUPS and
+# the scope; the composite clades to REPORT are curated in
+# INPUT_user/composite_clades_manifest.tsv, where each row picks one ALGORITHM:
+#   - exact            : members come from EXACTLY the listed component groups
+#   - absent           : members are ABSENT from ALL listed clades
+#   - core_urclade     : members in >=1 outgroup of a target clade AND >=1 ingroup
+#                        (the target's Ur = last-common-ancestor core)
+#   - core_early_clade : members in >=2 ingroups (the target's "Early" window = its
+#                        early descendant branches / the species tree's ambiguous nodes)
+# Edit `groups` to analyze ANY clade grouping; the default is the five metazoan
+# clades within Metazoa (these are CLADES, not phyla — Bilateria is a clade). Group
+# names + the scope name (Metazoa) + any clade_id_name are resolvable as
+# Target_Clade / Clades in the manifest.
+composite_clades:
+  reference_structure: "structure_001"
+  scope_clade_id_name: "C082_Metazoa"
+  outside_label: "NonMetazoa"
+  groups:
+    - { name: "Ctenophora", clade_id_names: [ "C086_Ctenophora" ] }
+    - { name: "Porifera",   clade_id_names: [ "C090_Porifera" ] }
+    - { name: "Placozoa",   clade_id_names: [ "C095_Placozoa" ] }
+    - { name: "Cnidaria",   clade_id_names: [ "C102_Cnidaria" ] }
+    - { name: "Bilateria",  clade_id_names: [ "C103_Bilateria" ] }
 
 # Output configuration
 output:
-  # Main output directory (relative to this workflow directory)
-  # Each structure gets: OUTPUT_pipeline/structure_NNN/1-output/ through 5-output/
+  # Main output directory (relative to this workflow directory). Each source gets its
+  # own subtree: OUTPUT_pipeline/<source>/structure_NNN/1-output/ through 6-output/,
+  # plus OUTPUT_pipeline/<source>/composite_clades/ (Script 007, once per source).
   base_dir: "OUTPUT_pipeline"
 
 # =============================================================================

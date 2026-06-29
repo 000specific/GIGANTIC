@@ -26,10 +26,8 @@ Inputs (from Script 001 outputs in 1-output/):
 - Annogroups with species already resolved to Genus_species
 
 Outputs (to 2-output/):
-- Per-annogroup origins with phylogenetic block and path annotations, plus each
-  annogroup's metazoan phylum-composition class (member-species based)
+- Per-annogroup origins with phylogenetic block and path annotations
 - Origins summary (annogroup counts per origin transition block)
-- Annogroup phylum-composition counts (annogroups per phylum-composition class)
 - Annogroups grouped by origin clade
 
 Usage:
@@ -49,14 +47,7 @@ import yaml
 
 # Add scripts directory to path for utility imports
 sys.path.insert( 0, str( Path( __file__ ).parent ) )
-from utils_run_summary import (
-    emit_run_summary_fragment,
-    load_annogroup_annotation_lookup,
-    METAZOAN_PHYLA,
-    PHYLUM_COMPOSITION_CLASS_KEYS,
-    phylum_signature_of_species,
-    named_phylum_class,
-)
+from utils_run_summary import emit_run_summary_fragment, load_annogroup_annotation_lookup
 
 # Increase CSV field size limit to handle large fields
 csv.field_size_limit( sys.maxsize )
@@ -78,6 +69,13 @@ def parse_arguments():
         type = str,
         required = True,
         help = 'Structure ID to process (e.g., "001", "002", ..., "105")'
+    )
+
+    parser.add_argument(
+        '--source',
+        type = str,
+        required = True,
+        help = 'Annotation source to process (e.g., "pfam", "go", "panther").'
     )
 
     parser.add_argument(
@@ -115,7 +113,7 @@ with open( config_path, 'r' ) as config_file:
 # Format structure ID
 TARGET_STRUCTURE = f"structure_{args.structure_id}"
 SPECIES_SET_NAME = config[ 'species_set_name' ]
-ANNOTATION_DATABASE = config[ 'annotation_database' ]
+ANNOTATION_DATABASE = args.source
 
 # Resolve paths relative to config file directory
 config_directory = config_path.parent
@@ -142,20 +140,6 @@ input_trees_species_directory = config_directory / config[ 'inputs' ][ 'trees_sp
 input_trees_phylogenetic_blocks_all = input_trees_species_directory / 'Species_Phylogenetic_Blocks'
 input_trees_phylogenetic_paths_all = input_trees_species_directory / 'Species_Phylogenetic_Paths'
 
-# Clade -> descendant-species mapping (per structure), used ONLY to classify each
-# annogroup's member species into metazoan phylum-composition classes (the same
-# approved vocabulary as the integrator). The five phylum clade_id_names + Metazoa
-# come from the config; with Bilateria the five phyla partition Metazoa.
-input_clade_species_mappings_file = input_trees_species_directory / 'Species_Clade_Species_Mappings' / '9_ai-clade_species_mappings-all_structures.tsv'
-PHYLA___CLADE_ID_NAMES = {
-    'Ctenophora': config[ 'inputs' ][ 'ctenophora_clade_id_name' ],
-    'Porifera':   config[ 'inputs' ][ 'porifera_clade_id_name' ],
-    'Placozoa':   config[ 'inputs' ][ 'placozoa_clade_id_name' ],
-    'Cnidaria':   config[ 'inputs' ][ 'cnidaria_clade_id_name' ],
-    'Bilateria':  config[ 'inputs' ][ 'bilateria_clade_id_name' ],
-}
-METAZOA_CLADE_ID_NAME = config[ 'inputs' ][ 'metazoa_clade_id_name' ]
-
 # Output directory
 output_directory = output_base_directory / TARGET_STRUCTURE / '2-output'
 output_directory.mkdir( parents = True, exist_ok = True )
@@ -163,7 +147,6 @@ output_directory.mkdir( parents = True, exist_ok = True )
 # Output files
 output_origins_file = output_directory / f'2_ai-{TARGET_STRUCTURE}_annogroup_origins.tsv'
 output_summary_file = output_directory / f'2_ai-{TARGET_STRUCTURE}_origins_summary-annogroups_per_clade.tsv'
-output_phylum_counts_file = output_directory / f'2_ai-{TARGET_STRUCTURE}_annogroup_phylum_composition_counts.tsv'
 output_by_origin_directory = output_directory / f'2_ai-{TARGET_STRUCTURE}_annogroups_by_origin'
 output_by_origin_directory.mkdir( parents = True, exist_ok = True )
 
@@ -302,90 +285,6 @@ def load_clade_mappings():
 
     logger.info( f"Loaded {len( clade_names___clade_id_names )} clade mappings" )
     return clade_names___clade_id_names
-
-
-def load_clade_species( clade_id_name ):
-    """
-    Read one clade's descendant-species set for TARGET_STRUCTURE from the
-    trees_species clade->species mapping. Returns a set of Genus_species.
-
-    Used only for the metazoan phylum-composition classification. Exits 1 if the
-    file or the requested clade row is missing, or the clade resolves to zero
-    species (a clade typo must fail loudly, not silently mislabel every annogroup).
-    """
-    if not input_clade_species_mappings_file.exists():
-        logger.error( f"CRITICAL ERROR: clade-species mapping not found: {input_clade_species_mappings_file}" )
-        logger.error( "  Needed to classify annogroups into metazoan phylum-composition classes." )
-        logger.error( "  Verify inputs.trees_species_dir points at the trees_species output_to_input." )
-        sys.exit( 1 )
-
-    clade_species = set()
-    found = False
-    with open( input_clade_species_mappings_file, 'r' ) as input_file:
-        # Structure_ID (...)	Clade_ID_Name (...)	Phylogenetic_Block (...)	Descendant_Species_Count (...)	Descendant_Species_List (...)
-        # structure_001	C103_Bilateria	...	35	Adineta_vaga,Amphiscolops_sp_MND2022,...
-        header = input_file.readline()
-        header_parts = header.strip().split( '\t' )
-        column_names___indices = {}
-        for index, column_header in enumerate( header_parts ):
-            column_name = column_header.split( ' (' )[ 0 ] if ' (' in column_header else column_header
-            column_names___indices[ column_name ] = index
-        structure_column = column_names___indices[ 'Structure_ID' ]
-        clade_column = column_names___indices[ 'Clade_ID_Name' ]
-        species_list_column = column_names___indices[ 'Descendant_Species_List' ]
-
-        for line in input_file:
-            line = line.rstrip( '\n' )
-            if not line:
-                continue
-            parts = line.split( '\t' )
-            if parts[ structure_column ] == TARGET_STRUCTURE and parts[ clade_column ] == clade_id_name:
-                species_cell = parts[ species_list_column ] if species_list_column < len( parts ) else ''
-                clade_species = { s for s in species_cell.split( ',' ) if s }
-                found = True
-                break
-
-    if not found:
-        logger.error( f"CRITICAL ERROR: clade '{clade_id_name}' not found for {TARGET_STRUCTURE} in {input_clade_species_mappings_file.name}" )
-        sys.exit( 1 )
-    if not clade_species:
-        logger.error( f"CRITICAL ERROR: clade '{clade_id_name}' resolved to ZERO species for {TARGET_STRUCTURE}" )
-        sys.exit( 1 )
-
-    return clade_species
-
-
-def load_phylum_species_sets():
-    """
-    Load the five metazoan phylum species sets + Metazoa for TARGET_STRUCTURE and
-    FAIL-FAST that the five phyla PARTITION Metazoa (pairwise disjoint AND union ==
-    Metazoa). The phylum-composition classification is only correct if this holds;
-    a silent partition error would mislabel annogroups (research-integrity).
-
-    Returns ( phyla___species, metazoan_species ).
-    """
-    metazoan_species = load_clade_species( METAZOA_CLADE_ID_NAME )
-    phyla___species = {}
-    for phylum, clade_id_name in PHYLA___CLADE_ID_NAMES.items():
-        phyla___species[ phylum ] = load_clade_species( clade_id_name )
-        logger.info( f"  {phylum} ({clade_id_name}) = {len( phyla___species[ phylum ] )} species" )
-
-    union_species = set()
-    for phylum in METAZOAN_PHYLA:
-        species_here = phyla___species[ phylum ]
-        if union_species & species_here:
-            logger.error( f"CRITICAL ERROR: metazoan phylum clades are NOT disjoint at {phylum} — they must partition Metazoa" )
-            sys.exit( 1 )
-        union_species |= species_here
-    if union_species != metazoan_species:
-        logger.error( "CRITICAL ERROR: the five metazoan phylum clades do not partition Metazoa" )
-        logger.error( f"  Metazoa ({len( metazoan_species )}) != union of phyla ({len( union_species )})" )
-        logger.error( f"  In Metazoa but no phylum (e.g.): {sorted( metazoan_species - union_species )[ :5 ]}" )
-        logger.error( f"  In a phylum but not Metazoa (e.g.): {sorted( union_species - metazoan_species )[ :5 ]}" )
-        sys.exit( 1 )
-    logger.info( f"  phylum partition verified: {len( union_species )} species across {', '.join( METAZOAN_PHYLA )} == Metazoa" )
-
-    return phyla___species, metazoan_species
 
 
 # ============================================================================
@@ -857,7 +756,7 @@ def process_annogroups( annogroup_ids___annogroup_data, species_clade_id_names__
 # ============================================================================
 
 def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths,
-                             annogroup_ids___annotation_columns, phyla___species, metazoan_species ):
+                             annogroup_ids___annotation_columns ):
     """Write per-annogroup origin assignments.
 
     Per Rule 6, the origin is identified by the canonical clade_id_name form.
@@ -884,19 +783,12 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
             'Shared_Clade_ID_Names (comma delimited list of shared ancestral clade_id_name values)',
             'Species_Count (total unique species in annogroup)',
             'Species_List (comma delimited list of species in annogroup)',
-            'Metazoan_Phylum_Signature (comma delimited metazoan phyla present among member species in fixed order Ctenophora Porifera Placozoa Cnidaria Bilateria; empty when no metazoan members)',
-            'Has_NonMetazoan (yes when at least one member species is not in Metazoa; a non-metazoan unicellular outgroup)',
-            'Phylum_Composition_Class (named metazoan phylum-composition class of the member species e.g. Ctenophora_Only or Mixed_Ctenophora_Cnidaria_Only or Mixed_With_NonMetazoan; unclassified when the signature is not one of the named classes)',
             'Annotation_Accessions (comma delimited annotation accessions defining this annogroup e.g. PF00069; empty for absent)',
             'Annotation_Definitions (semicolon delimited definition ==accession pairs where definition is the InterProScan signature description e.g. Protein kinase domain ==PF00069)'
         ]
 
         # Single-row header
         csv_writer.writerow( header_columns )
-
-        # Tally annogroups per phylum-composition class (for the counts table).
-        classes___counts = { class_key: 0 for class_key in PHYLUM_COMPOSITION_CLASS_KEYS }
-        classes___counts[ 'unclassified' ] = 0
 
         for annogroup_id in sorted( annogroup_origins.keys() ):
             data = annogroup_origins[ annogroup_id ]
@@ -913,14 +805,6 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
 
             species_list = ','.join( sorted( data[ 'species' ] ) )
 
-            # Metazoan phylum-composition class from the member species (the same
-            # approved vocabulary as the integrator; structure-independent).
-            member_species = set( data[ 'species' ] )
-            signature_cell, has_nonmetazoan = phylum_signature_of_species( member_species, phyla___species, metazoan_species )
-            phylum_composition_class = named_phylum_class( frozenset( signature_cell.split( ',' ) ) - { '' }, has_nonmetazoan )
-            classes___counts[ phylum_composition_class ] += 1
-            has_nonmetazoan_flag = 'yes' if has_nonmetazoan else 'no'
-
             annotation_columns = annogroup_ids___annotation_columns.get( annogroup_id, {} )
             annotation_accessions = annotation_columns.get( 'accessions', '' )
             annotation_definitions = annotation_columns.get( 'definitions', '' )
@@ -934,9 +818,6 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
                 shared_clades_string,
                 str( species_count ),
                 species_list,
-                signature_cell,
-                has_nonmetazoan_flag,
-                phylum_composition_class,
                 annotation_accessions,
                 annotation_definitions
             ]
@@ -944,36 +825,6 @@ def write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_bl
             csv_writer.writerow( output_row )
 
     logger.info( f"Wrote {len( annogroup_origins )} annogroup origins to {output_origins_file.name}" )
-
-    return classes___counts
-
-
-def write_phylum_composition_counts( classes___counts ):
-    """
-    Write the annogroup phylum-composition COUNTS table: one row per named class
-    (in fixed order) plus an 'unclassified' row, with the annogroup count and its
-    percentage of all classified annogroups. This is the OCL-side analog of the
-    integrator's phylum classes, applied to the annogroups themselves.
-    """
-    logger.info( f"Writing annogroup phylum-composition counts to: {output_phylum_counts_file}" )
-
-    total_annogroups = sum( classes___counts.values() )
-
-    with open( output_phylum_counts_file, 'w' ) as output_file:
-        output = 'Phylum_Composition_Class (named metazoan phylum-composition class of the annogroup member species; unclassified = signature not one of the named classes)\t'
-        output += 'Annogroup_Count (count of annogroups in this phylum-composition class)\t'
-        output += 'Percentage (percentage of all annogroups in this class calculated as count divided by total annogroups times 100)\n'
-        output_file.write( output )
-
-        # Named classes in fixed order, then unclassified last.
-        for class_key in PHYLUM_COMPOSITION_CLASS_KEYS + [ 'unclassified' ]:
-            count = classes___counts.get( class_key, 0 )
-            percentage = 100.0 * count / total_annogroups if total_annogroups > 0 else 0.0
-            output = f"{class_key}\t{count}\t{percentage:.2f}\n"
-            output_file.write( output )
-
-    logger.info( f"Wrote {len( PHYLUM_COMPOSITION_CLASS_KEYS ) + 1} phylum-composition class counts "
-                 f"(total {total_annogroups} annogroups) to {output_phylum_counts_file.name}" )
 
 
 def write_origins_summary( origins___annogroup_ids, clade_id_names___phylogenetic_blocks ):
@@ -1086,21 +937,14 @@ def main():
         clade_names___clade_id_names
     )
 
-    # Step 5b: Load the metazoan phylum species sets (for phylum-composition
-    # classification of each annogroup's member species). Fail-fast partition check.
-    logger.info( "" )
-    logger.info( "STEP 5b: Loading metazoan phylum species sets (phylum-composition classification)..." )
-    phyla___species, metazoan_species = load_phylum_species_sets()
-
     # Step 6: Write outputs
     logger.info( "" )
     logger.info( "STEP 6: Writing outputs..." )
     # Annotation accessions + definitions (Pfam IDs + definitions) keyed by Annogroup_ID
     annogroup_ids___annotation_columns = load_annogroup_annotation_lookup( input_annogroup_map_file )
     logger.info( f"Loaded annotation columns for {len( annogroup_ids___annotation_columns )} annogroups from map" )
-    classes___counts = write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths,
-                             annogroup_ids___annotation_columns, phyla___species, metazoan_species )
-    write_phylum_composition_counts( classes___counts )
+    write_annogroup_origins( annogroup_origins, clade_id_names___phylogenetic_blocks, clade_id_names___phylogenetic_paths,
+                             annogroup_ids___annotation_columns )
     write_origins_summary( origins___annogroup_ids, clade_id_names___phylogenetic_blocks )
     write_annogroups_by_origin( origins___annogroup_ids, clade_id_names___phylogenetic_blocks )
 
@@ -1114,7 +958,6 @@ def main():
     logger.info( "" )
     logger.info( "Output files:" )
     logger.info( f"  {output_origins_file.name}" )
-    logger.info( f"  {output_phylum_counts_file.name}" )
     logger.info( f"  {output_summary_file.name}" )
     logger.info( f"  {output_by_origin_directory.name}/ ({len( origins___annogroup_ids )} files)" )
     logger.info( "=" * 80 )
@@ -1128,6 +971,7 @@ def main():
     emit_run_summary_fragment(
         script_number = 2,
         structure_id = args.structure_id,
+        source = args.source,
         stats = {
             'duration_seconds': round( duration_seconds, 2 ),
             'annogroups_input': total_annogroups_input,

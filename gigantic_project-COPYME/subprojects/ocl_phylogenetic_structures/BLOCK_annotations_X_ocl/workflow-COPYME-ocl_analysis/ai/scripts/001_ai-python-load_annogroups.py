@@ -75,6 +75,14 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        '--source',
+        type = str,
+        required = True,
+        help = 'Annotation source to process (e.g., "pfam", "go", "panther"). The run '
+               'fans out over sources x structures; this selects the per-source annogroups.'
+    )
+
+    parser.add_argument(
         '--config',
         type = str,
         required = True,
@@ -110,10 +118,11 @@ with open( config_path, 'r' ) as config_file:
 # Format structure ID
 TARGET_STRUCTURE = f"structure_{args.structure_id}"
 
-# Species set and annotation source from config. ANNOTATION_DATABASE names the
-# annogroups subproject source (e.g. "pfam") -- annogroups are NOT computed here.
+# Species set from config; annotation source from --source (the run fans out over
+# sources x structures). ANNOTATION_DATABASE names the annogroups subproject source
+# (e.g. "pfam") -- annogroups are NOT computed here.
 SPECIES_SET_NAME = config[ 'species_set_name' ]
-ANNOTATION_DATABASE = config[ 'annotation_database' ]
+ANNOTATION_DATABASE = args.source
 
 # Annogroup types to map onto the structures. 'absent' is excluded by design
 # (it has no single evolutionary origin); default to the origin-bearing types.
@@ -798,6 +807,7 @@ def main():
     emit_run_summary_fragment(
         script_number = 1,
         structure_id = args.structure_id,
+        source = args.source,
         stats = {
             'duration_seconds': round( duration_seconds, 2 ),
             'annogroups_total': len( annogroup_entries ),

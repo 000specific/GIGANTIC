@@ -16,30 +16,35 @@
 #
 # BEFORE RUNNING:
 # 1. Edit START_HERE-user_config.yaml to set:
-#    - run_label (e.g., "species70_pfam")
 #    - species_set_name (e.g., "species70")
-#    - annotation_database (pfam, gene3d, deeploc, etc.)
-#    - annogroup_subtypes (single, combo, zero)
+#    - annotation_databases ("all" or a list like [ pfam, go ]; the run fans out per source)
+#    - annogroup_types (feature, combination, architecture; absent excluded)
 #    - execution_mode ("local" or "slurm")
 #    - Input paths to upstream subprojects
 # 2. Edit INPUT_user/structure_manifest.tsv with structure IDs to analyze
 # 3. Verify upstream subprojects have populated their output_to_input/:
 #    - trees_species/output_to_input/BLOCK_permutations_and_features/
-#    - annotations_hmms/output_to_input/BLOCK_build_annotation_database/
+#    - annogroups/output_to_input/BLOCK_build_annogroups/ (the annogroup map)
 #
 # WHAT THIS DOES:
 # 1. Creates (or reuses) per-STEP conda env from ai/conda_environment.yml
-# 2. Runs 5 scripts per structure (parallel across structures):
-#    001: Create annogroups from annotation files
+# 2. Runs the per-structure chain (parallel across structures):
+#    001: Load annogroups (imported from the annogroups subproject) + phylo inputs
 #    002: Determine annogroup origins (MRCA algorithm)
 #    003: Quantify conservation and loss (Rule 7 block-state classification)
-#    004: Generate comprehensive OCL summaries (per-subtype + all-types)
-#    005: Validate results (strict fail-fast)
+#    004: Generate comprehensive OCL summaries (per-type + all-types)
+#    005: Species-tree deconvolution (member species + protein counts per clade)
+#    006: Validate results (strict fail-fast)
+#    Then ONCE after all structures (barrier):
+#    007: Composite clades (classify annogroups by member species; structure-independent)
+#    008: Write run log
+#    009: Aggregate run summary -> RUN_SUMMARY.md
 # 3. Creates output_to_input symlinks for downstream subprojects
 #
 # OUTPUT:
-# Results in OUTPUT_pipeline/structure_NNN/1-output/ through 5-output/
-# Downstream symlinks in ../../output_to_input/BLOCK_annotations_X_ocl/{run_label}/
+# Results in OUTPUT_pipeline/structure_NNN/1-output/ through 6-output/
+#   plus OUTPUT_pipeline/composite_clades/ (computed once)
+# Downstream symlinks in ../../output_to_input/BLOCK_annotations_X_ocl/{species_set}_{source}/
 #
 ################################################################################
 
@@ -73,13 +78,12 @@ EXECUTION_MODE=$(read_config "execution_mode" "local")
 # that a run has been requested, even before SLURM schedules the job. The
 # placeholder is overwritten later:
 #   - on compute-node start: "IN PROGRESS" (below, inside actual work block)
-#   - on pipeline completion: full aggregated summary (Script 007)
+#   - on pipeline completion: full aggregated summary (Script 009)
 #
 # Also clear stale fragments from any previous run so the aggregator sees
 # only this run's data.
 
-RUN_LABEL_FOR_SUMMARY=$(read_config "run_label" "")
-ANNOTATION_DATABASE_FOR_SUMMARY=$(read_config "annotation_database" "")
+ANNOTATION_DATABASES_FOR_SUMMARY=$(read_config "annotation_databases" "all")
 SPECIES_SET_FOR_SUMMARY=$(read_config "species_set_name" "")
 PARALLELISM_MODE_FOR_SUMMARY=$(read_config "parallelism_mode" "local")
 MANIFEST_FOR_SUMMARY="INPUT_user/structure_manifest.tsv"
@@ -109,17 +113,16 @@ if [ "${EXECUTION_MODE}" == "slurm" ] && [ -z "${SLURM_JOB_ID}" ]; then
 else
     STATUS_EMOJI="🔄"
     STATUS_TEXT="IN PROGRESS (started $(date '+%Y-%m-%d %H:%M:%S'))"
-    STATUS_NOTE="This run is currently executing. Script 007 will replace this placeholder with aggregate per-script stats and a final success/failure verdict when the pipeline completes. If this file still shows IN PROGRESS after the pipeline has finished, something may have gone wrong -- check slurm_logs/ or the NextFlow execution trace for errors."
+    STATUS_NOTE="This run is currently executing. Script 009 will replace this placeholder with aggregate per-script stats and a final success/failure verdict when the pipeline completes. If this file still shows IN PROGRESS after the pipeline has finished, something may have gone wrong -- check slurm_logs/ or the NextFlow execution trace for errors."
 fi
 
 cat > "${SUMMARY_FILE}" <<EOF
-# Workflow Run Summary: ${RUN_LABEL_FOR_SUMMARY}
+# Workflow Run Summary: ${SPECIES_SET_FOR_SUMMARY} annogroup OCL
 
 **Status**: ${STATUS_EMOJI} **${STATUS_TEXT}**
 
-**Run label**: \`${RUN_LABEL_FOR_SUMMARY}\`
-**Annotation database**: \`${ANNOTATION_DATABASE_FOR_SUMMARY}\`
 **Species set**: \`${SPECIES_SET_FOR_SUMMARY}\`
+**Annotation sources**: \`${ANNOTATION_DATABASES_FOR_SUMMARY}\` (fans out per source)
 **Structures requested**: ${STRUCTURE_COUNT_FOR_SUMMARY}
 **Execution mode**: ${EXECUTION_MODE} / parallelism: ${PARALLELISM_MODE_FOR_SUMMARY}
 
@@ -267,14 +270,12 @@ echo ""
 # Read Configuration (for logging + downstream symlink step)
 # ============================================================================
 
-RUN_LABEL=$(read_config "run_label" "")
-ANNOTATION_DATABASE=$(read_config "annotation_database" "")
+ANNOTATION_DATABASES=$(read_config "annotation_databases" "all")
 SPECIES_SET=$(read_config "species_set_name" "")
 
 echo "Configuration:"
-echo "  Run Label           : ${RUN_LABEL}"
-echo "  Species Set         : ${SPECIES_SET}"
-echo "  Annotation Database : ${ANNOTATION_DATABASE}"
+echo "  Species Set          : ${SPECIES_SET}"
+echo "  Annotation Sources   : ${ANNOTATION_DATABASES} (fans out per source)"
 echo ""
 
 # ============================================================================
@@ -362,72 +363,69 @@ if [ $EXIT_CODE -ne 0 ]; then
 fi
 
 # ============================================================================
-# Create symlinks for output_to_input directory
+# Create symlinks for output_to_input directory (PER SOURCE)
 # ============================================================================
-# Real files live in OUTPUT_pipeline/structure_NNN/4-output/ (created by pipeline).
-# Symlinks go to ../../output_to_input/BLOCK_annotations_X_ocl/{run_label}/
-# Each structure gets a symlink: structure_NNN -> real 4-output summary file.
+# Real files live in OUTPUT_pipeline/<source>/structure_NNN/4-output/ (pipeline).
+# Symlinks go to ../../output_to_input/BLOCK_annotations_X_ocl/<species_set>_<source>/
+# Each (source, structure) gets a symlink to that structure's 4-output summary.
 #
-# The run_label provides namespacing so different database explorations coexist:
+# The <species_set>_<source> namespace lets the per-source OCL results coexist (one
+# run produces them all) and preserves the downstream consumer contract -- e.g.
+# integrator's `annogroup_ocl_run_label: "species70_pfam"`.
 #   output_to_input/BLOCK_annotations_X_ocl/species70_pfam/structure_001/
-#   output_to_input/BLOCK_annotations_X_ocl/species70_gene3d/structure_001/
+#   output_to_input/BLOCK_annotations_X_ocl/species70_go/structure_001/
 # ============================================================================
 
 echo ""
-echo "Creating symlinks for downstream subprojects..."
+echo "Creating symlinks for downstream subprojects (per source)..."
 
 # Determine the workflow directory name dynamically
 # (supports both COPYME templates and RUN_XX instances)
 WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 
-SHARED_DIR="../../output_to_input/BLOCK_annotations_X_ocl/${RUN_LABEL}"
-mkdir -p "${SHARED_DIR}"
+# Discover the sources actually produced (the OUTPUT_pipeline/<source>/ subdirs)
+TOTAL_SYMLINKS=0
+for source_dir in OUTPUT_pipeline/*/; do
+    [ -d "$source_dir" ] || continue
+    source_name=$(basename "$source_dir")
+    # Skip non-source aggregate dirs if any ever appear at this level
+    case "$source_name" in
+        composite_clades|logs ) continue ;;
+    esac
 
-# Remove any stale symlinks from previous runs
-for old_link in "${SHARED_DIR}"/structure_*; do
-    if [ -L "$old_link" ]; then
-        rm "$old_link"
-    fi
-done
+    SHARED_DIR="../../output_to_input/BLOCK_annotations_X_ocl/${SPECIES_SET}_${source_name}"
+    mkdir -p "${SHARED_DIR}"
 
-# Create symlinks for each structure directory
-# Primary downstream file is the all-types integrated summary.
-#
-# Also expose the annogroup MEMBERSHIP files (single + combo) from 1-output.
-# These carry per-annogroup member Sequence_IDs, which the OCL all-types summary
-# does NOT. Annogroup membership is structure-invariant (it is annotation-derived,
-# not topology-derived), so any structure's copy is equivalent; we expose every
-# structure for uniformity. Downstream consumer: integrator/BLOCK_annotations_X_orthogroups
-# joins these member IDs against orthogroup membership (added 2026-06-09).
-for structure_dir in OUTPUT_pipeline/structure_*; do
-    if [ -d "$structure_dir" ]; then
+    # Remove ALL stale per-structure symlink dirs from previous runs before recreating.
+    # output_to_input holds ONLY symlinks into OUTPUT_pipeline (never real data), so this
+    # is safe. The old per-link `rm` checked the structure_NNN *directories* for -L (they
+    # are dirs, not links) and so never removed anything -- symlinks from earlier runs and
+    # obsolete schemes (e.g. the retired single/combo files) accumulated indefinitely.
+    find "${SHARED_DIR}" -mindepth 1 -maxdepth 1 -type d -name 'structure_*' -exec rm -rf {} +
+
+    # One symlink per structure -> that structure's all-types integrated OCL summary.
+    #
+    # NOTE: OCL no longer exposes annogroup membership here. Annogroup membership
+    # (member Sequence_IDs) lives in the annogroups subproject, which downstream
+    # consumers read DIRECTLY. This BLOCK only shares its own OCL inference outputs.
+    for structure_dir in "${source_dir}"structure_*; do
+        [ -d "$structure_dir" ] || continue
         structure_name=$(basename "$structure_dir")
         summary_file="${structure_dir}/4-output/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv"
 
         if [ -f "$summary_file" ]; then
             mkdir -p "${SHARED_DIR}/${structure_name}"
-            # NOTE: BLOCK dir was renamed from BLOCK_ocl_analysis to BLOCK_annotations_X_ocl
-            # in the 2026-05-29 OCL reorg Phase 1, Commit 3/6.
-            # The output_to_input/BLOCK_annotations_X_ocl/ subdir name is retained for now to
-            # preserve existing symlinks; Phase 5 may rename that too.
-            ln -sf "../../../../BLOCK_annotations_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/4-output/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv" \
+            ln -sf "../../../../BLOCK_annotations_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${source_name}/${structure_name}/4-output/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv" \
                 "${SHARED_DIR}/${structure_name}/4_ai-${structure_name}_annogroups-complete_ocl_summary-all_types.tsv"
         fi
+    done
 
-        # Annogroup membership (single + combo): per-annogroup member Sequence_IDs.
-        for subtype in single combo; do
-            membership_file="${structure_dir}/1-output/1_ai-${structure_name}_annogroups-${subtype}.tsv"
-            if [ -f "$membership_file" ]; then
-                mkdir -p "${SHARED_DIR}/${structure_name}"
-                ln -sf "../../../../BLOCK_annotations_X_ocl/${WORKFLOW_DIR_NAME}/OUTPUT_pipeline/${structure_name}/1-output/1_ai-${structure_name}_annogroups-${subtype}.tsv" \
-                    "${SHARED_DIR}/${structure_name}/1_ai-${structure_name}_annogroups-${subtype}.tsv"
-            fi
-        done
-    fi
+    SOURCE_SYMLINKS=$(find "${SHARED_DIR}" -name "*.tsv" -type l 2>/dev/null | wc -l)
+    echo "  output_to_input/BLOCK_annotations_X_ocl/${SPECIES_SET}_${source_name}/ -> ${SOURCE_SYMLINKS} symlinks"
+    TOTAL_SYMLINKS=$(( TOTAL_SYMLINKS + SOURCE_SYMLINKS ))
 done
 
-SYMLINK_COUNT=$(find "${SHARED_DIR}" -name "*.tsv" -type l 2>/dev/null | wc -l)
-echo "  output_to_input/BLOCK_annotations_X_ocl/${RUN_LABEL}/ -> ${SYMLINK_COUNT} symlinks created"
+echo "  total: ${TOTAL_SYMLINKS} symlinks across all sources"
 
 echo ""
 echo "========================================================================"
@@ -438,16 +436,18 @@ echo "  OUTPUT_pipeline/structure_NNN/1-output/  Annogroups + phylogenetic data"
 echo "  OUTPUT_pipeline/structure_NNN/2-output/  Annogroup origins"
 echo "  OUTPUT_pipeline/structure_NNN/3-output/  Conservation/loss patterns"
 echo "  OUTPUT_pipeline/structure_NNN/4-output/  Comprehensive OCL summaries"
-echo "  OUTPUT_pipeline/structure_NNN/5-output/  Validation reports"
+echo "  OUTPUT_pipeline/structure_NNN/5-output/  Species-tree deconvolution (species + protein counts per clade)"
+echo "  OUTPUT_pipeline/structure_NNN/6-output/  Validation reports + QC metrics"
+echo "  OUTPUT_pipeline/composite_clades/        Composite clades (computed once)"
 echo ""
 echo "Primary downstream file (per structure):"
 echo "  4_ai-{structure}_annogroups-complete_ocl_summary-all_types.tsv"
 echo ""
-echo "Downstream symlinks:"
-echo "  ../../output_to_input/BLOCK_annotations_X_ocl/${RUN_LABEL}/"
+echo "Downstream symlinks (per source):"
+echo "  ../../output_to_input/BLOCK_annotations_X_ocl/${SPECIES_SET}_<source>/"
 echo ""
-echo "Run Label: ${RUN_LABEL}"
-echo "Annotation Database: ${ANNOTATION_DATABASE}"
+echo "Species set: ${SPECIES_SET}"
+echo "Annotation sources: ${ANNOTATION_DATABASES} (fanned out per source)"
 echo "Structures processed: ${STRUCTURE_COUNT}"
 echo "========================================================================"
 echo "Completed: $(date)"
@@ -455,7 +455,7 @@ echo "Completed: $(date)"
 # ============================================================================
 # Copy RUN_SUMMARY.md to external billboard at BLOCK level
 # ============================================================================
-# Inside the workflow dir: RUN_SUMMARY.md (built by Script 007)
+# Inside the workflow dir: RUN_SUMMARY.md (built by Script 009)
 # Sibling at BLOCK level:  workflow-RUN_XX-run_summary.md (copy for at-a-glance status)
 # The copy gives users visibility into run status without cd'ing into the workflow dir.
 

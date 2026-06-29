@@ -63,6 +63,13 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        '--source',
+        type = str,
+        required = True,
+        help = 'Annotation source to process (e.g., "pfam", "go", "panther").'
+    )
+
+    parser.add_argument(
         '--config',
         type = str,
         required = True,
@@ -1149,6 +1156,7 @@ def main():
     emit_run_summary_fragment(
         script_number = 4,
         structure_id = args.structure_id,
+        source = args.source,
         stats = {
             'duration_seconds': round( duration_seconds, 2 ),
             'annogroup_summaries_total': len( annogroup_summaries ),

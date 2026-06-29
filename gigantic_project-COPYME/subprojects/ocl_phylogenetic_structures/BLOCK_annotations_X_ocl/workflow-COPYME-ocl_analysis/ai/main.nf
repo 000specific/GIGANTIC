@@ -68,6 +68,26 @@ if ( params.help ) {
 // ============================================================================
 // Workflow root = ${projectDir}/.. (since projectDir is ai/, the workflow root
 // is one level up). All workflow-relative paths use that convention.
+//
+// This run fans out over SOURCES x STRUCTURES. Each (source, structure) pair runs
+// the per-structure chain independently, writing to OUTPUT_pipeline/<source>/.
+
+// Resolve the annotation sources to analyze (params.annotation_databases):
+//   "all"        -> every source dir present in the annogroups output_to_input
+//                   (<annogroups_dir>/<species_set>/<source>/)
+//   [ pfam, go ] -> an explicit list
+//   "pfam"       -> a single source string
+def sources_param = params.annotation_databases
+if ( sources_param instanceof List ) {
+    Channel.fromList( sources_param ).set { sources_channel }
+} else if ( sources_param.toString() == 'all' ) {
+    def annogroups_species_dir = "${projectDir}/../${params.inputs.annogroups_dir}/${params.species_set_name}"
+    Channel.fromPath( "${annogroups_species_dir}/*", type: 'dir' )
+        .map { it.name }
+        .set { sources_channel }
+} else {
+    Channel.of( sources_param.toString() ).set { sources_channel }
+}
 
 // Read structure IDs from manifest (path resolved from params.inputs.structure_manifest)
 Channel
@@ -76,25 +96,31 @@ Channel
     .map { row -> row.structure_id }
     .set { structure_ids_channel }
 
+// Cartesian product: one [source, structure_id] tuple per (source, structure)
+sources_channel
+    .combine( structure_ids_channel )
+    .set { source_structure_pairs }
+
 // ============================================================================
 // PROCESS 001: CREATE ANNOGROUPS
 // ============================================================================
 
 process load_annogroups {
-    tag "structure_${structure_id}"
+    tag "${source}/structure_${structure_id}"
 
     input:
-    val structure_id
+    tuple val(source), val(structure_id)
 
     output:
-    val structure_id, emit: structure_id
+    tuple val(source), val(structure_id)
 
     script:
     """
     python3 ${projectDir}/scripts/001_ai-python-load_annogroups.py \\
         --structure_id ${structure_id} \\
+        --source ${source} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
-        --output_dir ${projectDir}/../${params.output.base_dir}
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
     """
 }
 
@@ -103,20 +129,21 @@ process load_annogroups {
 // ============================================================================
 
 process determine_origins {
-    tag "structure_${structure_id}"
+    tag "${source}/structure_${structure_id}"
 
     input:
-    val structure_id
+    tuple val(source), val(structure_id)
 
     output:
-    val structure_id, emit: structure_id
+    tuple val(source), val(structure_id)
 
     script:
     """
     python3 ${projectDir}/scripts/002_ai-python-determine_origins.py \\
         --structure_id ${structure_id} \\
+        --source ${source} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
-        --output_dir ${projectDir}/../${params.output.base_dir}
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
     """
 }
 
@@ -125,20 +152,21 @@ process determine_origins {
 // ============================================================================
 
 process quantify_conservation_loss {
-    tag "structure_${structure_id}"
+    tag "${source}/structure_${structure_id}"
 
     input:
-    val structure_id
+    tuple val(source), val(structure_id)
 
     output:
-    val structure_id, emit: structure_id
+    tuple val(source), val(structure_id)
 
     script:
     """
     python3 ${projectDir}/scripts/003_ai-python-quantify_conservation_loss.py \\
         --structure_id ${structure_id} \\
+        --source ${source} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
-        --output_dir ${projectDir}/../${params.output.base_dir}
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
     """
 }
 
@@ -147,52 +175,108 @@ process quantify_conservation_loss {
 // ============================================================================
 
 process comprehensive_ocl_analysis {
-    tag "structure_${structure_id}"
+    tag "${source}/structure_${structure_id}"
 
     input:
-    val structure_id
+    tuple val(source), val(structure_id)
 
     output:
-    val structure_id, emit: structure_id
+    tuple val(source), val(structure_id)
 
     script:
     """
     python3 ${projectDir}/scripts/004_ai-python-comprehensive_ocl_analysis.py \\
         --structure_id ${structure_id} \\
+        --source ${source} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
-        --output_dir ${projectDir}/../${params.output.base_dir}
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
     """
 }
 
 // ============================================================================
-// PROCESS 005: VALIDATE RESULTS
+// PROCESS 005: SPECIES-TREE DECONVOLUTION (per structure)
 // ============================================================================
 
-process validate_results {
-    tag "structure_${structure_id}"
+process species_tree_deconvolution {
+    tag "${source}/structure_${structure_id}"
 
     input:
-    val structure_id
+    tuple val(source), val(structure_id)
 
     output:
-    val structure_id, emit: structure_id
+    tuple val(source), val(structure_id)
 
     script:
     """
-    python3 ${projectDir}/scripts/005_ai-python-validate_results.py \\
+    python3 ${projectDir}/scripts/005_ai-python-species_tree_deconvolution.py \\
         --structure_id ${structure_id} \\
+        --source ${source} \\
         --config ${projectDir}/../START_HERE-user_config.yaml \\
-        --output_dir ${projectDir}/../${params.output.base_dir}
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
     """
 }
 
 // ============================================================================
-// PROCESS 006: WRITE RUN LOG
+// PROCESS 006: VALIDATE RESULTS (per structure)
+// ============================================================================
+
+process validate_results {
+    tag "${source}/structure_${structure_id}"
+
+    input:
+    tuple val(source), val(structure_id)
+
+    output:
+    tuple val(source), val(structure_id)
+
+    script:
+    """
+    python3 ${projectDir}/scripts/006_ai-python-validate_results.py \\
+        --structure_id ${structure_id} \\
+        --source ${source} \\
+        --config ${projectDir}/../START_HERE-user_config.yaml \\
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
+    """
+}
+
+// ============================================================================
+// PROCESS 007: COMPOSITE CLADES (once -- structure-independent)
 // ============================================================================
 
 /*
- * Process 6: Write Run Log
- * Calls: scripts/006_ai-python-write_run_log.py
+ * Process 7: Composite Clades
+ * Calls: scripts/007_ai-python-composite_clades.py
+ *
+ * Computed ONCE PER SOURCE -- annogroup member species and the building-block
+ * clade species sets are stable across all structures (Rule 6). Runs after that
+ * source's per-structure chain completes (per-source barrier via groupTuple()).
+ */
+process composite_clades {
+    tag "${source}"
+    label 'local'
+
+    input:
+        tuple val(source), val(done_structures)
+
+    output:
+        val source, emit: composite_complete
+
+    script:
+    """
+    python3 ${projectDir}/scripts/007_ai-python-composite_clades.py \
+        --source ${source} \
+        --config ${projectDir}/../START_HERE-user_config.yaml \
+        --output_dir ${projectDir}/../${params.output.base_dir}/${source}
+    """
+}
+
+// ============================================================================
+// PROCESS 008: WRITE RUN LOG
+// ============================================================================
+
+/*
+ * Process 8: Write Run Log
+ * Calls: scripts/008_ai-python-write_run_log.py
  *
  * Creates a timestamped log in ai/logs/ within this workflow directory
  * for transparency and reproducibility.
@@ -208,7 +292,7 @@ process write_run_log {
 
     script:
     """
-    python3 ${projectDir}/scripts/006_ai-python-write_run_log.py \
+    python3 ${projectDir}/scripts/008_ai-python-write_run_log.py \
         --workflow-name "ocl_analysis" \
         --subproject-name "ocl_phylogenetic_structures-BLOCK_annotations_X_ocl" \
         --project-name "${params.project_name}" \
@@ -217,14 +301,14 @@ process write_run_log {
 }
 
 // ============================================================================
-// PROCESS 007: AGGREGATE RUN SUMMARY
+// PROCESS 009: AGGREGATE RUN SUMMARY
 // ============================================================================
 
 /*
- * Process 7: Aggregate Run Summary
- * Calls: scripts/007_ai-python-aggregate_run_summary.py
+ * Process 9: Aggregate Run Summary
+ * Calls: scripts/009_ai-python-aggregate_run_summary.py
  *
- * Reads per-structure JSON fragments emitted by Scripts 001-005 and builds
+ * Reads per-structure JSON fragments emitted by Scripts 001-004 + 006 and builds
  * RUN_SUMMARY.md at the workflow root. This is the final step -- gives users
  * a glanceable success/failure + key stats view without entering OUTPUT_pipeline/.
  */
@@ -239,7 +323,7 @@ process aggregate_run_summary {
 
     script:
     """
-    python3 ${projectDir}/scripts/007_ai-python-aggregate_run_summary.py \
+    python3 ${projectDir}/scripts/009_ai-python-aggregate_run_summary.py \
         --config ${projectDir}/../START_HERE-user_config.yaml \
         --workflow_dir ${projectDir}/..
     """
@@ -250,17 +334,26 @@ process aggregate_run_summary {
 // ============================================================================
 
 workflow {
-    // Run pipeline for each structure (parallel across structures, sequential per structure)
-    load_annogroups( structure_ids_channel )
-    determine_origins( load_annogroups.out.structure_id )
-    quantify_conservation_loss( determine_origins.out.structure_id )
-    comprehensive_ocl_analysis( quantify_conservation_loss.out.structure_id )
-    validate_results( comprehensive_ocl_analysis.out.structure_id )
+    // Per-(source, structure) chain (parallel across both source and structure,
+    // sequential within each source-structure pair). Every process threads the
+    // [source, structure_id] tuple through and writes to OUTPUT_pipeline/<source>/.
+    load_annogroups( source_structure_pairs )
+    determine_origins( load_annogroups.out )
+    quantify_conservation_loss( determine_origins.out )
+    comprehensive_ocl_analysis( quantify_conservation_loss.out )
+    species_tree_deconvolution( comprehensive_ocl_analysis.out )
+    validate_results( species_tree_deconvolution.out )
 
-    // Write run log after all structures complete validation
-    write_run_log( validate_results.out.structure_id.collect() )
+    // Per-source barrier: group each source's validated structures, then compute
+    // composite clades ONCE per source (structure-independent, Rule 6).
+    validate_results.out
+        .groupTuple()
+        .set { validated_by_source }
+    composite_clades( validated_by_source )
 
-    // Aggregate run summary into RUN_SUMMARY.md at workflow root (FINAL STEP)
+    // Global barrier: after every source's composite clades complete, write the run
+    // log, then aggregate the run summary across all sources (FINAL STEP).
+    write_run_log( composite_clades.out.composite_complete.collect() )
     aggregate_run_summary( write_run_log.out.log_complete )
 }
 
