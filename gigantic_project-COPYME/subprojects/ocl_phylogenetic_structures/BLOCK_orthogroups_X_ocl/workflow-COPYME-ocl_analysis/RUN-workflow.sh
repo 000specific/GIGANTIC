@@ -391,12 +391,12 @@ WORKFLOW_DIR_NAME="$(basename "${SCRIPT_DIR}")"
 SHARED_DIR="../../output_to_input/BLOCK_orthogroups_X_ocl/${RUN_LABEL}"
 mkdir -p "${SHARED_DIR}"
 
-# Remove any stale symlinks from previous runs
-for old_link in "${SHARED_DIR}"/structure_*; do
-    if [ -L "$old_link" ]; then
-        rm "$old_link"
-    fi
-done
+# Remove ALL stale per-structure symlink dirs from previous runs before recreating.
+# output_to_input holds ONLY symlinks into OUTPUT_pipeline (never real data), so this
+# is safe. The old per-link `rm` tested the structure_NNN *directories* for -L (they
+# are dirs, not links), so it never removed anything -- symlinks from earlier runs and
+# obsolete schemes would accumulate indefinitely.
+find "${SHARED_DIR}" -mindepth 1 -maxdepth 1 -type d -name 'structure_*' -exec rm -rf {} +
 
 # Create symlinks for each structure directory.
 # Source filenames include the structure_NNN infix (Script 004's naming convention);
