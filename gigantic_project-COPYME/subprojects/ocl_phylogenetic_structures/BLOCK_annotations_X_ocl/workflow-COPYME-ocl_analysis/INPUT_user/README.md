@@ -30,9 +30,16 @@ input species tree distinction, see
 2. Edit structure_manifest.tsv to list desired structure IDs (one per line)
 
 3. Edit START_HERE-user_config.yaml to set:
-   - `run_label` for this exploration (e.g., `species70_pfam`)
    - `species_set_name` (e.g., `species70`)
-   - `annotation_database` matching your input data (pfam, gene3d, deeploc, etc.)
-   - `annogroup_subtypes` (domain databases: single/combo/zero; simple databases: single only)
-   - `annotations_dir` pointing to the correct upstream database directory
+   - `annotation_databases` — the sources to analyze, IN PARALLEL: `"all"` (every
+     source with built annogroups) or a list like `[ pfam, go, panther ]`. The run
+     fans out PER SOURCE; each publishes to
+     `output_to_input/BLOCK_annotations_X_ocl/<species_set>_<source>/`. (This replaces
+     the old single-source `run_label` + `annotation_database`.)
+   - `annogroup_types` (origin-bearing types OCL maps: positional sources yield
+     feature/combination/architecture; whole-protein sources yield feature/combination.
+     `absent` is excluded from OCL by design — sequences sharing no feature have no
+     single evolutionary origin)
+   - `annogroups_dir` pointing to the annogroups subproject output
+     (`../../../annogroups/output_to_input/BLOCK_build_annogroups`)
    - `execution_mode` (`local` or `slurm`) and if slurm, `slurm_account` / `slurm_qos`

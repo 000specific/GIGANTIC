@@ -22,7 +22,7 @@ Scope:   This README is the user-facing landing page. AI navigation lives
   [`../../ai/ai_FYIs/ocl_phylogenetic_structures-rule_7_whitepaper.md`](../../ai/ai_FYIs/ocl_phylogenetic_structures-rule_7_whitepaper.md)
 - Sandbox sibling (gene-tree-vs-species-tree concordance): [`../z_species_trees_vs_gene_trees/`](../z_species_trees_vs_gene_trees/)
 - Sibling parent (taxonomic hierarchy axis): [`../z_ocl_taxonomic_hierarchies/`](../z_ocl_taxonomic_hierarchies/)
-- IN: `../trees_species/output_to_input/BLOCK_permutations_and_features/` (species tree STRUCTURES — substrate) + feature-producing subprojects per BLOCK (orthogroups, annotations_hmms, trees_gene_families AGS, trees_gene_groups AGS, hotspots, dark_proteomes, synteny)
+- IN: `../trees_species/output_to_input/BLOCK_permutations_and_features/` (species tree STRUCTURES — substrate) + feature-producing subprojects per BLOCK (orthogroups, annogroups, trees_gene_families AGS, trees_gene_groups AGS, hotspots, dark_proteomes, synteny)
 - OUT: `output_to_input/<BLOCK>/` consumed by downstream OCL-interpretation work; `upload_to_server/` for the project data server
 
 ## Purpose
@@ -52,7 +52,7 @@ subproject with a substrate switch.
 | BLOCK | Status | Feature source | Notes |
 |-------|--------|----------------|-------|
 | [`BLOCK_orthogroups_X_ocl/`](BLOCK_orthogroups_X_ocl/) | **functional** | `../orthogroups/` (any tool BLOCK: orthohmm, orthofinder, broccoli) | Migrated from the standalone `orthogroups_X_ocl/` subproject during the 2026-05-29 OCL reorg. Per-orthogroup OCL across 105 candidate species70 species tree structures. |
-| [`BLOCK_annotations_X_ocl/`](BLOCK_annotations_X_ocl/) | **functional** | `../annotations_hmms/BLOCK_build_annotation_database/` | Migrated from the standalone `annotations_X_ocl/` subproject. Per-annogroup OCL (single / combo / zero subtypes for domain databases; single only for simple databases). |
+| [`BLOCK_annotations_X_ocl/`](BLOCK_annotations_X_ocl/) | **functional** | `../annogroups/output_to_input/BLOCK_build_annogroups/` | Migrated from the standalone `annotations_X_ocl/` subproject. Imports annogroups (computed once by the annogroups subproject) and maps the origin-bearing types (feature / combination / architecture) onto each structure; `absent` is excluded from OCL by design. |
 | [`BLOCK_trees_gene_families_X_ocl/`](BLOCK_trees_gene_families_X_ocl/) | placeholder | `../trees_gene_families/.../STEP_1-homolog_discovery/` AGS | Reads AGS (pre-treebuilding All Gene Set) per hand-curated gene family. Side-steps the gene-tree-vs-species-tree reconciliation problem by operating on the homolog-set level rather than the tree level. |
 | [`BLOCK_trees_gene_groups_X_ocl/`](BLOCK_trees_gene_groups_X_ocl/) | placeholder | `../trees_gene_groups/.../STEP_1-homolog_discovery/` AGS | Same AGS-level routing as gene families, but per gene group (HGNC, SNAP family, etc.). |
 | [`BLOCK_synteny_X_ocl/`](BLOCK_synteny_X_ocl/) | placeholder | `../z_synteny/` (placeholder upstream) | Future axis: synteny-block conservation/loss across tree structures. |

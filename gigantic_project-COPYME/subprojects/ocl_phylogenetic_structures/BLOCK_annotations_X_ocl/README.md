@@ -70,16 +70,21 @@ Processes all selected annogroups across user-selected species tree topologies i
 
 For full canonical definitions of Rules 1-7, see `../../../AI_GUIDE.md`.
 
-## Design: COPYME for Multi-Database Exploration
+## Design: One Run Fans Out Per Annotation Source
 
 The OCL algorithm is database-agnostic -- the same pipeline works regardless of which
 annotation database (pfam, gene3d, deeploc, signalp, tmbed, metapredict) produced the input.
 
-Each exploration (database + structure selection) is a separate COPYME copy:
-- `workflow-RUN_01-ocl_analysis/` with run_label "species70_pfam"
-- `workflow-RUN_02-ocl_analysis/` with run_label "species70_gene3d"
+A single run analyzes EVERY source listed in `annotation_databases` (`"all"` or a
+list) in parallel, fanning out over **source x 105 structures**. Each source writes
+to its own subtree (`OUTPUT_pipeline/<source>/...`) and publishes to
+`output_to_input/BLOCK_annotations_X_ocl/<species_set>_<source>/`:
+- `species70_pfam/`, `species70_go/`, `species70_panther/` -- all from one run.
 
-Different explorations coexist in output_to_input via run_label-based subdirectories.
+So the per-source results coexist (they are NOT separate RUN versions: per the
+GIGANTIC convention the latest RUN of this block supersedes earlier ones). The
+`<species_set>_<source>` namespace also preserves the downstream consumer contract
+(e.g. the integrator's `annogroup_ocl_run_label: "species70_pfam"`).
 
 ### Annogroup Types Mapped Onto Structures
 
@@ -118,10 +123,11 @@ ocl_phylogenetic_structures/               # parent subproject (NEW)
 ├── README.md, AI_GUIDE.md                 # parent docs
 ├── output_to_input/                       # parent-level (per §2 mirrors producer paths)
 │   ├── BLOCK_annotations_X_ocl/           # this BLOCK's downstream symlinks
-│   │   ├── species70_pfam/                # run_label from a RUN copy
-│   │   │   ├── structure_001/
+│   │   ├── species70_pfam/                # <species_set>_<source>, one per source
+│   │   │   ├── structure_001/             #   from a SINGLE multi-source run
 │   │   │   └── ...
-│   │   └── species70_gene3d/              # run_label from another RUN copy
+│   │   ├── species70_go/
+│   │   └── species70_panther/
 │   └── BLOCK_orthogroups_X_ocl/           # sibling BLOCK's downstream symlinks
 ├── upload_to_server/                      # parent-level publishing
 # (no per-subproject research_notebook/ per §1; sandbox at
@@ -148,8 +154,9 @@ ocl_phylogenetic_structures/               # parent subproject (NEW)
 ### BLOCK_annotations_X_ocl reads FROM:
 - `../../trees_species/output_to_input/BLOCK_permutations_and_features/` - Phylogenetic blocks,
   paths, parent-child relationships, clade-species mappings
-- `../../annotations_hmms/output_to_input/BLOCK_build_annotation_database/` - Per-species
-  annotation files (7-column TSV per species per database)
+- `../../annogroups/output_to_input/BLOCK_build_annogroups/` - Annogroup map per source
+  (`<species_set>/<source>/2_ai-<source>-annogroup_map.tsv`), computed once and
+  structure-independent (set via `annogroups_dir` in config)
 
 ### BLOCK_annotations_X_ocl provides TO:
 - Parent `output_to_input/` for downstream analysis

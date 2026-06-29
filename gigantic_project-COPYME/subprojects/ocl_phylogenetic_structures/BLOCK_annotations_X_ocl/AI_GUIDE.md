@@ -61,11 +61,12 @@ ocl_phylogenetic_structures/                   # parent subproject
 ├── README.md, AI_GUIDE.md                     # parent docs
 ├── output_to_input/                           # parent-level shared output (per §2 mirrors producer paths)
 │   ├── BLOCK_annotations_X_ocl/               # this BLOCK's downstream symlinks
-│   │   ├── species70_pfam/                    # From RUN copy with that label
-│   │   │   ├── structure_001/
+│   │   ├── species70_pfam/                    # <species_set>_<source>, one per source
+│   │   │   ├── structure_001/                 #   ALL from a SINGLE multi-source run
 │   │   │   │   └── 4_ai-structure_001_annogroups-complete_ocl_summary-all_types.tsv
 │   │   │   └── ...
-│   │   └── species70_gene3d/                  # From another RUN copy
+│   │   ├── species70_go/
+│   │   └── species70_panther/
 │   └── BLOCK_orthogroups_X_ocl/               # sibling BLOCK's downstream symlinks
 ├── upload_to_server/                          # parent-level publishing
 ├── RUN-update_upload_to_server.sh             # parent-level publisher (§38)
@@ -164,18 +165,21 @@ OCL maps the **origin-bearing** types onto the structures; `absent` is excluded
 architecture). Which types a source yields is data-determined in the annogroups
 subproject (whole-protein sources like deeploc have no `architecture`).
 
-### COPYME Multi-Database Coexistence
+### Per-Source Coexistence (one run, all sources)
 
-This subproject supports running OCL analysis with different annotation databases.
-Each exploration gets its own COPYME copy:
+A single run analyzes every source in `annotation_databases` (`"all"` or a list)
+in parallel, fanning out over **source x structure**. Each source publishes to its
+own `<species_set>_<source>` subdirectory:
 
 ```
-workflow-RUN_01-ocl_analysis/  -> run_label: "species70_pfam"
-workflow-RUN_02-ocl_analysis/  -> run_label: "species70_gene3d"
+annotation_databases: [ pfam, go, panther ]   ->   output_to_input/BLOCK_annotations_X_ocl/
+                                                     ├── species70_pfam/
+                                                     ├── species70_go/
+                                                     └── species70_panther/
 ```
 
-The `run_label` in `START_HERE-user_config.yaml` determines the output_to_input
-subdirectory name, so different runs coexist without overwriting each other.
+The `<species_set>_<source>` namespace is auto-derived (no `run_label` key), so the
+per-source results coexist from one run without overwriting each other.
 
 ### Terminal Self-Loop Exclusion
 
@@ -210,7 +214,7 @@ For the full canonical definition, see Rule 6 in `../../../AI_GUIDE.md`.
 | Subproject | What It Provides | Config Path |
 |-----------|------------------|-------------|
 | trees_species | Phylogenetic blocks, parent-child tables, phylogenetic paths | `inputs.trees_species_dir` |
-| annotations_hmms | Per-species annotation files (7-column TSV per species per database) | `inputs.annotations_dir` |
+| annogroups | Annogroup map per source (computed once, structure-independent) | `inputs.annogroups_dir` |
 
 ---
 
@@ -218,28 +222,26 @@ For the full canonical definition, see Rule 6 in `../../../AI_GUIDE.md`.
 
 The primary downstream file is `4_ai-{structure}_annogroups-complete_ocl_summary-all_types.tsv`,
 which provides per-annogroup origin, block-state counts, and species composition across all
-subtypes. Per-subtype summaries are also available for focused analysis.
+origin-bearing types. Per-type summaries
+(`-feature`, `-combination`, `-architecture`) are also available for focused analysis.
 
-### Exposed in `output_to_input/BLOCK_annotations_X_ocl/{run_label}/structure_NNN/`
+### Exposed in `output_to_input/BLOCK_annotations_X_ocl/<species_set>_<source>/structure_NNN/`
 
 | File | Carries | Notes |
 |------|---------|-------|
 | `4_ai-{structure}_annogroups-complete_ocl_summary-all_types.tsv` | per-annogroup origin, OCL block-state counts, species composition, annotation accessions/definitions | the OCL spine; does **not** carry member `Sequence_IDs` |
-| `1_ai-{structure}_annogroups-single.tsv` | per-annogroup member `Sequence_IDs` (single subtype) | annogroup membership; **structure-invariant** (annotation-derived) |
-| `1_ai-{structure}_annogroups-combo.tsv` | per-annogroup member `Sequence_IDs` (combo subtype) | annogroup membership; **structure-invariant** |
+| `4_ai-{structure}_annogroups-complete_ocl_summary-feature.tsv` | same fields, feature type only | per-type view |
+| `4_ai-{structure}_annogroups-complete_ocl_summary-combination.tsv` | same fields, combination type only | per-type view |
+| `4_ai-{structure}_annogroups-complete_ocl_summary-architecture.tsv` | same fields, architecture type only | per-type view |
 
-The membership files (added 2026-06-09) are exposed because the OCL summary lacks
-the per-protein member IDs needed for cross-feature joins. Because annogroup
-membership does not depend on tree topology, a consumer needs only one structure's
-copy (e.g. `structure_001`).
+Member `Sequence_IDs` are not produced by this BLOCK; annogroup membership lives in
+the `annogroups` subproject (the integrator reads membership directly from there).
 
 ### Downstream consumers (per §40)
 
-- **`integrator/BLOCK_annotations_X_orthogroups`** — joins the annogroup membership
-  `Sequence_IDs` (single + combo) against orthogroup membership to find annogroups
-  touching non-bilaterian-only orthogroups. Reads the `1_ai-...annogroups-{single,combo}.tsv`
-  membership files exposed above (and the all-types summary for pfam
-  accessions/definitions). See `../../integrator/BLOCK_annotations_X_orthogroups/AI_GUIDE.md`.
+- **`integrator/BLOCK_annotations_X_orthogroups`** — does NOT read from this BLOCK. It
+  reads the annogroup map and membership directly from the `annogroups` subproject
+  output_to_input. See `../../integrator/BLOCK_annotations_X_orthogroups/AI_GUIDE.md`.
 
 ---
 
@@ -250,9 +252,9 @@ copy (e.g. `structure_001`).
 | "Config file not found" | Missing START_HERE-user_config.yaml | Verify config file exists in workflow directory |
 | "Structure manifest empty" | No structure IDs in manifest | Add structure IDs (001-105) to INPUT_user/structure_manifest.tsv |
 | "Phylogenetic blocks file not found" | trees_species not run | Run trees_species subproject first |
-| "No annotation files found" | annotations_hmms not run or wrong database path | Run annotations_hmms subproject; verify `annotations_dir` in config |
+| "Annogroup map not found" | annogroups subproject not run or wrong path | Run the annogroups subproject; verify `annogroups_dir` in config |
 | Script 005 exits with code 1 | Validation failures detected | Check 5-output/5_ai-validation_error_log.txt for details |
-| "No annogroups created" | Annotation files empty or wrong format | Verify annotation files are 7-column TSV with expected format |
+| "No annogroups loaded" | Annogroup map empty or wrong format | Verify the annogroups subproject produced `2_ai-<source>-annogroup_map.tsv` |
 
 ---
 
@@ -260,7 +262,7 @@ copy (e.g. `structure_001`).
 
 | File | User Edits? | Purpose |
 |------|------------|---------|
-| `START_HERE-user_config.yaml` | Yes | All configuration: run_label, annotation_database, annogroup_subtypes, paths, `execution_mode` (local or slurm), SLURM account/qos, `resume` flag, `cpus` + `memory_gb` for SLURM sizing |
+| `START_HERE-user_config.yaml` | Yes | All configuration: species_set_name, annotation_databases (`"all"` or a list; fans out per source), annogroup_types, paths, `execution_mode` (local or slurm), SLURM account/qos, `resume` flag, `cpus` + `memory_gb` for SLURM sizing |
 | `INPUT_user/structure_manifest.tsv` | Yes | Which tree structures to analyze (one structure_id per line) |
 | `RUN-workflow.sh` | No | Single entry point: `bash RUN-workflow.sh`. If `execution_mode: "slurm"`, self-submits as a SLURM job via `sbatch` |
 | `ai/conda_environment.yml` | No | Per-BLOCK conda env spec (name: `aiG-ocl_phylogenetic_structures-annotations_X_ocl`) |
@@ -273,8 +275,8 @@ copy (e.g. `structure_001`).
 
 | Situation | Ask |
 |-----------|-----|
-| User wants to run annotations OCL | "Which annotation database should I use? (pfam, gene3d, deeploc, signalp, tmbed, metapredict)" |
-| Domain vs simple database | "Domain databases support single/combo/zero subtypes; simple databases use single only" |
+| User wants to run annotations OCL | "Which annotation source should I use? (pfam, gene3d, deeploc, signalp, tmbed, metapredict)" |
+| Positional vs whole-protein source | "Positional sources yield feature/combination/architecture types; whole-protein sources yield feature/combination only — `absent` is excluded from OCL in all cases" |
 | User wants a subset of structures | "Which structure IDs should I add to the manifest?" |
 | Validation failures | "Would you like me to investigate the error log?" |
 
@@ -290,15 +292,13 @@ copy (e.g. `structure_001`).
 ```
 BLOCK_annotations_X_ocl/             # this BLOCK
 ├── workflow-COPYME-ocl_analysis/    # Template (never run directly)
-├── workflow-RUN_01-ocl_analysis/    # Copy for species70 pfam
-├── workflow-RUN_02-ocl_analysis/    # Copy for species70 gene3d
-└── workflow-RUN_03-ocl_analysis/    # Copy for species70 deeploc
+└── workflow-RUN_NN-ocl_analysis/    # A run (analyzes ALL listed sources at once)
 ```
 
-Each copy has its own `START_HERE-user_config.yaml` with a unique
-`run_label`, and outputs are symlinked into separate run_label
-subdirectories at `../output_to_input/BLOCK_annotations_X_ocl/{run_label}/`
-at the parent subproject level.
+One run analyzes every source in `annotation_databases`; outputs are symlinked
+per source into `../output_to_input/BLOCK_annotations_X_ocl/<species_set>_<source>/`
+at the parent subproject level. A new run supersedes the previous (per the GIGANTIC
+convention) — sources do NOT each get their own RUN copy.
 
 ### Creating a New Run
 
@@ -309,8 +309,8 @@ cp -r workflow-COPYME-ocl_analysis workflow-RUN_01-ocl_analysis
 # 2. Edit config for this specific run
 cd workflow-RUN_01-ocl_analysis
 nano START_HERE-user_config.yaml
-# Set: run_label, species_set_name, annotation_database,
-#      annogroup_subtypes, input paths,
+# Set: species_set_name, annotation_databases ("all" or a list -> fans out per source),
+#      annogroup_types, input paths,
 #      execution_mode ("local" or "slurm"), and if slurm:
 #      slurm_account/slurm_qos
 
@@ -330,10 +330,10 @@ during the OCL reorg) is created on-demand from
 
 | Script | Purpose | Key Output |
 |--------|---------|------------|
-| 001 | Create annogroups from per-species annotation files | Annogroup catalog with single/combo/zero subtypes |
+| 001 | Load annogroups imported from the `annogroups` subproject | `annogroup_map.tsv` + `annogroups-species_identifiers.tsv` (origin-bearing types: feature/combination/architecture) |
 | 002 | Determine MRCA origin of each annogroup | Annogroup origins with `Origin_Phylogenetic_Block` and `Origin_Phylogenetic_Block_State` |
 | 003 | Classify each (block, annogroup) pair into the five-state vocabulary (A/O/P/L/X) | Per-block stats, per-annogroup patterns |
-| 004 | Generate comprehensive summaries per subtype + all-types | Complete OCL summary tables |
+| 004 | Generate comprehensive summaries per type + all-types | Complete OCL summary tables (`-feature`, `-combination`, `-architecture`, `-all_types`) |
 | 005 | Validate all results (fail-fast per §36) | Validation report, error log, QC metrics |
 | 006 | Write run log (per §45) | Timestamped log of this run |
 | 007 | Aggregate run summary across structures | Per-RUN aggregate `RUN_SUMMARY.md` |
@@ -345,7 +345,7 @@ Scripts are sequential per structure but parallel across structures
 
 ```
 OUTPUT_pipeline/structure_NNN/
-├── 1-output/    Annogroups built from per-species annotations
+├── 1-output/    Annogroups loaded (imported) from the annogroups subproject
 ├── 2-output/    Annogroup origins + per-clade files
 ├── 3-output/    Conservation/loss per block + per annogroup
 ├── 4-output/    Comprehensive summaries (primary downstream files,
