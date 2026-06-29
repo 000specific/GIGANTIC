@@ -56,26 +56,30 @@ one_direction_homologs/
 ├── AI_GUIDE.md  # THIS FILE
 ├── TODO.md                             # Project tracking
 │
+├── RUN-update_upload_to_server.sh      # Publish to the data server (thin wrapper → shared helper, §38)
+│
 ├── user_research/                      # Personal workspace
 │
-├── upload_to_server/                   # Server sharing
-│   └── upload_manifest.tsv
+├── upload_to_server/                   # Curated deliverables for the data server (§38/§39)
+│   ├── README.md
+│   └── .gitkeep
 │
-├── output_to_input/                    # Outputs for downstream subprojects
+├── output_to_input/                    # Outputs for downstream subprojects (§2)
+│   ├── README.md
 │   └── BLOCK_diamond_ncbi_nr/
 │       └── ncbi_nr_top_hits/           # Top hits + statistics for downstream
 │
 └── BLOCK_diamond_ncbi_nr/
     ├── AI_GUIDE.md     # BLOCK-level AI guidance
-    ├── RUN-update_upload_to_server.sh
     │
     └── workflow-COPYME-diamond_ncbi_nr/
-        ├── RUN-workflow.sh             # bash RUN-workflow.sh
-        ├── RUN-workflow.sh         # sbatch RUN-workflow.sh
+        ├── README.md                  # Quick start guide
+        ├── RUN-workflow.sh            # Run the workflow (local or SLURM via execution_mode, §29)
         ├── START_HERE-user_config.yaml # User edits DIAMOND settings here
-        ├── INPUT_user/                 # Proteome manifest
-        ├── OUTPUT_pipeline/            # Results (6 numbered directories)
-        └── ai/                         # Internal
+        ├── upload_manifest.tsv        # Which outputs publish to the data server (§38/§39)
+        ├── INPUT_user/                # Proteome manifest
+        ├── OUTPUT_pipeline/           # Results (6 numbered directories)
+        └── ai/                        # Internal
 ```
 
 ---

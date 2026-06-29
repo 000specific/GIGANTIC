@@ -1,0 +1,35 @@
+# GIGANTIC upload_manifest.tsv — one_direction_homologs / BLOCK_diamond_ncbi_nr
+# ============================================================================
+# Publishes the one_direction_homologs deliverables: the cross-species hit
+# statistics summary, the per-species hit statistics, and the per-species
+# top-hits tables. Source globs are relative to this manifest's directory
+# (the workflow-RUN_*-species70_burst/ root).
+#
+# Build with (from the one_direction_homologs subproject root):
+#   bash RUN-update_upload_to_server.sh
+# (which calls ../../server/ai/update_upload_to_server.py --subproject-dir .)
+#
+# Published files land at:
+#   ../../upload_to_server/BLOCK_diamond_ncbi_nr/workflow-RUN_*-species70_burst/N-output/
+#
+# The publisher creates SYMLINKS (follow-the-symlink at HTTP request time, §38),
+# so the large per-species top-hits tables cost no extra disk to publish.
+#
+# NOTE: dir_label is a per-DIRECTORY folder subtitle. The per-species statistics
+# and top-hits tables both live in 5-output/, so both entries share one dir_label.
+#
+# This is a COPYME template (single source of truth). The discovery helper
+# ignores manifests in workflow-COPYME-* dirs; copy this file into the
+# canonical workflow-RUN_* dir for it to publish (per gigantic_conventions §38/§39).
+# ============================================================================
+
+source_path	include	dest_name	display_label	file_category	description	order	dir_label
+#
+# ----- Headline summary: cross-species hit statistics (6-output) -----
+OUTPUT_pipeline/6-output/6_ai-all_species_statistics.tsv	yes		NCBI nr hit statistics — all species	summary	One row per species: total query proteins processed and the counts of self-hits, non-self-hits, queries with no non-self hit, and queries with no self hit. A self-hit is a top-10 NCBI nr DIAMOND hit with 100 percent identity, zero mismatches and gaps, and at least 95 percent query coverage (the query protein is present in NCBI nr); a non-self-hit is a true homolog with a different sequence. Master summary across all 70 species.	5	cross-species summary
+#
+# ----- Per-species hit statistics (one file per species; filename is the phyloname) -----
+OUTPUT_pipeline/5-output/*_statistics.tsv	yes			summary	The per-species form of the hit statistics: total queries and self / non-self hit counts for one species. The filename is the species phyloname.	10	per-species hit statistics and top hits
+#
+# ----- Per-species top NCBI nr hits (one file per species; filename is the phyloname) -----
+OUTPUT_pipeline/5-output/*_top_hits.tsv	yes			data	One row per query protein: its top 10 NCBI nr DIAMOND hits (hit IDs, NCBI descriptions, and e-values), plus the top non-self hit (ID, description, percent identity) and the top self hit (ID, description). Large per-protein table (up to roughly 47 MB / 34,000 rows per species). The filename is the species phyloname.	20	per-species hit statistics and top hits

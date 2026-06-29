@@ -115,27 +115,28 @@ sbatch RUN-workflow.sh
 ```
 one_direction_homologs/
 ├── README.md                                   # This file
-├── AI_GUIDE.md          # AI assistant guidance
+├── AI_GUIDE.md                                 # AI assistant guidance
 ├── TODO.md                                     # Project tracking
+├── RUN-update_upload_to_server.sh              # Publish to the GIGANTIC data server (thin wrapper → shared helper, §38)
 ├── user_research/                              # Personal workspace
-├── upload_to_server/                           # Files for GIGANTIC server
-│   └── upload_manifest.tsv
+├── upload_to_server/                           # Curated deliverables for the GIGANTIC data server (§38/§39)
+│   ├── README.md
+│   └── .gitkeep                                # the built symlink tree is gitignored runtime content
 │
-├── output_to_input/                            # Outputs for downstream subprojects
+├── output_to_input/                            # Outputs for downstream subprojects (§2)
+│   ├── README.md
 │   └── BLOCK_diamond_ncbi_nr/
-│       └── ncbi_nr_top_hits/                   # Per-species top hits + statistics
+│       └── ncbi_nr_top_hits/                   # Per-species top hits + statistics (symlinks)
 │
 └── BLOCK_diamond_ncbi_nr/
-    ├── AI_GUIDE.md             # BLOCK-level AI guidance
-    ├── RUN-update_upload_to_server.sh          # Update server sharing symlinks
+    ├── AI_GUIDE.md                             # BLOCK-level AI guidance
     │
     └── workflow-COPYME-diamond_ncbi_nr/
         ├── README.md                           # Quick start guide
-        ├── RUN-workflow.sh                     # bash RUN-workflow.sh (local)
-        ├── RUN-workflow.sh                 # sbatch RUN-workflow.sh (SLURM)
+        ├── RUN-workflow.sh                     # Run the workflow (local or SLURM via execution_mode, §29)
         ├── START_HERE-user_config.yaml         # Edit this for your project
+        ├── upload_manifest.tsv                 # Which outputs publish to the data server (§38/§39)
         ├── INPUT_user/                         # Workflow inputs
-        │   └── proteome_manifest_example.tsv   # Example manifest
         ├── OUTPUT_pipeline/                    # Generated results
         └── ai/                                 # Internal (don't touch)
             ├── AI_GUIDE.md
